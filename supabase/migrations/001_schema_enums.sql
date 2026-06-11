@@ -21,7 +21,8 @@ create table public.stores (
   email text,
   seed_status public.seed_status not null default 'pending',
   is_active boolean not null default true,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table public.employees (
@@ -44,6 +45,7 @@ create table public.store_settings (
   timezone text not null default 'Asia/Saigon',
   bill_footer text not null default '',
   qr_info jsonb,
+  created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint store_settings_currency_vnd check (currency = 'VND')
 );
@@ -224,6 +226,7 @@ create table public.order_item_options (
   option_name text not null,
   price_delta integer not null default 0,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   unique (store_id, id),
   foreign key (store_id, order_item_id) references public.order_items (store_id, id) on delete cascade,
   foreign key (store_id, option_value_id) references public.option_values (store_id, id)
@@ -240,6 +243,7 @@ create table public.payments (
   change_amount integer not null check (change_amount >= 0),
   paid_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   unique (store_id, id),
   foreign key (store_id, order_id) references public.orders (store_id, id),
   foreign key (store_id, employee_id) references public.employees (store_id, id)

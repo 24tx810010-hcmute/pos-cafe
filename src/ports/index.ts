@@ -83,6 +83,18 @@ export interface IPrintPort {
   renderReceipt(receipt: PrintReceipt): Promise<void>;
 }
 
+export type RealtimeInvalidationInput = {
+  storeId: string;
+  invalidateMenu(): void;
+  invalidateFloorPlan(): void;
+  invalidateOpenOrders(): void;
+  invalidateReport(): void;
+};
+
+export interface IRealtimePort {
+  startStoreInvalidation(input: RealtimeInvalidationInput): () => void;
+}
+
 export type AppPorts = {
   auth: IAuthRepo;
   employee: IEmployeeRepo;
@@ -94,4 +106,5 @@ export type AppPorts = {
   settings: ISettingsRepo;
   seed: ISeedRepo;
   print: IPrintPort;
+  realtime: IRealtimePort;
 };

@@ -8,7 +8,6 @@ export type SeedStatus = "pending" | "seeded" | "failed";
 export type StoreSession = {
   storeId: string;
   storeNo: number;
-  storeKey: string;
 };
 
 export type Employee = {

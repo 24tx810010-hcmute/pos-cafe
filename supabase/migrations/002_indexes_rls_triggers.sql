@@ -11,6 +11,9 @@ $$;
 create trigger employees_set_updated_at before update on public.employees
 for each row execute function public.set_updated_at();
 
+create trigger stores_set_updated_at before update on public.stores
+for each row execute function public.set_updated_at();
+
 create trigger store_settings_set_updated_at before update on public.store_settings
 for each row execute function public.set_updated_at();
 
@@ -39,6 +42,12 @@ create trigger orders_set_updated_at before update on public.orders
 for each row execute function public.set_updated_at();
 
 create trigger order_items_set_updated_at before update on public.order_items
+for each row execute function public.set_updated_at();
+
+create trigger order_item_options_set_updated_at before update on public.order_item_options
+for each row execute function public.set_updated_at();
+
+create trigger payments_set_updated_at before update on public.payments
 for each row execute function public.set_updated_at();
 
 create index employees_store_active_idx on public.employees (store_id, is_active);

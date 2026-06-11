@@ -7,6 +7,7 @@ import type {
   IOrderRepo,
   IPaymentRepo,
   IPrintPort,
+  IRealtimePort,
   IReportRepo,
   ISeedRepo,
   ISettingsRepo,
@@ -47,6 +48,12 @@ const clone = <T>(value: T): T => structuredClone(value);
 
 const todayBusinessDate = "2026-06-11";
 
+const parseStoreNo = (storeKey: string): number => {
+  const [storeNo] = storeKey.split("-");
+  const parsed = Number.parseInt(storeNo, 10);
+  return Number.isFinite(parsed) ? parsed : 1;
+};
+
 type MockState = {
   session: StoreSession | null;
   employees: Employee[];
@@ -61,7 +68,7 @@ type MockState = {
 };
 
 export const createMockState = (): MockState => ({
-  session: { storeId: mockStoreId, storeNo: 1, storeKey: "1" },
+  session: { storeId: mockStoreId, storeNo: 1 },
   employees: clone(mockEmployees),
   pins: clone(mockPins),
   menu: clone(mockMenuCatalog),
@@ -105,15 +112,15 @@ class MockAuthRepo implements IAuthRepo {
   constructor(private readonly state: MockState) {}
 
   async pairStore(storeKey: string): Promise<void> {
-    this.state.session = { storeId: mockStoreId, storeNo: Number(storeKey) || 1, storeKey };
+    this.state.session = { storeId: mockStoreId, storeNo: parseStoreNo(storeKey) };
   }
 
   async createStore(): Promise<import("@/domain").CreateStoreResult> {
-    this.state.session = { storeId: mockStoreId, storeNo: 1, storeKey: "1" };
+    this.state.session = { storeId: mockStoreId, storeNo: 1 };
     return {
       storeId: mockStoreId,
       storeNo: 1,
-      storeKey: "1",
+      storeKey: "0001-X8F3QA",
       adminPin: "123456",
       seedStatus: "seeded",
       canRetrySeed: false,
@@ -440,6 +447,12 @@ class MockPrintPort implements IPrintPort {
   }
 }
 
+class MockRealtimePort implements IRealtimePort {
+  startStoreInvalidation(): () => void {
+    return () => undefined;
+  }
+}
+
 export const createMockPorts = (state = createMockState()): AppPorts => ({
   auth: new MockAuthRepo(state),
   employee: new MockEmployeeRepo(state),
@@ -451,4 +464,5 @@ export const createMockPorts = (state = createMockState()): AppPorts => ({
   settings: new MockSettingsRepo(state),
   seed: new MockSeedRepo(),
   print: new MockPrintPort(state),
+  realtime: new MockRealtimePort(),
 });
