@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import type { Employee, OrderType, SubmitOrderDraftItem } from "@/domain";
 
-export type DrawerModule = "order" | "payment" | "menuEditor" | "floorEditor" | "reportSettings" | null;
+export type DrawerModule = "order" | "payment" | "menuEditor" | "floorEditor" | "reportSettings" | "orderHistory" | "employees" | "settings" | null;
+export type AppScreen = "landing" | "storePairing" | "createStore" | "passcode";
 
 export type OrderDrawerContext = {
   orderId: string | null;
@@ -10,6 +11,7 @@ export type OrderDrawerContext = {
 };
 
 type AppState = {
+  screen: AppScreen;
   currentEmployee: Employee | null;
   activeAreaId: string | null;
   activeCategoryId: string | null;
@@ -18,6 +20,7 @@ type AppState = {
   paymentOrderId: string | null;
   draftItems: SubmitOrderDraftItem[];
   setCurrentEmployee: (employee: Employee | null) => void;
+  setScreen: (screen: AppScreen) => void;
   setActiveAreaId: (areaId: string) => void;
   setActiveCategoryId: (categoryId: string) => void;
   openDrawer: (drawer: Exclude<DrawerModule, null>) => void;
@@ -28,6 +31,7 @@ type AppState = {
 };
 
 export const useAppStore = create<AppState>((set) => ({
+  screen: "landing",
   currentEmployee: null,
   activeAreaId: null,
   activeCategoryId: null,
@@ -36,6 +40,7 @@ export const useAppStore = create<AppState>((set) => ({
   paymentOrderId: null,
   draftItems: [],
   setCurrentEmployee: (employee) => set({ currentEmployee: employee }),
+  setScreen: (screen) => set({ screen }),
   setActiveAreaId: (areaId) => set({ activeAreaId: areaId }),
   setActiveCategoryId: (categoryId) => set({ activeCategoryId: categoryId }),
   openDrawer: (drawer) => set({ drawer, orderContext: null, paymentOrderId: null }),

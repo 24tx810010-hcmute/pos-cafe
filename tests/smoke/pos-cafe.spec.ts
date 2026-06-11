@@ -1,6 +1,12 @@
 import { expect, test } from "@playwright/test";
 
 async function loginAsAdmin(page: import("@playwright/test").Page) {
+  if (await page.getByTestId("landing-screen").isVisible()) {
+    await page.getByTestId("go-store-pairing").click();
+    await page.getByTestId("store-pairing-screen").waitFor();
+    await page.getByTestId("go-passcode").click();
+  }
+  await page.getByTestId("passcode-screen").waitFor();
   await page.getByTestId("employee-emp-admin").click();
   for (const digit of ["1", "2", "3", "4", "5", "6"]) {
     await page.getByTestId(`pin-${digit}`).click();
@@ -18,7 +24,7 @@ test("portrait viewport shows rotate guidance", async ({ page }, testInfo) => {
 test("POS mock flow keeps primary actions visible on landscape viewports", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "portrait", "landscape-only flow");
   await page.goto("/");
-  await expect(page.getByTestId("passcode-screen")).toBeVisible();
+  await expect(page.getByTestId("landing-screen")).toBeVisible();
   await loginAsAdmin(page);
 
   await page.getByTestId("table-tbl-b01").click();
