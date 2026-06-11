@@ -1,0 +1,363 @@
+# Implementation Contract — POS Cafe
+
+> **Ngày chốt:** 2026-06-11  
+> **Vai trò:** contract để chia multi-agent coding. Không phải code/migration thật.  
+> **Spec tổng thể:** [2026-06-09-pos-cafe-design.md](2026-06-09-pos-cafe-design.md)  
+> **Schema/RLS:** [2026-06-10-pos-cafe-schema-rls-decisions.md](2026-06-10-pos-cafe-schema-rls-decisions.md)  
+> **Coding decisions:** [2026-06-11-pos-cafe-coding-decisions.md](2026-06-11-pos-cafe-coding-decisions.md)
+
+---
+
+## 1. RPC contract
+
+Quy ước chung:
+
+- RPC insert row mới phải nhận UUID do client sinh.
+- RPC kiểm tra `employee_id` active và thuộc store hiện tại; admin-only RPC kiểm tra role admin như guardrail nghiệp vụ/audit.
+- Role nhân viên vẫn là app-layer/Core guard; RLS chỉ cô lập store, không claim DB-level role security cho employee.
+- RPC trả lỗi chuẩn để adapter map thành `AppError`.
+- `submit_order_changes` dùng typed scalar params + `jsonb` items/options payload; RPC còn lại dùng typed params.
+- Order/payment conflict trả lỗi chuẩn `ORDER_VERSION_CONFLICT`.
+
+### `get_next_store_no()`
+
+```sql
+get_next_store_no() returns integer
+```
+
+- Cấp `store_no` tiếp theo để tạo Store Key.
+- Dùng Postgres sequence, race-safe, **cho phép hở số** nếu create-store/signUp lỗi.
+- Không dùng `store_no` làm credential.
+
+### `verify_employee_pin(...)`
+
+```sql
+verify_employee_pin(
+  p_employee_id uuid,
+  p_pin text
+) returns table (
+  id uuid,
+  name text,
+  role employee_role
+)
+```
+
+- Verify bằng `pgcrypto`.
+- Không trả `passcode_hash`.
+- UI gọi RPC sau khi user **chọn nhân viên + nhập PIN**; không yêu cầu PIN unique toàn store.
+- Client lưu employee trả về trong memory-only Zustand state.
+
+### `submit_order_changes(...)`
+
+```sql
+submit_order_changes(
+  p_order_id uuid null,
+  p_table_id uuid null,
+  p_order_type order_type,
+  p_employee_id uuid,
+  p_expected_lock_version integer null,
+  p_items jsonb
+) returns jsonb
+```
+
+Input `p_items` là snapshot hiện tại của order draft:
+
+```ts
+type SubmitOrderItem = {
+  id: string;
+  menuItemId: string;
+  itemName: string;
+  quantity: number;
+  unitPrice: number; // integer VND
+  note?: string | null;
+  options: Array<{
+    id: string;
+    optionValueId: string;
+    optionName: string;
+    priceDelta: number; // integer VND
+  }>;
+};
+```
+
+Behavior:
+
+- Nếu `p_order_id = null` và `p_items` có item quantity > 0: tạo order open.
+- Khi tạo order mới, RPC tự tính `business_date` và `order_no` tiếp theo trong transaction dựa trên `store_settings.timezone`.
+- Nếu dine-in có `p_table_id`: set table `occupied`.
+- Nếu `p_order_id != null`: check order `open` + `lock_version = p_expected_lock_version`, sau đó **replace snapshot** item/options của order open theo `p_items`.
+- Item quantity `0` hoặc bị bỏ khỏi snapshot được xem là `removed`.
+- Nếu toàn bộ item quantity về `0`: set order `void`, table `empty`, không tạo payment.
+- Không cho submit order đã `paid`.
+- Mỗi lần mutate thành công tăng `orders.lock_version`.
+- Nếu version lệch: không mutate và trả `ORDER_VERSION_CONFLICT` để UI refetch.
+
+Output tối thiểu:
+
+```ts
+type SubmitOrderChangesResult = {
+  orderId: string | null;
+  status: "open" | "void";
+  tableId: string | null;
+  tableStatus: "empty" | "occupied" | null;
+  orderNo: number;
+  businessDate: string;
+  lockVersion: number;
+  ticket: PrintTicket | null;
+};
+```
+
+### `pay_order(...)`
+
+```sql
+pay_order(
+  p_payment_id uuid,
+  p_order_id uuid,
+  p_employee_id uuid,
+  p_method payment_method,
+  p_expected_lock_version integer,
+  p_received_amount integer
+) returns jsonb
+```
+
+Behavior:
+
+- Chỉ nhận order `open` và `lock_version = p_expected_lock_version`.
+- Tính `amount = order.total`.
+- Nếu `p_received_amount < total`: lỗi, không tạo payment.
+- Tạo `payments`, set order `paid`, `paid_at = now()`.
+- Nếu dine-in có table: set table `empty`.
+- Tăng `orders.lock_version` khi pay thành công.
+- Nếu version lệch: không mutate và trả `ORDER_VERSION_CONFLICT` để UI refetch.
+- Paid order không void trong MVP.
+
+Output tối thiểu:
+
+```ts
+type PayOrderResult = {
+  orderId: string;
+  paymentId: string;
+  status: "paid";
+  total: number;
+  receivedAmount: number;
+  changeAmount: number;
+  lockVersion: number;
+  receipt: PrintReceipt;
+};
+```
+
+### `clear_demo_data(...)`
+
+```sql
+clear_demo_data(
+  p_employee_id uuid
+) returns jsonb
+```
+
+- Admin-only.
+- Block nếu còn open orders; user phải thanh toán hoặc huỷ order trước.
+- Tombstone menu/floor/decor demo data.
+- Giữ lại đúng 1 admin.
+
+### `void_order(...)`
+
+```sql
+void_order(
+  p_order_id uuid,
+  p_employee_id uuid
+) returns jsonb
+```
+
+- Reserved/admin/future only.
+- Không dùng để void paid order trong MVP.
+- Normal cancel của order open đi qua `submit_order_changes` với toàn bộ item về `0`.
+
+---
+
+## 2. Port/interface contract
+
+Quy ước:
+
+- Core/UI dùng camelCase.
+- Supabase adapter map snake_case DB row sang domain entity/DTO.
+- Repo list/get mặc định chỉ trả active rows (`deleted_at is null`).
+- Method đặc biệt mới include deleted rows.
+- Adapter/service throw `AppError`; không leak raw Supabase errors.
+- `ORDER_VERSION_CONFLICT` là `AppError` chuẩn cho stale order/payment; UI hiển thị toast/popup "Dữ liệu đã thay đổi, vui lòng tải lại".
+
+Ports theo domain:
+
+```ts
+interface IAuthRepo {
+  pairStore(storeKey: string): Promise<void>;
+  createStore(input: CreateStoreInput): Promise<CreateStoreResult>;
+  unpairStore(): Promise<void>;
+  getStoreSession(): Promise<StoreSession | null>;
+}
+
+interface IEmployeeRepo {
+  listActiveEmployees(): Promise<Employee[]>;
+  verifyPin(employeeId: string, pin: string): Promise<Employee>;
+  createEmployee(input: EmployeeInput): Promise<Employee>;
+  updateEmployee(input: EmployeeUpdate): Promise<Employee>;
+  resetPin(employeeId: string, newPin: string): Promise<void>;
+}
+
+interface IMenuRepo {
+  getMenu(): Promise<MenuCatalog>;
+  saveMenuChanges(changes: MenuChanges): Promise<void>;
+}
+
+interface IFloorPlanRepo {
+  getFloorPlan(): Promise<FloorPlan>;
+  saveFloorPlan(changes: FloorPlanChanges): Promise<void>;
+}
+
+interface IOrderRepo {
+  listOpenOrders(): Promise<OrderSummary[]>;
+  getOrder(orderId: string): Promise<OrderDetail>;
+  submitOrderChanges(input: SubmitOrderChangesInput): Promise<SubmitOrderChangesResult>;
+  listTakeawayOpenOrders(): Promise<OrderSummary[]>;
+  listOrderHistory(filter: OrderHistoryFilter): Promise<OrderSummaryPage>;
+}
+
+interface IPaymentRepo {
+  payOrder(input: PayOrderInput): Promise<PayOrderResult>;
+}
+
+interface IReportRepo {
+  getCoreReport(filter: ReportFilter): Promise<CoreReport>;
+}
+
+interface ISettingsRepo {
+  getSettings(): Promise<StoreSettings>;
+  updateSettings(input: StoreSettingsUpdate): Promise<StoreSettings>;
+  clearDemoData(employeeId: string): Promise<void>;
+}
+
+interface ISeedRepo {
+  seedDemo(storeId: string): Promise<void>;
+  seedBlank(storeId: string): Promise<void>;
+}
+
+interface IPrintPort {
+  renderOrderTicket(ticket: PrintTicket): Promise<void>;
+  renderReceipt(receipt: PrintReceipt): Promise<void>;
+}
+```
+
+DTO contract tối thiểu:
+
+```ts
+type SubmitOrderChangesInput = {
+  orderId: string | null;
+  tableId: string | null;
+  orderType: "dine_in" | "takeaway";
+  employeeId: string;
+  expectedVersion: number | null;
+  items: SubmitOrderItem[];
+};
+
+type PayOrderInput = {
+  paymentId: string;
+  orderId: string;
+  employeeId: string;
+  method: "cash" | "bank_transfer" | "qr" | "other";
+  expectedVersion: number;
+  receivedAmount: number;
+};
+
+type OrderSummary = {
+  id: string;
+  orderNo: number;
+  status: "open" | "paid" | "void";
+  total: number;
+  lockVersion: number;
+};
+
+type OrderDetail = OrderSummary & {
+  businessDate: string;
+  tableId: string | null;
+  orderType: "dine_in" | "takeaway";
+  items: SubmitOrderItem[];
+};
+```
+
+---
+
+## 3. Order/payment behavior
+
+- Bấm bàn trống chỉ mở draft UI, không tạo DB.
+- Bấm **In/Gửi đơn** mới gọi `submit_order_changes`, lưu DB, render/in phiếu tạm, quay về floor plan.
+- Order open submit theo **replace snapshot** item/options.
+- Bàn có order open:
+  - nếu có draft thay đổi → nút chính là **In/Gửi đơn**.
+  - nếu không có draft thay đổi → nút chính là **Thanh toán**.
+- Order open load vào UI kèm `lockVersion`; submit/pay truyền `expectedVersion`.
+- Nếu RPC trả `ORDER_VERSION_CONFLICT`: UI báo dữ liệu đã thay đổi và refetch order/open orders.
+- Giảm toàn bộ item về `0` + **In/Gửi đơn** → order `void`, table `empty`.
+- Takeaway có nút **Mang đi** và danh sách takeaway open.
+- Payment cash:
+  - nhập tiền khách đưa.
+  - nếu nhỏ hơn total: toast/popup lỗi, không complete.
+  - Complete thành công trước, sau đó render/in final bill.
+- Paid order không void trong MVP.
+- Money là integer VND.
+- Item/options snapshot tên + giá.
+- Daily `order_no` và report "hôm nay" dùng `store_settings.timezone`, default `Asia/Saigon`.
+- Report MVP chỉ tính order `paid`, loại `void`, lọc ngày bằng `business_date`.
+
+---
+
+## 4. UI shell/layout
+
+- UI mặc định tiếng Việt.
+- Single URL, internal app state.
+- App shell dùng left rail icon + label.
+- POS floor là màn mặc định sau passcode.
+- Passcode screen dùng chọn nhân viên + PIN.
+- Order screen: menu/category bên trái/giữa, cart/order summary panel bên phải.
+- Admin menu/floor editor: split-pane.
+- Phone portrait: hướng dẫn xoay ngang, không cố render POS đầy đủ.
+- PrintPort MVP render HTML/template preview cho phiếu tạm và final bill.
+
+---
+
+## 5. Seed contract
+
+- `seed.demo`:
+  - admin PIN `123456`
+  - cashier PIN `111111`
+  - menu demo medium kiểu cafe Việt
+  - option groups/values cho size/topping
+  - 2 floor areas medium
+  - tables đủ demo floor plan
+  - decor placeholder assets nếu chưa có ảnh thật
+- `seed.blank`:
+  - đúng 1 admin
+  - settings tối thiểu
+- Decor assets nằm trong `src/assets/floor-decor`, map bằng `asset_key`.
+- Menu item MVP không upload ảnh; dùng text/placeholder hoặc built-in `image_asset_key`, không thêm Supabase Storage.
+
+---
+
+## 6. Multi-agent split
+
+Stream 1 — Foundation/schema/RPC/migrations:
+- SQL migrations, enums, triggers, RLS, RPC skeleton.
+
+Stream 2 — Core types/services/ports:
+- Entities, value types, `AppError`, ports, pure services.
+
+Stream 3 — Supabase adapters:
+- Implement repos, row/entity mapping, TanStack Query-friendly methods.
+
+Stream 4 — Auth/session/store flow:
+- Pair/create store, passcode, current employee memory-only, role guard.
+
+Stream 5 — Menu + floor editors:
+- Menu editor, floor plan editor, save flow, dirty state, PrintPort-independent.
+
+Stream 6 — POS/order/payment/report/settings:
+- Floor view, order draft/cart, submit changes, payment cash, reports, settings/clear demo.
+
+Rule: Stream 1 + Stream 2 là foundation; các stream còn lại chỉ chạy song song sau khi contract/types ổn định.
