@@ -36,9 +36,16 @@
 - Tailwind/custom CSS dùng cho layout, POS surface, floor plan, dense dashboard.
 - Form dùng **React Hook Form + Zod**.
 - UI mặc định dùng tiếng Việt.
+- Primary color MVP: teal `#0F766E`; neutral modern palette, reusable beyond cafe.
 - App shell dùng left rail (icon + label).
-- Order screen dùng menu/category + cart panel bên phải.
-- Admin editor dùng split-pane.
+- Navigation module pattern: single URL + internal state + overlay drawer.
+- All modules open as drawer/workspace overlay from left rail:
+  - large desktop: `80-90vw`, max around `1440px`
+  - medium/tablet: `90-96vw`
+  - small width: `100vw`
+- Order drawer dùng menu/category + cart panel bên phải.
+- Admin editor drawers dùng split-pane.
+- UI reference source: `docs/superpowers/ui-prototype/pos-cafe-ui-reference.html`; screenshot: `docs/superpowers/assets/pos-cafe-ui-overview.png`.
 - Permission UI/Core guard:
   - Admin: menu/floor/employees/report/settings/clear demo + POS.
   - Cashier: floor/order/payment/order-history.

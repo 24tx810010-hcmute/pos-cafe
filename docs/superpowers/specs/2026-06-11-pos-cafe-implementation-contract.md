@@ -359,10 +359,17 @@ type FloorPlanChanges = {
 - UI mặc định tiếng Việt.
 - Single URL, internal app state.
 - App shell dùng left rail icon + label.
+- Primary color: teal `#0F766E`; neutral modern surfaces and slate text.
+- All modules open as overlay drawer/workspace from left rail:
+  - large desktop: `80-90vw`, max around `1440px`
+  - medium/tablet: `90-96vw`
+  - small width: `100vw`
+- Drawer switching with dirty state must confirm internally; no browser history entry.
 - POS floor là màn mặc định sau passcode.
 - Passcode screen dùng chọn nhân viên + PIN.
-- Order screen: menu/category bên trái/giữa, cart/order summary panel bên phải.
-- Admin menu/floor editor: split-pane.
+- Order drawer: menu/category bên trái/giữa, cart/order summary panel bên phải.
+- Admin menu/floor editor drawers: split-pane.
+- UI reference prototype: `docs/superpowers/ui-prototype/pos-cafe-ui-reference.html`; screenshot: `docs/superpowers/assets/pos-cafe-ui-overview.png`.
 - Permission guard:
   - Admin: menu/floor/employees/report/settings/clear demo + POS.
   - Cashier: floor/order/payment/order-history.
