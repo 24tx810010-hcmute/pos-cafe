@@ -60,6 +60,7 @@ App mở
   - FE sinh `secret`, gọi Supabase Auth `signUp` bằng email ẩn `store<store_no>@store.pos.local`.
   - Sau khi có session store account, client insert `stores`/`store_settings` và seed bằng TS seed bundle trong repo.
   - Tạo admin `employee` + PIN qua RPC/hash flow, cập nhật `stores.seed_status = seeded|failed`.
+  - Nếu signUp/store tạo xong nhưng seed lỗi: giữ store, set `stores.seed_status = failed`, UI hiện **Retry seed**; không bắt user xoá store/tạo lại.
   - **Hiện Store Key + admin PIN 1 lần.**
 - Nhiều thiết bị cùng quán = cùng store account → ghép bằng cùng Store Key. Chủ đưa mã cho nhân viên.
 
@@ -93,6 +94,17 @@ Ai có Store Key + ghép máy → có session Supabase mà RLS cho đọc toàn 
 - Decor assets có sẵn nằm trong `src/assets/floor-decor`; seed chỉ lưu `asset_key`.
 - **Report trong demo:** store mới chưa có order → report rỗng lúc đầu. Demo report bằng cách **tạo order live → thanh toán → hiện trong report** (thể hiện trọn luồng, hơn data giả).
 
+Seed demo medium mặc định:
+- Nhân viên: admin PIN `123456`, cashier PIN `111111`.
+- Menu cafe Việt phổ thông, 4 categories / 22 món:
+  - **Cà phê:** Cà phê đen, Cà phê sữa, Bạc xỉu, Cà phê muối, Americano, Latte.
+  - **Trà & trà sữa:** Trà đào cam sả, Trà vải, Trà tắc, Trà sữa truyền thống, Trà sữa ô long, Matcha latte.
+  - **Đá xay:** Chocolate đá xay, Matcha đá xay, Cookies đá xay, Cà phê đá xay.
+  - **Bánh/snack:** Croissant, Tiramisu, Bánh mì que, Khoai tây chiên, Bông lan trứng muối, Flan.
+- Option groups: size `M/L`, đá `0/50/100%`, đường `0/50/100%`, topping `trân châu/thạch cà phê/kem cheese`, thêm shot cho nhóm cà phê.
+- Floor plan: 2 areas (`Tầng trệt`, `Lầu 1`), 14 bàn tổng (`8 + 6`), decor placeholder `plant_01`, `wall_01`, `counter_01`, `door_01`.
+- Không seed order history.
+
 ---
 
 ## 5. Tech Stack (khóa)
@@ -109,7 +121,7 @@ Ai có Store Key + ghép máy → có session Supabase mà RLS cho đọc toàn 
 | Server state/cache | TanStack Query | fetch/refetch/invalidate khi Realtime event tới |
 | Backend (BaaS) | **Supabase** | Postgres + Auth + Realtime + RLS |
 | Database | PostgreSQL (Supabase cloud) | free 500MB |
-| Schema/RLS/RPC | SQL migrations (`supabase/migrations/*.sql`) | apply lên Supabase cloud; không dashboard-only |
+| Schema/RLS/RPC | SQL migrations (`supabase/migrations/*.sql`) | apply trực tiếp lên Supabase cloud; không dashboard-only; không bắt buộc local CLI/Docker |
 | Auth | Supabase Auth (1 user/store) + RLS cô lập store | role NV ở app-layer |
 | **Đồng bộ nhiều máy** | **Supabase Realtime** (`postgres_changes`) | **online-only**, không offline/local DB |
 | Biểu đồ | recharts | report doanh thu |
@@ -148,7 +160,7 @@ src/
 └── types/               # enums + shared types (Role, OrderStatus, OrderType...)
 
 supabase/
-└── migrations/          # schema, RLS, RPC, triggers versioned SQL
+└── migrations/          # 001_schema_enums, 002_indexes_rls_triggers, 003_rpc_functions
 ```
 
 **Prompt AI theo layer:** Adapter (paste port) → Hook (paste Service interface) → UI (paste Hook interface). Không bao giờ "làm cả feature 1 lần".
@@ -195,8 +207,9 @@ Luật navigation:
 
 Guard:
 - Role guard chạy theo `AppScreen`, không dựa vào route.
-- Admin-only screens: `adminMenu`, `adminFloorPlan`, `employees`, `report`, `settings`.
-- Cashier screens: `posFloor`, `order`, `payment`, `orderHistory`.
+- Admin: `adminMenu`, `adminFloorPlan`, `employees`, `report`, `settings`, `clear_demo_data`, và toàn bộ POS.
+- Cashier: `posFloor`, `order`, `payment`, `orderHistory`; không vào editor/report/settings/clear demo.
+- Kitchen role giữ enum/seam, chưa có màn MVP.
 
 UI target:
 - Landscape-first từ desktop/tablet tới điện thoại xoay ngang; layout POS giữ cùng mô hình trên mọi màn hình ngang.
@@ -279,14 +292,20 @@ Máy A edit menu / kéo bàn
 
 **MVP chọn "event -> refetch", không patch state thủ công.** Khi nhận Realtime event, app refetch lại danh sách liên quan (`refetchMenu()` / `refetchTables()`). Menu và bàn ít row nên chi phí nhỏ, code ít lỗi hơn tự merge từng event.
 
+Save contract:
+- Menu/Floor editor gửi **changeset** gồm `created`, `updated`, `deleted`.
+- `deleted` luôn là tombstone (`deleted_at`, `deleted_by_employee_id`), không hard-delete.
+- Không dùng full draft overwrite toàn bộ vì dễ ghi đè dữ liệu máy khác.
+
 Menu Editor:
 - Lưu dạng quan hệ theo `categories`, `menu_items`, `option_groups`, `option_values`; **không lưu cả menu thành JSON blob**.
 - **MVP làm luôn option/topping** vì đây là năng lực lõi của POS cà phê: size, đá/đường, topping, thêm shot...
 - Giới hạn scope option MVP: option chỉ gắn vào món, 1 cấp group/value; chưa làm công thức kho, tồn nguyên liệu, rule phụ thuộc phức tạp giữa các option.
 - Ảnh món MVP **không upload**; món dùng text/placeholder hoặc `image_asset_key` trỏ tới asset built-in. Không thêm Supabase Storage/bucket/policy trong phase này.
 - Edit form thao tác local state; Save gọi insert/update/upsert từng entity.
+- Save gửi `MenuChanges`: categories/menu_items/option_groups/option_values chia `created`, `updated`, `deleted`.
 - Xoá menu/category/option dùng tombstone `deleted_at`, không hard-delete. `is_available=false` chỉ dùng cho món tạm hết hàng, không phải xoá.
-- Order phải lưu snapshot giá/tên/options lúc bán (`unit_price`, `price_delta`, optional snapshot name) để sửa menu sau này không làm lệch order cũ.
+- Order phải lưu snapshot giá/tên/options lúc bán (`item_name`, `option_name`, `unit_price`, `price_delta`) để sửa menu sau này không làm lệch order cũ; snapshot này do RPC lấy từ DB, không tin giá/tên client gửi.
 - Máy POS/Menu picker subscribe các bảng menu; khi có thay đổi thì refetch menu.
 
 Floor-Plan Editor:
@@ -301,6 +320,7 @@ Floor-Plan Editor:
 - User **không upload/custom decor asset** trong MVP; không lưu `image_url` cho decor ở schema MVP.
 - Giới hạn scope floor-plan MVP: chưa làm đo kích thước thật, snap nâng cao, layer manager phức tạp, upload asset; tập trung vào khu/tầng + kéo/thả bàn/decor + trạng thái bàn realtime.
 - Save layout **không ghi đè `status`**. `status` là trạng thái vận hành do order/payment realtime cập nhật (`empty`/`occupied`), còn editor chỉ cập nhật layout.
+- Save gửi `FloorPlanChanges`: floor_areas/tables/floor_decor_items chia `created`, `updated`, `deleted`; table update không chứa `status`.
 - Máy POS floor-plan view subscribe `floor_areas`, `tables`, `floor_decor_items`; khi layout/status/decor đổi thì refetch floor plan.
 
 Conflict MVP:
@@ -319,7 +339,9 @@ RPC phase này:
 - `void_order(...)` → reserved/admin/future only; không dùng để void paid order trong MVP.
 - `clear_demo_data(...)` → admin-only; nếu còn open orders thì block, nếu không thì tombstone demo menu/floor/decor và giữ 1 admin.
 - RPC nào insert row mới vẫn nhận UUID do client sinh trước khi gọi, không dựa vào Postgres default UUID.
-- `submit_order_changes` dùng typed scalar params + `jsonb` items/options payload; chiến lược **replace snapshot** item/options của order open khi bấm **In/Gửi đơn**.
+- `submit_order_changes` dùng typed scalar params + `jsonb` items/options payload; chiến lược **replace order lines** của order open khi bấm **In/Gửi đơn**.
+- DB là nguồn sự thật cho giá/tên order: client gửi `menuItemId`, `quantity`, `note`, `optionValueId`; RPC đọc menu/options active từ DB rồi snapshot `item_name`, `option_name`, `unit_price`, `price_delta`.
+- Nếu menu item/option bị tombstone, unavailable hoặc không thuộc đúng món/store tại thời điểm submit, RPC trả lỗi nghiệp vụ để UI reload menu.
 - `orders.lock_version int default 0`; `submit_order_changes`/`pay_order` nhận expected version và chỉ mutate nếu status + version còn khớp. Nếu lệch, RPC trả lỗi conflict để UI báo "Dữ liệu đã thay đổi, vui lòng tải lại".
 - Role nhân viên vẫn là **app-layer/Core guard**; RPC có thể kiểm tra employee active/role để giảm lỗi nghiệp vụ/audit, nhưng docs không claim đây là DB-level role security tuyệt đối.
 

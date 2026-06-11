@@ -17,6 +17,7 @@ Quy ước chung:
 - Role nhân viên vẫn là app-layer/Core guard; RLS chỉ cô lập store, không claim DB-level role security cho employee.
 - RPC trả lỗi chuẩn để adapter map thành `AppError`.
 - `submit_order_changes` dùng typed scalar params + `jsonb` items/options payload; RPC còn lại dùng typed params.
+- DB là nguồn sự thật cho giá/tên khi submit order; client không gửi hoặc quyết định final price/name.
 - Order/payment conflict trả lỗi chuẩn `ORDER_VERSION_CONFLICT`.
 
 ### `get_next_store_no()`
@@ -60,21 +61,17 @@ submit_order_changes(
 ) returns jsonb
 ```
 
-Input `p_items` là snapshot hiện tại của order draft:
+Input `p_items` là draft line selection, không phải nguồn giá/tên:
 
 ```ts
-type SubmitOrderItem = {
-  id: string;
+type SubmitOrderDraftItem = {
+  id: string; // client UUID cho order_items row
   menuItemId: string;
-  itemName: string;
   quantity: number;
-  unitPrice: number; // integer VND
   note?: string | null;
   options: Array<{
-    id: string;
+    id: string; // client UUID cho order_item_options row
     optionValueId: string;
-    optionName: string;
-    priceDelta: number; // integer VND
   }>;
 };
 ```
@@ -84,12 +81,14 @@ Behavior:
 - Nếu `p_order_id = null` và `p_items` có item quantity > 0: tạo order open.
 - Khi tạo order mới, RPC tự tính `business_date` và `order_no` tiếp theo trong transaction dựa trên `store_settings.timezone`.
 - Nếu dine-in có `p_table_id`: set table `occupied`.
-- Nếu `p_order_id != null`: check order `open` + `lock_version = p_expected_lock_version`, sau đó **replace snapshot** item/options của order open theo `p_items`.
+- Với mỗi item/option: RPC đọc `menu_items`/`option_values` active từ DB, kiểm tra cùng `store_id`, chưa tombstone, món còn `is_available`, option thuộc đúng món, rồi snapshot `item_name`, `option_name`, `unit_price`, `price_delta`.
+- Nếu `p_order_id != null`: check order `open` + `lock_version = p_expected_lock_version`, sau đó **replace order lines** của order open theo `p_items`.
 - Item quantity `0` hoặc bị bỏ khỏi snapshot được xem là `removed`.
 - Nếu toàn bộ item quantity về `0`: set order `void`, table `empty`, không tạo payment.
 - Không cho submit order đã `paid`.
 - Mỗi lần mutate thành công tăng `orders.lock_version`.
 - Nếu version lệch: không mutate và trả `ORDER_VERSION_CONFLICT` để UI refetch.
+- Nếu menu item/option không hợp lệ: không mutate và trả `MENU_ITEM_UNAVAILABLE` hoặc `OPTION_VALUE_UNAVAILABLE`; UI refetch menu và giữ draft để user sửa.
 
 Output tối thiểu:
 
@@ -183,6 +182,7 @@ Quy ước:
 - Method đặc biệt mới include deleted rows.
 - Adapter/service throw `AppError`; không leak raw Supabase errors.
 - `ORDER_VERSION_CONFLICT` là `AppError` chuẩn cho stale order/payment; UI hiển thị toast/popup "Dữ liệu đã thay đổi, vui lòng tải lại".
+- `MENU_ITEM_UNAVAILABLE`/`OPTION_VALUE_UNAVAILABLE` là `AppError` chuẩn khi submit draft dùng menu/option không còn hợp lệ; UI refetch menu và giữ draft.
 
 Ports theo domain:
 
@@ -236,6 +236,7 @@ interface ISettingsRepo {
 
 interface ISeedRepo {
   seedDemo(storeId: string): Promise<void>;
+  retrySeedDemo(storeId: string): Promise<void>;
   seedBlank(storeId: string): Promise<void>;
 }
 
@@ -248,13 +249,22 @@ interface IPrintPort {
 DTO contract tối thiểu:
 
 ```ts
+type CreateStoreResult = {
+  storeId: string;
+  storeNo: number;
+  storeKey: string;
+  adminPin: string;
+  seedStatus: "seeded" | "failed";
+  canRetrySeed: boolean;
+};
+
 type SubmitOrderChangesInput = {
   orderId: string | null;
   tableId: string | null;
   orderType: "dine_in" | "takeaway";
   employeeId: string;
   expectedVersion: number | null;
-  items: SubmitOrderItem[];
+  items: SubmitOrderDraftItem[];
 };
 
 type PayOrderInput = {
@@ -278,7 +288,41 @@ type OrderDetail = OrderSummary & {
   businessDate: string;
   tableId: string | null;
   orderType: "dine_in" | "takeaway";
-  items: SubmitOrderItem[];
+  items: OrderItemSnapshot[];
+};
+
+type OrderItemSnapshot = {
+  id: string;
+  menuItemId: string;
+  itemName: string;
+  quantity: number;
+  unitPrice: number;
+  note?: string | null;
+  options: Array<{
+    id: string;
+    optionValueId: string;
+    optionName: string;
+    priceDelta: number;
+  }>;
+};
+
+type Changeset<TCreate, TUpdate, TDelete> = {
+  created: TCreate[];
+  updated: TUpdate[];
+  deleted: TDelete[];
+};
+
+type MenuChanges = {
+  categories: Changeset<CategoryCreate, CategoryUpdate, TombstoneDelete>;
+  menuItems: Changeset<MenuItemCreate, MenuItemUpdate, TombstoneDelete>;
+  optionGroups: Changeset<OptionGroupCreate, OptionGroupUpdate, TombstoneDelete>;
+  optionValues: Changeset<OptionValueCreate, OptionValueUpdate, TombstoneDelete>;
+};
+
+type FloorPlanChanges = {
+  areas: Changeset<FloorAreaCreate, FloorAreaUpdate, TombstoneDelete>;
+  tables: Changeset<TableCreate, TableLayoutUpdate, TombstoneDelete>; // update không chứa status
+  decorItems: Changeset<DecorCreate, DecorUpdate, TombstoneDelete>;
 };
 ```
 
@@ -288,12 +332,14 @@ type OrderDetail = OrderSummary & {
 
 - Bấm bàn trống chỉ mở draft UI, không tạo DB.
 - Bấm **In/Gửi đơn** mới gọi `submit_order_changes`, lưu DB, render/in phiếu tạm, quay về floor plan.
-- Order open submit theo **replace snapshot** item/options.
+- Order open submit theo **replace order lines**; RPC snapshot giá/tên từ DB.
+- Client gửi ids/quantity/note/options, không tự quyết giá cuối.
 - Bàn có order open:
   - nếu có draft thay đổi → nút chính là **In/Gửi đơn**.
   - nếu không có draft thay đổi → nút chính là **Thanh toán**.
 - Order open load vào UI kèm `lockVersion`; submit/pay truyền `expectedVersion`.
 - Nếu RPC trả `ORDER_VERSION_CONFLICT`: UI báo dữ liệu đã thay đổi và refetch order/open orders.
+- Nếu RPC trả `MENU_ITEM_UNAVAILABLE`/`OPTION_VALUE_UNAVAILABLE`: UI refetch menu và yêu cầu user sửa draft.
 - Giảm toàn bộ item về `0` + **In/Gửi đơn** → order `void`, table `empty`.
 - Takeaway có nút **Mang đi** và danh sách takeaway open.
 - Payment cash:
@@ -317,6 +363,10 @@ type OrderDetail = OrderSummary & {
 - Passcode screen dùng chọn nhân viên + PIN.
 - Order screen: menu/category bên trái/giữa, cart/order summary panel bên phải.
 - Admin menu/floor editor: split-pane.
+- Permission guard:
+  - Admin: menu/floor/employees/report/settings/clear demo + POS.
+  - Cashier: floor/order/payment/order-history.
+  - Kitchen role giữ enum/seam, chưa có màn MVP.
 - Phone portrait: hướng dẫn xoay ngang, không cố render POS đầy đủ.
 - PrintPort MVP render HTML/template preview cho phiếu tạm và final bill.
 
@@ -327,11 +377,12 @@ type OrderDetail = OrderSummary & {
 - `seed.demo`:
   - admin PIN `123456`
   - cashier PIN `111111`
-  - menu demo medium kiểu cafe Việt
-  - option groups/values cho size/topping
-  - 2 floor areas medium
-  - tables đủ demo floor plan
+  - menu demo medium kiểu cafe Việt: 4 categories, 22 món
+  - option groups/values cho size, đá, đường, topping, thêm shot
+  - 2 floor areas: `Tầng trệt` 8 bàn, `Lầu 1` 6 bàn
   - decor placeholder assets nếu chưa có ảnh thật
+  - không seed order history
+- Nếu seed lỗi sau create store: set `stores.seed_status = failed`, cho retry seed idempotent; không bắt tạo store lại.
 - `seed.blank`:
   - đúng 1 admin
   - settings tối thiểu
@@ -343,10 +394,10 @@ type OrderDetail = OrderSummary & {
 ## 6. Multi-agent split
 
 Stream 1 — Foundation/schema/RPC/migrations:
-- SQL migrations, enums, triggers, RLS, RPC skeleton.
+- Chạy trước. SQL migrations cloud-direct: `001_schema_enums.sql`, `002_indexes_rls_triggers.sql`, `003_rpc_functions.sql`.
 
 Stream 2 — Core types/services/ports:
-- Entities, value types, `AppError`, ports, pure services.
+- Chạy sau khi Stream 1 ổn. Entities, value types, `AppError`, ports, pure services.
 
 Stream 3 — Supabase adapters:
 - Implement repos, row/entity mapping, TanStack Query-friendly methods.
@@ -360,4 +411,4 @@ Stream 5 — Menu + floor editors:
 Stream 6 — POS/order/payment/report/settings:
 - Floor view, order draft/cart, submit changes, payment cash, reports, settings/clear demo.
 
-Rule: Stream 1 + Stream 2 là foundation; các stream còn lại chỉ chạy song song sau khi contract/types ổn định.
+Rule: Stream 1 chạy trước Stream 2; các stream UI/adapters chỉ chạy song song sau khi DB contract và core types ổn định.

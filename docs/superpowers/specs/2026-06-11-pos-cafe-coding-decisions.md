@@ -39,6 +39,10 @@
 - App shell dùng left rail (icon + label).
 - Order screen dùng menu/category + cart panel bên phải.
 - Admin editor dùng split-pane.
+- Permission UI/Core guard:
+  - Admin: menu/floor/employees/report/settings/clear demo + POS.
+  - Cashier: floor/order/payment/order-history.
+  - Kitchen role giữ enum/seam, chưa có màn MVP.
 
 ---
 
@@ -60,11 +64,14 @@
 
 - Package manager: **npm**.
 - Supabase schema/RLS/RPC quản lý bằng SQL migrations trong `supabase/migrations/*.sql`.
-- Dev/apply lên Supabase cloud project; không dùng dashboard-only làm source of truth.
+- Dev/apply trực tiếp lên Supabase cloud project; không dùng dashboard-only làm source of truth.
+- Không bắt buộc Supabase local CLI/Docker trong MVP.
+- Foundation migrations chia 3 file: `001_schema_enums.sql`, `002_indexes_rls_triggers.sql`, `003_rpc_functions.sql`.
 - Store creation MVP:
   - FE gọi `get_next_store_no()`; RPC dùng Postgres sequence, race-safe, cho phép hở số.
   - FE sinh secret và Supabase `signUp`.
   - Client seed bằng TS seed bundle.
+  - Nếu seed lỗi sau khi store tạo xong: set `seed_status=failed`, UI hiện retry seed, không bắt tạo lại store.
 - PIN verify bằng SQL RPC + `pgcrypto`; client không đọc trực tiếp `passcode_hash`.
 - RPC critical:
   - `get_next_store_no`
@@ -74,7 +81,9 @@
   - `clear_demo_data`
   - `void_order` reserved/admin/future only
 - RPC nào insert row mới vẫn nhận UUID do client sinh trước khi gọi.
-- `submit_order_changes` dùng typed scalar params + `jsonb` items/options payload, chiến lược **replace snapshot** item/options.
+- `submit_order_changes` dùng typed scalar params + `jsonb` items/options payload, chiến lược **replace order lines**.
+- DB là nguồn giá/tên: client gửi ids/quantity/note/options; RPC đọc menu/options active từ DB rồi snapshot tên + giá.
+- Nếu menu item/option bị tombstone/unavailable lúc submit, RPC trả lỗi nghiệp vụ để UI refetch menu và giữ draft.
 - `orders.lock_version int default 0`; `submit_order_changes` và `pay_order` nhận `expectedVersion`, check status + version trong transaction, lệch thì trả conflict.
 - RPC kiểm tra employee active/role khi cần; `verify_employee_pin` trả safe employee không có hash.
 - Role nhân viên vẫn là app-layer/Core guard; RPC role check là guardrail nghiệp vụ/audit, không claim DB-level role security.
@@ -89,6 +98,7 @@
 - Repo list/get mặc định lọc active rows (`deleted_at is null`); method đặc biệt mới include deleted rows.
 - Adapter/service throw `AppError`, không leak raw Supabase errors lên Core/UI.
 - Conflict order/payment map thành `AppError` code `ORDER_VERSION_CONFLICT`; UI báo dữ liệu đã thay đổi và yêu cầu tải lại.
+- Menu unavailable khi submit map thành `MENU_ITEM_UNAVAILABLE`/`OPTION_VALUE_UNAVAILABLE`; UI refetch menu và giữ draft.
 - `IPrintPort` MVP render HTML/template preview cho phiếu tạm và final bill; chưa tích hợp máy in thật.
 
 ---
@@ -99,7 +109,7 @@
 - Order flow:
   - bấm bàn trống chỉ mở draft order UI, chưa tạo DB.
   - bấm **In/Gửi đơn** gọi `submit_order_changes`, lưu DB, in phiếu tạm, quay về floor plan.
-  - order open lưu theo **replace snapshot** item/options khi submit.
+  - order open submit theo replace order lines; DB snapshot `item_name`, `option_name`, `unit_price`, `price_delta`.
   - bàn có order open: có draft thay đổi thì **In/Gửi đơn**, không có draft thay đổi thì **Thanh toán**.
   - toàn bộ item về 0 + **In/Gửi đơn** → order open `void`, table `empty`.
   - takeaway có nút **Mang đi** + danh sách takeaway đang mở.
@@ -130,12 +140,13 @@
 - Demo seed nằm trong repo dạng TypeScript seed bundle.
 - `seed.demo` gồm:
   - admin PIN `123456` + cashier PIN `111111`
-  - menu demo medium kiểu cafe Việt
-  - option groups/values cho size/topping
-  - 2 floor areas medium
-  - tables đủ demo
+  - menu demo medium kiểu cafe Việt: 4 categories, 22 món
+  - option groups/values cho size, đá, đường, topping, thêm shot
+  - 2 floor areas: `Tầng trệt` 8 bàn, `Lầu 1` 6 bàn
   - decor dùng placeholder `asset_key` ổn định nếu chưa có ảnh thật
+  - không seed order history
 - `seed.blank` giữ đúng 1 admin + settings tối thiểu.
+- Seed retry dùng lại seed demo idempotent khi `stores.seed_status=failed`.
 - Decor image files nằm trong `src/assets/floor-decor`.
 - MVP không upload/custom decor asset.
 - Menu item MVP không upload ảnh; dùng text/placeholder hoặc built-in `image_asset_key`, không thêm Supabase Storage.
@@ -149,14 +160,16 @@
   - Playwright hoặc manual smoke cho luồng demo chính.
 - Smoke flow bắt buộc:
   - tạo store → seed demo → passcode
+  - seed lỗi giả lập → `seed_status=failed` → retry seed thành công
   - order dine-in → chọn option → payment cash → table empty
+  - submit order khi menu item/option unavailable → lỗi nghiệp vụ + refetch menu
   - 2 máy/double-click submit hoặc pay cùng order → `ORDER_VERSION_CONFLICT` và refetch
   - menu editor save → POS refetch menu
   - floor editor save table/decor → POS refetch floor plan
   - clear demo data → còn 1 admin
 - Multi-agent strategy:
-  - Stream 1: foundation/schema/RPC/migrations.
-  - Stream 2: core types/services/ports.
+  - Stream 1 chạy trước: foundation/schema/RPC/migrations.
+  - Stream 2 chạy sau khi Stream 1 ổn: core types/services/ports.
   - Stream 3: Supabase adapters.
   - Stream 4: auth/session/store flow.
   - Stream 5: menu + floor editors.
