@@ -23,6 +23,7 @@
   - đã pair store → `passcode`
   - không khôi phục `payment`, edit item, edit layout draft.
 - **TanStack Query** giữ server state/cache: menu, floor plan, orders, settings, reports.
+- Runtime ports dùng `VITE_DATA_MODE=mock|supabase`; mặc định mock nếu thiếu Supabase env, Supabase mode khi có `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` hoặc explicit mode.
 - Realtime event chỉ dùng để invalidate/refetch query, không patch state thủ công trong MVP. Realtime nằm tập trung trong `IRealtimePort`/`useRealtime`; repo/domain port không tự expose subscription API riêng trong MVP.
 - Passcode screen dùng flow **chọn nhân viên + nhập PIN**; không dùng PIN-only và không yêu cầu PIN unique toàn store.
 
@@ -89,6 +90,7 @@
   - FE sinh secret và Supabase `signUp`.
   - Client seed bằng TS seed bundle.
   - Nếu seed lỗi sau khi store tạo xong: set `seed_status=failed`, UI hiện retry seed, không bắt tạo lại store.
+- Code foundation đã có session flow service/hooks cho load/pair/create/retry seed/verify PIN/unpair; UI thật phải bind vào hooks/service thay vì gọi adapter trực tiếp.
 - PIN verify bằng SQL RPC + `pgcrypto`; client không đọc trực tiếp `passcode_hash`.
 - RPC critical:
   - `get_next_store_no`

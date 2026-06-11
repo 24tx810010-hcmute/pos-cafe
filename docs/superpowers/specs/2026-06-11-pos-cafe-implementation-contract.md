@@ -436,9 +436,11 @@ Stream 2 — Core types/services/ports:
 
 Stream 3 — Supabase adapters:
 - Implement repos, row/entity mapping, TanStack Query-friendly methods. UI binding phải theo `UI -> hooks/services -> AppPorts -> adapters`, không gọi Supabase trực tiếp trong component.
+- Status 2026-06-11: foundation implemented on code branch.
 
 Stream 4 — Auth/session/store flow:
 - Pair/create store, passcode, current employee memory-only, role guard.
+- Status 2026-06-11: logic foundation implemented on code branch; create/pair UI binding remains separate.
 
 Stream 5 — Menu + floor editors:
 - Menu editor, floor plan editor, save flow, dirty state, PrintPort-independent.

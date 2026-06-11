@@ -137,6 +137,8 @@ Done khi:
 
 ### Session B — Supabase Adapter Track
 
+Status 2026-06-11: implemented trên code branch ở mức foundation. Đã có `src/adapters/supabase/*`, `createSupabasePorts`, Store Key auth adapter, row/RPC mappers, deterministic seed bundle, realtime invalidation, tests nền. `npm run build` và `npm run test` pass.
+
 Ownership:
 
 - `src/adapters/supabase/*`
@@ -178,6 +180,8 @@ Done khi:
 
 ### Session C — Store/Auth/Seed Flow Track
 
+Status 2026-06-11: implemented trên code branch ở mức logic foundation. Đã có runtime port factory (`mock` mặc định, `supabase` khi env đủ hoặc `VITE_DATA_MODE=supabase`), session flow service/hooks cho load/pair/create/retry seed/verify PIN/unpair, tests đảm bảo `StoreSession` không chứa raw `storeKey`. UI create/pair màn thật chưa bind.
+
 Ownership:
 
 - auth/session feature files
@@ -209,6 +213,7 @@ Done khi:
 - Store flow không lưu raw Store Key/secret sau pairing/create.
 - Auth setting caveat "Confirm email off" vẫn ghi trong docs/context nếu cần.
 - Smoke/manual flow: create/pair -> passcode -> floor.
+- Logic foundation done khi `npm run build`, `npm run test`, `npm run smoke` pass ở mock runtime; UI binding thật là bước riêng.
 
 ### Session D — POS Order/Payment Track
 
