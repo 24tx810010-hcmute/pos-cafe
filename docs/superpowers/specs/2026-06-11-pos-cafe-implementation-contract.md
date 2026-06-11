@@ -78,7 +78,7 @@ type SubmitOrderDraftItem = {
 
 Behavior:
 
-- Nếu `p_order_id = null` và `p_items` có item quantity > 0: tạo order open.
+- Với order mới có item quantity > 0, adapter phải sinh UUID client và truyền vào `p_order_id`; `p_order_id = null` chỉ dùng cho draft rỗng/no-op, không tạo order DB. Quy tắc này giữ seam UUID client.
 - Khi tạo order mới, RPC tự tính `business_date` và `order_no` tiếp theo trong transaction dựa trên `store_settings.timezone`. Cấp `order_no` bằng cách lock phạm vi `(store_id, business_date)` hợp lý trong transaction, hoặc retry khi unique `(store_id, business_date, order_no)` va chạm.
 - Nếu dine-in có `p_table_id`: lock table row, kiểm tra cùng store/chưa tombstone, rồi set table `occupied`.
 - Với mỗi item/option: RPC đọc `menu_items`/`option_values` active từ DB, kiểm tra cùng `store_id`, chưa tombstone, món còn `is_available`, option thuộc đúng món, rồi snapshot `item_name`, `option_name`, `unit_price`, `price_delta`.
@@ -420,7 +420,7 @@ type FloorPlanChanges = {
   - settings tối thiểu
 - Decor assets nằm trong `src/assets/floor-decor`, map bằng `asset_key`.
 - Menu item MVP không upload ảnh; dùng text/placeholder hoặc built-in `image_asset_key`, không thêm Supabase Storage.
-- Seed demo dùng deterministic IDs theo `store_id + seed_key` cho mọi row demo. Retry seed chỉ upsert/fill row thiếu và không tạo trùng category/menu/option/floor/table/decor.
+- Seed demo dùng deterministic IDs và cột `seed_key` theo `store_id + seed_key` cho mọi row demo. Retry seed upsert/fill row thiếu theo `(store_id, seed_key)` và không tạo trùng category/menu/option/floor/table/decor.
 - `CreateStoreResult.storeKey` chỉ dùng để hiển thị Store Key một lần sau create. Sau pairing/create, persisted session không chứa raw Store Key/secret.
 
 ---

@@ -97,6 +97,7 @@
   - `clear_demo_data`
   - `void_order` reserved/admin/future only
 - RPC nào insert row mới vẫn nhận UUID do client sinh trước khi gọi.
+- Với order mới có item, Supabase adapter sinh UUID client và truyền vào `submit_order_changes.p_order_id`; `p_order_id=null` chỉ dùng cho draft rỗng/no-op.
 - `submit_order_changes` dùng typed scalar params + `jsonb` items/options payload, chiến lược **replace order lines**.
 - DB là nguồn giá/tên: client gửi ids/quantity/note/options; RPC đọc menu/options active từ DB rồi snapshot tên + giá.
 - Nếu menu item/option bị tombstone/unavailable lúc submit, RPC trả lỗi nghiệp vụ để UI refetch menu và giữ draft.
@@ -163,7 +164,7 @@
   - decor dùng placeholder `asset_key` ổn định nếu chưa có ảnh thật
   - không seed order history
 - `seed.blank` giữ đúng 1 admin + settings tối thiểu.
-- Seed demo dùng deterministic IDs theo `store_id + seed_key`; retry seed idempotent và không tạo trùng dữ liệu.
+- Seed demo dùng deterministic IDs + `seed_key` theo `store_id + seed_key`; retry seed idempotent bằng `(store_id, seed_key)` và không tạo trùng dữ liệu.
 - Clear demo tombstone đúng data thuộc seed bundle, deactive cashier demo, giữ đúng 1 admin; không xoá dữ liệu user tự tạo.
 - Seed retry dùng lại seed demo idempotent khi `stores.seed_status=failed`.
 - Decor image files nằm trong `src/assets/floor-decor`.

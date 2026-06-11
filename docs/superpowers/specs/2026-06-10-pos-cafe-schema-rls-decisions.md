@@ -60,6 +60,7 @@
 - Tombstone fields:
   - `deleted_at timestamptz null`
   - `deleted_by_employee_id uuid null`
+- Seedable demo tables có thêm `seed_key text null` để seed retry idempotent và `clear_demo_data` chỉ clear dữ liệu seed. Các bảng này gồm `employees`, `categories`, `menu_items`, `option_groups`, `option_values`, `floor_areas`, `tables`, `floor_decor_items`; mỗi bảng có unique partial index `(store_id, seed_key) where seed_key is not null`.
 - `menu_items.is_available` chỉ có nghĩa "tạm hết món", không phải xoá.
 - Ảnh món MVP không upload: `menu_items.image_asset_key null` nếu dùng asset built-in/placeholder; không tạo Supabase Storage bucket/policy cho ảnh món trong MVP.
 - `employees.is_active` là khoá/mở nhân viên.
@@ -201,7 +202,7 @@ Clear demo data:
 Seed source:
 
 - Demo seed nằm trong repo dạng TypeScript seed bundle.
-- Seed demo dùng deterministic IDs theo `store_id + seed_key` cho nhân viên demo, category, món, option, floor area, bàn, decor để retry idempotent và không tạo trùng dữ liệu.
+- Seed demo dùng deterministic IDs và `seed_key` theo `store_id + seed_key` cho nhân viên demo, category, món, option, floor area, bàn, decor để retry idempotent và không tạo trùng dữ liệu.
 - `seed.demo` gồm admin PIN `123456`, cashier PIN `111111`, menu demo medium kiểu cafe Việt, 2 floor areas medium, tables và decor placeholder.
 - Menu demo mặc định: 4 categories, 22 món cafe Việt phổ thông, option size/đá/đường/topping/thêm shot.
 - Floor demo mặc định: `Tầng trệt` 8 bàn, `Lầu 1` 6 bàn, decor placeholder `plant_01`, `wall_01`, `counter_01`, `door_01`.

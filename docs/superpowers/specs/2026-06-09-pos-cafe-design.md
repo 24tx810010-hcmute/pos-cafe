@@ -90,7 +90,7 @@ Ai có Store Key + ghép máy → có session Supabase mà RLS cho đọc toàn 
 
 - **Demo data = chỉ user + menu + sơ đồ bàn** (KHÔNG order history).
 - **Seed-on-create:** tạo quán → seed demo data vào Supabase ngay từ **TS seed bundle trong repo** → quán mới không trống trơn, dùng thử được liền. **"Demo" = tạo 1 store có sẵn data** (store tạo tức thì, không email) → không cần local demo mode.
-- Seed demo dùng **deterministic IDs theo `store_id + seed_key`** cho nhân viên demo, category, món, option, area, bàn, decor. Retry seed idempotent: chạy lại không tạo trùng data.
+- Seed demo dùng **deterministic IDs + `seed_key` theo `store_id + seed_key`** cho nhân viên demo, category, món, option, area, bàn, decor. Retry seed idempotent: chạy lại không tạo trùng data.
 - **Nút "Clear demo data"** (general-setting): tombstone menu + floor areas + bàn + decor demo, **chừa đúng 1 admin** (PIN mặc định giữ nguyên) → custom thật từ slate trắng.
 - Clear demo **admin-only** và MVP **block nếu còn open orders**, yêu cầu thanh toán/huỷ order trước để tránh xoá menu/floor khi đang bán.
 - `clear_demo_data` chỉ clear dữ liệu thuộc seed bundle bằng deterministic seed IDs; deactive cashier demo; giữ đúng 1 admin. Nếu sau này muốn xoá toàn bộ dữ liệu tự tạo của quán, đó là chức năng destructive reset riêng, phải đổi tên và có confirm rõ.
@@ -347,6 +347,7 @@ RPC phase này:
 - `void_order(...)` → reserved/admin/future only; không dùng để void paid order trong MVP.
 - `clear_demo_data(...)` → admin-only; nếu còn open orders thì block, nếu không thì tombstone demo menu/floor/decor và giữ 1 admin.
 - RPC nào insert row mới vẫn nhận UUID do client sinh trước khi gọi, không dựa vào Postgres default UUID.
+- Với order mới có item, adapter sinh UUID client và truyền vào `submit_order_changes.p_order_id`; `p_order_id=null` chỉ là no-op cho draft rỗng, không tạo order DB.
 - `submit_order_changes` dùng typed scalar params + `jsonb` items/options payload; chiến lược **replace order lines** của order open khi bấm **In/Gửi đơn**.
 - Replace order lines **không hard-delete**: khi submit lại order open, mark order_items cũ `status='removed'`, insert snapshot active mới bằng UUID client; option rows cũ đi theo removed item và không xuất hiện trên bill/report.
 - DB là nguồn sự thật cho giá/tên order: client gửi `menuItemId`, `quantity`, `note`, `optionValueId`; RPC đọc menu/options active từ DB rồi snapshot `item_name`, `option_name`, `unit_price`, `price_delta`.

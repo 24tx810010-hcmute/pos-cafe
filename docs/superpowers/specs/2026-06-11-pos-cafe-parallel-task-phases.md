@@ -125,6 +125,7 @@ Tasks:
 - Đảm bảo payment cash: block thiếu tiền, set paid, create payment, release table.
 - Đảm bảo replace order lines không hard-delete: mark item cũ `removed`, insert snapshot mới, option cũ đi theo removed item.
 - Đảm bảo `stores`, `store_settings`, `payments`, `order_item_options` cũng có `created_at` + `updated_at` và trigger phù hợp.
+- Đảm bảo seedable demo tables có `seed_key` + unique partial index `(store_id, seed_key)` để `clear_demo_data` không xoá nhầm dữ liệu user tự tạo.
 
 Done khi:
 
@@ -190,7 +191,7 @@ Tasks:
 - Passcode flow chọn nhân viên + PIN qua port `verifyPin`.
 - Current employee memory-only; refresh về passcode nếu đã pair.
 - Raw Store Key/secret chỉ dùng lúc pair/create; `StoreSession` không chứa `storeKey` và không persist secret vào local app state.
-- Seed bundle dùng deterministic IDs theo `store_id + seed_key`; retry seed idempotent, không tạo trùng data.
+- Seed bundle dùng deterministic IDs + `seed_key` theo `store_id + seed_key`; retry seed idempotent theo `(store_id, seed_key)`, không tạo trùng data.
 
 Dependency:
 
