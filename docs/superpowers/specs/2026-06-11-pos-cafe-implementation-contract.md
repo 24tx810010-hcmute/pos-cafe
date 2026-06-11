@@ -429,12 +429,13 @@ type FloorPlanChanges = {
 
 Stream 1 — Foundation/schema/RPC/migrations:
 - Chạy trước. SQL migrations cloud-direct: `001_schema_enums.sql`, `002_indexes_rls_triggers.sql`, `003_rpc_functions.sql`.
+- Status 2026-06-11: local PostgreSQL `18.4` validation pass cho `001`/`002`/`003`; happy-path RPC smoke và negative smoke pass. Supabase cloud migration là bước setup riêng.
 
 Stream 2 — Core types/services/ports:
 - Chạy sau khi Stream 1 ổn. Entities, value types, `AppError`, ports, pure services.
 
 Stream 3 — Supabase adapters:
-- Implement repos, row/entity mapping, TanStack Query-friendly methods.
+- Implement repos, row/entity mapping, TanStack Query-friendly methods. UI binding phải theo `UI -> hooks/services -> AppPorts -> adapters`, không gọi Supabase trực tiếp trong component.
 
 Stream 4 — Auth/session/store flow:
 - Pair/create store, passcode, current employee memory-only, role guard.

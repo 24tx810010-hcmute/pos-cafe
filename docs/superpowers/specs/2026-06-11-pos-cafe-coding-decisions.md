@@ -83,6 +83,7 @@
 - Dev/apply trực tiếp lên Supabase cloud project; không dùng dashboard-only làm source of truth.
 - Không bắt buộc Supabase local CLI/Docker trong MVP.
 - Foundation migrations chia 3 file: `001_schema_enums.sql`, `002_indexes_rls_triggers.sql`, `003_rpc_functions.sql`.
+- Local validation 2026-06-11: PostgreSQL `18.4` temp DB apply `001`/`002`/`003` pass; smoke RPC `submit_order_changes`/`pay_order`/`clear_demo_data` pass; negative smoke `PAYMENT_AMOUNT_TOO_LOW`/`OPEN_ORDERS_BLOCK_CLEAR_DEMO` pass. Supabase cloud migration là bước setup riêng.
 - Store creation MVP:
   - FE gọi `get_next_store_no()`; RPC dùng Postgres sequence, race-safe, cho phép hở số.
   - FE sinh secret và Supabase `signUp`.
@@ -105,6 +106,7 @@
 - RPC kiểm tra employee active/role khi cần; `verify_employee_pin` trả safe employee không có hash.
 - Role nhân viên vẫn là app-layer/Core guard; RPC role check là guardrail nghiệp vụ/audit và spoofable nếu người gọi đã có Store Key/session, không claim DB-level role security.
 - Exact RPC/port signatures nằm trong implementation contract; file này chỉ giữ tóm tắt coding decisions.
+- UI thật phải đi qua component -> hooks/services -> `AppPorts` -> adapters; không import Supabase/RPC trực tiếp trong UI.
 
 ---
 

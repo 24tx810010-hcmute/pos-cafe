@@ -107,10 +107,12 @@ Các session dưới đây có thể chạy song song sau Phase 1 hoặc song so
 
 ### Session A — DB/RPC Transaction Track
 
+Status 2026-06-11: implemented trên code branch và local validated bằng PostgreSQL `18.4` temp DB. Apply `001`/`002`/`003` pass; happy-path smoke `submit_order_changes`/`pay_order`/`clear_demo_data` pass; negative smoke `PAYMENT_AMOUNT_TOO_LOW` và `OPEN_ORDERS_BLOCK_CLEAR_DEMO` pass. Supabase cloud migration là bước setup riêng.
+
 Ownership:
 
 - `supabase/migrations/003_rpc_functions.sql`
-- có thể bổ sung migration mới `004_*` nếu cần thay vì sửa migration đã apply; hiện chưa apply cloud nên sửa `003` vẫn được.
+- có thể bổ sung migration mới `004_*` nếu cần thay vì sửa migration đã chạy trên cloud; hiện cloud migration chưa chạy nên sửa `003` vẫn được.
 - SQL docs/test notes nếu tạo.
 
 Tasks:
@@ -131,7 +133,7 @@ Done khi:
 
 - SQL không còn `RPC_NOT_IMPLEMENTED` cho 3 RPC chính.
 - RPC trả lỗi chuẩn: `ORDER_VERSION_CONFLICT`, `MENU_ITEM_UNAVAILABLE`, `OPTION_VALUE_UNAVAILABLE`, `PAYMENT_AMOUNT_TOO_LOW`, `OPEN_ORDERS_BLOCK_CLEAR_DEMO`.
-- Có checklist manual SQL review trong commit/PR.
+- Local PostgreSQL validation pass: migrations apply bằng `psql -v ON_ERROR_STOP=1`, happy-path RPC smoke pass, negative smoke pass.
 
 ### Session B — Supabase Adapter Track
 
@@ -144,6 +146,7 @@ Ownership:
 Tasks:
 
 - Tạo Supabase client đọc `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+- Tạo adapter factory trả về `AppPorts`; runtime app chỉ nhận ports, không import Supabase ở Core/UI.
 - Implement adapters cho ports:
   - Auth
   - Employee
@@ -157,6 +160,9 @@ Tasks:
   - Print vẫn có thể là HTML preview.
 - Map snake_case row/RPC result sang camelCase DTO.
 - Map raw Supabase/RPC errors sang `AppError`.
+- Auth adapter parse Store Key `STORE_NO-SECRET`, sign in bằng email ẩn `store<store_no>@store.pos.local`, không persist raw Store Key/secret sau pairing/create.
+- RPC adapters sinh UUID client cho row/order/payment mới trước khi gọi RPC; UI không gọi RPC trực tiếp.
+- Seed adapter dùng deterministic IDs + `seed_key`; retry idempotent theo `(store_id, seed_key)`.
 - Repo list/get mặc định lọc `deleted_at is null`.
 - Realtime adapter triển khai `IRealtimePort`/`useRealtime` tập trung để invalidate Query; không thêm subscribe vào từng repo domain trong MVP.
 
