@@ -30,8 +30,10 @@
 ## 2. UI target
 
 - Target chính: **landscape-first** từ desktop/tablet tới điện thoại xoay ngang.
-- Layout POS giữ cùng mô hình trên mọi màn hình ngang; không tách mobile app riêng.
+- Layout POS giữ cùng mô hình trên mọi màn hình ngang; không tách mobile app riêng và không cắt feature MVP trên phone landscape.
 - Phone portrait không cố render đầy đủ POS; hiển thị hướng dẫn xoay ngang để dùng.
+- App body/shell không phải vùng scroll chính; shell/drawer cố định theo viewport.
+- Header/action bar của module sticky; từng pane nội dung tự `overflow: auto`.
 - MUI dùng cho controls phổ biến: Button, Input, Dialog, Tabs, Table.
 - Tailwind/custom CSS dùng cho layout, POS surface, floor plan, dense dashboard.
 - Form dùng **React Hook Form + Zod**.
@@ -43,9 +45,15 @@
   - large desktop: `80-90vw`, max around `1440px`
   - medium/tablet: `90-96vw`
   - small width: `100vw`
-- Order drawer dùng menu/category + cart panel bên phải.
-- Admin editor drawers dùng split-pane.
+- Module layout giữ cùng mental model 3 vùng trên mọi màn ngang:
+  - trái: category/filter/navigation dọc, scroll riêng
+  - giữa: content chính như menu items, floor canvas, report table/chart
+  - phải: selected item/cart/payment summary/properties, scroll riêng
+- Order drawer dùng category trái, menu grid giữa, cart panel phải; cart footer tổng tiền + nút chính sticky dưới.
+- Admin editor drawers dùng split-pane/pane scroll riêng; phone landscape vẫn đủ chức năng, chỉ compact spacing/width.
+- Floor view/editor dùng pan/zoom canvas riêng, không dựa vào page scroll.
 - UI reference source: `docs/superpowers/ui-prototype/pos-cafe-ui-reference.html`; screenshot: `docs/superpowers/assets/pos-cafe-ui-overview.png`.
+- Responsive shell reference: `docs/superpowers/ui-prototype/pos-cafe-responsive-shell.html`; tablet/phone landscape screenshots: `docs/superpowers/assets/pos-cafe-ui-tablet-1024x600.png`, `docs/superpowers/assets/pos-cafe-ui-phone-844x390.png`, `docs/superpowers/assets/pos-cafe-ui-phone-740x360.png`.
 - Permission UI/Core guard:
   - Admin: menu/floor/employees/report/settings/clear demo + POS.
   - Cashier: floor/order/payment/order-history.

@@ -212,12 +212,16 @@ Guard:
 - Kitchen role giữ enum/seam, chưa có màn MVP.
 
 UI target:
-- Landscape-first từ desktop/tablet tới điện thoại xoay ngang; layout POS giữ cùng mô hình trên mọi màn hình ngang.
+- Landscape-first từ desktop/tablet tới điện thoại xoay ngang; mọi màn MVP vẫn truy cập được trên màn ngang nhỏ, không cắt feature theo thiết bị.
 - Phone portrait không cố render đầy đủ POS; hiện trạng thái/hướng dẫn xoay ngang để dùng.
 - UI mặc định dùng tiếng Việt.
 - App shell dùng left rail (icon + label) để chuyển module.
-- POS order screen dùng layout menu/category bên trái/giữa + cart/order summary panel bên phải.
-- Admin editor dùng split-pane: danh sách/canvas ở vùng chính, panel thuộc tính bên phải.
+- App body/shell không scroll tự do; drawer/module cố định theo viewport, header/action bar sticky, từng pane nội dung tự `overflow: auto`.
+- Trên mọi màn ngang, module giữ cùng mental model 3 vùng: trái là category/filter/navigation dọc, giữa là nội dung chính, phải là detail/cart/payment summary/properties.
+- POS order screen dùng category dọc bên trái, menu item grid ở giữa, cart/order summary bên phải; cart item list scroll riêng, tổng tiền + nút chính sticky dưới.
+- Admin editor dùng split-pane cùng mô hình: danh sách/canvas ở vùng chính, panel thuộc tính bên phải; phone landscape vẫn đủ chức năng nhưng compact hơn.
+- Floor view/editor dùng pan/zoom canvas riêng, không phụ thuộc page scroll.
+- UI responsive reference: `docs/superpowers/ui-prototype/pos-cafe-responsive-shell.html`; kiểm tra tablet/phone landscape bằng `docs/superpowers/assets/pos-cafe-ui-tablet-1024x600.png`, `docs/superpowers/assets/pos-cafe-ui-phone-844x390.png`, và `docs/superpowers/assets/pos-cafe-ui-phone-740x360.png`.
 
 ---
 

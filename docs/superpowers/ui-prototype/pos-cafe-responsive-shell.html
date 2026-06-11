@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>POS Cafe Responsive Shell</title>
+  <style>
+    :root {
+      --primary: #0f766e;
+      --primary-weak: #e6f4f1;
+      --bg: #f5f7fa;
+      --surface: #ffffff;
+      --line: #d7dee8;
+      --ink: #172033;
+      --muted: #657286;
+      --success: #15803d;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .app {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .rail {
+      background: #111827;
+      color: #dbe4ef;
+      padding: 10px 8px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: var(--primary);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      margin: 0 auto;
+    }
+
+    .rail-list {
+      display: grid;
+      gap: 6px;
+      align-content: start;
+      min-height: 0;
+      overflow: auto;
+      scrollbar-width: none;
+    }
+
+    .rail-item {
+      min-height: 44px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: inherit;
+      display: grid;
+      place-items: center;
+      gap: 2px;
+      cursor: default;
+    }
+
+    .rail-item.active {
+      background: rgba(15, 118, 110, 0.24);
+      color: #ffffff;
+      box-shadow: inset 3px 0 0 var(--primary);
+    }
+
+    .rail-icon {
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .rail-label {
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    .workspace {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      padding: 12px;
+    }
+
+    .floor-bg {
+      height: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(90deg, rgba(215, 222, 232, 0.38) 1px, transparent 1px),
+        linear-gradient(rgba(215, 222, 232, 0.38) 1px, transparent 1px),
+        #eef3f7;
+      background-size: 36px 36px;
+      opacity: 0.8;
+    }
+
+    .drawer {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      bottom: 12px;
+      width: min(88vw, 1440px);
+      max-width: calc(100vw - 88px);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 22px 60px rgba(15, 23, 42, 0.18);
+      overflow: hidden;
+    }
+
+    .drawer-header {
+      min-height: 58px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.96);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .drawer-title {
+      min-width: 0;
+    }
+
+    .drawer-title h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .drawer-title p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .btn {
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 0 12px;
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .btn.primary {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: white;
+    }
+
+    .drawer-body {
+      min-height: 0;
+      overflow: auto;
+      padding: 12px;
+      background: var(--bg);
+    }
+
+    .pane-grid {
+      min-width: 640px;
+      height: 100%;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(104px, 160px) minmax(280px, 1fr) minmax(220px, 320px);
+      gap: 10px;
+    }
+
+    .pane {
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .pane-head {
+      min-height: 42px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 13px;
+      background: #fbfcfd;
+    }
+
+    .pane-scroll {
+      min-height: 0;
+      overflow: auto;
+      padding: 10px;
+    }
+
+    .category-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .category {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: white;
+      min-height: 38px;
+      padding: 8px;
+      text-align: left;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .category.active {
+      border-color: rgba(15, 118, 110, 0.35);
+      background: var(--primary-weak);
+      color: var(--primary);
+    }
+
+    .search {
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 0 10px;
+      width: min(280px, 100%);
+      background: white;
+      color: var(--muted);
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+      gap: 9px;
+    }
+
+    .menu-card {
+      min-height: 88px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      padding: 10px;
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+    }
+
+    .menu-card strong {
+      font-size: 14px;
+      line-height: 1.22;
+    }
+
+    .menu-card span {
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .cart-pane {
+      grid-template-rows: auto minmax(0, 1fr) auto;
+    }
+
+    .cart-list {
+      min-height: 0;
+      overflow: auto;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .cart-item {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 9px;
+      background: white;
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .cart-item-top,
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .cart-footer {
+      border-top: 1px solid var(--line);
+      padding: 10px;
+      background: white;
+      display: grid;
+      gap: 8px;
+      position: sticky;
+      bottom: 0;
+      z-index: 4;
+    }
+
+    .total-row {
+      font-size: 13px;
+    }
+
+    .total-row.final {
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .status-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--success);
+    }
+
+    @media (max-width: 980px) and (orientation: landscape) {
+      .app {
+        grid-template-columns: 52px minmax(0, 1fr);
+      }
+
+      .rail {
+        padding: 8px 6px;
+      }
+
+      .logo {
+        width: 34px;
+        height: 34px;
+      }
+
+      .rail-item {
+        min-height: 38px;
+      }
+
+      .workspace {
+        padding: 0;
+      }
+
+      .floor-bg {
+        border: 0;
+        border-radius: 0;
+      }
+
+      .drawer {
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-width: none;
+        border-radius: 0;
+        border-top: 0;
+        border-bottom: 0;
+      }
+
+      .drawer-header {
+        min-height: 48px;
+        padding: 7px 10px;
+      }
+
+      .drawer-title h1 {
+        font-size: 15px;
+      }
+
+      .drawer-title p,
+      .rail-label {
+        font-size: 10px;
+      }
+
+      .header-actions {
+        gap: 6px;
+      }
+
+      .btn {
+        min-height: 30px;
+        padding: 0 9px;
+        font-size: 12px;
+      }
+
+      .drawer-body {
+        padding: 8px;
+      }
+
+      .pane-grid {
+        min-width: 620px;
+        grid-template-columns: 96px minmax(270px, 1fr) 210px;
+        gap: 8px;
+      }
+
+      .pane-head {
+        min-height: 34px;
+        padding: 7px 8px;
+        font-size: 12px;
+      }
+
+      .pane-scroll,
+      .cart-list {
+        padding: 8px;
+      }
+
+      .category {
+        min-height: 34px;
+        padding: 7px;
+        font-size: 12px;
+      }
+
+      .search {
+        height: 30px;
+        font-size: 12px;
+      }
+
+      .menu-grid {
+        grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+        gap: 7px;
+      }
+
+      .menu-card {
+        min-height: 74px;
+        padding: 8px;
+      }
+
+      .menu-card strong {
+        font-size: 12px;
+      }
+
+      .cart-item {
+        padding: 7px;
+        font-size: 12px;
+      }
+
+      .cart-footer {
+        padding: 8px;
+      }
+
+      .total-row.final {
+        font-size: 15px;
+      }
+    }
+
+    @media (orientation: portrait) {
+      .app {
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .rail,
+      .workspace {
+        display: none;
+      }
+
+      .rotate-message {
+        display: block;
+      }
+    }
+
+    .rotate-message {
+      display: none;
+      max-width: 360px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail">
+      <div class="logo">P</div>
+      <nav class="rail-list" aria-label="Module navigation">
+        <button class="rail-item active"><span class="rail-icon">▦</span><span class="rail-label">Bàn</span></button>
+        <button class="rail-item"><span class="rail-icon">☰</span><span class="rail-label">Đơn</span></button>
+        <button class="rail-item"><span class="rail-icon">◷</span><span class="rail-label">Report</span></button>
+        <button class="rail-item"><span class="rail-icon">⚙</span><span class="rail-label">Cài đặt</span></button>
+      </nav>
+      <button class="rail-item"><span class="rail-icon">↩</span><span class="rail-label">Khoá</span></button>
+    </aside>
+
+    <main class="workspace">
+      <div class="floor-bg" aria-hidden="true"></div>
+      <section class="drawer" aria-label="Order drawer">
+        <header class="drawer-header">
+          <div class="drawer-title">
+            <h1>Bàn B02 · Đơn #024</h1>
+            <p>Phone landscape giữ đủ 3 vùng, mỗi vùng scroll riêng</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn">Tạm tính</button>
+            <button class="btn primary">In/Gửi</button>
+          </div>
+        </header>
+
+        <div class="drawer-body">
+          <div class="pane-grid">
+            <aside class="pane">
+              <div class="pane-head">Danh mục</div>
+              <div class="pane-scroll">
+                <div class="category-list">
+                  <button class="category active">Cà phê</button>
+                  <button class="category">Trà</button>
+                  <button class="category">Đá xay</button>
+                  <button class="category">Nước ép</button>
+                  <button class="category">Bánh</button>
+                  <button class="category">Topping</button>
+                  <button class="category">Combo</button>
+                </div>
+              </div>
+            </aside>
+
+            <section class="pane">
+              <div class="pane-head">
+                <span>Menu</span>
+                <input class="search" value="Tìm món..." aria-label="Tìm món">
+              </div>
+              <div class="pane-scroll">
+                <div class="menu-grid">
+                  <button class="menu-card"><strong>Cà phê sữa</strong><span>29.000đ</span></button>
+                  <button class="menu-card"><strong>Bạc xỉu</strong><span>32.000đ</span></button>
+                  <button class="menu-card"><strong>Americano</strong><span>35.000đ</span></button>
+                  <button class="menu-card"><strong>Latte</strong><span>45.000đ</span></button>
+                  <button class="menu-card"><strong>Cold brew</strong><span>49.000đ</span></button>
+                  <button class="menu-card"><strong>Ca cao đá</strong><span>39.000đ</span></button>
+                  <button class="menu-card"><strong>Trà đào</strong><span>42.000đ</span></button>
+                  <button class="menu-card"><strong>Bánh croissant</strong><span>35.000đ</span></button>
+                </div>
+              </div>
+            </section>
+
+            <aside class="pane cart-pane">
+              <div class="pane-head">
+                <span>Giỏ hàng</span>
+                <span class="muted">3 món</span>
+              </div>
+              <div class="cart-list">
+                <div class="cart-item">
+                  <div class="cart-item-top"><strong>Cà phê sữa</strong><strong>58K</strong></div>
+                  <div class="muted">x2 · size M · ít đá</div>
+                </div>
+                <div class="cart-item">
+                  <div class="cart-item-top"><strong>Bạc xỉu</strong><strong>32K</strong></div>
+                  <div class="muted">x1 · 50% đường</div>
+                </div>
+                <div class="cart-item">
+                  <div class="cart-item-top"><strong>Croissant</strong><strong>35K</strong></div>
+                  <div class="muted">x1 · hâm nóng</div>
+                </div>
+                <div class="status-strip"><span class="status-dot"></span><span>Order open · version 3</span></div>
+              </div>
+              <footer class="cart-footer">
+                <div class="total-row"><span>Tạm tính</span><strong>125.000đ</strong></div>
+                <div class="total-row final"><span>Tổng</span><strong>125.000đ</strong></div>
+                <button class="btn primary">In/Gửi đơn</button>
+              </footer>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <section class="rotate-message">
+      <h1>Xoay ngang thiết bị</h1>
+      <p>POS dùng layout landscape để giữ đủ menu, bàn, thanh toán và báo cáo.</p>
+    </section>
+  </div>
+</body>
+</html>

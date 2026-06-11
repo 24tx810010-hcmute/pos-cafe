@@ -360,6 +360,8 @@ type FloorPlanChanges = {
 - Single URL, internal app state.
 - App shell dùng left rail icon + label.
 - Primary color: teal `#0F766E`; neutral modern surfaces and slate text.
+- Landscape screens, including phone landscape, must expose all MVP modules/features; do not remove POS/report/editor functionality by device.
+- The app body/shell is not the primary scroll surface. Drawer/module height is fixed to viewport; module header/action bar stays visible; each pane owns its own `overflow: auto`.
 - All modules open as overlay drawer/workspace from left rail:
   - large desktop: `80-90vw`, max around `1440px`
   - medium/tablet: `90-96vw`
@@ -367,9 +369,12 @@ type FloorPlanChanges = {
 - Drawer switching with dirty state must confirm internally; no browser history entry.
 - POS floor là màn mặc định sau passcode.
 - Passcode screen dùng chọn nhân viên + PIN.
-- Order drawer: menu/category bên trái/giữa, cart/order summary panel bên phải.
-- Admin menu/floor editor drawers: split-pane.
+- All module drawers use the same 3-zone mental model on landscape screens: left category/filter/navigation, center primary content, right detail/cart/payment summary/properties.
+- Order drawer: vertical categories left, responsive menu grid center, cart/order summary right. Cart list scrolls independently; totals and primary action stay sticky at bottom.
+- Admin menu/floor editor drawers: split-pane with independent pane scrolling; phone landscape keeps full functionality with compact density.
+- Floor view/editor canvas uses pan/zoom internally, independent from page scroll.
 - UI reference prototype: `docs/superpowers/ui-prototype/pos-cafe-ui-reference.html`; screenshot: `docs/superpowers/assets/pos-cafe-ui-overview.png`.
+- Responsive shell prototype: `docs/superpowers/ui-prototype/pos-cafe-responsive-shell.html`; tablet/phone landscape screenshots: `docs/superpowers/assets/pos-cafe-ui-tablet-1024x600.png`, `docs/superpowers/assets/pos-cafe-ui-phone-844x390.png`, `docs/superpowers/assets/pos-cafe-ui-phone-740x360.png`.
 - Permission guard:
   - Admin: menu/floor/employees/report/settings/clear demo + POS.
   - Cashier: floor/order/payment/order-history.

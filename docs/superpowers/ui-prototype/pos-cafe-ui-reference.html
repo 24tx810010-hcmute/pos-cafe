@@ -802,7 +802,7 @@
 
     .responsive-demo {
       display: grid;
-      grid-template-columns: 1fr 340px;
+      grid-template-columns: 1fr 520px;
       gap: 18px;
       padding: 16px;
       background: var(--bg);
@@ -811,10 +811,10 @@
 
     .phone-frame {
       background: #0b1220;
-      border-radius: 24px;
-      padding: 14px;
-      width: 300px;
-      height: 442px;
+      border-radius: 28px;
+      padding: 12px;
+      width: 500px;
+      height: 268px;
       justify-self: center;
       align-self: center;
     }
@@ -834,10 +834,87 @@
     }
 
     .phone-body {
-      padding: 12px;
+      padding: 8px;
       background: var(--bg);
       display: grid;
-      gap: 10px;
+      grid-template-columns: 86px 1fr 142px;
+      gap: 8px;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .phone-pane {
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 8px;
+      overflow: auto;
+      display: grid;
+      gap: 7px;
+      align-content: start;
+    }
+
+    .phone-cat {
+      min-height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      padding: 0 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      background: #fff;
+    }
+
+    .phone-cat.active {
+      border-color: rgba(15, 118, 110, .35);
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .phone-menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+    }
+
+    .phone-card {
+      min-height: 54px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 7px;
+      background: #fff;
+      font-size: 11px;
+      display: grid;
+      align-content: space-between;
+      gap: 5px;
+    }
+
+    .phone-card strong {
+      color: var(--ink);
+      line-height: 1.15;
+    }
+
+    .phone-card span {
+      color: var(--primary);
+      font-weight: 800;
+    }
+
+    .phone-cart {
+      grid-template-rows: minmax(0, 1fr) auto;
+    }
+
+    .phone-cart-footer {
+      position: sticky;
+      bottom: 0;
+      background: var(--surface);
+      display: grid;
+      gap: 6px;
+      border-top: 1px solid var(--line);
+      padding-top: 7px;
+      font-size: 11px;
     }
 
     .note-block {
@@ -1196,21 +1273,39 @@
         <div class="screen-title"><span>08 / Responsive Drawer</span><span>Small width = 100vw</span></div>
         <div class="responsive-demo">
           <div class="note-block">
-            <strong>Drawer behavior</strong>
-            Desktop lớn dùng drawer 80-90vw, max-width khoảng 1440px. Desktop/tablet vừa dùng 90-96vw.
-            Width nhỏ dùng 100vw, full-height, không tạo route mới và không ghi browser history.
-            Dirty state khi đổi module phải confirm nội bộ.
+            <strong>Responsive behavior</strong>
+            Mọi màn ngang giữ đủ feature MVP. Body/shell không scroll tự do; drawer cố định viewport,
+            header/action bar sticky, từng pane tự overflow auto. Module giữ mental model 3 vùng:
+            trái category/filter, giữa content chính, phải cart/detail/properties. Width nhỏ dùng 100vw,
+            không tạo route mới và không ghi browser history.
           </div>
           <div class="phone-frame">
             <div class="phone-content">
-              <div class="drawer-header"><div><h3>Đơn B02</h3><p>Full width drawer</p></div></div>
+              <div class="drawer-header"><div><h3>Đơn B02</h3><p>Phone landscape · controlled panes</p></div></div>
               <div class="phone-body">
-                <div class="search">Tìm món...</div>
-                <div class="menu-item"><strong>Cà phê sữa</strong><span class="price">29.000đ</span></div>
-                <div class="menu-item"><strong>Bạc xỉu</strong><span class="price">32.000đ</span></div>
-                <div class="cart-total">
-                  <div class="total-row final"><span>Tổng</span><strong>118K</strong></div>
-                  <button class="btn primary" style="width:100%">In/Gửi đơn</button>
+                <div class="phone-pane">
+                  <div class="phone-cat active">Cà phê</div>
+                  <div class="phone-cat">Trà</div>
+                  <div class="phone-cat">Bánh</div>
+                  <div class="phone-cat">Topping</div>
+                </div>
+                <div class="phone-pane">
+                  <div class="phone-menu-grid">
+                    <div class="phone-card"><strong>Cà phê sữa</strong><span>29K</span></div>
+                    <div class="phone-card"><strong>Bạc xỉu</strong><span>32K</span></div>
+                    <div class="phone-card"><strong>Latte</strong><span>45K</span></div>
+                    <div class="phone-card"><strong>Cold brew</strong><span>49K</span></div>
+                  </div>
+                </div>
+                <div class="phone-pane phone-cart">
+                  <div style="display:grid;gap:7px;min-height:0;overflow:auto">
+                    <div class="cart-item"><strong>Cà phê sữa</strong><span class="price">58K</span></div>
+                    <div class="cart-item"><strong>Bạc xỉu</strong><span class="price">32K</span></div>
+                  </div>
+                  <div class="phone-cart-footer">
+                    <div class="total-row final"><span>Tổng</span><strong>90K</strong></div>
+                    <button class="btn primary" style="width:100%">In/Gửi</button>
+                  </div>
                 </div>
               </div>
             </div>
