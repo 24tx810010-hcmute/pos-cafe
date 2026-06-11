@@ -1,8 +1,8 @@
 # POS Cafe Parallel Task Phases
 
-> **Vai trò:** file handoff để chia nhiều session/agent code song song sau milestone `feat: scaffold POS app foundation`.
-> **Base hiện tại:** branch `codex/code-kickoff-foundation`, commit `731a527`.
-> **Nguyên tắc:** mỗi session đọc `pos-cafe-context.md`, implementation contract, và file này trước khi code.
+> **Vai trò:** file handoff để chia nhiều session/agent code song song sau milestone code foundation.
+> **Base hiện tại:** code worktree `D:\Workspace\pos-cafe-code`, branch `codex/code-foundation`.
+> **Nguyên tắc:** mỗi coding session đọc `WORKTREE-HANDOFF.md` trước, rồi đọc `pos-cafe-context.md`, implementation contract, và file này trước khi code.
 
 ---
 
@@ -34,7 +34,7 @@ Chưa có:
 
 ## 2. Quy tắc chia session
 
-- Mỗi session tạo branch riêng từ `codex/code-kickoff-foundation`, ví dụ `codex/stream-db-rpc`, `codex/stream-ui-pos`.
+- Mỗi session tạo branch riêng từ `codex/code-foundation`, ví dụ `codex/stream-db-rpc`, `codex/stream-ui-pos`.
 - Không sửa file ngoài vùng ownership nếu không thật sự cần. Nếu cần sửa contract chung, ghi rõ trong PR/commit.
 - Không để UI gọi Supabase trực tiếp. UI chỉ gọi hooks/ports.
 - Không để Supabase type lọt vào `src/core`, `src/domain`, hoặc component UI.
@@ -123,6 +123,8 @@ Tasks:
 - Đảm bảo `orders.lock_version` + `expectedVersion`.
 - Đảm bảo all-zero submit void order open và release table.
 - Đảm bảo payment cash: block thiếu tiền, set paid, create payment, release table.
+- Đảm bảo replace order lines không hard-delete: mark item cũ `removed`, insert snapshot mới, option cũ đi theo removed item.
+- Đảm bảo `stores`, `store_settings`, `payments`, `order_item_options` cũng có `created_at` + `updated_at` và trigger phù hợp.
 
 Done khi:
 
@@ -155,6 +157,7 @@ Tasks:
 - Map snake_case row/RPC result sang camelCase DTO.
 - Map raw Supabase/RPC errors sang `AppError`.
 - Repo list/get mặc định lọc `deleted_at is null`.
+- Realtime adapter triển khai `IRealtimePort`/`useRealtime` tập trung để invalidate Query; không thêm subscribe vào từng repo domain trong MVP.
 
 Dependency:
 
@@ -186,6 +189,8 @@ Tasks:
   - UI có retry seed
 - Passcode flow chọn nhân viên + PIN qua port `verifyPin`.
 - Current employee memory-only; refresh về passcode nếu đã pair.
+- Raw Store Key/secret chỉ dùng lúc pair/create; `StoreSession` không chứa `storeKey` và không persist secret vào local app state.
+- Seed bundle dùng deterministic IDs theo `store_id + seed_key`; retry seed idempotent, không tạo trùng data.
 
 Dependency:
 
@@ -194,6 +199,7 @@ Dependency:
 Done khi:
 
 - Store flow không lưu employee vào localStorage/sessionStorage.
+- Store flow không lưu raw Store Key/secret sau pairing/create.
 - Auth setting caveat "Confirm email off" vẫn ghi trong docs/context nếu cần.
 - Smoke/manual flow: create/pair -> passcode -> floor.
 
@@ -293,6 +299,7 @@ Tasks:
   - display name/address/bill footer/timezone
   - clear demo admin-only
   - block/cảnh báo khi còn open orders.
+  - clear demo chỉ tombstone seed data bằng deterministic seed IDs, deactive cashier demo, giữ đúng 1 admin; không xoá dữ liệu user tự tạo.
 - PrintPort:
   - HTML/template preview cho phiếu tạm
   - HTML/template preview cho final bill
@@ -323,6 +330,7 @@ Tasks chung:
 - Tích hợp Realtime invalidation:
   - orders/payments/tables -> refetch open orders/floor/report
   - menu/floor/decor -> refetch menu/floor plan
+- Realtime nằm ở `IRealtimePort`/`useRealtime`, không rải `supabase.channel()` trong feature/component.
 - Chạy full smoke với Supabase project thật sau khi user cung cấp env.
 - Không đổi domain DTO trong phase này nếu không có bug contract.
 
@@ -379,9 +387,13 @@ Nếu chạy nhiều session cùng lúc, ưu tiên merge theo rule:
 
 Trước khi code:
 
+- [ ] Đọc `docs/superpowers/specs/WORKTREE-HANDOFF.md`.
 - [ ] Đọc `pos-cafe-context.md`.
 - [ ] Đọc `2026-06-11-pos-cafe-implementation-contract.md`.
 - [ ] Đọc file parallel task phases này.
+- [ ] Chạy `git worktree list` ở docs worktree để xác nhận `D:\Workspace\pos-cafe-code` đang ở branch `codex/code-foundation` hoặc branch stream tách từ branch đó.
+- [ ] Chạy `git status --short --branch` ở cả docs và code worktree.
+- [ ] Ở code worktree, chạy `git ls-tree -r --name-only HEAD | rg "^(docs/|pos-cafe-context\.md)"`; lệnh này không được trả kết quả.
 - [ ] Xác định ownership file.
 - [ ] Tạo branch riêng.
 

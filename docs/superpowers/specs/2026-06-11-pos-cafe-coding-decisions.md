@@ -17,12 +17,13 @@
   - POS draft/order context
   - editor dirty state
 - Current employee không lưu `localStorage`/`sessionStorage`.
+- Raw Store Key/secret không lưu trong `localStorage`, domain `StoreSession`, hoặc app state sau pairing/create. `CreateStoreResult.storeKey` chỉ dùng để hiển thị một lần sau tạo quán.
 - Refresh:
   - chưa pair store → `pairing`
   - đã pair store → `passcode`
   - không khôi phục `payment`, edit item, edit layout draft.
 - **TanStack Query** giữ server state/cache: menu, floor plan, orders, settings, reports.
-- Realtime event chỉ dùng để invalidate/refetch query, không patch state thủ công trong MVP.
+- Realtime event chỉ dùng để invalidate/refetch query, không patch state thủ công trong MVP. Realtime nằm tập trung trong `IRealtimePort`/`useRealtime`; repo/domain port không tự expose subscription API riêng trong MVP.
 - Passcode screen dùng flow **chọn nhân viên + nhập PIN**; không dùng PIN-only và không yêu cầu PIN unique toàn store.
 
 ---
@@ -101,7 +102,7 @@
 - Nếu menu item/option bị tombstone/unavailable lúc submit, RPC trả lỗi nghiệp vụ để UI refetch menu và giữ draft.
 - `orders.lock_version int default 0`; `submit_order_changes` và `pay_order` nhận `expectedVersion`, check status + version trong transaction, lệch thì trả conflict.
 - RPC kiểm tra employee active/role khi cần; `verify_employee_pin` trả safe employee không có hash.
-- Role nhân viên vẫn là app-layer/Core guard; RPC role check là guardrail nghiệp vụ/audit, không claim DB-level role security.
+- Role nhân viên vẫn là app-layer/Core guard; RPC role check là guardrail nghiệp vụ/audit và spoofable nếu người gọi đã có Store Key/session, không claim DB-level role security.
 - Exact RPC/port signatures nằm trong implementation contract; file này chỉ giữ tóm tắt coding decisions.
 
 ---
@@ -125,6 +126,7 @@
   - bấm bàn trống chỉ mở draft order UI, chưa tạo DB.
   - bấm **In/Gửi đơn** gọi `submit_order_changes`, lưu DB, in phiếu tạm, quay về floor plan.
   - order open submit theo replace order lines; DB snapshot `item_name`, `option_name`, `unit_price`, `price_delta`.
+  - replace order lines không hard-delete: mark item cũ `removed`, insert snapshot mới, option cũ đi theo removed item và không xuất hiện trên bill/report.
   - bàn có order open: có draft thay đổi thì **In/Gửi đơn**, không có draft thay đổi thì **Thanh toán**.
   - toàn bộ item về 0 + **In/Gửi đơn** → order open `void`, table `empty`.
   - takeaway có nút **Mang đi** + danh sách takeaway đang mở.
@@ -161,6 +163,8 @@
   - decor dùng placeholder `asset_key` ổn định nếu chưa có ảnh thật
   - không seed order history
 - `seed.blank` giữ đúng 1 admin + settings tối thiểu.
+- Seed demo dùng deterministic IDs theo `store_id + seed_key`; retry seed idempotent và không tạo trùng dữ liệu.
+- Clear demo tombstone đúng data thuộc seed bundle, deactive cashier demo, giữ đúng 1 admin; không xoá dữ liệu user tự tạo.
 - Seed retry dùng lại seed demo idempotent khi `stores.seed_status=failed`.
 - Decor image files nằm trong `src/assets/floor-decor`.
 - MVP không upload/custom decor asset.

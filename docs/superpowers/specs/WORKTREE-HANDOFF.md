@@ -19,7 +19,7 @@ Repo này đang tách **planning docs** và **code thực tế** bằng `git wor
 
 Branch code `codex/code-foundation` được tạo từ `main` và cherry-pick code scaffold, **không chứa history docs**.
 
-Branch cũ `codex/code-kickoff-foundation` được tạo từ `docs`, không dùng cho code mới vì có history docs.
+Branch code đời cũ được tạo trực tiếp từ `docs`, không dùng cho code mới vì có history docs.
 
 ## Quy ước prompt
 
@@ -33,6 +33,7 @@ Nếu không có prefix:
 
 - Câu hỏi/ra quyết định/planning → xử lý ở docs worktree.
 - Coding/bugfix/test/build → xử lý ở code worktree, vẫn đọc docs worktree làm reference.
+- Mỗi coding session phải đọc file này trước, rồi mới đọc `pos-cafe-context.md`, implementation contract, và task phase liên quan.
 
 ## Quy tắc bắt buộc
 
@@ -69,6 +70,7 @@ git ls-tree -r --name-only HEAD | rg "^(docs/|pos-cafe-context\.md)"
 ```
 
 Lệnh `rg` trên không được trả kết quả. Nếu có kết quả, code branch đã bị lẫn docs.
+Trước khi tạo branch code mới, tạo từ `codex/code-foundation` tại `D:\Workspace\pos-cafe-code`; không tạo từ docs branch.
 
 ## Verify code worktree
 

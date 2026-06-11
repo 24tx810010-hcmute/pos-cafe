@@ -14,7 +14,7 @@ Quy ước chung:
 
 - RPC insert row mới phải nhận UUID do client sinh.
 - RPC kiểm tra `employee_id` active và thuộc store hiện tại; admin-only RPC kiểm tra role admin như guardrail nghiệp vụ/audit.
-- Role nhân viên vẫn là app-layer/Core guard; RLS chỉ cô lập store, không claim DB-level role security cho employee.
+- Role nhân viên vẫn là app-layer/Core guard; RLS chỉ cô lập store, không claim DB-level role security cho employee. RPC role checks là guardrail spoofable nếu người gọi đã có Store Key/session.
 - RPC trả lỗi chuẩn để adapter map thành `AppError`.
 - `submit_order_changes` dùng typed scalar params + `jsonb` items/options payload; RPC còn lại dùng typed params.
 - DB là nguồn sự thật cho giá/tên khi submit order; client không gửi hoặc quyết định final price/name.
@@ -79,13 +79,15 @@ type SubmitOrderDraftItem = {
 Behavior:
 
 - Nếu `p_order_id = null` và `p_items` có item quantity > 0: tạo order open.
-- Khi tạo order mới, RPC tự tính `business_date` và `order_no` tiếp theo trong transaction dựa trên `store_settings.timezone`.
-- Nếu dine-in có `p_table_id`: set table `occupied`.
+- Khi tạo order mới, RPC tự tính `business_date` và `order_no` tiếp theo trong transaction dựa trên `store_settings.timezone`. Cấp `order_no` bằng cách lock phạm vi `(store_id, business_date)` hợp lý trong transaction, hoặc retry khi unique `(store_id, business_date, order_no)` va chạm.
+- Nếu dine-in có `p_table_id`: lock table row, kiểm tra cùng store/chưa tombstone, rồi set table `occupied`.
 - Với mỗi item/option: RPC đọc `menu_items`/`option_values` active từ DB, kiểm tra cùng `store_id`, chưa tombstone, món còn `is_available`, option thuộc đúng món, rồi snapshot `item_name`, `option_name`, `unit_price`, `price_delta`.
-- Nếu `p_order_id != null`: check order `open` + `lock_version = p_expected_lock_version`, sau đó **replace order lines** của order open theo `p_items`.
-- Item quantity `0` hoặc bị bỏ khỏi snapshot được xem là `removed`.
+- Nếu `p_order_id != null`: lock order row, check order `open` + `lock_version = p_expected_lock_version`, sau đó **replace order lines** của order open theo `p_items`.
+- Replace lines không hard-delete: mark order_items cũ `status='removed'`, insert các item active mới bằng UUID client; option rows cũ nằm dưới removed item và không xuất hiện trên bill/report.
+- Item quantity `0` hoặc bị bỏ khỏi draft được xem là removed.
 - Nếu toàn bộ item quantity về `0`: set order `void`, table `empty`, không tạo payment.
 - Không cho submit order đã `paid`.
+- RPC tính `subtotal/total` từ DB snapshot trong transaction; client không được quyết giá cuối.
 - Mỗi lần mutate thành công tăng `orders.lock_version`.
 - Nếu version lệch: không mutate và trả `ORDER_VERSION_CONFLICT` để UI refetch.
 - Nếu menu item/option không hợp lệ: không mutate và trả `MENU_ITEM_UNAVAILABLE` hoặc `OPTION_VALUE_UNAVAILABLE`; UI refetch menu và giữ draft để user sửa.
@@ -120,11 +122,11 @@ pay_order(
 
 Behavior:
 
-- Chỉ nhận order `open` và `lock_version = p_expected_lock_version`.
+- Lock order row; chỉ nhận order `open` và `lock_version = p_expected_lock_version`.
 - Tính `amount = order.total`.
 - Nếu `p_received_amount < total`: lỗi, không tạo payment.
 - Tạo `payments`, set order `paid`, `paid_at = now()`.
-- Nếu dine-in có table: set table `empty`.
+- Nếu dine-in có table: lock table row và set table `empty`.
 - Tăng `orders.lock_version` khi pay thành công.
 - Nếu version lệch: không mutate và trả `ORDER_VERSION_CONFLICT` để UI refetch.
 - Paid order không void trong MVP.
@@ -154,8 +156,9 @@ clear_demo_data(
 
 - Admin-only.
 - Block nếu còn open orders; user phải thanh toán hoặc huỷ order trước.
-- Tombstone menu/floor/decor demo data.
-- Giữ lại đúng 1 admin.
+- Tombstone đúng menu/floor/decor demo data được nhận diện bằng deterministic seed IDs theo `store_id + seed_key`.
+- Deactive cashier demo và giữ lại đúng 1 admin.
+- Không xoá dữ liệu user tự tạo. Destructive reset toàn store là chức năng riêng ngoài MVP.
 
 ### `void_order(...)`
 
@@ -244,6 +247,10 @@ interface IPrintPort {
   renderOrderTicket(ticket: PrintTicket): Promise<void>;
   renderReceipt(receipt: PrintReceipt): Promise<void>;
 }
+
+interface IRealtimePort {
+  startStoreInvalidation(input: RealtimeInvalidationInput): () => void;
+}
 ```
 
 DTO contract tối thiểu:
@@ -256,6 +263,19 @@ type CreateStoreResult = {
   adminPin: string;
   seedStatus: "seeded" | "failed";
   canRetrySeed: boolean;
+};
+
+type StoreSession = {
+  storeId: string;
+  storeNo: number;
+};
+
+type RealtimeInvalidationInput = {
+  storeId: string;
+  invalidateMenu(): void;
+  invalidateFloorPlan(): void;
+  invalidateOpenOrders(): void;
+  invalidateReport(): void;
 };
 
 type SubmitOrderChangesInput = {
@@ -400,6 +420,8 @@ type FloorPlanChanges = {
   - settings tối thiểu
 - Decor assets nằm trong `src/assets/floor-decor`, map bằng `asset_key`.
 - Menu item MVP không upload ảnh; dùng text/placeholder hoặc built-in `image_asset_key`, không thêm Supabase Storage.
+- Seed demo dùng deterministic IDs theo `store_id + seed_key` cho mọi row demo. Retry seed chỉ upsert/fill row thiếu và không tạo trùng category/menu/option/floor/table/decor.
+- `CreateStoreResult.storeKey` chỉ dùng để hiển thị Store Key một lần sau create. Sau pairing/create, persisted session không chứa raw Store Key/secret.
 
 ---
 

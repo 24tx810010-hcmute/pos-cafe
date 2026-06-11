@@ -33,7 +33,7 @@
 | Order item delete | `order_items.status = removed`, không xoá item đang nằm trong order |
 | Order concurrency | `orders.lock_version int default 0`; submit/pay dùng expected version để chống double-submit |
 | Order pricing | DB là nguồn giá/tên; RPC snapshot từ `menu_items`/`option_values`, không tin giá client |
-| Payment | Có bảng `payments`; UI MVP chỉ cash, enum chừa `bank_transfer`, `qr`, `other` |
+| Payment | Có bảng `payments`; UI MVP chỉ cash, enum chừa `bank_transfer`, `qr`, `other`; DB dùng `employee_id`, domain có thể expose `paidByEmployeeId` |
 | Critical RPC | `get_next_store_no`, `verify_employee_pin`, `submit_order_changes`, `pay_order`, `clear_demo_data`; `void_order` reserved/admin/future |
 | Passcode | UI chọn nhân viên + nhập PIN; không yêu cầu PIN unique toàn store |
 | Menu image | MVP không upload ảnh món; dùng text/placeholder hoặc built-in `image_asset_key` |
@@ -46,7 +46,7 @@
 ## 3. Schema rules
 
 - Mọi bảng có `id` UUID do client sinh khi insert, trừ `stores.id` lấy từ `auth.uid()`.
-- Mọi bảng có `created_at` + `updated_at`; `updated_at` auto update bằng trigger.
+- Mọi bảng có `created_at` + `updated_at`; `updated_at` auto update bằng trigger. Không có ngoại lệ cho `stores`, `store_settings`, `payments`, hoặc `order_item_options`.
 - Mọi bảng thuộc quán có `store_id`.
 - `stores.store_no` là số tăng dần/unique để tạo Store Key dễ đọc; lấy bằng Postgres sequence, race-safe, cho phép hở số; không dùng `store_no` làm credential.
 - Bảng editor/sync có tombstone:
@@ -63,7 +63,7 @@
 - `menu_items.is_available` chỉ có nghĩa "tạm hết món", không phải xoá.
 - Ảnh món MVP không upload: `menu_items.image_asset_key null` nếu dùng asset built-in/placeholder; không tạo Supabase Storage bucket/policy cho ảnh món trong MVP.
 - `employees.is_active` là khoá/mở nhân viên.
-- `stores.is_active` là khoá/mở store/license.
+- `stores.is_active` là license/app-layer conceptual trong MVP. Nếu muốn khóa store thật ở DB, mọi policy/RPC phải check `stores.is_active`; chưa claim đây là DB-level enforcement trong MVP.
 - `store_settings.timezone` default `Asia/Saigon`; report "hôm nay" và daily `order_no` theo timezone của store, không theo thiết bị.
 - `orders` có unique/index theo `(store_id, business_date, order_no)`; RPC tự cấp `order_no` trong transaction.
 - `orders.lock_version int default 0`; `submit_order_changes` và `pay_order` nhận expected version, chỉ mutate nếu status + version còn khớp, rồi tăng `lock_version`.
@@ -127,7 +127,7 @@ RPC dùng cho các thao tác cần tính nhất quán hoặc cần che hash:
 | `verify_employee_pin(...)` | verify PIN bằng `pgcrypto`, client không đọc `passcode_hash`; UI chọn nhân viên + PIN |
 | `submit_order_changes(...)` | tạo/cập nhật/huỷ order open bằng replace order lines; DB đọc giá/tên active rồi snapshot; nếu dine-in thì cập nhật table status trong cùng transaction |
 | `pay_order(...)` | tạo `payments`, set order `paid`/`paid_at`, set table `empty` nếu có |
-| `clear_demo_data(...)` | admin-only; block nếu còn open orders; nếu không thì tombstone menu/floor/decor demo, giữ 1 admin |
+| `clear_demo_data(...)` | admin-only guardrail; block nếu còn open orders; tombstone đúng seed data bằng deterministic seed IDs, deactive cashier demo, giữ 1 admin |
 | `void_order(...)` | reserved/admin/future only; không dùng để void paid order trong MVP |
 
 Exact RPC signatures nằm ở implementation contract; file này chốt responsibility + transaction boundary.
@@ -135,7 +135,7 @@ RPC nào insert row mới vẫn phải nhận UUID do client sinh, không dựa 
 `submit_order_changes` dùng typed scalar params + `jsonb` items/options payload; các RPC khác dùng typed params.
 `submit_order_changes` và `pay_order` nhận expected lock version; nếu `orders.lock_version` lệch thì trả conflict error (`ORDER_VERSION_CONFLICT`) để UI yêu cầu tải lại.
 Nếu menu item/option không còn hợp lệ lúc submit, RPC trả lỗi nghiệp vụ như `MENU_ITEM_UNAVAILABLE` hoặc `OPTION_VALUE_UNAVAILABLE`; UI refetch menu và giữ draft để user sửa.
-RPC kiểm tra `employee_id` active, thuộc store hiện tại và role khi cần; admin-only RPC kiểm tra role admin như guardrail nghiệp vụ, không thay thế caveat role app-layer.
+RPC kiểm tra `employee_id` active, thuộc store hiện tại và role khi cần; admin-only RPC kiểm tra role admin như guardrail nghiệp vụ/audit. Guardrail này spoofable nếu người gọi đã có Store Key/session, không thay thế caveat role app-layer và không được trình bày như employee-level DB security.
 `verify_employee_pin` trả safe employee (`id`, `name`, `role`), không trả hash.
 
 ### 4.2 Migration policy
@@ -191,15 +191,17 @@ Order:
 
 Clear demo data:
 
-- Dùng tombstone cho menu/floor/decor demo.
+- Dùng tombstone cho menu/floor/decor demo được nhận diện bằng deterministic seed IDs theo `store_id + seed_key`.
 - Admin-only.
 - MVP block nếu còn open orders; user phải thanh toán hoặc huỷ order trước khi clear demo.
-- Giữ lại đúng 1 admin.
+- Deactive cashier demo và giữ lại đúng 1 admin.
 - Nếu cần slate trắng thật, tạo record mới bằng UUID mới thay vì hồi sinh record demo cũ.
+- Nếu sau này muốn xoá toàn bộ dữ liệu user tự tạo, đó là destructive reset riêng, phải đổi tên và có confirm rõ.
 
 Seed source:
 
 - Demo seed nằm trong repo dạng TypeScript seed bundle.
+- Seed demo dùng deterministic IDs theo `store_id + seed_key` cho nhân viên demo, category, món, option, floor area, bàn, decor để retry idempotent và không tạo trùng dữ liệu.
 - `seed.demo` gồm admin PIN `123456`, cashier PIN `111111`, menu demo medium kiểu cafe Việt, 2 floor areas medium, tables và decor placeholder.
 - Menu demo mặc định: 4 categories, 22 món cafe Việt phổ thông, option size/đá/đường/topping/thêm shot.
 - Floor demo mặc định: `Tầng trệt` 8 bàn, `Lầu 1` 6 bàn, decor placeholder `plant_01`, `wall_01`, `counter_01`, `door_01`.
