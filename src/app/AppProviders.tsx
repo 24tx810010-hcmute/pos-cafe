@@ -1,0 +1,52 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import { useMemo, type ReactNode } from "react";
+import { Toaster } from "react-hot-toast";
+import { createMockPorts } from "@/adapters/mock";
+import { PortsContext } from "./portsContext";
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#0F766E",
+    },
+  },
+  shape: {
+    borderRadius: 8,
+  },
+  typography: {
+    fontFamily: 'Inter, "Segoe UI", Arial, sans-serif',
+    button: {
+      textTransform: "none",
+      fontWeight: 700,
+    },
+  },
+});
+
+export function AppProviders({ children }: { children: ReactNode }) {
+  const ports = useMemo(() => createMockPorts(), []);
+  const queryClient = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 30_000,
+            retry: false,
+          },
+        },
+      }),
+    [],
+  );
+
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <PortsContext.Provider value={ports}>
+        <QueryClientProvider client={queryClient}>
+          {children}
+          <Toaster position="top-right" />
+        </QueryClientProvider>
+      </PortsContext.Provider>
+    </ThemeProvider>
+  );
+}
