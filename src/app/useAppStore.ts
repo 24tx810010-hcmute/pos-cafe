@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Employee, OrderType, SubmitOrderDraftItem } from "@/domain";
 
-export type DrawerModule = "order" | "payment" | "menuEditor" | "floorEditor" | "reportSettings" | "orderHistory" | "employees" | "settings" | null;
+export type DrawerModule = "order" | "payment" | "takeaway" | "menuEditor" | "floorEditor" | "reportSettings" | "orderHistory" | "employees" | "settings" | "kitchen" | "paymentSettings" | null;
 export type AppScreen = "landing" | "storePairing" | "createStore" | "passcode";
 
 export type OrderDrawerContext = {

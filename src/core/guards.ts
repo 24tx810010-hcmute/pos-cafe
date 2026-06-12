@@ -11,7 +11,8 @@ export type AppModule =
   | "employees"
   | "report"
   | "settings"
-  | "clearDemo";
+  | "clearDemo"
+  | "kitchen";
 
 const rolePermissions: Record<EmployeeRole, AppModule[]> = {
   admin: [
@@ -25,9 +26,10 @@ const rolePermissions: Record<EmployeeRole, AppModule[]> = {
     "report",
     "settings",
     "clearDemo",
+    "kitchen",
   ],
   cashier: ["floor", "order", "payment", "orderHistory"],
-  kitchen: [],
+  kitchen: ["kitchen"],
 };
 
 export const canAccessModule = (employee: Employee | null, module: AppModule): boolean => {

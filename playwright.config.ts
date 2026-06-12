@@ -2,7 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/smoke",
-  timeout: 30_000,
+  // Comprehensive admin flows under a single shared dev server during the first
+  // (cold) Vite compile can run long when all viewport projects start at once.
+  timeout: 60_000,
   fullyParallel: true,
   use: {
     baseURL: "http://127.0.0.1:5173",
