@@ -357,7 +357,9 @@ Done khi:
 
 Mục tiêu: nối UI với Supabase adapters thật sau khi RPC và adapters ổn.
 
-Status 2026-06-12: integration support utilities implemented/pushed trên `codex/stream-db-rpc` commit `0f71594`: `src/features/integration/uiError.ts`, `dirtyFlow.ts`, `realtimeInvalidation.ts`, `useRealtimeInvalidation.ts` và tests. Adapter hardening/mock parity pushed commit `773ed45`. Architecture boundary cleanup pushed commit `9f32291`; Supabase cloud pgcrypto fix + RPC/REST E2E pushed commit `ae1523b`. Integration checklist đã có ở `2026-06-12-pos-cafe-integration-checklist.md`. Chưa merge vào UI branch.
+Status 2026-06-12: integration support utilities implemented/pushed trên `codex/stream-db-rpc` commit `0f71594`: `src/features/integration/uiError.ts`, `dirtyFlow.ts`, `realtimeInvalidation.ts`, `useRealtimeInvalidation.ts` và tests. Adapter hardening/mock parity pushed commit `773ed45`. Architecture boundary cleanup pushed commit `9f32291`; Supabase cloud pgcrypto fix + RPC/REST E2E pushed commit `ae1523b`. Integration checklist đã có ở `2026-06-12-pos-cafe-integration-checklist.md`.
+
+Status 2026-06-13: UI checkpoint `codex/code-foundation` đã push spacing fix `6009b47`. Đã tạo/push branch tích hợp `codex/ui-logic-integration`, merge `codex/stream-db-rpc` vào UI checkpoint bằng merge commit `1c420d9`. Validation sau merge pass: `npm run build`, `npm run test` (16 files/60 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, scan conflict marker/import cũ. Chưa merge ngược integration vào `codex/code-foundation` hoặc main; bước kế tiếp là bind UI thật + Supabase-mode UI E2E.
 
 Tasks chung:
 

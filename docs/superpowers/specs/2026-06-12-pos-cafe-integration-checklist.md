@@ -1,7 +1,7 @@
 # POS Cafe Integration Checklist
 
 > Vai trò: checklist cho phase nối nhánh UI với nhánh logic/adapters. File này dùng sau khi UI mock/production component split đã ổn, không dùng để merge trực tiếp vào `codex/code-foundation`.
-> Trạng thái 2026-06-12: logic branch tích lũy là `codex/stream-db-rpc` commit tối thiểu `9f32291`. UI branch đang phát triển từ `codex/code-foundation`.
+> Trạng thái 2026-06-13: UI checkpoint `codex/code-foundation` đã push tới `6009b47`; branch tích hợp `codex/ui-logic-integration` đã merge `codex/stream-db-rpc` và push merge commit `1c420d9`.
 
 ---
 
@@ -11,6 +11,14 @@
 - Merge logic branch `codex/stream-db-rpc` vào integration branch, không merge ngược vào `codex/code-foundation`.
 - Bind UI thật vào hooks/services/`AppPorts`, không gọi Supabase/RPC trực tiếp từ component.
 - Chạy đủ automated tests + manual smoke trước khi quyết định merge tiếp.
+
+Status 2026-06-13:
+
+- Đã tạo `codex/ui-logic-integration` từ `codex/code-foundation` sau UI spacing fix `6009b47`.
+- Đã merge `codex/stream-db-rpc` vào integration branch bằng merge commit `1c420d9`.
+- Đã push `origin/codex/ui-logic-integration`.
+- Validation đã pass: `npm run build`, `npm run test` (16 files/60 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, scan conflict marker/import `portsContext` cũ.
+- Việc còn lại của phase này: bind UI thật từng module theo bảng §5 và chạy Supabase-mode UI E2E.
 
 ---
 
