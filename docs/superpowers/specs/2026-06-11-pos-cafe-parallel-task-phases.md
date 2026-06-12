@@ -2,7 +2,7 @@
 
 > **Vai trò:** file handoff để chia nhiều session/agent code song song sau milestone code foundation.
 > **Base hiện tại:** code worktree `D:\Workspace\pos-cafe-code`, branch `codex/code-foundation`.
-> **Logic branch đang tích lũy:** `codex/stream-db-rpc` đã chứa DB/RPC, adapters, session flow, POS/admin hooks, integration support và adapter/mock hardening; chưa merge vào `codex/code-foundation` vì UI branch đang làm từ base đó.
+> **Logic branch đang tích lũy:** `codex/stream-db-rpc` đã chứa DB/RPC, adapters, session flow, POS/admin hooks, integration support, adapter/mock hardening và architecture boundary cleanup; chưa merge vào `codex/code-foundation` vì UI branch đang làm từ base đó.
 > **Nguyên tắc:** mỗi coding session đọc `WORKTREE-HANDOFF.md` trước, rồi đọc `pos-cafe-context.md`, implementation contract, và file này trước khi code.
 
 ---
@@ -25,6 +25,7 @@
 - Admin flow hooks cho employees/menu/floor/settings/clear-demo/report query đã có.
 - Integration support utilities đã có: UI error mapper, dirty/save helper, realtime invalidation hook.
 - Adapter hardening/mock parity đã có: Supabase RPC param-shape tests, menu/floor changeset mapping tests, mock takeaway open order, mock paid history/report, unavailable menu/option errors, mock menu/floor save changeset behavior.
+- Architecture boundary cleanup đã có trên `codex/stream-db-rpc` commit `9f32291`: demo seed data chuyển sang `src/seed/demoSeedData.ts` để Supabase adapter không import mock adapter; `PortsContext` chuyển sang `src/ports/portsContext.tsx`; query keys chung chuyển sang `src/features/shared/queryKeys.ts`; root `txt.txt` đã xoá.
 - Test nền:
   - `npm run build`
   - `npm run test`
@@ -144,7 +145,7 @@ Done khi:
 
 ### Session B — Supabase Adapter Track
 
-Status 2026-06-12: implemented trên code branch ở mức foundation + hardening. Đã có `src/adapters/supabase/*`, `createSupabasePorts`, Store Key auth adapter, row/RPC mappers, deterministic seed bundle, realtime invalidation, tests nền và adapter param-shape tests cho `submit_order_changes`/`pay_order`/`clear_demo_data` + menu/floor changeset mapping. `npm run build`, `npm run test`, `npm run smoke` pass.
+Status 2026-06-12: implemented trên code branch ở mức foundation + hardening. Đã có `src/adapters/supabase/*`, `createSupabasePorts`, Store Key auth adapter, row/RPC mappers, deterministic seed bundle, realtime invalidation, tests nền và adapter param-shape tests cho `submit_order_changes`/`pay_order`/`clear_demo_data` + menu/floor changeset mapping. Boundary cleanup commit `9f32291` đã tách demo seed data khỏi mock adapter dependency. `npm run build`, `npm run test`, `npm run smoke` pass.
 
 Ownership:
 
@@ -188,6 +189,7 @@ Done khi:
 ### Session C — Store/Auth/Seed Flow Track
 
 Status 2026-06-11: implemented trên code branch ở mức logic foundation. Đã có runtime port factory (`mock` mặc định, `supabase` khi env đủ hoặc `VITE_DATA_MODE=supabase`), session flow service/hooks cho load/pair/create/retry seed/verify PIN/unpair, tests đảm bảo `StoreSession` không chứa raw `storeKey`. UI create/pair màn thật chưa bind.
+Update 2026-06-12: seed demo source nằm ở `src/seed/demoSeedData.ts`; mock adapter chỉ re-export data này để giữ compatibility. Supabase seed bundle dùng trực tiếp module seed trung lập, không import `src/adapters/mock/*`.
 
 Ownership:
 
@@ -349,7 +351,7 @@ Done khi:
 
 Mục tiêu: nối UI với Supabase adapters thật sau khi RPC và adapters ổn.
 
-Status 2026-06-12: integration support utilities implemented/pushed trên `codex/stream-db-rpc` commit `0f71594`: `src/features/integration/uiError.ts`, `dirtyFlow.ts`, `realtimeInvalidation.ts`, `useRealtimeInvalidation.ts` và tests. Adapter hardening/mock parity pushed commit `773ed45`. Chưa merge vào UI branch.
+Status 2026-06-12: integration support utilities implemented/pushed trên `codex/stream-db-rpc` commit `0f71594`: `src/features/integration/uiError.ts`, `dirtyFlow.ts`, `realtimeInvalidation.ts`, `useRealtimeInvalidation.ts` và tests. Adapter hardening/mock parity pushed commit `773ed45`. Architecture boundary cleanup pushed commit `9f32291`: `PortsContext` ở `src/ports/portsContext.tsx`, query keys ở `src/features/shared/queryKeys.ts`. Chưa merge vào UI branch.
 
 Tasks chung:
 
