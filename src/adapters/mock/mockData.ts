@@ -168,4 +168,55 @@ export const mockOpenOrders: OrderDetail[] = [
       { id: "oi-b05-3", menuItemId: "mi-tran-chau", itemName: "Topping", quantity: 1, unitPrice: 5000, note: null, options: [] },
     ],
   },
+  {
+    id: "ord-takeaway-1",
+    tableId: null,
+    orderNo: 26,
+    businessDate: "2026-06-11",
+    status: "open",
+    total: 84000,
+    lockVersion: 2,
+    orderType: "takeaway",
+    paidAt: null,
+    items: [
+      { id: "oi-takeaway-1", menuItemId: "mi-tra-dao", itemName: "Trà đào", quantity: 1, unitPrice: 42000, note: null, options: [] },
+      { id: "oi-takeaway-2", menuItemId: "mi-tra-vai", itemName: "Trà vải", quantity: 1, unitPrice: 42000, note: "Ít đá", options: [] },
+    ],
+  },
 ];
+
+export const mockPaidOrders: OrderDetail[] = [
+  {
+    id: "ord-paid-1",
+    tableId: "tbl-l01",
+    orderNo: 23,
+    businessDate: "2026-06-11",
+    status: "paid",
+    total: 77000,
+    lockVersion: 2,
+    orderType: "dine_in",
+    paidAt: "2026-06-11T09:15:00.000Z",
+    items: [
+      {
+        id: "oi-paid-1",
+        menuItemId: "mi-latte",
+        itemName: "Latte",
+        quantity: 1,
+        unitPrice: 45000,
+        note: null,
+        options: [],
+      },
+      {
+        id: "oi-paid-2",
+        menuItemId: "mi-bac-xiu",
+        itemName: "Bạc xỉu",
+        quantity: 1,
+        unitPrice: 32000,
+        note: null,
+        options: [{ id: "oio-paid-2", optionValueId: "ov-duong-50", optionName: "50% đường", priceDelta: 0 }],
+      },
+    ],
+  },
+];
+
+export const mockOrders: OrderDetail[] = [...mockOpenOrders, ...mockPaidOrders];

@@ -18,7 +18,9 @@ import type {
   EmployeeInput,
   EmployeeUpdate,
   FloorPlan,
+  FloorPlanChanges,
   MenuCatalog,
+  MenuChanges,
   OrderDetail,
   OrderHistoryFilter,
   OrderSummary,
@@ -38,7 +40,7 @@ import {
   mockEmployees,
   mockFloorPlan,
   mockMenuCatalog,
-  mockOpenOrders,
+  mockOrders,
   mockPins,
   mockSettings,
   mockStoreId,
@@ -54,7 +56,21 @@ const parseStoreNo = (storeKey: string): number => {
   return Number.isFinite(parsed) ? parsed : 1;
 };
 
-type MockState = {
+const stripUndefined = <T extends object>(value: T): Partial<T> =>
+  Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as Partial<T>;
+
+const updateById = <T extends { id: string }>(
+  items: T[],
+  update: Partial<T> & { id: string },
+): T[] =>
+  items.map((item) => (item.id === update.id ? { ...item, ...stripUndefined(update) } : item));
+
+const removeByIds = <T extends { id: string }>(items: T[], deleted: Array<{ id: string }>): T[] => {
+  const deletedIds = new Set(deleted.map((item) => item.id));
+  return items.filter((item) => !deletedIds.has(item.id));
+};
+
+export type MockState = {
   session: StoreSession | null;
   employees: Employee[];
   pins: Record<string, string>;
@@ -73,7 +89,7 @@ export const createMockState = (): MockState => ({
   pins: clone(mockPins),
   menu: clone(mockMenuCatalog),
   floorPlan: clone(mockFloorPlan),
-  orders: clone(mockOpenOrders),
+  orders: clone(mockOrders),
   settings: clone(mockSettings),
   nextOrderNo: 30,
   lastTicket: null,
@@ -183,8 +199,34 @@ class MockMenuRepo implements IMenuRepo {
     return clone(this.state.menu);
   }
 
-  async saveMenuChanges(): Promise<void> {
-    await Promise.resolve();
+  async saveMenuChanges(changes: MenuChanges): Promise<void> {
+    this.state.menu.categories.push(...changes.categories.created);
+    this.state.menu.menuItems.push(
+      ...changes.menuItems.created.map((item) => ({
+        ...item,
+        imageAssetKey: item.imageAssetKey ?? null,
+      })),
+    );
+    this.state.menu.optionGroups.push(...changes.optionGroups.created);
+    this.state.menu.optionValues.push(...changes.optionValues.created);
+
+    for (const category of changes.categories.updated) {
+      this.state.menu.categories = updateById(this.state.menu.categories, category);
+    }
+    for (const item of changes.menuItems.updated) {
+      this.state.menu.menuItems = updateById(this.state.menu.menuItems, item);
+    }
+    for (const group of changes.optionGroups.updated) {
+      this.state.menu.optionGroups = updateById(this.state.menu.optionGroups, group);
+    }
+    for (const value of changes.optionValues.updated) {
+      this.state.menu.optionValues = updateById(this.state.menu.optionValues, value);
+    }
+
+    this.state.menu.optionValues = removeByIds(this.state.menu.optionValues, changes.optionValues.deleted);
+    this.state.menu.optionGroups = removeByIds(this.state.menu.optionGroups, changes.optionGroups.deleted);
+    this.state.menu.menuItems = removeByIds(this.state.menu.menuItems, changes.menuItems.deleted);
+    this.state.menu.categories = removeByIds(this.state.menu.categories, changes.categories.deleted);
   }
 }
 
@@ -195,8 +237,37 @@ class MockFloorPlanRepo implements IFloorPlanRepo {
     return clone(this.state.floorPlan);
   }
 
-  async saveFloorPlan(): Promise<void> {
-    await Promise.resolve();
+  async saveFloorPlan(changes: FloorPlanChanges): Promise<void> {
+    this.state.floorPlan.areas.push(...changes.areas.created);
+    this.state.floorPlan.tables.push(
+      ...changes.tables.created.map((table) => ({
+        ...table,
+        status: "empty" as const,
+      })),
+    );
+    this.state.floorPlan.decorItems.push(
+      ...changes.decorItems.created.map((decor) => ({
+        ...decor,
+        label: decor.label ?? null,
+      })),
+    );
+
+    for (const area of changes.areas.updated) {
+      this.state.floorPlan.areas = updateById(this.state.floorPlan.areas, area);
+    }
+    for (const table of changes.tables.updated) {
+      const tableUpdate = stripUndefined(table);
+      this.state.floorPlan.tables = this.state.floorPlan.tables.map((candidate) =>
+        candidate.id === table.id ? { ...candidate, ...tableUpdate, status: candidate.status } : candidate,
+      );
+    }
+    for (const decor of changes.decorItems.updated) {
+      this.state.floorPlan.decorItems = updateById(this.state.floorPlan.decorItems, decor);
+    }
+
+    this.state.floorPlan.decorItems = removeByIds(this.state.floorPlan.decorItems, changes.decorItems.deleted);
+    this.state.floorPlan.tables = removeByIds(this.state.floorPlan.tables, changes.tables.deleted);
+    this.state.floorPlan.areas = removeByIds(this.state.floorPlan.areas, changes.areas.deleted);
   }
 }
 
@@ -384,20 +455,28 @@ class MockReportRepo implements IReportRepo {
   async getCoreReport(): Promise<CoreReport> {
     const paidOrders = this.state.orders.filter((order) => order.status === "paid");
     const revenue = paidOrders.reduce((sum, order) => sum + order.total, 0);
+    const hourlyRevenue = new Map<string, number>();
+    const topItems = new Map<string, number>();
+
+    for (const order of paidOrders) {
+      const paidAt = order.paidAt ? new Date(order.paidAt) : null;
+      const label = paidAt && !Number.isNaN(paidAt.getTime()) ? paidAt.getHours().toString().padStart(2, "0") : "--";
+      hourlyRevenue.set(label, (hourlyRevenue.get(label) ?? 0) + order.total);
+
+      for (const item of order.items) {
+        topItems.set(item.itemName, (topItems.get(item.itemName) ?? 0) + item.quantity);
+      }
+    }
+
     return {
       businessDate: todayBusinessDate,
       revenue,
       paidOrders: paidOrders.length,
       averageTicket: paidOrders.length ? Math.round(revenue / paidOrders.length) : 0,
-      topItemName: paidOrders[0]?.items[0]?.itemName ?? "Bạc xỉu",
-      hourlyRevenue: [
-        { label: "08", revenue: 180000 },
-        { label: "10", revenue: 320000 },
-        { label: "12", revenue: 260000 },
-        { label: "14", revenue: 420000 },
-        { label: "16", revenue: 360000 },
-        { label: "18", revenue: 540000 },
-      ],
+      topItemName: [...topItems.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "-",
+      hourlyRevenue: [...hourlyRevenue.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([label, value]) => ({ label, revenue: value })),
     };
   }
 }
