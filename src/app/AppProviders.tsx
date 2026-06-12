@@ -44,7 +44,18 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <PortsContext.Provider value={ports}>
         <QueryClientProvider client={queryClient}>
           {children}
-          <Toaster position="top-right" />
+          <Toaster
+            position="bottom-right"
+            containerClassName="app-toaster"
+            toastOptions={{
+              duration: 2400,
+              style: {
+                borderRadius: 8,
+                fontSize: 13,
+                maxWidth: "min(360px, calc(100vw - 24px))",
+              },
+            }}
+          />
         </QueryClientProvider>
       </PortsContext.Provider>
     </ThemeProvider>

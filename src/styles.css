@@ -36,6 +36,16 @@ textarea {
   font: inherit;
 }
 
+.app-toaster {
+  right: 12px !important;
+  bottom: 12px !important;
+  max-width: calc(100vw - 24px);
+}
+
+.app-toaster [role="status"] {
+  box-shadow: 0 14px 36px rgb(15 23 42 / 18%);
+}
+
 .rotate-guidance {
   display: none;
   min-height: 100vh;
@@ -746,8 +756,13 @@ textarea {
   gap: 12px;
 }
 
+.drawer-header {
+  flex-wrap: wrap;
+}
+
 .title-stack {
   min-width: 0;
+  flex: 1 1 240px;
 }
 
 .title-stack h1,
@@ -758,6 +773,13 @@ textarea {
   letter-spacing: 0;
 }
 
+.drawer-header .title-stack h2,
+.drawer-header .title-stack h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .title-stack p {
   margin: 4px 0 0;
   color: var(--muted);
@@ -765,6 +787,25 @@ textarea {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.header-actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+}
+
+.header-actions > * {
+  flex-shrink: 0;
+}
+
+.header-actions .MuiButton-root {
+  min-height: 36px;
+  white-space: nowrap;
 }
 
 .workspace-body {
@@ -1393,6 +1434,11 @@ textarea {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.confirm-actions .MuiButton-root {
+  min-width: 96px;
 }
 
 .price-text {
@@ -1727,6 +1773,18 @@ textarea {
     padding: 8px 10px;
   }
 
+  .drawer-header {
+    gap: 8px 10px;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .header-actions .MuiButton-root {
+    min-height: 34px;
+  }
+
   .workspace-body {
     height: calc(100% - 50px);
     padding: 8px;
@@ -1807,6 +1865,27 @@ textarea {
   .title-stack h2,
   .title-stack h3 {
     font-size: 15px;
+  }
+}
+
+@media (max-width: 640px) {
+  .drawer-header .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .drawer-header .header-actions .MuiButton-root {
+    flex: 1 1 128px;
+  }
+
+  .menu-tab-btn {
+    flex-basis: 104px;
+  }
+
+  .app-toaster {
+    right: 10px !important;
+    bottom: 10px !important;
+    max-width: calc(100vw - 20px);
   }
 }
 
@@ -1898,7 +1977,8 @@ textarea {
 
 .tw-card-actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .tw-action-btn {
   padding: 4px 10px;
@@ -2195,7 +2275,7 @@ textarea {
 }
 .emp-last-unlock { font-size: 11px; color: var(--muted); }
 
-.emp-card-actions { display: flex; gap: 6px; }
+.emp-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .emp-action-btn {
   width: 30px;
   height: 30px;
@@ -2274,16 +2354,30 @@ textarea {
   gap: 10px;
 }
 
-.menu-tabs { display: none; }
+.menu-tabs {
+  display: none;
+  min-width: 0;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 1px 2px 4px;
+  scrollbar-width: thin;
+}
 .menu-tab-btn {
-  flex: 1 1 0;
+  flex: 1 0 112px;
+  min-height: 36px;
   padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--surface);
   font-weight: 700;
   font-size: 13px;
+  line-height: 1.15;
+  white-space: nowrap;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .menu-tab-btn.active { border-color: var(--primary-line); background: var(--primary-soft); color: var(--primary); }
 
@@ -2327,7 +2421,7 @@ textarea {
 .menu-cat-main { min-width: 0; display: grid; gap: 2px; flex: 1 1 auto; }
 .menu-cat-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu-cat-main .muted { font-size: 11px; }
-.menu-cat-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.menu-cat-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
 /* Item grid */
 .menu-item-grid {
@@ -2367,7 +2461,7 @@ textarea {
 .menu-edit-card-body { display: grid; gap: 4px; min-width: 0; }
 .menu-edit-card-body strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu-card-tags { display: flex; gap: 5px; flex-wrap: wrap; }
-.menu-card-actions { display: flex; gap: 6px; }
+.menu-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .menu-card-actions .menu-mini-btn:first-child { flex: 1 1 auto; }
 
 .menu-add-card {
@@ -2457,19 +2551,23 @@ textarea {
 
 @media (max-width: 900px) {
   .menu-three-pane { grid-template-columns: 1fr; min-width: 0; }
-  .menu-tabs { display: flex; gap: 6px; }
+  .menu-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   .menu-pane { display: none; }
   .menu-pane.tab-active { display: grid; }
 }
 
 /* Floor-plan editor drawer */
 .fe-three-pane { grid-template-columns: minmax(160px, 200px) minmax(320px, 1fr) minmax(290px, 340px); }
-.fe-header-actions { flex-wrap: wrap; gap: 8px; }
-.fe-area-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.fe-header-actions { flex-wrap: wrap; gap: 10px; }
+.fe-area-tabs { display: flex; gap: 8px; flex-wrap: wrap; min-width: 0; }
 
 .fe-tools { display: grid; gap: 14px; align-content: start; }
 .fe-tool-group { display: grid; gap: 8px; }
-.fe-tool-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.fe-tool-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .fe-zoom-label { font-size: 12px; font-weight: 700; min-width: 40px; text-align: center; }
 .menu-mini-btn.on { border-color: var(--primary-line); background: var(--primary-soft); color: var(--primary); }
 
@@ -2754,7 +2852,7 @@ textarea {
 
 .menu-chip-toggle:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.pay-pre-methods { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+.pay-pre-methods { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
 
 .pay-bank-box {
   width: 100%;
