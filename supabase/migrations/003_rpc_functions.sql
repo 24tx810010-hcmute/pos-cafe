@@ -13,7 +13,7 @@ language sql
 security definer
 set search_path = public
 as $$
-  select crypt(p_pin, gen_salt('bf'));
+  select extensions.crypt(p_pin, extensions.gen_salt('bf'));
 $$;
 
 create or replace function public.verify_employee_pin(
@@ -35,7 +35,7 @@ begin
   where e.store_id = auth.uid()
     and e.id = p_employee_id
     and e.is_active = true
-    and e.passcode_hash = crypt(p_pin, e.passcode_hash);
+    and e.passcode_hash = extensions.crypt(p_pin, e.passcode_hash);
 
   if not found then
     raise exception 'INVALID_PIN'
