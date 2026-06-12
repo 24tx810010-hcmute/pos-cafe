@@ -2,7 +2,7 @@
 
 > **Vai trò:** file handoff để chia nhiều session/agent code song song sau milestone code foundation.
 > **Base hiện tại:** code worktree `D:\Workspace\pos-cafe-code`, branch `codex/code-foundation`.
-> **Logic branch đang tích lũy:** `codex/stream-db-rpc` đã chứa DB/RPC, adapters, session flow, POS/admin hooks, integration support, adapter/mock hardening và architecture boundary cleanup; chưa merge vào `codex/code-foundation` vì UI branch đang làm từ base đó.
+> **Logic branch đang tích lũy:** `codex/stream-db-rpc` đã chứa DB/RPC, adapters, session flow, POS/admin hooks, integration support, adapter/mock hardening, architecture boundary cleanup và Supabase cloud pgcrypto fix; chưa merge vào `codex/code-foundation` vì UI branch đang làm từ base đó.
 > **Nguyên tắc:** mỗi coding session đọc `WORKTREE-HANDOFF.md` trước, rồi đọc `pos-cafe-context.md`, implementation contract, và file này trước khi code.
 
 ---
@@ -26,6 +26,7 @@
 - Integration support utilities đã có: UI error mapper, dirty/save helper, realtime invalidation hook.
 - Adapter hardening/mock parity đã có: Supabase RPC param-shape tests, menu/floor changeset mapping tests, mock takeaway open order, mock paid history/report, unavailable menu/option errors, mock menu/floor save changeset behavior.
 - Architecture boundary cleanup đã có trên `codex/stream-db-rpc` commit `9f32291`: demo seed data chuyển sang `src/seed/demoSeedData.ts` để Supabase adapter không import mock adapter; `PortsContext` chuyển sang `src/ports/portsContext.tsx`; query keys chung chuyển sang `src/features/shared/queryKeys.ts`; root `txt.txt` đã xoá.
+- Supabase cloud validation 2026-06-12 pass trên `codex/stream-db-rpc` commit `ae1523b`: `pgcrypto` qualified qua `extensions.crypt/extensions.gen_salt`; cloud Auth autoconfirm/signup OK; tables/RPC reachable; create store test + seed tối thiểu + verify PIN + `submit_order_changes` + negative `PAYMENT_AMOUNT_TOO_LOW` + blocked `clear_demo_data` + `pay_order` + `clear_demo_data` pass.
 - Test nền:
   - `npm run build`
   - `npm run test`
@@ -35,7 +36,7 @@ Chưa có:
 
 - UI production component split, hiện `src/app/App.tsx` còn là mock monolith.
 - UI thật bind vào hooks/ports mới.
-- Supabase cloud project apply migration và end-to-end smoke thật.
+- UI-level Supabase cloud E2E thật vẫn chờ UI branch có landing/pairing/create-store binding.
 - Branch integration cuối cùng giữa UI branch và `codex/stream-db-rpc`.
 
 Checklist đã có:
@@ -120,7 +121,7 @@ Các session dưới đây có thể chạy song song sau Phase 1 hoặc song so
 
 ### Session A — DB/RPC Transaction Track
 
-Status 2026-06-11: implemented trên code branch và local validated bằng PostgreSQL `18.4` temp DB. Apply `001`/`002`/`003` pass; happy-path smoke `submit_order_changes`/`pay_order`/`clear_demo_data` pass; negative smoke `PAYMENT_AMOUNT_TOO_LOW` và `OPEN_ORDERS_BLOCK_CLEAR_DEMO` pass. Supabase cloud migration là bước setup riêng.
+Status 2026-06-12: implemented trên code branch. Local validation 2026-06-11 bằng PostgreSQL `18.4` temp DB pass cho `001`/`002`/`003`, happy-path smoke `submit_order_changes`/`pay_order`/`clear_demo_data`, negative smoke `PAYMENT_AMOUNT_TOO_LOW` và `OPEN_ORDERS_BLOCK_CLEAR_DEMO`. Supabase cloud validation 2026-06-12 pass sau fix `pgcrypto` schema `extensions` ở commit `ae1523b`.
 
 Ownership:
 
@@ -150,7 +151,7 @@ Done khi:
 
 ### Session B — Supabase Adapter Track
 
-Status 2026-06-12: implemented trên code branch ở mức foundation + hardening. Đã có `src/adapters/supabase/*`, `createSupabasePorts`, Store Key auth adapter, row/RPC mappers, deterministic seed bundle, realtime invalidation, tests nền và adapter param-shape tests cho `submit_order_changes`/`pay_order`/`clear_demo_data` + menu/floor changeset mapping. Boundary cleanup commit `9f32291` đã tách demo seed data khỏi mock adapter dependency. `npm run build`, `npm run test`, `npm run smoke` pass.
+Status 2026-06-12: implemented trên code branch ở mức foundation + hardening. Đã có `src/adapters/supabase/*`, `createSupabasePorts`, Store Key auth adapter, row/RPC mappers, deterministic seed bundle, realtime invalidation, tests nền và adapter param-shape tests cho `submit_order_changes`/`pay_order`/`clear_demo_data` + menu/floor changeset mapping. Boundary cleanup commit `9f32291` đã tách demo seed data khỏi mock adapter dependency. Cloud E2E trực tiếp pass ở commit `ae1523b`; `npm run build`, `npm run test`, `VITE_DATA_MODE=mock npm run smoke` pass.
 
 Ownership:
 
@@ -356,7 +357,7 @@ Done khi:
 
 Mục tiêu: nối UI với Supabase adapters thật sau khi RPC và adapters ổn.
 
-Status 2026-06-12: integration support utilities implemented/pushed trên `codex/stream-db-rpc` commit `0f71594`: `src/features/integration/uiError.ts`, `dirtyFlow.ts`, `realtimeInvalidation.ts`, `useRealtimeInvalidation.ts` và tests. Adapter hardening/mock parity pushed commit `773ed45`. Architecture boundary cleanup pushed commit `9f32291`: `PortsContext` ở `src/ports/portsContext.tsx`, query keys ở `src/features/shared/queryKeys.ts`. Integration checklist đã có ở `2026-06-12-pos-cafe-integration-checklist.md`. Chưa merge vào UI branch.
+Status 2026-06-12: integration support utilities implemented/pushed trên `codex/stream-db-rpc` commit `0f71594`: `src/features/integration/uiError.ts`, `dirtyFlow.ts`, `realtimeInvalidation.ts`, `useRealtimeInvalidation.ts` và tests. Adapter hardening/mock parity pushed commit `773ed45`. Architecture boundary cleanup pushed commit `9f32291`; Supabase cloud pgcrypto fix + RPC/REST E2E pushed commit `ae1523b`. Integration checklist đã có ở `2026-06-12-pos-cafe-integration-checklist.md`. Chưa merge vào UI branch.
 
 Tasks chung:
 

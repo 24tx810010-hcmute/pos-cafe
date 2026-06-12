@@ -1,7 +1,7 @@
 # POS Cafe Supabase Cloud Setup Checklist
 
 > Vai trò: checklist setup Supabase cloud thật cho demo/integration. File này không thay thế SQL migrations trong repo; migrations vẫn là source of truth.
-> Trạng thái 2026-06-12: SQL/RPC đã validate local bằng PostgreSQL `18.4`; cloud project chưa apply trong docs hiện tại.
+> Trạng thái 2026-06-12: SQL/RPC đã validate local bằng PostgreSQL `18.4`; Supabase cloud đã check pass bằng REST/RPC E2E trực tiếp sau commit `ae1523b`.
 
 ---
 
@@ -173,6 +173,12 @@ npm run smoke
 npm run dev
 ```
 
+Lưu ý hiện tại: smoke Playwright trong repo vẫn là mock-specific vì test chờ employee id mock như `emp-admin`. Khi `.env.local` đặt `VITE_DATA_MODE=supabase`, `npm run smoke` có thể fail ở passcode vì chưa có UI pairing/create-store/pair session thật. Để test responsive/mock baseline, chạy:
+
+```powershell
+$env:VITE_DATA_MODE='mock'; npm run smoke; Remove-Item Env:\VITE_DATA_MODE
+```
+
 Manual:
 
 - Create store mới.
@@ -194,6 +200,15 @@ Manual:
 - Browser B đang cùng Store Key thấy table/order cập nhật sau realtime invalidation/refetch.
 - Browser B pay order.
 - Browser A thấy table empty/report cập nhật.
+
+Validation log 2026-06-12:
+
+- `.env.local` Supabase mode có URL + anon key hợp lệ.
+- Auth settings public: signup enabled, email autoconfirm enabled, email provider enabled.
+- REST table/column checks pass cho `stores`, `store_settings`, `employees`, `menu_items`, `tables`, `payments`, `order_item_options`.
+- RPC checks pass: `hash_employee_pin`, `verify_employee_pin`, `submit_order_changes`, `pay_order`, `clear_demo_data`.
+- Cloud E2E trực tiếp pass: create store test, seed tối thiểu, verify admin PIN, submit dine-in order, negative `PAYMENT_AMOUNT_TOO_LOW`, blocked `OPEN_ORDERS_BLOCK_CLEAR_DEMO`, pay order, clear demo seed rows.
+- Một store test đầu tiên bị dừng giữa chừng do assert sai trong script kiểm tra; store test thứ hai pass và đã clear demo seed rows. Nếu cần dọn sạch tuyệt đối, xử lý bằng Supabase dashboard/service-role dưới xác nhận riêng.
 
 ---
 
