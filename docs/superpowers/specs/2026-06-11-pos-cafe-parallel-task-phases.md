@@ -38,6 +38,11 @@ Chưa có:
 - Supabase cloud project apply migration và end-to-end smoke thật.
 - Branch integration cuối cùng giữa UI branch và `codex/stream-db-rpc`.
 
+Checklist đã có:
+
+- Integration checklist: `docs/superpowers/specs/2026-06-12-pos-cafe-integration-checklist.md`.
+- Supabase cloud setup checklist: `docs/superpowers/specs/2026-06-12-pos-cafe-supabase-cloud-setup-checklist.md`.
+
 ---
 
 ## 2. Quy tắc chia session
@@ -351,7 +356,7 @@ Done khi:
 
 Mục tiêu: nối UI với Supabase adapters thật sau khi RPC và adapters ổn.
 
-Status 2026-06-12: integration support utilities implemented/pushed trên `codex/stream-db-rpc` commit `0f71594`: `src/features/integration/uiError.ts`, `dirtyFlow.ts`, `realtimeInvalidation.ts`, `useRealtimeInvalidation.ts` và tests. Adapter hardening/mock parity pushed commit `773ed45`. Architecture boundary cleanup pushed commit `9f32291`: `PortsContext` ở `src/ports/portsContext.tsx`, query keys ở `src/features/shared/queryKeys.ts`. Chưa merge vào UI branch.
+Status 2026-06-12: integration support utilities implemented/pushed trên `codex/stream-db-rpc` commit `0f71594`: `src/features/integration/uiError.ts`, `dirtyFlow.ts`, `realtimeInvalidation.ts`, `useRealtimeInvalidation.ts` và tests. Adapter hardening/mock parity pushed commit `773ed45`. Architecture boundary cleanup pushed commit `9f32291`: `PortsContext` ở `src/ports/portsContext.tsx`, query keys ở `src/features/shared/queryKeys.ts`. Integration checklist đã có ở `2026-06-12-pos-cafe-integration-checklist.md`. Chưa merge vào UI branch.
 
 Tasks chung:
 
@@ -379,7 +384,7 @@ Tasks:
 - Add loading/error/empty states cho mọi drawer.
 - Add toasts rõ cho conflict, unavailable menu, insufficient cash, clear-demo blocked.
 - Add Vercel deploy config nếu cần.
-- Add Supabase setup checklist:
+- Supabase setup checklist đã có ở `2026-06-12-pos-cafe-supabase-cloud-setup-checklist.md`; khi có project/env thật thì chạy theo checklist:
   - project cloud
   - apply migrations
   - Auth email confirmation off
