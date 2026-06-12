@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ReportFilter } from "@/domain";
-import { usePorts } from "@/app/portsContext";
+import { usePorts } from "@/ports/portsContext";
 import { adminQueryKeys } from "./adminQueryKeys";
 
 export const useAdminEmployeesQuery = () => {

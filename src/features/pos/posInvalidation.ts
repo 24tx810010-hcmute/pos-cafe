@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { posQueryKeys } from "./posQueryKeys";
+import { posQueryKeys } from "@/features/shared/queryKeys";
 
 export const invalidateAfterOrderMutation = async (
   queryClient: QueryClient,

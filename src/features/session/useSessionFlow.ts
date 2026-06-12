@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreateStoreInput, Employee } from "@/domain";
 import { AppError } from "@/core/appError";
-import { usePorts } from "@/app/portsContext";
+import { usePorts } from "@/ports/portsContext";
 import { useAppStore } from "@/app/useAppStore";
 import {
   createStoreForSession,

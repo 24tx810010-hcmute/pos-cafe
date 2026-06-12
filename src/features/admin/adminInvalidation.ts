@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { posQueryKeys } from "@/features/pos/posQueryKeys";
+import { posQueryKeys } from "@/features/shared/queryKeys";
 import { adminQueryKeys } from "./adminQueryKeys";
 
 export const invalidateAfterEmployeeMutation = async (queryClient: QueryClient): Promise<void> => {

@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { invalidateAfterOrderMutation } from "./posInvalidation";
-import { posQueryKeys } from "./posQueryKeys";
+import { posQueryKeys } from "@/features/shared/queryKeys";
 
 describe("posInvalidation", () => {
   it("invalidates every server-state surface affected by an order mutation", async () => {

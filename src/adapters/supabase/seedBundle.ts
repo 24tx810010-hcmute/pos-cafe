@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FloorDecorItem, FloorTable, MenuItem, OptionGroup, OptionValue } from "@/domain";
 import { AppError } from "@/core/appError";
-import { mockFloorPlan, mockMenuCatalog } from "@/adapters/mock/mockData";
+import { demoFloorPlan, demoMenuCatalog } from "@/seed/demoSeedData";
 import { deterministicUuid } from "./deterministicId";
 import { mapSupabaseError, requireData, throwIfError } from "./errors";
 
@@ -132,13 +132,13 @@ const decorRows = (
 
 export const seedDemoData = async (client: SupabaseAnyClient, storeId: string): Promise<void> => {
   try {
-    const categoryIds = await buildIdMap(storeId, "category", mockMenuCatalog.categories.map((category) => category.id));
-    const itemIds = await buildIdMap(storeId, "menu_item", mockMenuCatalog.menuItems.map((item) => item.id));
-    const groupIds = await buildIdMap(storeId, "option_group", mockMenuCatalog.optionGroups.map((group) => group.id));
-    const valueIds = await buildIdMap(storeId, "option_value", mockMenuCatalog.optionValues.map((value) => value.id));
-    const areaIds = await buildIdMap(storeId, "area", mockFloorPlan.areas.map((area) => area.id));
-    const tableIds = await buildIdMap(storeId, "table", mockFloorPlan.tables.map((table) => table.id));
-    const decorIds = await buildIdMap(storeId, "decor", mockFloorPlan.decorItems.map((decor) => decor.id));
+    const categoryIds = await buildIdMap(storeId, "category", demoMenuCatalog.categories.map((category) => category.id));
+    const itemIds = await buildIdMap(storeId, "menu_item", demoMenuCatalog.menuItems.map((item) => item.id));
+    const groupIds = await buildIdMap(storeId, "option_group", demoMenuCatalog.optionGroups.map((group) => group.id));
+    const valueIds = await buildIdMap(storeId, "option_value", demoMenuCatalog.optionValues.map((value) => value.id));
+    const areaIds = await buildIdMap(storeId, "area", demoFloorPlan.areas.map((area) => area.id));
+    const tableIds = await buildIdMap(storeId, "table", demoFloorPlan.tables.map((table) => table.id));
+    const decorIds = await buildIdMap(storeId, "decor", demoFloorPlan.decorItems.map((decor) => decor.id));
     const cashierId = await deterministicUuid(storeId, seedKey("employee", "cashier"));
     const cashierHash = await hashPin(client, "111111");
 
@@ -157,7 +157,7 @@ export const seedDemoData = async (client: SupabaseAnyClient, storeId: string): 
     await upsertRows(
       client,
       "categories",
-      mockMenuCatalog.categories.map((category) => ({
+      demoMenuCatalog.categories.map((category) => ({
         id: categoryIds[category.id],
         store_id: storeId,
         name: category.name,
@@ -166,13 +166,13 @@ export const seedDemoData = async (client: SupabaseAnyClient, storeId: string): 
       })),
     );
 
-    await upsertRows(client, "menu_items", menuItemRows(storeId, mockMenuCatalog.menuItems, itemIds, categoryIds));
-    await upsertRows(client, "option_groups", optionGroupRows(storeId, mockMenuCatalog.optionGroups, groupIds, itemIds));
-    await upsertRows(client, "option_values", optionValueRows(storeId, mockMenuCatalog.optionValues, valueIds, groupIds));
+    await upsertRows(client, "menu_items", menuItemRows(storeId, demoMenuCatalog.menuItems, itemIds, categoryIds));
+    await upsertRows(client, "option_groups", optionGroupRows(storeId, demoMenuCatalog.optionGroups, groupIds, itemIds));
+    await upsertRows(client, "option_values", optionValueRows(storeId, demoMenuCatalog.optionValues, valueIds, groupIds));
     await upsertRows(
       client,
       "floor_areas",
-      mockFloorPlan.areas.map((area) => ({
+      demoFloorPlan.areas.map((area) => ({
         id: areaIds[area.id],
         store_id: storeId,
         name: area.name,
@@ -180,8 +180,8 @@ export const seedDemoData = async (client: SupabaseAnyClient, storeId: string): 
         seed_key: seedKey("area", area.id),
       })),
     );
-    await upsertRows(client, "tables", tableRows(storeId, mockFloorPlan.tables, tableIds, areaIds));
-    await upsertRows(client, "floor_decor_items", decorRows(storeId, mockFloorPlan.decorItems, decorIds, areaIds));
+    await upsertRows(client, "tables", tableRows(storeId, demoFloorPlan.tables, tableIds, areaIds));
+    await upsertRows(client, "floor_decor_items", decorRows(storeId, demoFloorPlan.decorItems, decorIds, areaIds));
 
     const { error } = await client.from("stores").update({ seed_status: "seeded" }).eq("id", storeId);
     throwIfError(error);

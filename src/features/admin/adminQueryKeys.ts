@@ -1,4 +1,4 @@
-import { posQueryKeys } from "@/features/pos/posQueryKeys";
+import { posQueryKeys } from "@/features/shared/queryKeys";
 
 export const adminQueryKeys = {
   employees: ["admin", "employees"] as const,

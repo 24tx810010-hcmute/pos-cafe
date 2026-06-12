@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { usePorts } from "@/app/portsContext";
+import { usePorts } from "@/ports/portsContext";
 import { startRealtimeInvalidation } from "./realtimeInvalidation";
 
 export const useRealtimeInvalidation = (storeId: string | null | undefined): void => {

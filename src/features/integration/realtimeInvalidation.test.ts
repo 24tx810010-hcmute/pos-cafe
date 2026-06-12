@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { createMockPorts } from "@/adapters/mock";
-import { posQueryKeys } from "@/features/pos/posQueryKeys";
+import { posQueryKeys } from "@/features/shared/queryKeys";
 import {
   createRealtimeInvalidationInput,
   startRealtimeInvalidation,

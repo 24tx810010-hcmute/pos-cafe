@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { OrderHistoryFilter, ReportFilter } from "@/domain";
-import { usePorts } from "@/app/portsContext";
-import { posQueryKeys } from "./posQueryKeys";
+import { posQueryKeys } from "@/features/shared/queryKeys";
+import { usePorts } from "@/ports/portsContext";
 
 export const useMenuQuery = () => {
   const ports = usePorts();
