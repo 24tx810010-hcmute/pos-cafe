@@ -2,7 +2,7 @@
 
 > **Vai trò:** file handoff để chia nhiều session/agent code song song sau milestone code foundation.
 > **Base hiện tại:** code worktree `D:\Workspace\pos-cafe-code`, branch `codex/code-foundation`.
-> **Logic branch đang tích lũy:** `codex/stream-db-rpc` đã chứa DB/RPC, adapters, session flow, POS/admin hooks và integration support; chưa merge vào `codex/code-foundation` vì UI branch đang làm từ base đó.
+> **Logic branch đang tích lũy:** `codex/stream-db-rpc` đã chứa DB/RPC, adapters, session flow, POS/admin hooks, integration support và adapter/mock hardening; chưa merge vào `codex/code-foundation` vì UI branch đang làm từ base đó.
 > **Nguyên tắc:** mỗi coding session đọc `WORKTREE-HANDOFF.md` trước, rồi đọc `pos-cafe-context.md`, implementation contract, và file này trước khi code.
 
 ---
@@ -24,6 +24,7 @@
 - POS order/payment flow hooks đã có.
 - Admin flow hooks cho employees/menu/floor/settings/clear-demo/report query đã có.
 - Integration support utilities đã có: UI error mapper, dirty/save helper, realtime invalidation hook.
+- Adapter hardening/mock parity đã có: Supabase RPC param-shape tests, menu/floor changeset mapping tests, mock takeaway open order, mock paid history/report, unavailable menu/option errors, mock menu/floor save changeset behavior.
 - Test nền:
   - `npm run build`
   - `npm run test`
@@ -143,7 +144,7 @@ Done khi:
 
 ### Session B — Supabase Adapter Track
 
-Status 2026-06-11: implemented trên code branch ở mức foundation. Đã có `src/adapters/supabase/*`, `createSupabasePorts`, Store Key auth adapter, row/RPC mappers, deterministic seed bundle, realtime invalidation, tests nền. `npm run build` và `npm run test` pass.
+Status 2026-06-12: implemented trên code branch ở mức foundation + hardening. Đã có `src/adapters/supabase/*`, `createSupabasePorts`, Store Key auth adapter, row/RPC mappers, deterministic seed bundle, realtime invalidation, tests nền và adapter param-shape tests cho `submit_order_changes`/`pay_order`/`clear_demo_data` + menu/floor changeset mapping. `npm run build`, `npm run test`, `npm run smoke` pass.
 
 Ownership:
 
@@ -224,6 +225,7 @@ Done khi:
 ### Session D — POS Order/Payment Track
 
 Status 2026-06-12: logic foundation implemented/pushed trên `codex/stream-db-rpc`. Đã có `src/features/pos/*`: order draft/cart helpers, submit/pay services qua `AppPorts`, TanStack Query hooks, invalidation và tests. Chưa bind vào UI thật.
+Mock parity 2026-06-12: mock repos đã có takeaway open order, paid history/report state và unavailable menu/option errors để UI test flow trước khi Supabase thật.
 
 Ownership:
 
@@ -267,6 +269,7 @@ Done khi:
 ### Session E — Menu/Floor Editor Track
 
 Status 2026-06-12: UI/editor thật chưa implement trong logic branch. Admin support đã có helper tạo empty changeset/dirty check và mutation hooks gọi `menu.saveMenuChanges`/`floorPlan.saveFloorPlan`, nhưng editor draft UI/changset builder vẫn thuộc UI/integration phase sau.
+Mock parity 2026-06-12: mock `saveMenuChanges` và `saveFloorPlan` đã apply changeset trong memory; floor-plan mock save giữ nguyên `tables.status`.
 
 Ownership:
 
@@ -346,7 +349,7 @@ Done khi:
 
 Mục tiêu: nối UI với Supabase adapters thật sau khi RPC và adapters ổn.
 
-Status 2026-06-12: integration support utilities implemented/pushed trên `codex/stream-db-rpc` commit `0f71594`: `src/features/integration/uiError.ts`, `dirtyFlow.ts`, `realtimeInvalidation.ts`, `useRealtimeInvalidation.ts` và tests. Chưa merge vào UI branch.
+Status 2026-06-12: integration support utilities implemented/pushed trên `codex/stream-db-rpc` commit `0f71594`: `src/features/integration/uiError.ts`, `dirtyFlow.ts`, `realtimeInvalidation.ts`, `useRealtimeInvalidation.ts` và tests. Adapter hardening/mock parity pushed commit `773ed45`. Chưa merge vào UI branch.
 
 Tasks chung:
 
