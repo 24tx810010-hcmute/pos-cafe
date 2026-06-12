@@ -59,7 +59,7 @@ import type {
 import { canAccessModule, type AppModule } from "@/core/guards";
 import { formatCompactVnd, formatVnd } from "@/core/money";
 import { isAppError } from "@/core/appError";
-import { usePorts } from "./portsContext";
+import { usePorts } from "@/ports/portsContext";
 import { useAppStore, type DrawerModule } from "./useAppStore";
 
 const logicalStage = { width: 1600, height: 900 };

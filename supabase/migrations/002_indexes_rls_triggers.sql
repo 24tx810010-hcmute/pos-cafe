@@ -51,15 +51,23 @@ create trigger payments_set_updated_at before update on public.payments
 for each row execute function public.set_updated_at();
 
 create index employees_store_active_idx on public.employees (store_id, is_active);
+create unique index employees_store_seed_key_idx on public.employees (store_id, seed_key) where seed_key is not null;
 create index categories_store_active_idx on public.categories (store_id, sort_order) where deleted_at is null;
+create unique index categories_store_seed_key_idx on public.categories (store_id, seed_key) where seed_key is not null;
 create index menu_items_store_category_active_idx on public.menu_items (store_id, category_id, sort_order) where deleted_at is null;
+create unique index menu_items_store_seed_key_idx on public.menu_items (store_id, seed_key) where seed_key is not null;
 create index option_groups_store_item_active_idx on public.option_groups (store_id, menu_item_id, sort_order) where deleted_at is null;
+create unique index option_groups_store_seed_key_idx on public.option_groups (store_id, seed_key) where seed_key is not null;
 create index option_values_store_group_active_idx on public.option_values (store_id, option_group_id, sort_order) where deleted_at is null;
+create unique index option_values_store_seed_key_idx on public.option_values (store_id, seed_key) where seed_key is not null;
 create index floor_areas_store_active_idx on public.floor_areas (store_id, sort_order) where deleted_at is null;
+create unique index floor_areas_store_seed_key_idx on public.floor_areas (store_id, seed_key) where seed_key is not null;
 create index tables_store_area_active_idx on public.tables (store_id, area_id, sort_order) where deleted_at is null;
+create unique index tables_store_seed_key_idx on public.tables (store_id, seed_key) where seed_key is not null;
 create index floor_decor_items_store_area_active_idx on public.floor_decor_items (store_id, area_id, z_index) where deleted_at is null;
+create unique index floor_decor_items_store_seed_key_idx on public.floor_decor_items (store_id, seed_key) where seed_key is not null;
 create index orders_store_status_idx on public.orders (store_id, status, business_date desc);
-create index orders_store_table_open_idx on public.orders (store_id, table_id) where status = 'open';
+create unique index orders_store_table_open_idx on public.orders (store_id, table_id) where status = 'open' and table_id is not null;
 create index order_items_store_order_idx on public.order_items (store_id, order_id, sort_order);
 create index payments_store_paid_at_idx on public.payments (store_id, paid_at desc);
 

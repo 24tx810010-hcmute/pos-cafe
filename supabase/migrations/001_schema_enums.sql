@@ -1,4 +1,5 @@
-create extension if not exists pgcrypto;
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
 
 create sequence if not exists public.store_no_seq;
 
@@ -32,6 +33,7 @@ create table public.employees (
   role public.employee_role not null,
   passcode_hash text not null,
   is_active boolean not null default true,
+  seed_key text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (store_id, id)
@@ -55,6 +57,7 @@ create table public.categories (
   store_id uuid not null references public.stores (id) on delete cascade,
   name text not null,
   sort_order integer not null default 0,
+  seed_key text,
   deleted_at timestamptz,
   deleted_by_employee_id uuid,
   created_at timestamptz not null default now(),
@@ -72,6 +75,7 @@ create table public.menu_items (
   image_asset_key text,
   sort_order integer not null default 0,
   is_available boolean not null default true,
+  seed_key text,
   deleted_at timestamptz,
   deleted_by_employee_id uuid,
   created_at timestamptz not null default now(),
@@ -91,6 +95,7 @@ create table public.option_groups (
   min_select integer not null default 0,
   max_select integer not null default 1,
   sort_order integer not null default 0,
+  seed_key text,
   deleted_at timestamptz,
   deleted_by_employee_id uuid,
   created_at timestamptz not null default now(),
@@ -108,6 +113,7 @@ create table public.option_values (
   name text not null,
   price_delta integer not null default 0,
   sort_order integer not null default 0,
+  seed_key text,
   deleted_at timestamptz,
   deleted_by_employee_id uuid,
   created_at timestamptz not null default now(),
@@ -122,6 +128,7 @@ create table public.floor_areas (
   store_id uuid not null references public.stores (id) on delete cascade,
   name text not null,
   sort_order integer not null default 0,
+  seed_key text,
   deleted_at timestamptz,
   deleted_by_employee_id uuid,
   created_at timestamptz not null default now(),
@@ -144,6 +151,7 @@ create table public.tables (
   seats integer not null default 2,
   sort_order integer not null default 0,
   status public.table_status not null default 'empty',
+  seed_key text,
   deleted_at timestamptz,
   deleted_by_employee_id uuid,
   created_at timestamptz not null default now(),
@@ -167,6 +175,7 @@ create table public.floor_decor_items (
   rotation integer not null default 0,
   z_index integer not null default 0,
   is_locked boolean not null default false,
+  seed_key text,
   deleted_at timestamptz,
   deleted_by_employee_id uuid,
   created_at timestamptz not null default now(),
