@@ -3,7 +3,7 @@
 > Ngày chốt: 2026-06-11
 > Vai trò: hướng dẫn nối UI thật với core/ports/adapters sau giai đoạn UI mock.
 > Không phải spec cho UI mock-only agent; UI mock package vẫn nằm ở `docs/superpowers/ui-screens/`.
-> Trạng thái 2026-06-13: branch `codex/ui-logic-integration` đã có UI checkpoint + logic adapters merge sẵn; dùng file này cho phase bind UI thật và Supabase-mode E2E.
+> Trạng thái 2026-06-13: branch `codex/ui-logic-integration` đã có UI checkpoint + logic adapters merge sẵn. Binding nền UI thật đã push ở commit `47f17f6`; dùng file này cho phần binding còn lại và Supabase-mode E2E.
 
 ## 1. Preflight cho agent implement
 
@@ -13,6 +13,14 @@
 - Nhánh đúng mặc định là branch code hiện tại được user chỉ định, thường tách từ `codex/code-foundation` hoặc branch đã chứa DB/RPC foundation.
 - Nếu sai nhánh và worktree sạch, switch về nhánh đúng giúp user. Nếu có thay đổi chưa commit, dừng và báo user; không discard.
 - Không commit/push nếu user chưa yêu cầu rõ.
+
+Status implementation 2026-06-13:
+
+- Đã bind nền `App.tsx` qua feature hooks/AppPorts: session bootstrap, pairing/create store, passcode, realtime invalidation, POS floor, takeaway, order drawer, payment drawer, settings và clear-demo.
+- `App.tsx` không còn gọi `usePorts()`/`ports.*` trực tiếp; UI không import Supabase client hay gọi RPC trực tiếp.
+- Mock runtime mặc định bắt đầu ở trạng thái unpaired để đi đúng flow landing -> pairing/create -> passcode.
+- Validation đã pass trên code branch: `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `npm run test` (16 files/60 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep.
+- Còn lại: bind mutation thật cho employees/menu/floor editor changesets, polish report/history binding, rồi chạy Supabase-mode UI E2E với Store Key/test account rõ ràng.
 
 ## 2. Boundary bắt buộc
 

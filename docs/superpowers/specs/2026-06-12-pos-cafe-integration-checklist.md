@@ -1,7 +1,7 @@
 # POS Cafe Integration Checklist
 
 > Vai trò: checklist cho phase nối nhánh UI với nhánh logic/adapters. File này dùng sau khi UI mock/production component split đã ổn, không dùng để merge trực tiếp vào `codex/code-foundation`.
-> Trạng thái 2026-06-13: UI checkpoint `codex/code-foundation` đã push tới `6009b47`; branch tích hợp `codex/ui-logic-integration` đã merge `codex/stream-db-rpc` và push merge commit `1c420d9`.
+> Trạng thái 2026-06-13: UI checkpoint `codex/code-foundation` đã push tới `6009b47`; branch tích hợp `codex/ui-logic-integration` đã merge `codex/stream-db-rpc`, push merge commit `1c420d9`, rồi push binding nền UI thật ở commit `47f17f6`.
 
 ---
 
@@ -18,7 +18,9 @@ Status 2026-06-13:
 - Đã merge `codex/stream-db-rpc` vào integration branch bằng merge commit `1c420d9`.
 - Đã push `origin/codex/ui-logic-integration`.
 - Validation đã pass: `npm run build`, `npm run test` (16 files/60 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, scan conflict marker/import `portsContext` cũ.
-- Việc còn lại của phase này: bind UI thật từng module theo bảng §5 và chạy Supabase-mode UI E2E.
+- Binding nền UI thật đã push commit `47f17f6`: session bootstrap/pair/create/passcode, realtime invalidation, POS floor/takeaway/order/payment/settings/clear-demo dùng feature hooks/AppPorts; `App.tsx` không còn gọi `usePorts()` trực tiếp; mock session mặc định unpaired.
+- Validation sau binding nền đã pass: `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `npm run test` (16 files/60 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep Supabase/UI.
+- Việc còn lại của phase này: bind employees/menu/floor editor mutations thật, polish report/history binding, rồi chạy Supabase-mode UI E2E có Store Key/test account rõ ràng.
 
 ---
 

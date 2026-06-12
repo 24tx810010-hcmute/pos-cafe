@@ -361,9 +361,11 @@ Status 2026-06-12: integration support utilities implemented/pushed trên `codex
 
 Status 2026-06-13: UI checkpoint `codex/code-foundation` đã push spacing fix `6009b47`. Đã tạo/push branch tích hợp `codex/ui-logic-integration`, merge `codex/stream-db-rpc` vào UI checkpoint bằng merge commit `1c420d9`. Validation sau merge pass: `npm run build`, `npm run test` (16 files/60 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, scan conflict marker/import cũ. Chưa merge ngược integration vào `codex/code-foundation` hoặc main; bước kế tiếp là bind UI thật + Supabase-mode UI E2E.
 
+Status 2026-06-13b: binding nền UI thật đã push trên `codex/ui-logic-integration` commit `47f17f6`. Đã nối session bootstrap, pairing/create store, passcode, realtime invalidation, POS floor, takeaway, order drawer, payment drawer, settings và clear-demo qua feature hooks/AppPorts; `App.tsx` không còn gọi `usePorts()` trực tiếp và không có Supabase boundary leak trong UI/features. Validation pass: `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `npm run test` (16 files/60 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep. Chưa merge ngược vào `codex/code-foundation`; phần còn lại là admin editor changesets, report/history polish và Supabase-mode UI E2E.
+
 Tasks chung:
 
-- Thay mock ports bằng runtime switch:
+- Duy trì runtime switch:
   - mock mode cho dev/demo offline UI
   - Supabase mode khi env có URL/key
 - Tích hợp Realtime invalidation:
