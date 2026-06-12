@@ -33,6 +33,7 @@ export interface IAuthRepo {
 }
 
 export interface IEmployeeRepo {
+  listEmployees(): Promise<Employee[]>;
   listActiveEmployees(): Promise<Employee[]>;
   verifyPin(employeeId: string, pin: string): Promise<Employee>;
   createEmployee(input: EmployeeInput): Promise<Employee>;

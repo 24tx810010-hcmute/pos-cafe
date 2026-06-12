@@ -3,6 +3,25 @@ import type { FloorPlanChanges, MenuChanges } from "@/domain";
 import { createMockPorts, createMockState } from "./mockRepos";
 
 describe("mock repositories", () => {
+  it("keeps inactive employees visible to admin list but hidden from passcode list", async () => {
+    const ports = createMockPorts();
+
+    await ports.employee.updateEmployee({ id: "emp-cashier-1", isActive: false });
+
+    await expect(ports.employee.listEmployees()).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "emp-cashier-1", isActive: false }),
+      ]),
+    );
+    await expect(ports.employee.listActiveEmployees()).resolves.not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "emp-cashier-1" }),
+      ]),
+    );
+    await expect(ports.employee.verifyPin("missing", "0000")).rejects.toMatchObject({ code: "INVALID_PIN" });
+    await expect(ports.employee.resetPin("missing", "0000")).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
   it("submits open order changes with expected lock version and rejects stale version", async () => {
     const ports = createMockPorts();
     const order = await ports.order.getOrder("ord-b02");

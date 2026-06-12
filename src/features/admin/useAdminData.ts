@@ -3,11 +3,12 @@ import type { ReportFilter } from "@/domain";
 import { usePorts } from "@/ports/portsContext";
 import { adminQueryKeys } from "./adminQueryKeys";
 
-export const useAdminEmployeesQuery = () => {
+export const useAdminEmployeesQuery = (enabled = true) => {
   const ports = usePorts();
   return useQuery({
     queryKey: adminQueryKeys.employees,
-    queryFn: () => ports.employee.listActiveEmployees(),
+    queryFn: () => ports.employee.listEmployees(),
+    enabled,
   });
 };
 

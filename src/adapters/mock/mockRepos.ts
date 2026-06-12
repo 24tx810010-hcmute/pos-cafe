@@ -155,6 +155,10 @@ class MockAuthRepo implements IAuthRepo {
 class MockEmployeeRepo implements IEmployeeRepo {
   constructor(private readonly state: MockState) {}
 
+  async listEmployees(): Promise<Employee[]> {
+    return clone(this.state.employees);
+  }
+
   async listActiveEmployees(): Promise<Employee[]> {
     return clone(this.state.employees.filter((employee) => employee.isActive));
   }
@@ -188,6 +192,12 @@ class MockEmployeeRepo implements IEmployeeRepo {
   }
 
   async resetPin(employeeId: string, newPin: string): Promise<void> {
+    const employee = this.state.employees.find((candidate) => candidate.id === employeeId);
+
+    if (!employee) {
+      throw new AppError("NOT_FOUND", "Không tìm thấy nhân viên.");
+    }
+
     this.state.pins[employeeId] = newPin;
   }
 }

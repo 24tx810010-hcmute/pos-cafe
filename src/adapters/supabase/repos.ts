@@ -282,6 +282,15 @@ class SupabaseAuthRepo implements IAuthRepo {
 class SupabaseEmployeeRepo implements IEmployeeRepo {
   constructor(private readonly client: SupabaseAnyClient) {}
 
+  async listEmployees(): Promise<Employee[]> {
+    const { data, error } = await this.client
+      .from("employees")
+      .select("id,name,role,is_active")
+      .order("name");
+    throwIfError(error);
+    return ((data ?? []) as Row[]).map(mapEmployee);
+  }
+
   async listActiveEmployees(): Promise<Employee[]> {
     const { data, error } = await this.client
       .from("employees")

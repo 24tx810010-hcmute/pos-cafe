@@ -43,6 +43,7 @@ import toast from "react-hot-toast";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
 import type {
   DecorKind,
+  Employee,
   EmployeeRole,
   FloorPlan,
   FloorTable,
@@ -70,9 +71,13 @@ import {
 } from "@/features/pos";
 import {
   useAdminFloorPlanQuery,
+  useAdminEmployeesQuery,
   useAdminMenuQuery,
   useClearDemoDataMutation,
+  useCreateEmployeeMutation,
+  useResetPinMutation,
   useStoreSettingsQuery,
+  useUpdateEmployeeMutation,
   useUpdateSettingsMutation,
 } from "@/features/admin";
 import {
@@ -1332,13 +1337,9 @@ function OrderHistoryStubDrawer() {
 
 type EmpFilter = "all" | EmployeeRole | "inactive";
 
-interface EmployeeRecord {
-  id: string;
-  name: string;
-  role: EmployeeRole;
-  isActive: boolean;
+type EmployeeRecord = Employee & {
   lastUnlock: string | null;
-}
+};
 
 interface EmpForm {
   name: string;
@@ -1352,12 +1353,17 @@ const EMP_ROLE_LABEL: Record<EmployeeRole, string> = { admin: "Admin", cashier: 
 const EMP_ROLE_ORDER: EmployeeRole[] = ["admin", "cashier", "kitchen"];
 const EMPTY_EMP_FORM: EmpForm = { name: "", role: "cashier", isActive: true, newPin: "", confirmPin: "" };
 
-const INITIAL_EMPLOYEES: EmployeeRecord[] = [
-  { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true, lastUnlock: "Hôm nay · 07:45" },
-  { id: "emp-cashier-1", name: "Thu ngân 1", role: "cashier", isActive: true, lastUnlock: "Hôm nay · 08:02" },
-  { id: "emp-cashier-2", name: "Thu ngân 2", role: "cashier", isActive: true, lastUnlock: "Hôm qua · 21:10" },
-  { id: "emp-kitchen", name: "Bếp", role: "kitchen", isActive: false, lastUnlock: "3 ngày trước" },
-];
+const createEmployeeId = (): string => {
+  const uuid = globalThis.crypto?.randomUUID?.();
+  if (uuid) return uuid;
+  const suffix = Date.now().toString().padStart(12, "0").slice(-12);
+  return `00000000-0000-4000-8000-${suffix}`;
+};
+
+const toEmployeeRecord = (employee: Employee): EmployeeRecord => ({
+  ...employee,
+  lastUnlock: null,
+});
 
 function empInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -1371,7 +1377,10 @@ function EmployeesDrawer() {
   const currentEmployee = useAppStore((state) => state.currentEmployee);
   const allowed = canAccessModule(currentEmployee, "employees");
 
-  const [employees, setEmployees] = useState<EmployeeRecord[]>(INITIAL_EMPLOYEES);
+  const employeesQuery = useAdminEmployeesQuery(allowed);
+  const createEmployeeMutation = useCreateEmployeeMutation(currentEmployee);
+  const updateEmployeeMutation = useUpdateEmployeeMutation(currentEmployee);
+  const resetPinMutation = useResetPinMutation(currentEmployee);
   const [filter, setFilter] = useState<EmpFilter>("all");
   const [selectedId, setSelectedId] = useState<string | "new" | null>(null);
   const [form, setForm] = useState<EmpForm>(EMPTY_EMP_FORM);
@@ -1379,6 +1388,14 @@ function EmployeesDrawer() {
   const [discardTarget, setDiscardTarget] = useState<{ target: string | "new" | null } | null>(null);
   const [pinResetTarget, setPinResetTarget] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const employees = useMemo(
+    () => (employeesQuery.data ?? []).map(toEmployeeRecord),
+    [employeesQuery.data],
+  );
+  const isSaving =
+    createEmployeeMutation.isPending ||
+    updateEmployeeMutation.isPending ||
+    resetPinMutation.isPending;
 
   const selectedRecord =
     typeof selectedId === "string" && selectedId !== "new"
@@ -1444,14 +1461,37 @@ function EmployeesDrawer() {
     { key: "kitchen", label: "Bếp" },
     { key: "inactive", label: "Tạm khoá" },
   ];
+  const employeeStatusText = employeesQuery.isLoading
+    ? "Đang tải nhân viên"
+    : employeesQuery.isError
+    ? "Lỗi tải nhân viên"
+    : `${employees.length} nhân viên · online`;
+  const pinResetEmployee = pinResetTarget ? employees.find((e) => e.id === pinResetTarget) : null;
 
   const toggleActive = (id: string) => {
     const target = employees.find((e) => e.id === id);
     if (!target) return;
+    if (isSaving) return;
+    if (isDirty) {
+      toast.error("Lưu hoặc bỏ thay đổi hiện tại trước khi đổi trạng thái.");
+      return;
+    }
     const nextActive = !target.isActive;
-    setEmployees((list) => list.map((e) => (e.id === id ? { ...e, isActive: nextActive } : e)));
-    if (selectedId === id) setForm((f) => ({ ...f, isActive: nextActive }));
-    toast.success(nextActive ? "Đã mở khoá nhân viên (mock)" : "Đã tạm khoá nhân viên (mock)");
+    if (!nextActive && currentEmployee?.id === id) {
+      toast.error("Không thể tạm khoá tài khoản đang đăng nhập.");
+      return;
+    }
+
+    updateEmployeeMutation.mutate(
+      { employee: { id, isActive: nextActive } },
+      {
+        onSuccess: (updated) => {
+          if (selectedId === id) setForm((f) => ({ ...f, isActive: updated.isActive }));
+          toast.success(nextActive ? "Đã mở khoá nhân viên" : "Đã tạm khoá nhân viên");
+        },
+        onError: (error) => toast.error(toToastError(error)),
+      },
+    );
   };
 
   const validate = (): boolean => {
@@ -1466,24 +1506,63 @@ function EmployeesDrawer() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
-    if (selectedId === "new") {
-      const id = `emp-${Date.now()}`;
-      const rec: EmployeeRecord = { id, name: form.name.trim(), role: form.role, isActive: form.isActive, lastUnlock: null };
-      setEmployees((list) => [...list, rec]);
-      setSelectedId(id);
-      setForm({ name: rec.name, role: rec.role, isActive: rec.isActive, newPin: "", confirmPin: "" });
-    } else if (selectedRecord) {
-      setEmployees((list) =>
-        list.map((e) =>
-          e.id === selectedRecord.id ? { ...e, name: form.name.trim(), role: form.role, isActive: form.isActive } : e,
-        ),
-      );
-      setForm((f) => ({ ...f, newPin: "", confirmPin: "" }));
+    if (isSaving) return;
+    if (selectedRecord && currentEmployee?.id === selectedRecord.id && !form.isActive) {
+      toast.error("Không thể tạm khoá tài khoản đang đăng nhập.");
+      return;
     }
-    setErrors({});
-    toast.success("Đã lưu nhân viên (mock)");
+
+    try {
+      if (selectedId === "new") {
+        const created = await createEmployeeMutation.mutateAsync({
+          employee: {
+            id: createEmployeeId(),
+            name: form.name.trim(),
+            role: form.role,
+            pin: form.newPin,
+          },
+        });
+        const finalEmployee = form.isActive
+          ? created
+          : await updateEmployeeMutation.mutateAsync({ employee: { id: created.id, isActive: false } });
+
+        setSelectedId(finalEmployee.id);
+        setForm({
+          name: finalEmployee.name,
+          role: finalEmployee.role,
+          isActive: finalEmployee.isActive,
+          newPin: "",
+          confirmPin: "",
+        });
+        toast.success("Đã tạo nhân viên");
+      } else if (selectedRecord) {
+        const shouldResetPin = form.newPin !== "";
+        const updated = await updateEmployeeMutation.mutateAsync({
+          employee: {
+            id: selectedRecord.id,
+            name: form.name.trim(),
+            role: form.role,
+            isActive: form.isActive,
+          },
+        });
+        if (shouldResetPin) {
+          await resetPinMutation.mutateAsync({ employeeId: selectedRecord.id, newPin: form.newPin });
+        }
+        setForm({
+          name: updated.name,
+          role: updated.role,
+          isActive: updated.isActive,
+          newPin: "",
+          confirmPin: "",
+        });
+        toast.success(shouldResetPin ? "Đã lưu nhân viên và đặt lại PIN" : "Đã lưu nhân viên");
+      }
+      setErrors({});
+    } catch (error) {
+      toast.error(toToastError(error));
+    }
   };
 
   if (!allowed) {
@@ -1510,7 +1589,7 @@ function EmployeesDrawer() {
       <header className="drawer-header">
         <div className="title-stack">
           <h2>Quản lý nhân viên</h2>
-          <p><span className="sync-dot" />{employees.length} nhân viên · mock</p>
+          <p><span className="sync-dot" />{employeeStatusText}</p>
         </div>
         <div className="header-actions">
           <Button
@@ -1518,6 +1597,7 @@ function EmployeesDrawer() {
             startIcon={<UserPlus size={16} />}
             data-testid="add-employee-button"
             onClick={() => requestSelect("new")}
+            disabled={isSaving}
           >
             Thêm nhân viên
           </Button>
@@ -1553,7 +1633,17 @@ function EmployeesDrawer() {
               <span className="muted">{filtered.length} người</span>
             </div>
             <div className="pane-scroll">
-              {filtered.length === 0 ? (
+              {employeesQuery.isLoading ? (
+                <div className="tw-empty-state">
+                  <Users size={32} color="#94a3b8" />
+                  <p>Đang tải nhân viên...</p>
+                </div>
+              ) : employeesQuery.isError ? (
+                <div className="tw-empty-state">
+                  <AlertTriangle size={32} color="#b45309" />
+                  <p>{toToastError(employeesQuery.error)}</p>
+                </div>
+              ) : filtered.length === 0 ? (
                 <div className="tw-empty-state">
                   <Users size={32} color="#94a3b8" />
                   <p>Chưa có nhân viên.</p>
@@ -1582,12 +1672,18 @@ function EmployeesDrawer() {
                         <button className="emp-action-btn" title="Sửa" onClick={() => requestSelect(emp.id)}>
                           <Pencil size={15} />
                         </button>
-                        <button className="emp-action-btn" title="Đặt lại PIN" onClick={() => setPinResetTarget(emp.id)}>
+                        <button
+                          className="emp-action-btn"
+                          title="Đặt lại PIN"
+                          disabled={isSaving}
+                          onClick={() => setPinResetTarget(emp.id)}
+                        >
                           <KeyRound size={15} />
                         </button>
                         <button
                           className="emp-action-btn"
                           title={emp.isActive ? "Tạm khoá" : "Mở khoá"}
+                          disabled={isSaving}
                           onClick={() => toggleActive(emp.id)}
                         >
                           {emp.isActive ? <Lock size={15} /> : <Unlock size={15} />}
@@ -1645,12 +1741,14 @@ function EmployeesDrawer() {
                     <div className="emp-segment">
                       <button
                         className={`emp-segment-btn${form.isActive ? " active" : ""}`}
+                        data-testid="employee-active-button"
                         onClick={() => setForm((f) => ({ ...f, isActive: true }))}
                       >
                         Đang hoạt động
                       </button>
                       <button
                         className={`emp-segment-btn${form.isActive ? "" : " active danger"}`}
+                        data-testid="employee-inactive-button"
                         onClick={() => setForm((f) => ({ ...f, isActive: false }))}
                       >
                         Tạm khoá
@@ -1695,9 +1793,10 @@ function EmployeesDrawer() {
                   fullWidth
                   startIcon={<Save size={15} />}
                   data-testid="save-employee-button"
+                  disabled={isSaving}
                   onClick={handleSave}
                 >
-                  Lưu nhân viên
+                  {isSaving ? "Đang lưu..." : "Lưu nhân viên"}
                 </Button>
               </div>
             )}
@@ -1731,20 +1830,22 @@ function EmployeesDrawer() {
       {pinResetTarget && (
         <div className="confirm-overlay" onClick={() => setPinResetTarget(null)}>
           <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
-            <h3>Đặt lại PIN?</h3>
+            <h3>Đặt lại PIN</h3>
             <p>
-              Gửi yêu cầu đặt lại PIN cho {employees.find((e) => e.id === pinResetTarget)?.name}. Đây là thao tác mock.
+              Mở form chi tiết của {pinResetEmployee?.name ?? "nhân viên"} rồi nhập PIN mới. PIN chỉ được lưu khi bấm Lưu nhân viên.
             </p>
             <div className="confirm-actions">
               <Button variant="outlined" onClick={() => setPinResetTarget(null)}>Huỷ</Button>
               <Button
                 variant="contained"
                 onClick={() => {
+                  const target = pinResetTarget;
                   setPinResetTarget(null);
-                  toast.success("Đã gửi yêu cầu đặt lại PIN (mock)");
+                  requestSelect(target);
+                  toast.success("Nhập PIN mới trong form chi tiết rồi bấm Lưu.");
                 }}
               >
-                Đặt lại PIN
+                Mở form
               </Button>
             </div>
           </div>

@@ -86,11 +86,16 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await expect(page.getByTestId("pay-qr-preview")).toBeVisible();
 
   await page.locator(".rail-action").filter({ hasText: "Cài đặt" }).click();
-  await expect(page.getByTestId("settings-drawer")).toBeVisible();
+  const settingsDrawer = page.getByTestId("settings-drawer");
+  await expect(settingsDrawer).toBeVisible();
   await expect(page.getByTestId("save-settings-button")).toBeVisible();
-  const settingsNavTab = page.locator(".menu-tab-btn", { hasText: "Mục" });
-  if (await settingsNavTab.isVisible()) await settingsNavTab.click();
-  await page.getByTestId("settings-drawer").getByRole("button", { name: "Demo", exact: true }).click();
+  const settingsNavTab = settingsDrawer.getByRole("button", { name: "Mục", exact: true });
+  if ((page.viewportSize()?.width ?? 9999) <= 900) {
+    await expect(settingsNavTab).toBeVisible();
+    await settingsNavTab.click();
+  }
+  await expect(settingsDrawer.getByRole("button", { name: "Demo", exact: true })).toBeVisible();
+  await settingsDrawer.getByRole("button", { name: "Demo", exact: true }).click();
   await page.getByTestId("open-clear-demo").click();
   await expect(page.getByTestId("clear-demo-dialog")).toBeVisible();
   expect(page.url()).toBe(initialUrl);

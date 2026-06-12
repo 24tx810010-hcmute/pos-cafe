@@ -80,7 +80,35 @@ const createMutationClient = () => {
   return { client, calls };
 };
 
+const createEmployeeQueryClient = () => {
+  const data = [{ id: "emp-cashier-1", name: "Thu ngân", role: "cashier", is_active: false }];
+  const order = vi.fn(async () => ({ data, error: null }));
+  const eq = vi.fn(() => ({ order }));
+  const select = vi.fn(() => ({ eq, order }));
+  const client = {
+    from: vi.fn(() => ({ select })),
+  };
+
+  return { client, select, eq, order };
+};
+
 describe("Supabase adapter ports", () => {
+  it("uses separate employee list queries for admin and active passcode views", async () => {
+    const { client, select, eq, order } = createEmployeeQueryClient();
+    const ports = createSupabasePorts(client as never);
+
+    await expect(ports.employee.listEmployees()).resolves.toEqual([
+      expect.objectContaining({ id: "emp-cashier-1", isActive: false }),
+    ]);
+    expect(client.from).toHaveBeenCalledWith("employees");
+    expect(select).toHaveBeenCalledWith("id,name,role,is_active");
+    expect(eq).not.toHaveBeenCalled();
+
+    await ports.employee.listActiveEmployees();
+    expect(eq).toHaveBeenCalledWith("is_active", true);
+    expect(order).toHaveBeenCalledWith("name");
+  });
+
   it("maps submitOrderChanges camelCase input to submit_order_changes RPC params", async () => {
     const client = createRpcClient({ submit_order_changes: submitResult });
     const ports = createSupabasePorts(client as never);
