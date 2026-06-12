@@ -10,12 +10,12 @@ import {
 } from "./sessionFlow";
 
 describe("sessionFlow", () => {
-  it("loads paired session from auth repo", async () => {
+  it("loads unpaired session by default from auth repo", async () => {
     const ports = createMockPorts();
 
     await expect(loadStoreSession(ports)).resolves.toEqual({
-      status: "paired",
-      session: { storeId: "store-demo-001", storeNo: 1 },
+      status: "unpaired",
+      session: null,
     });
   });
 

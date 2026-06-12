@@ -84,7 +84,7 @@ export type MockState = {
 };
 
 export const createMockState = (): MockState => ({
-  session: { storeId: mockStoreId, storeNo: 1 },
+  session: null,
   employees: clone(mockEmployees),
   pins: clone(mockPins),
   menu: clone(mockMenuCatalog),

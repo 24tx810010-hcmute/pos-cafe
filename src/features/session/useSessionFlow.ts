@@ -26,6 +26,15 @@ export const useStoreSessionQuery = () => {
   });
 };
 
+export const useActiveEmployeesQuery = () => {
+  const ports = usePorts();
+
+  return useQuery({
+    queryKey: sessionQueryKeys.employees,
+    queryFn: () => ports.employee.listActiveEmployees(),
+  });
+};
+
 export const usePairStoreMutation = () => {
   const ports = usePorts();
   const queryClient = useQueryClient();

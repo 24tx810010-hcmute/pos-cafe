@@ -38,7 +38,6 @@ import {
   Utensils,
 } from "lucide-react";
 import { Button, TextField, Tooltip } from "@mui/material";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import toast from "react-hot-toast";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
@@ -47,36 +46,82 @@ import type {
   EmployeeRole,
   FloorPlan,
   FloorTable,
-  MenuCatalog,
   MenuItem,
   TableShape,
   TableStatus,
   OrderDetail,
-  OrderItemSnapshot,
   OrderSummary,
-  SubmitOrderDraftItem,
 } from "@/domain";
 import { canAccessModule, type AppModule } from "@/core/guards";
 import { formatCompactVnd, formatVnd } from "@/core/money";
-import { isAppError } from "@/core/appError";
-import { usePorts } from "@/ports/portsContext";
+import {
+  addDraftMenuItem,
+  adjustDraftQuantity,
+  buildCartLines,
+  calculateCartTotal,
+  orderDetailToDraft,
+  useFloorPlanQuery,
+  useMenuQuery,
+  useOpenOrdersQuery,
+  useOrderDetailQuery,
+  usePayOrderMutation,
+  useSubmitOrderMutation,
+  useTakeawayOpenOrdersQuery,
+} from "@/features/pos";
+import {
+  useAdminFloorPlanQuery,
+  useAdminMenuQuery,
+  useClearDemoDataMutation,
+  useStoreSettingsQuery,
+  useUpdateSettingsMutation,
+} from "@/features/admin";
+import {
+  useActiveEmployeesQuery,
+  useCreateStoreMutation,
+  usePairStoreMutation,
+  useStoreSessionQuery,
+  useUnpairStoreMutation,
+  useVerifyEmployeeMutation,
+} from "@/features/session";
+import { mapUnknownErrorToUiError, useRealtimeInvalidation } from "@/features/integration";
 import { useAppStore, type DrawerModule } from "./useAppStore";
 
 const logicalStage = { width: 1600, height: 900 };
 
-const orderQueryKeys = {
-  employees: ["employees"] as const,
-  menu: ["menu"] as const,
-  floorPlan: ["floorPlan"] as const,
-  openOrders: ["orders", "open"] as const,
-  order: (orderId: string | null) => ["orders", "detail", orderId] as const,
-  report: ["report", "core"] as const,
-  settings: ["settings"] as const,
-};
+const toToastError = (error: unknown): string => mapUnknownErrorToUiError(error).message;
 
 export function App() {
   const screen = useAppStore((state) => state.screen);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
+  const setScreen = useAppStore((state) => state.setScreen);
+  const setCurrentEmployee = useAppStore((state) => state.setCurrentEmployee);
+  const storeSessionQuery = useStoreSessionQuery();
+  const storeSession = storeSessionQuery.data?.session ?? null;
+
+  useRealtimeInvalidation(currentEmployee ? storeSession?.storeId : null);
+
+  useEffect(() => {
+    if (!storeSessionQuery.data) {
+      return;
+    }
+
+    if (storeSessionQuery.data.status === "paired" && screen === "landing") {
+      setScreen("passcode");
+    }
+
+    if (storeSessionQuery.data.status === "unpaired" && (screen === "passcode" || currentEmployee)) {
+      setCurrentEmployee(null);
+      setScreen("landing");
+    }
+  }, [currentEmployee, screen, setCurrentEmployee, setScreen, storeSessionQuery.data]);
+
+  useEffect(() => {
+    if (storeSessionQuery.error) {
+      toast.error(toToastError(storeSessionQuery.error));
+      setCurrentEmployee(null);
+      setScreen("landing");
+    }
+  }, [setCurrentEmployee, setScreen, storeSessionQuery.error]);
 
   return (
     <>
@@ -143,7 +188,7 @@ function LandingScreen() {
             <span>Thiết lập quán và nhận Store Key + Admin PIN.</span>
           </button>
         </div>
-        <p className="landing-note">Đây là bản UI mock, thao tác chỉ giả lập.</p>
+        <p className="landing-note">Một URL duy nhất, dữ liệu chạy qua mock hoặc Supabase theo cấu hình.</p>
       </div>
     </main>
   );
@@ -153,7 +198,7 @@ function StorePairingScreen() {
   const setScreen = useAppStore((state) => state.setScreen);
   const [key, setKey] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const pairMutation = usePairStoreMutation();
 
   const validateKey = (value: string) => {
     const parts = value.split("-");
@@ -169,13 +214,19 @@ function StorePairingScreen() {
       return;
     }
     setError("");
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      toast.success("Đã ghép thiết bị (mock)");
-      setScreen("passcode");
-    }, 400);
+    pairMutation.mutate(key.trim(), {
+      onSuccess: () => {
+        toast.success("Đã ghép thiết bị");
+        setScreen("passcode");
+      },
+      onError: (submitError) => {
+        setError(toToastError(submitError));
+      },
+    });
   };
+
+  const loading = pairMutation.isPending;
+
 
   return (
     <main className="preauth-screen" data-testid="store-pairing-screen">
@@ -195,7 +246,7 @@ function StorePairingScreen() {
           <div className="preauth-form">
             <div className="title-stack" style={{ marginBottom: 20 }}>
               <h2>Ghép thiết bị với quán</h2>
-              <p>Nhập mã chủ quán cung cấp. Đây là mock, không kết nối backend.</p>
+              <p>Nhập Store Key do chủ quán cung cấp để ghép thiết bị.</p>
             </div>
 
             <div className="preauth-field">
@@ -206,7 +257,7 @@ function StorePairingScreen() {
                 onChange={(e) => { setKey(e.target.value); setError(""); }}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 error={!!error}
-                helperText={error || "Nhập mã chủ quán cung cấp. Đây là mock, không kết nối backend."}
+                helperText={error || "Sau khi ghép, thiết bị chỉ lưu phiên cửa hàng, không lưu raw Store Key."}
                 fullWidth
                 size="small"
                 inputProps={{ "data-testid": "store-key-input" }}
@@ -249,8 +300,8 @@ function CreateStoreScreen() {
   const [storeName, setStoreName] = useState("");
   const [address, setAddress] = useState("");
   const [nameError, setNameError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ storeKey: string; adminPin: string } | null>(null);
+  const createStoreMutation = useCreateStoreMutation();
+  const [result, setResult] = useState<{ storeKey: string; adminPin: string; seedStatus: string; canRetrySeed: boolean } | null>(null);
 
   const handleCreate = () => {
     if (!storeName.trim()) {
@@ -258,17 +309,32 @@ function CreateStoreScreen() {
       return;
     }
     setNameError("");
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setResult({ storeKey: "0001-X8F3QA", adminPin: "123456" });
-    }, 500);
+    createStoreMutation.mutate(
+      { displayName: storeName.trim() },
+      {
+        onSuccess: ({ store }) => {
+          setResult({
+            storeKey: store.storeKey,
+            adminPin: store.adminPin,
+            seedStatus: store.seedStatus,
+            canRetrySeed: store.canRetrySeed,
+          });
+        },
+        onError: (error) => {
+          const message = toToastError(error);
+          setNameError(message);
+          toast.error(message);
+        },
+      },
+    );
   };
+
+  const loading = createStoreMutation.isPending;
 
   const copyText = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(
       () => toast.success(`Đã copy ${label}`),
-      () => toast(`Đã copy ${label} (mock)`),
+      () => toast(`Không copy tự động được ${label}.`),
     );
   };
 
@@ -312,7 +378,7 @@ function CreateStoreScreen() {
             </div>
 
             <p className="create-store-warning">
-              ⚠ Chỉ hiện một lần trong flow thật; trong mock có thể hiện lại để demo.
+              ⚠ Store Key chỉ hiển thị một lần. Không lưu raw Store Key trong app state.
             </p>
 
             <Button variant="contained" data-testid="go-passcode" onClick={() => setScreen("passcode")}>
@@ -366,7 +432,7 @@ function CreateStoreScreen() {
               <div className="create-store-check-row">
                 <input type="checkbox" id="seed-demo" defaultChecked disabled />
                 <label htmlFor="seed-demo" style={{ color: "var(--muted)", fontSize: 13 }}>
-                  Seed dữ liệu demo (mock)
+                  Seed dữ liệu demo
                 </label>
               </div>
 
@@ -403,13 +469,11 @@ function CreateStoreScreen() {
 }
 
 function PasscodeScreen() {
-  const ports = usePorts();
-  const setCurrentEmployee = useAppStore((state) => state.setCurrentEmployee);
   const setScreen = useAppStore((state) => state.setScreen);
-  const employeesQuery = useQuery({
-    queryKey: orderQueryKeys.employees,
-    queryFn: () => ports.employee.listActiveEmployees(),
-  });
+  const storeSessionQuery = useStoreSessionQuery();
+  const employeesQuery = useActiveEmployeesQuery();
+  const verifyMutation = useVerifyEmployeeMutation();
+  const unpairMutation = useUnpairStoreMutation();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
@@ -425,20 +489,39 @@ function PasscodeScreen() {
     }
   }, [employeesQuery.data, selectedEmployeeId]);
 
-  const verifyMutation = useMutation({
-    mutationFn: () => ports.employee.verifyPin(selectedEmployeeId, pin),
-    onSuccess: (employee) => {
-      setCurrentEmployee(employee);
-      toast.success(`Xin chào ${employee.name}`);
-    },
-    onError: (error) => {
-      const msg = isAppError(error) ? error.message : "PIN không đúng.";
-      setPinError(msg);
-      setPin("");
-      setShaking(true);
-      setTimeout(() => setShaking(false), 500);
-    },
-  });
+  const verifyPin = () => {
+    verifyMutation.mutate(
+      { employeeId: selectedEmployeeId, pin },
+      {
+        onSuccess: (employee) => {
+          toast.success(`Xin chào ${employee.name}`);
+        },
+        onError: (error) => {
+          const msg = toToastError(error);
+          setPinError(msg);
+          setPin("");
+          setShaking(true);
+          setTimeout(() => setShaking(false), 500);
+        },
+      },
+    );
+  };
+
+  const unpair = () => {
+    unpairMutation.mutate(undefined, {
+      onSuccess: () => {
+        setPin("");
+        setSelectedEmployeeId("");
+        setScreen("landing");
+        toast.success("Đã gỡ ghép thiết bị");
+      },
+      onError: (error) => {
+        const msg = toToastError(error);
+        setPinError(msg);
+        toast.error(msg);
+      },
+    });
+  };
 
   const appendPin = (value: string) => {
     setPinError("");
@@ -456,10 +539,12 @@ function PasscodeScreen() {
         <div className="passcode-brand-top">
           <div className="brand-mark">P</div>
           <div>
-            <div className="passcode-store-name">Cửa hàng #0001</div>
+            <div className="passcode-store-name">
+              Cửa hàng #{String(storeSessionQuery.data?.session?.storeNo ?? 1).padStart(4, "0")}
+            </div>
             <div className="passcode-store-status">
               <span className="passcode-status-dot" />
-              Realtime online mock
+              Realtime online
             </div>
           </div>
         </div>
@@ -471,7 +556,7 @@ function PasscodeScreen() {
         <span
           className="pair-strip"
           style={{ cursor: "pointer", width: "fit-content" }}
-          onClick={() => setScreen("landing")}
+          onClick={unpair}
         >
           ← Đổi quán / Gỡ ghép
         </span>
@@ -486,7 +571,7 @@ function PasscodeScreen() {
         {employeesQuery.isLoading ? (
           <div className="passcode-empty">Đang tải danh sách nhân viên...</div>
         ) : !employeesQuery.data?.length ? (
-          <div className="passcode-empty">Chưa có nhân viên mock.</div>
+          <div className="passcode-empty">Chưa có nhân viên active.</div>
         ) : (
           <div className="employee-grid">
             {employeesQuery.data.map((employee) => (
@@ -525,7 +610,7 @@ function PasscodeScreen() {
             variant="contained"
             data-testid="unlock-button"
             disabled={!selectedEmployeeId || pin.length < 4 || verifyMutation.isPending}
-            onClick={() => verifyMutation.mutate()}
+            onClick={verifyPin}
             sx={{ borderRadius: "8px", fontWeight: 700 }}
           >
             {verifyMutation.isPending ? "..." : "Mở khoá"}
@@ -706,21 +791,15 @@ const MOCK_PAID_TAKEAWAY = [
 ];
 
 function TakeawayDrawer() {
-  const ports = usePorts();
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const openOrder = useAppStore((state) => state.openOrder);
   const openPayment = useAppStore((state) => state.openPayment);
   const [filter, setFilter] = useState<TakeawayFilter>("open");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const openOrdersQuery = useQuery({ queryKey: orderQueryKeys.openOrders, queryFn: () => ports.order.listOpenOrders() });
-  const takeawayOpen = (openOrdersQuery.data ?? []).filter((o) => o.orderType === "takeaway");
-
-  const detailQuery = useQuery({
-    queryKey: orderQueryKeys.order(selectedId),
-    queryFn: () => ports.order.getOrder(selectedId!),
-    enabled: !!selectedId && filter !== "paid",
-  });
+  const openOrdersQuery = useTakeawayOpenOrdersQuery();
+  const takeawayOpen = openOrdersQuery.data ?? [];
+  const detailQuery = useOrderDetailQuery(filter !== "paid" ? selectedId : null);
 
   const filterChips: Array<{ key: TakeawayFilter; label: string }> = [
     { key: "open", label: "Đang mở" },
@@ -749,7 +828,7 @@ function TakeawayDrawer() {
       <header className="drawer-header">
         <div className="title-stack">
           <h2>Đơn mang đi</h2>
-          <p><span className="sync-dot" /> {takeawayOpen.length} đơn đang mở · mock</p>
+          <p><span className="sync-dot" /> {takeawayOpen.length} đơn đang mở · online</p>
         </div>
         <div className="header-actions">
           <div className="tw-filter-chips">
@@ -2173,11 +2252,11 @@ interface SettingsForm {
 }
 
 function GeneralSettingsDrawer() {
-  const ports = usePorts();
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
   const allowed = canAccessModule(currentEmployee, "settings");
-  const settingsQuery = useQuery({ queryKey: orderQueryKeys.settings, queryFn: () => ports.settings.getSettings() });
+  const settingsQuery = useStoreSettingsQuery();
+  const updateSettingsMutation = useUpdateSettingsMutation(currentEmployee);
 
   const [seeded, setSeeded] = useState(false);
   const [base, setBase] = useState<SettingsForm | null>(null);
@@ -2214,9 +2293,29 @@ function GeneralSettingsDrawer() {
       setMobileTab("form");
       return;
     }
-    setBase(form);
     setNameError("");
-    toast.success("Đã lưu cài đặt (mock)");
+    updateSettingsMutation.mutate(
+      {
+        settings: {
+          displayName: form.displayName.trim(),
+          address: form.address,
+          billFooter: form.billFooter,
+        },
+      },
+      {
+        onSuccess: (saved) => {
+          const next = {
+            displayName: saved.displayName,
+            address: saved.address,
+            billFooter: saved.billFooter,
+          };
+          setBase(next);
+          setForm(next);
+          toast.success("Đã lưu cài đặt");
+        },
+        onError: (error) => toast.error(toToastError(error)),
+      },
+    );
   };
   const handleCancel = () => {
     if (dirty) setConfirmCancel(true);
@@ -2257,12 +2356,18 @@ function GeneralSettingsDrawer() {
       <header className="drawer-header">
         <div className="title-stack">
           <h2>Cài đặt chung {dirty && <span className="dirty-badge" data-testid="settings-dirty-badge">Chưa lưu</span>}</h2>
-          <p><span className="sync-dot" />Cấu hình quán · mock</p>
+          <p><span className="sync-dot" />Cấu hình quán · online</p>
         </div>
         <div className="header-actions">
           <Button variant="text" onClick={handleCancel}>Huỷ</Button>
-          <Button variant="contained" startIcon={<Save size={15} />} data-testid="save-settings-button" onClick={handleSave}>
-            Lưu cài đặt mock
+          <Button
+            variant="contained"
+            startIcon={<Save size={15} />}
+            data-testid="save-settings-button"
+            disabled={updateSettingsMutation.isPending}
+            onClick={handleSave}
+          >
+            {updateSettingsMutation.isPending ? "Đang lưu..." : "Lưu cài đặt"}
           </Button>
         </div>
       </header>
@@ -2381,25 +2486,26 @@ function GeneralSettingsDrawer() {
 }
 
 function ClearDemoDialog({ onClose }: { onClose: () => void }) {
-  const ports = usePorts();
-  const openOrdersQuery = useQuery({ queryKey: orderQueryKeys.openOrders, queryFn: () => ports.order.listOpenOrders() });
+  const currentEmployee = useAppStore((state) => state.currentEmployee);
+  const openOrdersQuery = useOpenOrdersQuery();
+  const clearDemoMutation = useClearDemoDataMutation(currentEmployee);
   const openCount = openOrdersQuery.data?.length ?? 0;
-  const [simulateClosed, setSimulateClosed] = useState(false);
   const [confirmText, setConfirmText] = useState("");
-  const [processing, setProcessing] = useState(false);
 
-  const blocked = openCount > 0 && !simulateClosed;
+  const blocked = openCount > 0;
   const ready = !blocked && confirmText.trim().toUpperCase() === "CLEAR";
+  const processing = clearDemoMutation.isPending;
 
   const checklist = ["Menu demo", "Sơ đồ bàn demo", "Decor demo", "Cashier demo (deactivate)", "Giữ lại 1 admin"];
 
   const handleClear = () => {
-    setProcessing(true);
-    setTimeout(() => {
-      setProcessing(false);
-      toast.success("Đã clear demo data (mock)");
-      onClose();
-    }, 600);
+    clearDemoMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast.success("Đã clear demo data");
+        onClose();
+      },
+      onError: (error) => toast.error(toToastError(error)),
+    });
   };
 
   return (
@@ -2409,9 +2515,9 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
           <AlertTriangle size={20} color="#b45309" />
           <h3>Clear demo data</h3>
         </div>
-        <p>Thao tác mock này chỉ minh hoạ clear dữ liệu seed demo. Không gọi backend, không xoá record thật.</p>
+        <p>Thao tác này chỉ xoá/tombstone dữ liệu demo đã seed, không xoá dữ liệu người dùng tự tạo.</p>
         <div className="clear-demo-real">
-          Trong bản thật: chặn nếu còn đơn đang mở, tombstone menu/sơ đồ/decor demo, deactivate cashier demo, giữ lại 1 admin.
+          Hệ thống chặn nếu còn đơn đang mở, tombstone menu/sơ đồ/decor demo, deactivate cashier demo, giữ lại 1 admin.
         </div>
 
         {blocked ? (
@@ -2420,7 +2526,6 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
             <span className="muted">Đóng hết đơn đang mở trước khi clear demo.</span>
             <div className="clear-demo-blocked-actions">
               <Button variant="contained" size="small" onClick={onClose}>Đóng đơn đang mở trước</Button>
-              <button className="preauth-link" onClick={() => setSimulateClosed(true)}>(mock) Giả lập đã đóng hết đơn</button>
             </div>
           </div>
         ) : (
@@ -2450,7 +2555,7 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
             disabled={!ready || processing}
             onClick={handleClear}
           >
-            {processing ? "Đang xử lý..." : "Clear demo (mock)"}
+            {processing ? "Đang xử lý..." : "Clear demo"}
           </Button>
         </div>
       </div>
@@ -2461,15 +2566,14 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
 type TableFilter = "all" | "empty" | "occupied";
 
 function FloorWorkspace() {
-  const ports = usePorts();
   const currentEmployee = useAppStore((state) => state.currentEmployee);
   const activeAreaId = useAppStore((state) => state.activeAreaId);
   const setActiveAreaId = useAppStore((state) => state.setActiveAreaId);
   const openOrder = useAppStore((state) => state.openOrder);
   const openDrawer = useAppStore((state) => state.openDrawer);
 
-  const floorPlanQuery = useQuery({ queryKey: orderQueryKeys.floorPlan, queryFn: () => ports.floorPlan.getFloorPlan() });
-  const openOrdersQuery = useQuery({ queryKey: orderQueryKeys.openOrders, queryFn: () => ports.order.listOpenOrders() });
+  const floorPlanQuery = useFloorPlanQuery();
+  const openOrdersQuery = useOpenOrdersQuery();
 
   const [tableFilter, setTableFilter] = useState<TableFilter>("all");
 
@@ -2505,7 +2609,7 @@ function FloorWorkspace() {
         <div className="title-stack">
           <h1>Sơ đồ bàn</h1>
           <p>
-            <span className="sync-dot" /> {currentEmployee?.name} · {allTables.length} bàn · realtime online mock
+            <span className="sync-dot" /> {currentEmployee?.name} · {allTables.length} bàn · realtime online
           </p>
         </div>
         <div className="header-actions">
@@ -2516,7 +2620,16 @@ function FloorWorkspace() {
           >
             Mang đi
           </Button>
-          <Button variant="outlined" onClick={() => toast("Đã làm mới (mock)")}>Làm mới</Button>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              void floorPlanQuery.refetch();
+              void openOrdersQuery.refetch();
+              toast.success("Đã làm mới dữ liệu");
+            }}
+          >
+            Làm mới
+          </Button>
           <Button variant="contained" onClick={() => toast("Tạo đơn nhanh sẽ dùng draft order.")}>
             Tạo đơn nhanh
           </Button>
@@ -2697,8 +2810,6 @@ function FloorWorkspace() {
 }
 
 function OrderDrawer() {
-  const ports = usePorts();
-  const queryClient = useQueryClient();
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const openPayment = useAppStore((state) => state.openPayment);
   const context = useAppStore((state) => state.orderContext);
@@ -2712,13 +2823,10 @@ function OrderDrawer() {
   const [confirmClose, setConfirmClose] = useState(false);
   const [noteOpenId, setNoteOpenId] = useState<string | null>(null);
 
-  const menuQuery = useQuery({ queryKey: orderQueryKeys.menu, queryFn: () => ports.menu.getMenu() });
-  const floorPlanQuery = useQuery({ queryKey: orderQueryKeys.floorPlan, queryFn: () => ports.floorPlan.getFloorPlan() });
-  const orderQuery = useQuery({
-    queryKey: orderQueryKeys.order(context?.orderId ?? null),
-    queryFn: () => ports.order.getOrder(context!.orderId!),
-    enabled: !!context?.orderId,
-  });
+  const menuQuery = useMenuQuery();
+  const floorPlanQuery = useFloorPlanQuery();
+  const orderQuery = useOrderDetailQuery(context?.orderId ?? null);
+  const submitMutation = useSubmitOrderMutation();
 
   useEffect(() => {
     const firstCategory = menuQuery.data?.categories[0]?.id;
@@ -2727,7 +2835,7 @@ function OrderDrawer() {
 
   useEffect(() => {
     if (context?.orderId && orderQuery.data) {
-      setDraftItems(orderQuery.data.items.map(snapshotToDraft));
+      setDraftItems(orderDetailToDraft(orderQuery.data));
     }
     if (context && !context.orderId) setDraftItems([]);
   }, [context, orderQuery.data, setDraftItems]);
@@ -2741,7 +2849,7 @@ function OrderDrawer() {
   const orderDetail = orderQuery.data ?? null;
   const table = context?.tableId ? floorPlanQuery.data?.tables.find((t) => t.id === context.tableId) : null;
   const cartLines = useMemo(() => (menu ? buildCartLines(menu, draftItems) : []), [draftItems, menu]);
-  const total = cartLines.reduce((sum, line) => sum + line.total, 0);
+  const total = calculateCartTotal(cartLines);
   const isDirty = draftItems.length > 0;
 
   const handleClose = () => {
@@ -2749,42 +2857,32 @@ function OrderDrawer() {
     closeDrawer();
   };
 
-  const submitMutation = useMutation({
-    mutationFn: () =>
-      ports.order.submitOrderChanges({
-        orderId: context?.orderId ?? null,
-        tableId: context?.tableId ?? null,
-        orderType: context?.orderType ?? "takeaway",
-        employeeId: currentEmployee!.id,
-        expectedVersion: orderDetail?.lockVersion ?? null,
-        items: draftItems,
-      }),
-    onSuccess: async (result) => {
-      if (result.ticket) await ports.print.renderOrderTicket(result.ticket);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: orderQueryKeys.openOrders }),
-        queryClient.invalidateQueries({ queryKey: orderQueryKeys.floorPlan }),
-        queryClient.invalidateQueries({ queryKey: orderQueryKeys.report }),
-      ]);
-      toast.success(result.status === "void" ? "Đã huỷ đơn mở." : "Đã in/gửi đơn.");
-      closeDrawer();
-    },
-    onError: (error) => toast.error(isAppError(error) ? error.message : "Không thể gửi đơn."),
-  });
-
   const addItem = (menuItem: MenuItem) => {
     if (!menuItem.isAvailable) return;
-    const existing = draftItems.find((d) => d.menuItemId === menuItem.id && d.options.length === 0);
-    if (existing) {
-      setDraftItems(draftItems.map((d) => (d.id === existing.id ? { ...d, quantity: d.quantity + 1 } : d)));
-      return;
-    }
-    setDraftItems([...draftItems, { id: crypto.randomUUID(), menuItemId: menuItem.id, quantity: 1, note: null, options: [] }]);
+    setDraftItems(addDraftMenuItem(draftItems, menuItem));
   };
 
   const adjustQuantity = (id: string, delta: number) => {
-    setDraftItems(
-      draftItems.map((d) => (d.id === id ? { ...d, quantity: Math.max(0, d.quantity + delta) } : d)).filter((d) => d.quantity > 0),
+    setDraftItems(adjustDraftQuantity(draftItems, id, delta));
+  };
+
+  const submitOrder = () => {
+    if (!context || !currentEmployee) return;
+
+    submitMutation.mutate(
+      {
+        context,
+        employeeId: currentEmployee.id,
+        expectedVersion: orderDetail?.lockVersion ?? null,
+        items: draftItems,
+      },
+      {
+        onSuccess: (result) => {
+          toast.success(result.status === "void" ? "Đã huỷ đơn mở." : "Đã in/gửi đơn.");
+          closeDrawer();
+        },
+        onError: (error) => toast.error(toToastError(error)),
+      },
     );
   };
 
@@ -2827,7 +2925,7 @@ function OrderDrawer() {
               {context?.orderType === "takeaway" ? "Mang đi" : "Dine-in"}
             </span>
             {orderDetail ? ` · v${orderDetail.lockVersion}` : " · Draft chưa ghi DB"}
-            {" · "}<span className="sync-dot" />mock
+            {" · "}<span className="sync-dot" />online
           </p>
         </div>
         <div className="header-actions">
@@ -2841,7 +2939,7 @@ function OrderDrawer() {
             variant="contained"
             data-testid="submit-order-button"
             disabled={submitMutation.isPending}
-            onClick={() => submitMutation.mutate()}
+            onClick={submitOrder}
           >
             {submitMutation.isPending ? "Đang gửi..." : "In/Gửi đơn"}
           </Button>
@@ -2968,7 +3066,7 @@ function OrderDrawer() {
                 fullWidth
                 data-testid="submit-order-button-footer"
                 disabled={submitMutation.isPending}
-                onClick={() => submitMutation.mutate()}
+                onClick={submitOrder}
               >
                 In/Gửi đơn
               </Button>
@@ -2981,18 +3079,12 @@ function OrderDrawer() {
 }
 
 function PaymentDrawer() {
-  const ports = usePorts();
-  const queryClient = useQueryClient();
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const paymentOrderId = useAppStore((state) => state.paymentOrderId);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
-  const floorPlanQuery = useQuery({ queryKey: orderQueryKeys.floorPlan, queryFn: () => ports.floorPlan.getFloorPlan() });
-
-  const orderQuery = useQuery({
-    queryKey: orderQueryKeys.order(paymentOrderId),
-    queryFn: () => ports.order.getOrder(paymentOrderId!),
-    enabled: !!paymentOrderId,
-  });
+  const floorPlanQuery = useFloorPlanQuery();
+  const orderQuery = useOrderDetailQuery(paymentOrderId);
+  const payMutation = usePayOrderMutation();
   const order = orderQuery.data;
   const [receivedAmount, setReceivedAmount] = useState(0);
   const [payMethod, setPayMethod] = useState<"cash" | "qr" | "bank">("cash");
@@ -3006,28 +3098,25 @@ function PaymentDrawer() {
 
   const table = order?.tableId ? floorPlanQuery.data?.tables.find((t) => t.id === order.tableId) : null;
 
-  const payMutation = useMutation({
-    mutationFn: () =>
-      ports.payment.payOrder({
-        paymentId: crypto.randomUUID(),
-        orderId: order!.id,
-        employeeId: currentEmployee!.id,
-        method: payMethod === "cash" ? "cash" : payMethod === "qr" ? "qr" : "bank_transfer",
-        expectedVersion: order!.lockVersion,
-        receivedAmount,
-      }),
-    onSuccess: async (result) => {
-      await ports.print.renderReceipt(result.receipt);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: orderQueryKeys.openOrders }),
-        queryClient.invalidateQueries({ queryKey: orderQueryKeys.floorPlan }),
-        queryClient.invalidateQueries({ queryKey: orderQueryKeys.report }),
-      ]);
-      toast.success("Đã thanh toán (mock). Bàn đã trống.");
-      closeDrawer();
-    },
-    onError: (error) => toast.error(isAppError(error) ? error.message : "Không thể thanh toán."),
-  });
+  const payOrder = () => {
+    if (!order || !currentEmployee) return;
+
+    if (payMethod !== "cash") {
+      toast("QR/chuyển khoản đang là placeholder; MVP thanh toán bằng tiền mặt.");
+      return;
+    }
+
+    payMutation.mutate(
+      { order, employeeId: currentEmployee.id, receivedAmount },
+      {
+        onSuccess: () => {
+          toast.success("Đã thanh toán. Bàn đã trống.");
+          closeDrawer();
+        },
+        onError: (error) => toast.error(toToastError(error)),
+      },
+    );
+  };
 
   if (!paymentOrderId) {
     return (
@@ -3036,7 +3125,7 @@ function PaymentDrawer() {
           <div className="title-stack"><h2>Thanh toán</h2></div>
           <div className="header-actions"><Button variant="outlined" onClick={closeDrawer}>Đóng</Button></div>
         </header>
-        <div className="drawer-body"><p className="muted" style={{ padding: 16 }}>Không tìm thấy đơn mock.</p></div>
+        <div className="drawer-body"><p className="muted" style={{ padding: 16 }}>Không tìm thấy đơn.</p></div>
       </section>
     );
   }
@@ -3057,7 +3146,7 @@ function PaymentDrawer() {
             variant="contained"
             data-testid="pay-button"
             disabled={!order || insufficient || payMutation.isPending}
-            onClick={() => payMutation.mutate()}
+            onClick={payOrder}
             color={insufficient ? "error" : "primary"}
           >
             {payMutation.isPending ? "Đang xử lý..." : "Hoàn tất"}
@@ -3197,7 +3286,7 @@ function PaymentDrawer() {
                 size="large"
                 data-testid="pay-button-footer"
                 disabled={!order || insufficient || payMutation.isPending}
-                onClick={() => payMutation.mutate()}
+                onClick={payOrder}
                 sx={{ borderRadius: "8px", fontWeight: 800, fontSize: 16 }}
               >
                 {payMutation.isPending ? "Đang xử lý..." : "Hoàn tất thanh toán"}
@@ -3260,9 +3349,8 @@ const nextSort = (current: number[]) => (current.length ? Math.max(...current) +
 type MenuTab = "cat" | "item" | "props";
 
 function MenuEditorDrawer() {
-  const ports = usePorts();
   const closeDrawer = useAppStore((state) => state.closeDrawer);
-  const menuQuery = useQuery({ queryKey: orderQueryKeys.menu, queryFn: () => ports.menu.getMenu() });
+  const menuQuery = useAdminMenuQuery();
 
   const [seeded, setSeeded] = useState(false);
   const [cats, setCats] = useState<DraftCategory[]>([]);
@@ -3819,9 +3907,8 @@ const decorDefaultSize = (kind: DecorKind) => {
 };
 
 function FloorEditorDrawer() {
-  const ports = usePorts();
   const closeDrawer = useAppStore((state) => state.closeDrawer);
-  const floorQuery = useQuery({ queryKey: orderQueryKeys.floorPlan, queryFn: () => ports.floorPlan.getFloorPlan() });
+  const floorQuery = useAdminFloorPlanQuery();
 
   const [seeded, setSeeded] = useState(false);
   const [areas, setAreas] = useState<DraftArea[]>([]);
@@ -4727,35 +4814,6 @@ function CartSnapshotList({ order }: { order: OrderDetail | undefined }) {
       </div>
     </div>
   );
-}
-
-function snapshotToDraft(item: OrderItemSnapshot): SubmitOrderDraftItem {
-  return {
-    id: item.id,
-    menuItemId: item.menuItemId,
-    quantity: item.quantity,
-    note: item.note ?? null,
-    options: item.options.map((option) => ({ id: option.id, optionValueId: option.optionValueId })),
-  };
-}
-
-function buildCartLines(menu: MenuCatalog, draftItems: SubmitOrderDraftItem[]) {
-  return draftItems.map((draft) => {
-    const menuItem = menu.menuItems.find((item) => item.id === draft.menuItemId);
-    const options = draft.options
-      .map((option) => menu.optionValues.find((candidate) => candidate.id === option.optionValueId))
-      .filter(Boolean);
-    const optionDelta = options.reduce((sum, option) => sum + (option?.priceDelta ?? 0), 0);
-    const unitPrice = menuItem?.price ?? 0;
-
-    return {
-      id: draft.id,
-      name: menuItem?.name ?? "Món không còn hợp lệ",
-      quantity: draft.quantity,
-      optionText: options.map((option) => option?.name).filter(Boolean).join(", "),
-      total: (unitPrice + optionDelta) * draft.quantity,
-    };
-  });
 }
 
 function stageStyle(posX: number, posY: number, width: number, height: number) {
