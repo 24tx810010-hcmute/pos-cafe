@@ -1,7 +1,7 @@
 # POS Cafe Integration Checklist
 
 > Vai trò: checklist cho phase nối nhánh UI với nhánh logic/adapters. File này dùng sau khi UI mock/production component split đã ổn, không dùng để merge trực tiếp vào `codex/code-foundation`.
-> Trạng thái 2026-06-13: UI checkpoint `codex/code-foundation` đã push tới `6009b47`; branch tích hợp `codex/ui-logic-integration` đã merge `codex/stream-db-rpc`, push merge commit `1c420d9`, rồi push binding nền UI thật ở commit `47f17f6`.
+> Trạng thái 2026-06-13: UI checkpoint `codex/code-foundation` đã push tới `6009b47`; branch tích hợp `codex/ui-logic-integration` đã merge `codex/stream-db-rpc`, push merge commit `1c420d9`, push binding nền UI thật `47f17f6`, rồi push Employees slice `4d7d1ae`.
 
 ---
 
@@ -20,7 +20,9 @@ Status 2026-06-13:
 - Validation đã pass: `npm run build`, `npm run test` (16 files/60 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, scan conflict marker/import `portsContext` cũ.
 - Binding nền UI thật đã push commit `47f17f6`: session bootstrap/pair/create/passcode, realtime invalidation, POS floor/takeaway/order/payment/settings/clear-demo dùng feature hooks/AppPorts; `App.tsx` không còn gọi `usePorts()` trực tiếp; mock session mặc định unpaired.
 - Validation sau binding nền đã pass: `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `npm run test` (16 files/60 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep Supabase/UI.
-- Việc còn lại của phase này: bind employees/menu/floor editor mutations thật, polish report/history binding, rồi chạy Supabase-mode UI E2E có Store Key/test account rõ ràng.
+- Employees binding slice đã push commit `4d7d1ae`: thêm `employee.listEmployees()` cho admin, giữ `listActiveEmployees()` cho passcode, bind Employees drawer qua admin query/mutations, thêm component tests và khóa inactive visibility.
+- Validation sau Employees slice đã pass: `npm run test -- employeeDrawer`, `npm run test` (17 files/65 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep Supabase/UI.
+- Việc còn lại của phase này: bind menu/floor editor mutations thật, polish report/history binding, rồi chạy Supabase-mode UI E2E có Store Key/test account rõ ràng.
 
 ---
 

@@ -363,6 +363,8 @@ Status 2026-06-13: UI checkpoint `codex/code-foundation` đã push spacing fix `
 
 Status 2026-06-13b: binding nền UI thật đã push trên `codex/ui-logic-integration` commit `47f17f6`. Đã nối session bootstrap, pairing/create store, passcode, realtime invalidation, POS floor, takeaway, order drawer, payment drawer, settings và clear-demo qua feature hooks/AppPorts; `App.tsx` không còn gọi `usePorts()` trực tiếp và không có Supabase boundary leak trong UI/features. Validation pass: `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `npm run test` (16 files/60 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep. Chưa merge ngược vào `codex/code-foundation`; phần còn lại là admin editor changesets, report/history polish và Supabase-mode UI E2E.
 
+Status 2026-06-13c: Employees binding slice đã push commit `4d7d1ae`. Đã thêm `employee.listEmployees()` để admin thấy cả inactive employees, giữ `listActiveEmployees()` cho màn PIN, bind Employees drawer qua `useAdminEmployeesQuery` và create/update/reset PIN mutations, thêm component tests cho create/deactivate/reset PIN, adapter tests cho admin/passcode list split, và sửa smoke locator settings responsive. Validation pass: `npm run test -- employeeDrawer`, `npm run test` (17 files/65 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep. Chưa merge ngược vào `codex/code-foundation`; phần còn lại là menu/floor editor changesets, report/history polish và Supabase-mode UI E2E.
+
 Tasks chung:
 
 - Duy trì runtime switch:

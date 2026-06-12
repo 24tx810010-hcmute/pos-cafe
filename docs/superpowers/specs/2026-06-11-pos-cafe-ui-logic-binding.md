@@ -3,7 +3,7 @@
 > Ngày chốt: 2026-06-11
 > Vai trò: hướng dẫn nối UI thật với core/ports/adapters sau giai đoạn UI mock.
 > Không phải spec cho UI mock-only agent; UI mock package vẫn nằm ở `docs/superpowers/ui-screens/`.
-> Trạng thái 2026-06-13: branch `codex/ui-logic-integration` đã có UI checkpoint + logic adapters merge sẵn. Binding nền UI thật đã push ở commit `47f17f6`; dùng file này cho phần binding còn lại và Supabase-mode E2E.
+> Trạng thái 2026-06-13: branch `codex/ui-logic-integration` đã có UI checkpoint + logic adapters merge sẵn. Binding nền UI thật đã push ở commit `47f17f6`; Employees binding slice đã push ở commit `4d7d1ae`; dùng file này cho phần binding còn lại và Supabase-mode E2E.
 
 ## 1. Preflight cho agent implement
 
@@ -20,7 +20,9 @@ Status implementation 2026-06-13:
 - `App.tsx` không còn gọi `usePorts()`/`ports.*` trực tiếp; UI không import Supabase client hay gọi RPC trực tiếp.
 - Mock runtime mặc định bắt đầu ở trạng thái unpaired để đi đúng flow landing -> pairing/create -> passcode.
 - Validation đã pass trên code branch: `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `npm run test` (16 files/60 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep.
-- Còn lại: bind mutation thật cho employees/menu/floor editor changesets, polish report/history binding, rồi chạy Supabase-mode UI E2E với Store Key/test account rõ ràng.
+- Employees slice `4d7d1ae`: admin Employees drawer dùng `useAdminEmployeesQuery` + create/update/reset PIN mutations; port tách `listEmployees()` cho admin list và `listActiveEmployees()` cho passcode; inactive employees vẫn hiện trong admin list để có thể mở lại.
+- Validation sau Employees slice đã pass: `npm run test -- employeeDrawer`, `npm run test` (17 files/65 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep.
+- Còn lại: bind mutation thật cho menu/floor editor changesets, polish report/history binding, rồi chạy Supabase-mode UI E2E với Store Key/test account rõ ràng.
 
 ## 2. Boundary bắt buộc
 
