@@ -2,6 +2,7 @@
 
 > **Vai trò:** file handoff để chia nhiều session/agent code song song sau milestone code foundation.
 > **Base hiện tại:** code worktree `D:\Workspace\pos-cafe-code`, branch `codex/code-foundation`.
+> **Logic branch đang tích lũy:** `codex/stream-db-rpc` đã chứa DB/RPC, adapters, session flow, POS/admin hooks và integration support; chưa merge vào `codex/code-foundation` vì UI branch đang làm từ base đó.
 > **Nguyên tắc:** mỗi coding session đọc `WORKTREE-HANDOFF.md` trước, rồi đọc `pos-cafe-context.md`, implementation contract, và file này trước khi code.
 
 ---
@@ -17,6 +18,12 @@
 - Mock repos trong `src/adapters/mock/*`.
 - Interactive UI mock trong `src/app/App.tsx` + `src/styles.css`.
 - Repo-first migrations trong `supabase/migrations/001..003`.
+- DB/RPC transaction track đã implement và local validated bằng PostgreSQL temp DB.
+- Supabase adapter foundation đã có `createSupabasePorts`, row/RPC mappers, Store Key auth, deterministic seed bundle và realtime adapter.
+- Runtime port factory + Store/Auth/Seed flow hooks đã có.
+- POS order/payment flow hooks đã có.
+- Admin flow hooks cho employees/menu/floor/settings/clear-demo/report query đã có.
+- Integration support utilities đã có: UI error mapper, dirty/save helper, realtime invalidation hook.
 - Test nền:
   - `npm run build`
   - `npm run test`
@@ -24,11 +31,10 @@
 
 Chưa có:
 
-- Supabase adapters thật.
-- RPC transaction thật cho `submit_order_changes`, `pay_order`, `clear_demo_data`.
-- Store creation/seed thật.
-- Realtime subscription thật.
 - UI production component split, hiện `src/app/App.tsx` còn là mock monolith.
+- UI thật bind vào hooks/ports mới.
+- Supabase cloud project apply migration và end-to-end smoke thật.
+- Branch integration cuối cùng giữa UI branch và `codex/stream-db-rpc`.
 
 ---
 
@@ -217,6 +223,8 @@ Done khi:
 
 ### Session D — POS Order/Payment Track
 
+Status 2026-06-12: logic foundation implemented/pushed trên `codex/stream-db-rpc`. Đã có `src/features/pos/*`: order draft/cart helpers, submit/pay services qua `AppPorts`, TanStack Query hooks, invalidation và tests. Chưa bind vào UI thật.
+
 Ownership:
 
 - POS floor view
@@ -258,6 +266,8 @@ Done khi:
 
 ### Session E — Menu/Floor Editor Track
 
+Status 2026-06-12: UI/editor thật chưa implement trong logic branch. Admin support đã có helper tạo empty changeset/dirty check và mutation hooks gọi `menu.saveMenuChanges`/`floorPlan.saveFloorPlan`, nhưng editor draft UI/changset builder vẫn thuộc UI/integration phase sau.
+
 Ownership:
 
 - menu editor feature
@@ -293,6 +303,8 @@ Done khi:
 - Có test hoặc manual checklist cho Save changeset và no status overwrite.
 
 ### Session G — Report/Settings/Print Track
+
+Status 2026-06-12: logic hooks foundation implemented một phần trong `src/features/admin/*` và `src/features/pos/*`: report query, settings mutation, clear-demo admin guard/invalidation, POS print call qua `IPrintPort` khi submit/pay. UI report/settings/print preview production chưa tách khỏi mock monolith.
 
 Ownership:
 
@@ -333,6 +345,8 @@ Done khi:
 ## 5. Phase 3 — Integration
 
 Mục tiêu: nối UI với Supabase adapters thật sau khi RPC và adapters ổn.
+
+Status 2026-06-12: integration support utilities implemented/pushed trên `codex/stream-db-rpc` commit `0f71594`: `src/features/integration/uiError.ts`, `dirtyFlow.ts`, `realtimeInvalidation.ts`, `useRealtimeInvalidation.ts` và tests. Chưa merge vào UI branch.
 
 Tasks chung:
 
