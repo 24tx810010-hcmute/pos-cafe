@@ -13,6 +13,14 @@
 - **Đề tài:** Quản lý order quán cà phê **đa thiết bị đồng bộ song song**, phân quyền vai trò. Không phải bài toán quản lý chuỗi đa chi nhánh. TLCN, < 1 tháng, 2h/ngày, 0đ. **AI lập trình chính**.
 - **Flagship:** Menu Editor + Floor-Plan Editor (sơ đồ bàn trực quan).
 
+## Trạng thái hiện tại (2026-06-13)
+
+- **Không có gì chưa push** tại thời điểm cập nhật này: code worktree `D:\Workspace\pos-cafe-code` đang ở `codex/ui-logic-integration` = `origin/codex/ui-logic-integration` commit `4d7d1ae`; docs worktree `D:\Workspace\pos-cafe` đang ở `docs` = `origin/docs` commit `a8ef2b0`.
+- **Không merge vào `codex/code-foundation` lúc này.** Branch đó vẫn là UI checkpoint cố định đã có UI mock + spacing fix `6009b47`; logic/UI binding đang tích hợp riêng trên `codex/ui-logic-integration`.
+- **Đã xong:** DB/RPC foundation, Supabase adapter foundation, Store/Auth/Seed logic, POS order/payment hooks, admin hooks nền, Supabase cloud RPC/REST E2E, UI foundation binding, và Employees binding slice.
+- **Validation mới nhất:** `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `npm run test` (17 files/65 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep UI/Supabase.
+- **Phase nhỏ tiếp theo:** bind **Menu editor changeset save** vào `menu.saveMenuChanges`, rồi mới tới Floor editor changesets, report/history polish, Supabase-mode UI E2E.
+
 ## Quyết định đã chốt
 
 | Hạng mục | Chốt |
