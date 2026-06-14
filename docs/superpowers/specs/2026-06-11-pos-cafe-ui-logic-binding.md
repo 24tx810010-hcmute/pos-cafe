@@ -3,7 +3,7 @@
 > Ngày chốt: 2026-06-11
 > Vai trò: hướng dẫn nối UI thật với core/ports/adapters sau giai đoạn UI mock.
 > Không phải spec cho UI mock-only agent; UI mock package vẫn nằm ở `docs/superpowers/ui-screens/`.
-> Trạng thái 2026-06-13: branch `codex/ui-logic-integration` đã có UI checkpoint + logic adapters merge sẵn. Binding nền UI thật đã push ở commit `47f17f6`; Employees binding slice đã push ở commit `4d7d1ae`; dùng file này cho phần binding còn lại và Supabase-mode E2E.
+> Trạng thái 2026-06-14: branch `codex/ui-logic-integration` đã có UI checkpoint + logic adapters merge sẵn. Binding nền UI thật đã push ở commit `47f17f6`; Employees binding slice đã push ở commit `4d7d1ae`; Menu/Floor editor changeset save và Report/History polish đã implement local; dùng file này cho Supabase-mode E2E tiếp theo.
 
 ## 1. Preflight cho agent implement
 
@@ -22,7 +22,13 @@ Status implementation 2026-06-13:
 - Validation đã pass trên code branch: `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `npm run test` (16 files/60 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep.
 - Employees slice `4d7d1ae`: admin Employees drawer dùng `useAdminEmployeesQuery` + create/update/reset PIN mutations; port tách `listEmployees()` cho admin list và `listActiveEmployees()` cho passcode; inactive employees vẫn hiện trong admin list để có thể mở lại.
 - Validation sau Employees slice đã pass: `npm run test -- employeeDrawer`, `npm run test` (17 files/65 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep.
-- Còn lại: bind mutation thật cho menu/floor editor changesets, polish report/history binding, rồi chạy Supabase-mode UI E2E với Store Key/test account rõ ràng.
+- Menu editor changeset save: drawer dùng `useSaveMenuMutation(currentEmployee)`, giữ `baseMenu` snapshot để diff draft, sinh UUID client cho item/category/group/value mới, gửi `MenuChanges` qua `menu.saveMenuChanges`, refetch menu sau save, và không gọi Supabase trực tiếp từ UI.
+- Validation sau Menu editor slice đã pass: `npm run test -- menuEditorDrawer`, `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `npm run test` (18 files/67 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep.
+- Floor editor changeset save: drawer dùng `useSaveFloorPlanMutation(currentEmployee)`, giữ `baseFloorPlan` snapshot để diff draft, sinh UUID client cho area/table/decor mới, gửi `FloorPlanChanges` qua `floorPlan.saveFloorPlan`, refetch floor plan sau save, lưu logical coordinates theo stage `1600x900` scale-to-fit, và không gửi/ghi đè `tables.status`.
+- Validation sau Floor editor slice đã pass: `npm run test -- floorEditorDrawer`, `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `npm run test` (19 files/71 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep.
+- Report/History polish: Order History drawer dùng `useOrderHistoryQuery` + `useOrderDetailQuery`, có custom date range, server pagination, loading/error/empty state, không còn dataset mock. Report drawer dùng `useCoreReportsQuery` để aggregate daily `report.getCoreReport({ businessDate })` cho hôm nay/7 ngày/tháng/custom, dùng `useOrderHistoryQuery` cho recent paid orders, và mock report repo lọc đúng `businessDate` như Supabase.
+- Validation sau Report/History polish đã pass: `npm run test -- reportHistoryDrawer`, `npm run test` (20 files/75 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep.
+- Còn lại: chạy Supabase-mode UI E2E với Store Key/test account rõ ràng.
 
 ## 2. Boundary bắt buộc
 
