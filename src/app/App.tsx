@@ -103,12 +103,17 @@ import {
   useUnpairStoreMutation,
   useVerifyEmployeeMutation,
 } from "@/features/session";
-import { mapUnknownErrorToUiError, useRealtimeInvalidation } from "@/features/integration";
+import { formatUiErrorForToast, mapUnknownErrorToUiError, useRealtimeInvalidation } from "@/features/integration";
 import { useAppStore, type DrawerModule } from "./useAppStore";
 
 const logicalStage = { width: 1600, height: 900 };
 
 const toToastError = (error: unknown): string => mapUnknownErrorToUiError(error).message;
+const notifyUiError = (error: unknown) => {
+  const uiError = mapUnknownErrorToUiError(error);
+  toast.error(formatUiErrorForToast(uiError));
+  return uiError;
+};
 
 export function App() {
   const screen = useAppStore((state) => state.screen);
@@ -901,6 +906,15 @@ function TakeawayDrawer() {
                 <div className="tw-list-loading">
                   {[1, 2, 3].map((i) => <div key={i} className="tw-skeleton-card" />)}
                 </div>
+              ) : openOrdersQuery.isError ? (
+                <div className="tw-empty-state" data-testid="takeaway-error-state">
+                  <AlertTriangle size={32} color="#b45309" />
+                  <strong>Không tải được đơn mang đi</strong>
+                  <p>{toToastError(openOrdersQuery.error)}</p>
+                  <Button variant="contained" size="small" onClick={() => void openOrdersQuery.refetch()}>
+                    Thử tải lại
+                  </Button>
+                </div>
               ) : displayOrders.length === 0 ? (
                 <div className="tw-empty-state">
                   <ClipboardList size={32} color="#94a3b8" />
@@ -989,6 +1003,14 @@ function TakeawayDrawer() {
                 </div>
               ) : detailQuery.isLoading ? (
                 <p className="muted" style={{ padding: 16 }}>Đang tải...</p>
+              ) : detailQuery.isError ? (
+                <div className="tw-empty-state" data-testid="takeaway-detail-error-state">
+                  <AlertTriangle size={30} color="#b45309" />
+                  <p>{toToastError(detailQuery.error)}</p>
+                  <Button variant="outlined" size="small" onClick={() => void detailQuery.refetch()}>
+                    Thử lại
+                  </Button>
+                </div>
               ) : detailQuery.data ? (
                 <div className="tw-detail-body">
                   <div className="tw-detail-row"><span>Đơn số</span><strong>#{detailQuery.data.orderNo}</strong></div>
@@ -2624,7 +2646,7 @@ function GeneralSettingsDrawer() {
             variant="contained"
             startIcon={<Save size={15} />}
             data-testid="save-settings-button"
-            disabled={updateSettingsMutation.isPending}
+            disabled={!seeded || !dirty || updateSettingsMutation.isPending}
             onClick={handleSave}
           >
             {updateSettingsMutation.isPending ? "Đang lưu..." : "Lưu cài đặt"}
@@ -2633,7 +2655,16 @@ function GeneralSettingsDrawer() {
       </header>
 
       <div className="drawer-body menu-editor-body">
-        {!seeded ? (
+        {settingsQuery.isError ? (
+          <div className="tw-empty-state" data-testid="settings-error-state">
+            <AlertTriangle size={32} color="#b45309" />
+            <strong>Không tải được cài đặt</strong>
+            <p>{toToastError(settingsQuery.error)}</p>
+            <Button variant="contained" size="small" onClick={() => void settingsQuery.refetch()}>
+              Thử tải lại
+            </Button>
+          </div>
+        ) : !seeded ? (
           <p className="muted" style={{ padding: 16 }}>Đang tải cài đặt...</p>
         ) : (
           <>
@@ -2690,15 +2721,24 @@ function GeneralSettingsDrawer() {
                       <TextField label="Tiền tệ" value="VND" size="small" fullWidth disabled />
                       <div className="fe-status-row">
                         <span className="emp-field-label">Realtime</span>
-                        <span className="status-pill status-active">● mock online</span>
+                        <span className="status-pill status-active">● online</span>
                       </div>
-                      <p className="muted">Múi giờ và tiền tệ cố định trong bản mock.</p>
+                      <p className="muted">Múi giờ và tiền tệ cố định trong bản demo.</p>
                     </>
                   ) : (
                     <div className="set-demo-box">
                       <strong>Dữ liệu demo</strong>
-                      <p className="muted">Chỉ clear dữ liệu seed demo, không xoá dữ liệu do người dùng tự tạo. Đây là thao tác mock.</p>
-                      <Button variant="outlined" color="error" startIcon={<Trash2 size={15} />} data-testid="open-clear-demo" onClick={() => setClearOpen(true)}>
+                      <p className="muted">Chỉ clear dữ liệu seed demo, không xoá dữ liệu do người dùng tự tạo.</p>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<Trash2 size={15} />}
+                        data-testid="open-clear-demo"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setClearOpen(true);
+                        }}
+                      >
                         Clear demo data
                       </Button>
                     </div>
@@ -2752,8 +2792,10 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
   const openCount = openOrdersQuery.data?.length ?? 0;
   const [confirmText, setConfirmText] = useState("");
 
-  const blocked = openCount > 0;
-  const ready = !blocked && confirmText.trim().toUpperCase() === "CLEAR";
+  const checkingOpenOrders = openOrdersQuery.isLoading || (openOrdersQuery.isFetching && !openOrdersQuery.data);
+  const openOrdersError = openOrdersQuery.isError;
+  const blocked = openOrdersQuery.isSuccess && openCount > 0;
+  const ready = openOrdersQuery.isSuccess && !blocked && confirmText.trim().toUpperCase() === "CLEAR";
   const processing = clearDemoMutation.isPending;
 
   const checklist = ["Menu demo", "Sơ đồ bàn demo", "Decor demo", "Cashier demo (deactivate)", "Giữ lại 1 admin"];
@@ -2764,12 +2806,24 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
         toast.success("Đã clear demo data");
         onClose();
       },
-      onError: (error) => toast.error(toToastError(error)),
+      onError: (error) => {
+        const uiError = notifyUiError(error);
+        if (uiError.action === "closeOpenOrders") {
+          void openOrdersQuery.refetch();
+        }
+      },
     });
   };
 
   return (
-    <div className="confirm-overlay" onClick={processing ? undefined : onClose}>
+    <div
+      className="confirm-overlay"
+      onClick={(event) => {
+        if (!processing && event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div className="confirm-dialog clear-demo-dialog" data-testid="clear-demo-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="clear-demo-head">
           <AlertTriangle size={20} color="#b45309" />
@@ -2780,7 +2834,22 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
           Hệ thống chặn nếu còn đơn đang mở, tombstone menu/sơ đồ/decor demo, deactivate cashier demo, giữ lại 1 admin.
         </div>
 
-        {blocked ? (
+        {checkingOpenOrders ? (
+          <div className="clear-demo-blocked" data-testid="clear-demo-loading">
+            <strong>Đang kiểm tra đơn đang mở...</strong>
+            <span className="muted">Chờ hệ thống tải danh sách đơn trước khi cho phép clear demo.</span>
+          </div>
+        ) : openOrdersError ? (
+          <div className="clear-demo-blocked" data-testid="clear-demo-error">
+            <strong>Không kiểm tra được đơn đang mở</strong>
+            <span className="muted">{toToastError(openOrdersQuery.error)}</span>
+            <div className="clear-demo-blocked-actions">
+              <Button variant="contained" size="small" onClick={() => void openOrdersQuery.refetch()}>
+                Thử kiểm tra lại
+              </Button>
+            </div>
+          </div>
+        ) : blocked ? (
           <div className="clear-demo-blocked" data-testid="clear-demo-blocked">
             <strong>Còn {openCount} đơn đang mở</strong>
             <span className="muted">Đóng hết đơn đang mở trước khi clear demo.</span>
@@ -2812,7 +2881,7 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
             variant="contained"
             color="error"
             data-testid="clear-demo-confirm-button"
-            disabled={!ready || processing}
+            disabled={!ready || processing || checkingOpenOrders || openOrdersError}
             onClick={handleClear}
           >
             {processing ? "Đang xử lý..." : "Clear demo"}
@@ -2965,6 +3034,15 @@ function FloorWorkspace() {
           </div>
           {floorPlanQuery.isLoading ? (
             <div className="floor-empty-state">Đang tải sơ đồ...</div>
+          ) : floorPlanQuery.isError ? (
+            <div className="floor-empty-state" data-testid="floor-error-state">
+              <AlertTriangle size={32} color="#b45309" />
+              <p>Không tải được sơ đồ bàn.</p>
+              <p className="muted">{toToastError(floorPlanQuery.error)}</p>
+              <Button variant="contained" size="small" onClick={() => void floorPlanQuery.refetch()}>
+                Thử tải lại
+              </Button>
+            </div>
           ) : allTables.length === 0 ? (
             <div className="floor-empty-state">
               <LayoutGrid size={32} color="#94a3b8" />
@@ -3019,7 +3097,16 @@ function FloorWorkspace() {
         <aside className="floor-orders-panel">
           <div className="floor-side-title" style={{ padding: "12px 14px 8px" }}>Đơn đang mở · {dineInOrders.length}</div>
           <div className="floor-orders-list">
-            {dineInOrders.length === 0 ? (
+            {openOrdersQuery.isLoading ? (
+              <p className="floor-orders-empty">Đang tải đơn đang mở...</p>
+            ) : openOrdersQuery.isError ? (
+              <div className="floor-orders-empty" data-testid="floor-orders-error-state">
+                <p>Không tải được đơn đang mở.</p>
+                <Button variant="outlined" size="small" onClick={() => void openOrdersQuery.refetch()}>
+                  Thử lại
+                </Button>
+              </div>
+            ) : dineInOrders.length === 0 ? (
               <p className="floor-orders-empty">Chưa có đơn dine-in.</p>
             ) : (
               dineInOrders.map((ord) => {
@@ -3111,6 +3198,7 @@ function OrderDrawer() {
   const cartLines = useMemo(() => (menu ? buildCartLines(menu, draftItems) : []), [draftItems, menu]);
   const total = calculateCartTotal(cartLines);
   const isDirty = draftItems.length > 0;
+  const submitDisabled = submitMutation.isPending || menuQuery.isError || orderQuery.isError || (!!context?.orderId && orderQuery.isLoading);
 
   const handleClose = () => {
     if (isDirty && !orderDetail) { setConfirmClose(true); return; }
@@ -3124,6 +3212,19 @@ function OrderDrawer() {
 
   const adjustQuantity = (id: string, delta: number) => {
     setDraftItems(adjustDraftQuantity(draftItems, id, delta));
+  };
+
+  const handleSubmitError = (error: unknown) => {
+    const uiError = notifyUiError(error);
+    if (uiError.action === "refreshMenu") {
+      void menuQuery.refetch();
+    }
+    if (uiError.action === "reloadOrder") {
+      if (context?.orderId) {
+        void orderQuery.refetch();
+      }
+      void floorPlanQuery.refetch();
+    }
   };
 
   const submitOrder = () => {
@@ -3141,7 +3242,7 @@ function OrderDrawer() {
           toast.success(result.status === "void" ? "Đã huỷ đơn mở." : "Đã in/gửi đơn.");
           closeDrawer();
         },
-        onError: (error) => toast.error(toToastError(error)),
+        onError: handleSubmitError,
       },
     );
   };
@@ -3198,7 +3299,7 @@ function OrderDrawer() {
           <Button
             variant="contained"
             data-testid="submit-order-button"
-            disabled={submitMutation.isPending}
+            disabled={submitDisabled}
             onClick={submitOrder}
           >
             {submitMutation.isPending ? "Đang gửi..." : "In/Gửi đơn"}
@@ -3207,6 +3308,18 @@ function OrderDrawer() {
       </header>
 
       <div className="drawer-body">
+        {orderQuery.isError && (
+          <div className="drawer-alert" data-testid="order-error-state">
+            <AlertTriangle size={18} />
+            <div>
+              <strong>Không tải được đơn hiện tại</strong>
+              <p>{toToastError(orderQuery.error)}</p>
+            </div>
+            <Button size="small" variant="outlined" onClick={() => void orderQuery.refetch()}>
+              Thử lại
+            </Button>
+          </div>
+        )}
         <div className="three-pane">
           {/* Left: Categories */}
           <aside className="pane">
@@ -3242,6 +3355,15 @@ function OrderDrawer() {
             <div className="pane-scroll">
               {menuQuery.isLoading ? (
                 <p className="muted" style={{ padding: 12 }}>Đang tải menu...</p>
+              ) : menuQuery.isError ? (
+                <div className="tw-empty-state" data-testid="order-menu-error-state">
+                  <AlertTriangle size={30} color="#b45309" />
+                  <strong>Không tải được menu</strong>
+                  <p>{toToastError(menuQuery.error)}</p>
+                  <Button variant="contained" size="small" onClick={() => void menuQuery.refetch()}>
+                    Thử tải lại
+                  </Button>
+                </div>
               ) : items.length === 0 ? (
                 <p className="muted" style={{ padding: 12 }}>Không có món.</p>
               ) : (
@@ -3325,7 +3447,7 @@ function OrderDrawer() {
                 variant="contained"
                 fullWidth
                 data-testid="submit-order-button-footer"
-                disabled={submitMutation.isPending}
+                disabled={submitDisabled}
                 onClick={submitOrder}
               >
                 In/Gửi đơn
@@ -3373,7 +3495,13 @@ function PaymentDrawer() {
           toast.success("Đã thanh toán. Bàn đã trống.");
           closeDrawer();
         },
-        onError: (error) => toast.error(toToastError(error)),
+        onError: (error) => {
+          const uiError = notifyUiError(error);
+          if (uiError.action === "reloadOrder") {
+            void orderQuery.refetch();
+            void floorPlanQuery.refetch();
+          }
+        },
       },
     );
   };
@@ -3405,7 +3533,7 @@ function PaymentDrawer() {
           <Button
             variant="contained"
             data-testid="pay-button"
-            disabled={!order || insufficient || payMutation.isPending}
+            disabled={!order || orderQuery.isError || insufficient || payMutation.isPending}
             onClick={payOrder}
             color={insufficient ? "error" : "primary"}
           >
@@ -3415,6 +3543,21 @@ function PaymentDrawer() {
       </header>
 
       <div className="drawer-body">
+        {orderQuery.isLoading ? (
+          <div className="tw-empty-state" data-testid="payment-loading-state">
+            <ReceiptText size={32} color="#94a3b8" />
+            <p>Đang tải đơn thanh toán...</p>
+          </div>
+        ) : orderQuery.isError ? (
+          <div className="tw-empty-state" data-testid="payment-error-state">
+            <AlertTriangle size={32} color="#b45309" />
+            <strong>Không tải được đơn thanh toán</strong>
+            <p>{toToastError(orderQuery.error)}</p>
+            <Button variant="contained" size="small" onClick={() => void orderQuery.refetch()}>
+              Thử tải lại
+            </Button>
+          </div>
+        ) : (
         <div className="payment-three-pane">
           {/* Left: Order info */}
           <aside className="panel payment-info-panel">
@@ -3545,7 +3688,7 @@ function PaymentDrawer() {
                 fullWidth
                 size="large"
                 data-testid="pay-button-footer"
-                disabled={!order || insufficient || payMutation.isPending}
+                disabled={!order || orderQuery.isError || insufficient || payMutation.isPending}
                 onClick={payOrder}
                 sx={{ borderRadius: "8px", fontWeight: 800, fontSize: 16 }}
               >
@@ -3554,6 +3697,7 @@ function PaymentDrawer() {
             </div>
           </aside>
         </div>
+        )}
       </div>
     </section>
   );
@@ -4026,7 +4170,16 @@ function MenuEditorDrawer() {
       </header>
 
       <div className="drawer-body menu-editor-body">
-        {!seeded ? (
+        {menuQuery.isError ? (
+          <div className="tw-empty-state" data-testid="menu-editor-error-state">
+            <AlertTriangle size={32} color="#b45309" />
+            <strong>Không tải được menu</strong>
+            <p>{toToastError(menuQuery.error)}</p>
+            <Button variant="contained" size="small" onClick={() => void menuQuery.refetch()}>
+              Thử tải lại
+            </Button>
+          </div>
+        ) : !seeded ? (
           <p className="muted" style={{ padding: 16 }}>Đang tải menu...</p>
         ) : (
           <>
@@ -4753,7 +4906,16 @@ function FloorEditorDrawer() {
       </header>
 
       <div className="drawer-body menu-editor-body">
-        {!seeded ? (
+        {floorQuery.isError ? (
+          <div className="tw-empty-state" data-testid="floor-editor-error-state">
+            <AlertTriangle size={32} color="#b45309" />
+            <strong>Không tải được sơ đồ</strong>
+            <p>{toToastError(floorQuery.error)}</p>
+            <Button variant="contained" size="small" onClick={() => void floorQuery.refetch()}>
+              Thử tải lại
+            </Button>
+          </div>
+        ) : !seeded ? (
           <p className="muted" style={{ padding: 16 }}>Đang tải sơ đồ...</p>
         ) : (
           <>

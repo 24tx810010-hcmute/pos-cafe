@@ -153,3 +153,5 @@ export const mapUnknownErrorToUiError = (error: unknown): UiError => {
 };
 
 export const getUiErrorTemplate = (code: AppErrorCode): UiError => ({ ...UI_ERROR_BY_CODE[code] });
+
+export const formatUiErrorForToast = (error: UiError): string => `${error.title}: ${error.message}`;

@@ -2010,6 +2010,27 @@ textarea {
   color: var(--muted);
 }
 
+.drawer-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 14px 0;
+  padding: 10px 12px;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: #92400e;
+}
+.drawer-alert p {
+  margin: 2px 0 0;
+  color: #92400e;
+  font-size: 13px;
+}
+.drawer-alert .MuiButton-root {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
 .tw-list-loading {
   display: flex;
   flex-direction: column;

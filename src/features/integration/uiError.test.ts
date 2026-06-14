@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AppError } from "@/core/appError";
 import {
+  formatUiErrorForToast,
   getUiErrorTemplate,
   mapAppErrorToUiError,
   mapUnknownErrorToUiError,
@@ -52,5 +53,13 @@ describe("uiError", () => {
 
     expect(uiError.code).toBe("UNKNOWN");
     expect(uiError.message).toBe("Thao tác chưa hoàn tất. Hãy thử lại hoặc kiểm tra kết nối.");
+  });
+
+  it("formats toast copy with title and message", () => {
+    const uiError = getUiErrorTemplate("ORDER_VERSION_CONFLICT");
+
+    expect(formatUiErrorForToast(uiError)).toBe(
+      "Đơn đã thay đổi: Dữ liệu đơn vừa được cập nhật từ thiết bị khác. Tải lại đơn trước khi tiếp tục.",
+    );
   });
 });
