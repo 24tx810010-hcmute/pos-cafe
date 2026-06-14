@@ -35,9 +35,11 @@ export const createAppPorts = (env: RuntimePortEnv = {}): AppPorts => {
   return createMockPorts();
 };
 
+let viteEnvPorts: AppPorts | null = null;
+
 export const createAppPortsFromViteEnv = (): AppPorts =>
-  createAppPorts({
+  (viteEnvPorts ??= createAppPorts({
     mode: import.meta.env.VITE_DATA_MODE,
     supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
     supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-  });
+  }));
