@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import type { OrderHistoryFilter, ReportFilter } from "@/domain";
 import { posQueryKeys } from "@/features/shared/queryKeys";
 import { usePorts } from "@/ports/portsContext";
@@ -48,5 +48,15 @@ export const useCoreReportQuery = (filter: ReportFilter) => {
   return useQuery({
     queryKey: posQueryKeys.report(filter.businessDate),
     queryFn: () => ports.report.getCoreReport(filter),
+  });
+};
+
+export const useCoreReportsQuery = (filters: ReportFilter[]) => {
+  const ports = usePorts();
+  return useQueries({
+    queries: filters.map((filter) => ({
+      queryKey: posQueryKeys.report(filter.businessDate),
+      queryFn: () => ports.report.getCoreReport(filter),
+    })),
   });
 };

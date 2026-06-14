@@ -42,12 +42,21 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointer
 import toast from "react-hot-toast";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
 import type {
+  Category,
+  CoreReport,
   DecorKind,
   Employee,
   EmployeeRole,
+  FloorArea,
+  FloorDecorItem,
   FloorPlan,
+  FloorPlanChanges,
   FloorTable,
+  MenuCatalog,
+  MenuChanges,
   MenuItem,
+  OptionGroup,
+  OptionValue,
   TableShape,
   TableStatus,
   OrderDetail,
@@ -63,8 +72,10 @@ import {
   orderDetailToDraft,
   useFloorPlanQuery,
   useMenuQuery,
+  useCoreReportsQuery,
   useOpenOrdersQuery,
   useOrderDetailQuery,
+  useOrderHistoryQuery,
   usePayOrderMutation,
   useSubmitOrderMutation,
   useTakeawayOpenOrdersQuery,
@@ -76,9 +87,13 @@ import {
   useClearDemoDataMutation,
   useCreateEmployeeMutation,
   useResetPinMutation,
+  useSaveFloorPlanMutation,
+  useSaveMenuMutation,
   useStoreSettingsQuery,
   useUpdateEmployeeMutation,
   useUpdateSettingsMutation,
+  hasFloorPlanChanges,
+  hasMenuChanges,
 } from "@/features/admin";
 import {
   useActiveEmployeesQuery,
@@ -1023,38 +1038,111 @@ type HistoryDateRange = "today" | "7days" | "month" | "custom";
 type HistoryStatusFilter = "all" | "paid" | "void" | "open";
 type HistoryOrderTypeFilter = "all" | "dine_in" | "takeaway";
 
-interface MockHistoryOrder {
+const PAY_METHOD_LABEL: Record<string, string> = { cash: "Tiền mặt", qr: "QR / VietQR", bank_transfer: "Chuyển khoản" };
+
+const DEFAULT_TIMEZONE = "Asia/Saigon";
+
+type BusinessDateRange = {
+  fromDate: string;
+  toDate: string;
+};
+
+type HistoryOrderRow = {
   id: string;
   orderNo: number;
   createdAt: string;
   tableLabel: string;
-  orderType: "dine_in" | "takeaway";
+  orderType: OrderSummary["orderType"];
   total: number;
-  status: "paid" | "void" | "open";
-  employeeName: string;
-  payMethod: "cash" | "qr" | "bank_transfer" | null;
-  items: Array<{ name: string; quantity: number; unitPrice: number }>;
-}
+  status: OrderSummary["status"];
+  employeeName: string | null;
+  payMethod: string | null;
+};
 
-const MOCK_HISTORY: MockHistoryOrder[] = [
-  { id: "h-1", orderNo: 101, createdAt: "08:12", tableLabel: "B01", orderType: "dine_in", total: 95000, status: "paid", employeeName: "Ngân", payMethod: "cash", items: [{ name: "Cà phê sữa", quantity: 2, unitPrice: 35000 }, { name: "Trà đào", quantity: 1, unitPrice: 25000 }] },
-  { id: "h-2", orderNo: 102, createdAt: "08:45", tableLabel: "Mang đi", orderType: "takeaway", total: 55000, status: "paid", employeeName: "Minh", payMethod: "cash", items: [{ name: "Bạc xỉu", quantity: 1, unitPrice: 30000 }, { name: "Bánh mì", quantity: 1, unitPrice: 25000 }] },
-  { id: "h-3", orderNo: 103, createdAt: "09:10", tableLabel: "B03", orderType: "dine_in", total: 140000, status: "paid", employeeName: "Admin", payMethod: "qr", items: [{ name: "Cà phê đen", quantity: 2, unitPrice: 30000 }, { name: "Sinh tố", quantity: 2, unitPrice: 40000 }] },
-  { id: "h-4", orderNo: 104, createdAt: "09:35", tableLabel: "B05", orderType: "dine_in", total: 75000, status: "void", employeeName: "Ngân", payMethod: null, items: [{ name: "Trà sữa", quantity: 3, unitPrice: 25000 }] },
-  { id: "h-5", orderNo: 105, createdAt: "10:02", tableLabel: "Mang đi", orderType: "takeaway", total: 45000, status: "paid", employeeName: "Ngân", payMethod: "cash", items: [{ name: "Cà phê sữa", quantity: 1, unitPrice: 35000 }, { name: "Snack", quantity: 1, unitPrice: 10000 }] },
-  { id: "h-6", orderNo: 106, createdAt: "10:30", tableLabel: "B02", orderType: "dine_in", total: 120000, status: "paid", employeeName: "Minh", payMethod: "cash", items: [{ name: "Cà phê đen", quantity: 4, unitPrice: 30000 }] },
-  { id: "h-7", orderNo: 107, createdAt: "11:15", tableLabel: "B06", orderType: "dine_in", total: 80000, status: "paid", employeeName: "Admin", payMethod: "bank_transfer", items: [{ name: "Matcha latte", quantity: 2, unitPrice: 40000 }] },
-  { id: "h-8", orderNo: 108, createdAt: "11:48", tableLabel: "Mang đi", orderType: "takeaway", total: 60000, status: "paid", employeeName: "Ngân", payMethod: "cash", items: [{ name: "Bạc xỉu", quantity: 2, unitPrice: 30000 }] },
-  { id: "h-9", orderNo: 109, createdAt: "14:05", tableLabel: "B04", orderType: "dine_in", total: 170000, status: "paid", employeeName: "Minh", payMethod: "qr", items: [{ name: "Cà phê sữa", quantity: 2, unitPrice: 35000 }, { name: "Trà đào", quantity: 2, unitPrice: 25000 }, { name: "Bánh mì", quantity: 2, unitPrice: 25000 }] },
-  { id: "h-10", orderNo: 110, createdAt: "15:30", tableLabel: "B07", orderType: "dine_in", total: 90000, status: "void", employeeName: "Ngân", payMethod: null, items: [{ name: "Sinh tố", quantity: 2, unitPrice: 40000 }, { name: "Snack", quantity: 1, unitPrice: 10000 }] },
-  { id: "h-11", orderNo: 111, createdAt: "16:20", tableLabel: "Mang đi", orderType: "takeaway", total: 35000, status: "paid", employeeName: "Minh", payMethod: "cash", items: [{ name: "Cà phê đen", quantity: 1, unitPrice: 30000 }, { name: "Snack", quantity: 1, unitPrice: 5000 }] },
-  { id: "h-12", orderNo: 112, createdAt: "17:00", tableLabel: "B01", orderType: "dine_in", total: 210000, status: "paid", employeeName: "Admin", payMethod: "cash", items: [{ name: "Matcha latte", quantity: 3, unitPrice: 40000 }, { name: "Trà sữa", quantity: 2, unitPrice: 25000 }, { name: "Bánh mì", quantity: 2, unitPrice: 20000 }] },
-];
+const businessDateInTimezone = (date: Date, timeZone: string): string => {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date);
+    const year = parts.find((part) => part.type === "year")?.value;
+    const month = parts.find((part) => part.type === "month")?.value;
+    const day = parts.find((part) => part.type === "day")?.value;
+    if (year && month && day) return `${year}-${month}-${day}`;
+  } catch {
+    // Fall through to UTC fallback if the runtime does not support this timezone.
+  }
+  return date.toISOString().slice(0, 10);
+};
 
-const PAY_METHOD_LABEL: Record<string, string> = { cash: "Tiền mặt", qr: "QR / VietQR", bank_transfer: "Chuyển khoản" };
+const shiftBusinessDate = (businessDate: string, days: number): string => {
+  const date = new Date(`${businessDate}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
+const normalizeBusinessRange = (fromDate: string, toDate: string): BusinessDateRange =>
+  fromDate <= toDate ? { fromDate, toDate } : { fromDate: toDate, toDate: fromDate };
+
+const businessRangeFor = (
+  range: HistoryDateRange,
+  today: string,
+  customFrom: string,
+  customTo: string,
+): BusinessDateRange => {
+  if (range === "7days") return { fromDate: shiftBusinessDate(today, -6), toDate: today };
+  if (range === "month") return { fromDate: `${today.slice(0, 8)}01`, toDate: today };
+  if (range === "custom") return normalizeBusinessRange(customFrom || today, customTo || customFrom || today);
+  return { fromDate: today, toDate: today };
+};
+
+const enumerateBusinessDates = ({ fromDate, toDate }: BusinessDateRange): string[] => {
+  const dates: string[] = [];
+  let cursor = fromDate;
+  while (cursor <= toDate && dates.length < 31) {
+    dates.push(cursor);
+    cursor = shiftBusinessDate(cursor, 1);
+  }
+  return dates;
+};
+
+const formatBusinessDate = (businessDate: string): string => {
+  const [year, month, day] = businessDate.split("-");
+  return year && month && day ? `${day}/${month}/${year}` : businessDate;
+};
+
+const shortBusinessDate = (businessDate: string): string => {
+  const [, month, day] = businessDate.split("-");
+  return month && day ? `${day}/${month}` : businessDate;
+};
+
+const tableNameMap = (floorPlan: FloorPlan | undefined): Map<string, string> =>
+  new Map((floorPlan?.tables ?? []).map((table) => [table.id, table.name]));
+
+const tableLabelForOrder = (order: Pick<OrderSummary, "orderType" | "tableId">, tables: Map<string, string>): string => {
+  if (order.orderType === "takeaway") return "Mang đi";
+  if (!order.tableId) return "Dine-in";
+  return tables.get(order.tableId) ?? order.tableId;
+};
+
+const historyRowFromOrder = (order: OrderSummary, tables: Map<string, string>): HistoryOrderRow => ({
+  id: order.id,
+  orderNo: order.orderNo,
+  createdAt: formatBusinessDate(order.businessDate),
+  tableLabel: tableLabelForOrder(order, tables),
+  orderType: order.orderType,
+  total: order.total,
+  status: order.status,
+  employeeName: null,
+  payMethod: null,
+});
 
 function OrderHistoryDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
+  const settingsQuery = useStoreSettingsQuery();
+  const floorQuery = useFloorPlanQuery();
   const [dateRange, setDateRange] = useState<HistoryDateRange>("today");
   const [statusFilter, setStatusFilter] = useState<HistoryStatusFilter>("all");
   const [orderTypeFilter, setOrderTypeFilter] = useState<HistoryOrderTypeFilter>("all");
@@ -1062,20 +1150,44 @@ function OrderHistoryDrawer() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 8;
+  const timezone = settingsQuery.data?.timezone ?? DEFAULT_TIMEZONE;
+  const today = businessDateInTimezone(new Date(), timezone);
+  const [customFrom, setCustomFrom] = useState(today);
+  const [customTo, setCustomTo] = useState(today);
+  const selectedRange = useMemo(
+    () => businessRangeFor(dateRange, today, customFrom, customTo),
+    [customFrom, customTo, dateRange, today],
+  );
+  const historyQuery = useOrderHistoryQuery({ ...selectedRange, page, pageSize: PAGE_SIZE });
+  const detailQuery = useOrderDetailQuery(selectedId);
+  const tables = useMemo(() => tableNameMap(floorQuery.data), [floorQuery.data]);
+  const historyRows = useMemo(
+    () => (historyQuery.data?.items ?? []).map((order) => historyRowFromOrder(order, tables)),
+    [historyQuery.data?.items, tables],
+  );
 
-  const filtered = MOCK_HISTORY.filter((o) => {
+  const filtered = historyRows.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
     if (orderTypeFilter !== "all" && o.orderType !== orderTypeFilter) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
-      if (!String(o.orderNo).includes(q) && !o.tableLabel.toLowerCase().includes(q) && !o.employeeName.toLowerCase().includes(q)) return false;
+      const haystack = [o.orderNo, o.tableLabel, o.status, o.id, o.employeeName ?? ""].join(" ").toLowerCase();
+      if (!haystack.includes(q)) return false;
     }
     return true;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const selected = MOCK_HISTORY.find((o) => o.id === selectedId) ?? null;
+  const totalPages = Math.max(1, Math.ceil((historyQuery.data?.total ?? 0) / PAGE_SIZE));
+  const paginated = filtered;
+  const selected = historyRows.find((o) => o.id === selectedId) ?? null;
+  const selectedDetail = detailQuery.data;
+  const pageRevenue = historyRows.filter((o) => o.status === "paid").reduce((sum, o) => sum + o.total, 0);
+
+  useEffect(() => {
+    if (historyQuery.data && page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [historyQuery.data, page, totalPages]);
 
   const dateRangeChips: Array<{ key: HistoryDateRange; label: string }> = [
     { key: "today", label: "Hôm nay" },
@@ -1108,7 +1220,7 @@ function OrderHistoryDrawer() {
       <header className="drawer-header">
         <div className="title-stack">
           <h2>Lịch sử đơn</h2>
-          <p><span className="sync-dot" />{filtered.length} đơn · mock</p>
+          <p><span className="sync-dot" />{historyQuery.data?.total ?? 0} đơn · online</p>
         </div>
         <div className="header-actions hx-header-actions">
           <div className="hx-date-chips">
@@ -1122,9 +1234,31 @@ function OrderHistoryDrawer() {
               </button>
             ))}
           </div>
+          {dateRange === "custom" && (
+            <div className="hx-date-chips">
+              <TextField
+                type="date"
+                size="small"
+                label="Từ"
+                value={customFrom}
+                onChange={(e) => { setCustomFrom(e.target.value); handleFilterChange(); }}
+                InputLabelProps={{ shrink: true }}
+                inputProps={{ "data-testid": "history-from-date" }}
+              />
+              <TextField
+                type="date"
+                size="small"
+                label="Đến"
+                value={customTo}
+                onChange={(e) => { setCustomTo(e.target.value); handleFilterChange(); }}
+                InputLabelProps={{ shrink: true }}
+                inputProps={{ "data-testid": "history-to-date" }}
+              />
+            </div>
+          )}
           <TextField
             size="small"
-            placeholder="Tìm mã đơn / bàn / NV..."
+            placeholder="Tìm mã đơn / bàn..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); handleFilterChange(); }}
             sx={{ maxWidth: 200 }}
@@ -1150,7 +1284,7 @@ function OrderHistoryDrawer() {
                   >
                     {sc.label}
                     <span className="hx-filter-count">
-                      {sc.key === "all" ? MOCK_HISTORY.length : MOCK_HISTORY.filter((o) => o.status === sc.key).length}
+                      {sc.key === "all" ? historyRows.length : historyRows.filter((o) => o.status === sc.key).length}
                     </span>
                   </button>
                 ))}
@@ -1165,24 +1299,24 @@ function OrderHistoryDrawer() {
                   >
                     {oc.label}
                     <span className="hx-filter-count">
-                      {oc.key === "all" ? MOCK_HISTORY.length : MOCK_HISTORY.filter((o) => o.orderType === oc.key).length}
+                      {oc.key === "all" ? historyRows.length : historyRows.filter((o) => o.orderType === oc.key).length}
                     </span>
                   </button>
                 ))}
               </div>
               <div className="hx-filter-section hx-summary-box" style={{ marginTop: 16 }}>
-                <div className="hx-filter-label">Tổng hôm nay</div>
+                <div className="hx-filter-label">Tổng trang này</div>
                 <div className="hx-summary-row">
                   <span>Doanh thu</span>
-                  <strong className="price-text">{formatVnd(MOCK_HISTORY.filter((o) => o.status === "paid").reduce((s, o) => s + o.total, 0))}</strong>
+                  <strong className="price-text">{formatVnd(pageRevenue)}</strong>
                 </div>
                 <div className="hx-summary-row">
                   <span>Số đơn TT</span>
-                  <strong>{MOCK_HISTORY.filter((o) => o.status === "paid").length}</strong>
+                  <strong>{historyRows.filter((o) => o.status === "paid").length}</strong>
                 </div>
                 <div className="hx-summary-row">
                   <span>Đã huỷ</span>
-                  <strong>{MOCK_HISTORY.filter((o) => o.status === "void").length}</strong>
+                  <strong>{historyRows.filter((o) => o.status === "void").length}</strong>
                 </div>
               </div>
             </div>
@@ -1195,10 +1329,22 @@ function OrderHistoryDrawer() {
               <span className="muted">{filtered.length} kết quả</span>
             </div>
             <div className="pane-scroll hx-table-pane">
-              {filtered.length === 0 ? (
+              {historyQuery.isLoading ? (
+                <div className="tw-list-loading">
+                  {[1, 2, 3].map((i) => <div key={i} className="tw-skeleton-card" />)}
+                </div>
+              ) : historyQuery.isError ? (
+                <div className="tw-empty-state">
+                  <AlertTriangle size={32} color="#b45309" />
+                  <p>{toToastError(historyQuery.error)}</p>
+                  <Button variant="outlined" size="small" onClick={() => void historyQuery.refetch()}>
+                    Tải lại
+                  </Button>
+                </div>
+              ) : filtered.length === 0 ? (
                 <div className="tw-empty-state">
                   <ReceiptText size={32} color="#94a3b8" />
-                  <p>Hôm nay chưa có đơn nào.</p>
+                  <p>Chưa có đơn nào trong khoảng đã chọn.</p>
                 </div>
               ) : (
                 <>
@@ -1206,10 +1352,10 @@ function OrderHistoryDrawer() {
                   <table className="hx-table">
                     <thead>
                       <tr>
-                        <th>Giờ</th>
+                        <th>Ngày</th>
                         <th>Mã đơn</th>
                         <th>Bàn / Loại</th>
-                        <th>Nhân viên</th>
+                        <th>NV</th>
                         <th>Tổng tiền</th>
                         <th>Trạng thái</th>
                       </tr>
@@ -1219,6 +1365,7 @@ function OrderHistoryDrawer() {
                         <tr
                           key={o.id}
                           className={`hx-row${selectedId === o.id ? " selected" : ""}`}
+                          data-testid={`history-row-${o.id}`}
                           onClick={() => setSelectedId(selectedId === o.id ? null : o.id)}
                         >
                           <td className="muted">{o.createdAt}</td>
@@ -1228,7 +1375,7 @@ function OrderHistoryDrawer() {
                               {o.orderType === "takeaway" ? "Mang đi" : o.tableLabel}
                             </span>
                           </td>
-                          <td>{o.employeeName}</td>
+                          <td>{o.employeeName ?? "—"}</td>
                           <td><strong className="price-text">{formatCompactVnd(o.total)}</strong></td>
                           <td><span className={statusBadgeClass(o.status)}>{statusLabel(o.status)}</span></td>
                         </tr>
@@ -1251,7 +1398,7 @@ function OrderHistoryDrawer() {
                         <div className="hx-hcard-meta">
                           <span className="muted">{o.createdAt}</span>
                           <span className={`hx-type-pill ${o.orderType}`}>{o.orderType === "takeaway" ? "Mang đi" : o.tableLabel}</span>
-                          <span className="muted">{o.employeeName}</span>
+                          <span className="muted">{o.employeeName ?? "—"}</span>
                         </div>
                         <strong className="price-text">{formatVnd(o.total)}</strong>
                       </div>
@@ -1280,7 +1427,7 @@ function OrderHistoryDrawer() {
               ) : (
                 <div className="tw-detail-body">
                   <div className="tw-detail-row"><span>Đơn số</span><strong>#{selected.orderNo}</strong></div>
-                  <div className="tw-detail-row"><span>Giờ tạo</span><strong>{selected.createdAt}</strong></div>
+                  <div className="tw-detail-row"><span>Ngày</span><strong>{selected.createdAt}</strong></div>
                   <div className="tw-detail-row">
                     <span>Loại</span>
                     <strong>
@@ -1289,7 +1436,9 @@ function OrderHistoryDrawer() {
                       </span>
                     </strong>
                   </div>
-                  <div className="tw-detail-row"><span>Nhân viên</span><strong>{selected.employeeName}</strong></div>
+                  {selected.employeeName && (
+                    <div className="tw-detail-row"><span>Nhân viên</span><strong>{selected.employeeName}</strong></div>
+                  )}
                   <div className="tw-detail-row">
                     <span>Trạng thái</span>
                     <strong><span className={statusBadgeClass(selected.status)}>{statusLabel(selected.status)}</span></strong>
@@ -1299,21 +1448,29 @@ function OrderHistoryDrawer() {
                   )}
                   <div className="tw-detail-divider" />
                   <div className="hx-filter-label" style={{ marginBottom: 4 }}>Món</div>
-                  {selected.items.map((item, i) => (
-                    <div key={i} className="tw-detail-item">
-                      <span>{item.name} × {item.quantity}</span>
-                      <strong>{formatCompactVnd(item.unitPrice * item.quantity)}</strong>
-                    </div>
-                  ))}
+                  {detailQuery.isLoading ? (
+                    <p className="muted">Đang tải chi tiết...</p>
+                  ) : detailQuery.isError ? (
+                    <p className="muted">{toToastError(detailQuery.error)}</p>
+                  ) : selectedDetail?.items.length ? (
+                    selectedDetail.items.map((item) => (
+                      <div key={item.id} className="tw-detail-item">
+                        <span>{item.itemName} × {item.quantity}</span>
+                        <strong>{formatCompactVnd(item.unitPrice * item.quantity)}</strong>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="muted">Không có chi tiết món.</p>
+                  )}
                   <div className="tw-detail-divider" />
-                  <div className="tw-detail-row total"><span>Tổng</span><strong className="price-text">{formatVnd(selected.total)}</strong></div>
+                  <div className="tw-detail-row total"><span>Tổng</span><strong className="price-text">{formatVnd(selectedDetail?.total ?? selected.total)}</strong></div>
                   <div className="tw-detail-actions">
                     <Button
                       variant="outlined"
                       size="small"
                       fullWidth
                       startIcon={<ReceiptText size={15} />}
-                      onClick={() => toast("Đã mở preview hoá đơn (mock).")}
+                      onClick={() => toast("Tính năng in lại sẽ dùng bản lưu hoá đơn ở bước sau.")}
                     >
                       In lại
                     </Button>
@@ -1353,12 +1510,14 @@ const EMP_ROLE_LABEL: Record<EmployeeRole, string> = { admin: "Admin", cashier: 
 const EMP_ROLE_ORDER: EmployeeRole[] = ["admin", "cashier", "kitchen"];
 const EMPTY_EMP_FORM: EmpForm = { name: "", role: "cashier", isActive: true, newPin: "", confirmPin: "" };
 
-const createEmployeeId = (): string => {
+let clientIdSeq = 0;
+const createClientId = (): string => {
   const uuid = globalThis.crypto?.randomUUID?.();
   if (uuid) return uuid;
-  const suffix = Date.now().toString().padStart(12, "0").slice(-12);
+  const suffix = `${Date.now()}${clientIdSeq++}`.padStart(12, "0").slice(-12);
   return `00000000-0000-4000-8000-${suffix}`;
 };
+const createEmployeeId = createClientId;
 
 const toEmployeeRecord = (employee: Employee): EmployeeRecord => ({
   ...employee,
@@ -3439,8 +3598,7 @@ interface DraftValue {
   isNew?: boolean;
 }
 
-let menuDraftSeq = 0;
-const nextDraftId = (prefix: string) => `${prefix}-draft-${Date.now()}-${menuDraftSeq++}`;
+const nextDraftId = (_prefix: string) => createClientId();
 const toInt = (raw: string) => {
   const n = parseInt(raw.replace(/[^\d]/g, ""), 10);
   return Number.isNaN(n) ? 0 : n;
@@ -3449,11 +3607,159 @@ const nextSort = (current: number[]) => (current.length ? Math.max(...current) +
 
 type MenuTab = "cat" | "item" | "props";
 
+const mapById = <T extends { id: string }>(items: T[]): Map<string, T> =>
+  new Map(items.map((item) => [item.id, item]));
+
+const trimMenuName = (value: string): string => value.trim();
+
+const tombstoneFor = (id: string, actorId: string | null | undefined) => ({
+  id,
+  deletedByEmployeeId: actorId ?? null,
+});
+
+function buildMenuChangesFromDrafts(input: {
+  base: MenuCatalog;
+  categories: DraftCategory[];
+  items: DraftItem[];
+  groups: DraftGroup[];
+  values: DraftValue[];
+  actorId: string | null | undefined;
+}): MenuChanges {
+  const changes: MenuChanges = {
+    categories: { created: [], updated: [], deleted: [] },
+    menuItems: { created: [], updated: [], deleted: [] },
+    optionGroups: { created: [], updated: [], deleted: [] },
+    optionValues: { created: [], updated: [], deleted: [] },
+  };
+  const baseCategories = mapById<Category>(input.base.categories);
+  const baseItems = mapById<MenuItem>(input.base.menuItems);
+  const baseGroups = mapById<OptionGroup>(input.base.optionGroups);
+  const baseValues = mapById<OptionValue>(input.base.optionValues);
+
+  for (const category of input.categories) {
+    const name = trimMenuName(category.name);
+    const original = baseCategories.get(category.id);
+    if (!original || category.isNew) {
+      if (!category.deleted) {
+        changes.categories.created.push({ id: category.id, name, sortOrder: category.sortOrder });
+      }
+      continue;
+    }
+    if (category.deleted) {
+      changes.categories.deleted.push(tombstoneFor(category.id, input.actorId));
+      continue;
+    }
+
+    const update: MenuChanges["categories"]["updated"][number] = { id: category.id };
+    if (name !== original.name) update.name = name;
+    if (category.sortOrder !== original.sortOrder) update.sortOrder = category.sortOrder;
+    if (Object.keys(update).length > 1) changes.categories.updated.push(update);
+  }
+
+  for (const item of input.items) {
+    const name = trimMenuName(item.name);
+    const original = baseItems.get(item.id);
+    if (!original || item.isNew) {
+      if (!item.deleted) {
+        changes.menuItems.created.push({
+          id: item.id,
+          categoryId: item.categoryId,
+          name,
+          price: item.price,
+          imageAssetKey: null,
+          sortOrder: item.sortOrder,
+          isAvailable: item.isAvailable,
+        });
+      }
+      continue;
+    }
+    if (item.deleted) {
+      changes.menuItems.deleted.push(tombstoneFor(item.id, input.actorId));
+      continue;
+    }
+
+    const update: MenuChanges["menuItems"]["updated"][number] = { id: item.id };
+    if (item.categoryId !== original.categoryId) update.categoryId = item.categoryId;
+    if (name !== original.name) update.name = name;
+    if (item.price !== original.price) update.price = item.price;
+    if (item.sortOrder !== original.sortOrder) update.sortOrder = item.sortOrder;
+    if (item.isAvailable !== original.isAvailable) update.isAvailable = item.isAvailable;
+    if (Object.keys(update).length > 1) changes.menuItems.updated.push(update);
+  }
+
+  for (const group of input.groups) {
+    const name = trimMenuName(group.name);
+    const original = baseGroups.get(group.id);
+    if (!original || group.isNew) {
+      if (!group.deleted) {
+        changes.optionGroups.created.push({
+          id: group.id,
+          menuItemId: group.menuItemId,
+          name,
+          selectType: group.selectType,
+          isRequired: group.isRequired,
+          minSelect: group.minSelect,
+          maxSelect: group.maxSelect,
+          sortOrder: group.sortOrder,
+        });
+      }
+      continue;
+    }
+    if (group.deleted) {
+      changes.optionGroups.deleted.push(tombstoneFor(group.id, input.actorId));
+      continue;
+    }
+
+    const update: MenuChanges["optionGroups"]["updated"][number] = { id: group.id };
+    if (group.menuItemId !== original.menuItemId) update.menuItemId = group.menuItemId;
+    if (name !== original.name) update.name = name;
+    if (group.selectType !== original.selectType) update.selectType = group.selectType;
+    if (group.isRequired !== original.isRequired) update.isRequired = group.isRequired;
+    if (group.minSelect !== original.minSelect) update.minSelect = group.minSelect;
+    if (group.maxSelect !== original.maxSelect) update.maxSelect = group.maxSelect;
+    if (group.sortOrder !== original.sortOrder) update.sortOrder = group.sortOrder;
+    if (Object.keys(update).length > 1) changes.optionGroups.updated.push(update);
+  }
+
+  for (const value of input.values) {
+    const name = trimMenuName(value.name);
+    const original = baseValues.get(value.id);
+    if (!original || value.isNew) {
+      if (!value.deleted) {
+        changes.optionValues.created.push({
+          id: value.id,
+          optionGroupId: value.optionGroupId,
+          name,
+          priceDelta: value.priceDelta,
+          sortOrder: value.sortOrder,
+        });
+      }
+      continue;
+    }
+    if (value.deleted) {
+      changes.optionValues.deleted.push(tombstoneFor(value.id, input.actorId));
+      continue;
+    }
+
+    const update: MenuChanges["optionValues"]["updated"][number] = { id: value.id };
+    if (value.optionGroupId !== original.optionGroupId) update.optionGroupId = value.optionGroupId;
+    if (name !== original.name) update.name = name;
+    if (value.priceDelta !== original.priceDelta) update.priceDelta = value.priceDelta;
+    if (value.sortOrder !== original.sortOrder) update.sortOrder = value.sortOrder;
+    if (Object.keys(update).length > 1) changes.optionValues.updated.push(update);
+  }
+
+  return changes;
+}
+
 function MenuEditorDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
+  const currentEmployee = useAppStore((state) => state.currentEmployee);
   const menuQuery = useAdminMenuQuery();
+  const saveMenuMutation = useSaveMenuMutation(currentEmployee);
 
   const [seeded, setSeeded] = useState(false);
+  const [baseMenu, setBaseMenu] = useState<MenuCatalog | null>(null);
   const [cats, setCats] = useState<DraftCategory[]>([]);
   const [items, setItems] = useState<DraftItem[]>([]);
   const [groups, setGroups] = useState<DraftGroup[]>([]);
@@ -3465,42 +3771,49 @@ function MenuEditorDrawer() {
   const [mobileTab, setMobileTab] = useState<MenuTab>("item");
   const [confirmCancel, setConfirmCancel] = useState(false);
 
+  const seedDraftFromMenu = (catalog: MenuCatalog) => {
+    setBaseMenu(catalog);
+    setCats(catalog.categories.map((c) => ({ id: c.id, name: c.name, sortOrder: c.sortOrder })));
+    setItems(
+      catalog.menuItems.map((m) => ({
+        id: m.id,
+        categoryId: m.categoryId,
+        name: m.name,
+        price: m.price,
+        sortOrder: m.sortOrder,
+        isAvailable: m.isAvailable,
+      })),
+    );
+    setGroups(
+      catalog.optionGroups.map((g) => ({
+        id: g.id,
+        menuItemId: g.menuItemId,
+        name: g.name,
+        selectType: g.selectType,
+        isRequired: g.isRequired,
+        minSelect: g.minSelect,
+        maxSelect: g.maxSelect,
+        sortOrder: g.sortOrder,
+      })),
+    );
+    setValues(
+      catalog.optionValues.map((v) => ({
+        id: v.id,
+        optionGroupId: v.optionGroupId,
+        name: v.name,
+        priceDelta: v.priceDelta,
+        sortOrder: v.sortOrder,
+      })),
+    );
+    setSelectedCategoryId(catalog.categories[0]?.id ?? "");
+    setSelectedItemId(null);
+    setDirty(false);
+    setSeeded(true);
+  };
+
   useEffect(() => {
     if (menuQuery.data && !seeded) {
-      setCats(menuQuery.data.categories.map((c) => ({ id: c.id, name: c.name, sortOrder: c.sortOrder })));
-      setItems(
-        menuQuery.data.menuItems.map((m) => ({
-          id: m.id,
-          categoryId: m.categoryId,
-          name: m.name,
-          price: m.price,
-          sortOrder: m.sortOrder,
-          isAvailable: m.isAvailable,
-        })),
-      );
-      setGroups(
-        menuQuery.data.optionGroups.map((g) => ({
-          id: g.id,
-          menuItemId: g.menuItemId,
-          name: g.name,
-          selectType: g.selectType,
-          isRequired: g.isRequired,
-          minSelect: g.minSelect,
-          maxSelect: g.maxSelect,
-          sortOrder: g.sortOrder,
-        })),
-      );
-      setValues(
-        menuQuery.data.optionValues.map((v) => ({
-          id: v.id,
-          optionGroupId: v.optionGroupId,
-          name: v.name,
-          priceDelta: v.priceDelta,
-          sortOrder: v.sortOrder,
-        })),
-      );
-      setSelectedCategoryId(menuQuery.data.categories[0]?.id ?? "");
-      setSeeded(true);
+      seedDraftFromMenu(menuQuery.data);
     }
   }, [menuQuery.data, seeded]);
 
@@ -3621,7 +3934,13 @@ function MenuEditorDrawer() {
   const activeCatCount = cats.filter((c) => !c.deleted).length;
   const activeItemCount = items.filter((i) => !i.deleted).length;
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (saveMenuMutation.isPending) return;
+    const sourceMenu = baseMenu ?? menuQuery.data;
+    if (!sourceMenu) {
+      toast.error("Menu chưa tải xong.");
+      return;
+    }
     const badItem = items.find((i) => !i.deleted && (!i.name.trim() || i.price < 0));
     if (badItem) {
       setSelectedCategoryId(badItem.categoryId);
@@ -3637,8 +3956,33 @@ function MenuEditorDrawer() {
       toast.error("Nhóm tuỳ chọn: số chọn tối đa phải ≥ tối thiểu.");
       return;
     }
-    toast.success("Đã lưu menu (mock)");
-    setDirty(false);
+
+    const changes = buildMenuChangesFromDrafts({
+      base: sourceMenu,
+      categories: cats,
+      items,
+      groups,
+      values,
+      actorId: currentEmployee?.id,
+    });
+    if (!hasMenuChanges(changes)) {
+      setDirty(false);
+      toast.success("Không có thay đổi cần lưu.");
+      return;
+    }
+
+    try {
+      await saveMenuMutation.mutateAsync({ changes });
+      const refreshed = await menuQuery.refetch();
+      if (refreshed.data) {
+        seedDraftFromMenu(refreshed.data);
+      } else {
+        setDirty(false);
+      }
+      toast.success("Đã lưu menu.");
+    } catch (error) {
+      toast.error(toToastError(error));
+    }
   };
 
   const handleCancel = () => {
@@ -3661,7 +4005,7 @@ function MenuEditorDrawer() {
           </h2>
           <p>
             <span className="sync-dot" />
-            {activeCatCount} danh mục · {activeItemCount} món · mock
+            {activeCatCount} danh mục · {activeItemCount} món · online
           </p>
         </div>
         <div className="header-actions">
@@ -3669,8 +4013,14 @@ function MenuEditorDrawer() {
           <Button variant="outlined" startIcon={<Eye size={15} />} onClick={() => setPreview((p) => !p)}>
             {preview ? "Thoát xem trước" : "Xem trước"}
           </Button>
-          <Button variant="contained" startIcon={<Save size={15} />} data-testid="save-menu-button" onClick={handleSave}>
-            Lưu mock
+          <Button
+            variant="contained"
+            startIcon={<Save size={15} />}
+            data-testid="save-menu-button"
+            onClick={handleSave}
+            disabled={!dirty || saveMenuMutation.isPending}
+          >
+            {saveMenuMutation.isPending ? "Đang lưu..." : "Lưu menu"}
           </Button>
         </div>
       </header>
@@ -3945,6 +4295,7 @@ interface DraftArea {
   id: string;
   name: string;
   sortOrder: number;
+  deleted?: boolean;
   isNew?: boolean;
 }
 interface DraftTable {
@@ -4007,11 +4358,135 @@ const decorDefaultSize = (kind: DecorKind) => {
   }
 };
 
+function buildFloorPlanChangesFromDrafts(input: {
+  base: FloorPlan;
+  areas: DraftArea[];
+  tables: DraftTable[];
+  decor: DraftDecor[];
+  actorId: string | null | undefined;
+}): FloorPlanChanges {
+  const changes: FloorPlanChanges = {
+    areas: { created: [], updated: [], deleted: [] },
+    tables: { created: [], updated: [], deleted: [] },
+    decorItems: { created: [], updated: [], deleted: [] },
+  };
+  const baseAreas = mapById<FloorArea>(input.base.areas);
+  const baseTables = mapById<FloorTable>(input.base.tables);
+  const baseDecor = mapById<FloorDecorItem>(input.base.decorItems);
+
+  for (const area of input.areas) {
+    const name = trimMenuName(area.name);
+    const original = baseAreas.get(area.id);
+    if (!original || area.isNew) {
+      if (!area.deleted) {
+        changes.areas.created.push({ id: area.id, name, sortOrder: area.sortOrder });
+      }
+      continue;
+    }
+    if (area.deleted) {
+      changes.areas.deleted.push(tombstoneFor(area.id, input.actorId));
+      continue;
+    }
+
+    const update: FloorPlanChanges["areas"]["updated"][number] = { id: area.id };
+    if (name !== original.name) update.name = name;
+    if (area.sortOrder !== original.sortOrder) update.sortOrder = area.sortOrder;
+    if (Object.keys(update).length > 1) changes.areas.updated.push(update);
+  }
+
+  for (const table of input.tables) {
+    const name = trimMenuName(table.name);
+    const original = baseTables.get(table.id);
+    if (!original || table.isNew) {
+      if (!table.deleted) {
+        changes.tables.created.push({
+          id: table.id,
+          areaId: table.areaId,
+          name,
+          posX: table.posX,
+          posY: table.posY,
+          width: table.width,
+          height: table.height,
+          shape: table.shape,
+          rotation: table.rotation,
+          seats: table.seats,
+          sortOrder: table.sortOrder,
+        });
+      }
+      continue;
+    }
+    if (table.deleted) {
+      changes.tables.deleted.push(tombstoneFor(table.id, input.actorId));
+      continue;
+    }
+
+    const update: FloorPlanChanges["tables"]["updated"][number] = { id: table.id };
+    if (table.areaId !== original.areaId) update.areaId = table.areaId;
+    if (name !== original.name) update.name = name;
+    if (table.posX !== original.posX) update.posX = table.posX;
+    if (table.posY !== original.posY) update.posY = table.posY;
+    if (table.width !== original.width) update.width = table.width;
+    if (table.height !== original.height) update.height = table.height;
+    if (table.shape !== original.shape) update.shape = table.shape;
+    if (table.rotation !== original.rotation) update.rotation = table.rotation;
+    if (table.seats !== original.seats) update.seats = table.seats;
+    if (table.sortOrder !== original.sortOrder) update.sortOrder = table.sortOrder;
+    if (Object.keys(update).length > 1) changes.tables.updated.push(update);
+  }
+
+  for (const item of input.decor) {
+    const label = item.label === null ? null : trimMenuName(item.label);
+    const original = baseDecor.get(item.id);
+    if (!original || item.isNew) {
+      if (!item.deleted) {
+        changes.decorItems.created.push({
+          id: item.id,
+          areaId: item.areaId,
+          kind: item.kind,
+          label,
+          assetKey: item.assetKey,
+          posX: item.posX,
+          posY: item.posY,
+          width: item.width,
+          height: item.height,
+          rotation: item.rotation,
+          zIndex: item.zIndex,
+          isLocked: item.isLocked,
+        });
+      }
+      continue;
+    }
+    if (item.deleted) {
+      changes.decorItems.deleted.push(tombstoneFor(item.id, input.actorId));
+      continue;
+    }
+
+    const update: FloorPlanChanges["decorItems"]["updated"][number] = { id: item.id };
+    if (item.areaId !== original.areaId) update.areaId = item.areaId;
+    if (item.kind !== original.kind) update.kind = item.kind;
+    if (label !== original.label) update.label = label;
+    if (item.assetKey !== original.assetKey) update.assetKey = item.assetKey;
+    if (item.posX !== original.posX) update.posX = item.posX;
+    if (item.posY !== original.posY) update.posY = item.posY;
+    if (item.width !== original.width) update.width = item.width;
+    if (item.height !== original.height) update.height = item.height;
+    if (item.rotation !== original.rotation) update.rotation = item.rotation;
+    if (item.zIndex !== original.zIndex) update.zIndex = item.zIndex;
+    if (item.isLocked !== original.isLocked) update.isLocked = item.isLocked;
+    if (Object.keys(update).length > 1) changes.decorItems.updated.push(update);
+  }
+
+  return changes;
+}
+
 function FloorEditorDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
+  const currentEmployee = useAppStore((state) => state.currentEmployee);
   const floorQuery = useAdminFloorPlanQuery();
+  const saveFloorMutation = useSaveFloorPlanMutation(currentEmployee);
 
   const [seeded, setSeeded] = useState(false);
+  const [baseFloorPlan, setBaseFloorPlan] = useState<FloorPlan | null>(null);
   const [areas, setAreas] = useState<DraftArea[]>([]);
   const [tables, setTables] = useState<DraftTable[]>([]);
   const [decor, setDecor] = useState<DraftDecor[]>([]);
@@ -4027,13 +4502,20 @@ function FloorEditorDrawer() {
   const stageRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ kind: "table" | "decor"; id: string; offX: number; offY: number } | null>(null);
 
+  const seedDraftFromFloorPlan = (plan: FloorPlan) => {
+    setBaseFloorPlan(plan);
+    setAreas(plan.areas.map((a) => ({ id: a.id, name: a.name, sortOrder: a.sortOrder })));
+    setTables(plan.tables.map((t) => ({ ...t })));
+    setDecor(plan.decorItems.map((d) => ({ ...d })));
+    setAreaId(plan.areas[0]?.id ?? "");
+    setSelected(null);
+    setDirty(false);
+    setSeeded(true);
+  };
+
   useEffect(() => {
     if (floorQuery.data && !seeded) {
-      setAreas(floorQuery.data.areas.map((a) => ({ id: a.id, name: a.name, sortOrder: a.sortOrder })));
-      setTables(floorQuery.data.tables.map((t) => ({ ...t })));
-      setDecor(floorQuery.data.decorItems.map((d) => ({ ...d })));
-      setAreaId(floorQuery.data.areas[0]?.id ?? "");
-      setSeeded(true);
+      seedDraftFromFloorPlan(floorQuery.data);
     }
   }, [floorQuery.data, seeded]);
 
@@ -4042,15 +4524,18 @@ function FloorEditorDrawer() {
   // --- Geometry ---
   const toLogical = (clientX: number, clientY: number) => {
     const rect = stageRef.current?.getBoundingClientRect();
-    if (!rect) return { x: 800, y: 450 };
-    return { x: ((clientX - rect.left) / rect.width) * 1600, y: ((clientY - rect.top) / rect.height) * 900 };
+    if (!rect) return { x: logicalStage.width / 2, y: logicalStage.height / 2 };
+    return {
+      x: ((clientX - rect.left) / rect.width) * logicalStage.width,
+      y: ((clientY - rect.top) / rect.height) * logicalStage.height,
+    };
   };
   const snapVal = (v: number) => (snap ? Math.round(v / 20) * 20 : Math.round(v));
   const nodeStyle = (o: { posX: number; posY: number; width: number; height: number; rotation: number }) => ({
-    left: `${(o.posX / 1600) * 100}%`,
-    top: `${(o.posY / 900) * 100}%`,
-    width: `${(o.width / 1600) * 100}%`,
-    height: `${(o.height / 900) * 100}%`,
+    left: `${(o.posX / logicalStage.width) * 100}%`,
+    top: `${(o.posY / logicalStage.height) * 100}%`,
+    width: `${(o.width / logicalStage.width) * 100}%`,
+    height: `${(o.height / logicalStage.height) * 100}%`,
     transform: `translate(-50%, -50%) rotate(${o.rotation}deg)`,
   });
 
@@ -4063,17 +4548,40 @@ function FloorEditorDrawer() {
     setSelected(null);
     touch();
   };
+  const patchArea = (id: string, patch: Partial<DraftArea>) => {
+    setAreas((list) => list.map((a) => (a.id === id ? { ...a, ...patch } : a)));
+    touch();
+  };
+  const toggleDeleteArea = (id: string) => {
+    setAreas((list) => list.map((a) => (a.id === id ? { ...a, deleted: !a.deleted } : a)));
+    setSelected(null);
+    touch();
+  };
 
   // --- Table ops ---
   const addTable = (shape: TableShape) => {
     if (!areaId) return;
+    if (areas.find((area) => area.id === areaId)?.deleted) return;
     const id = nextDraftId("tbl");
     const size = tableDefaultSize(shape);
     const n = tables.filter((t) => t.areaId === areaId && !t.deleted).length + 1;
     const sortOrder = nextSort(tables.filter((t) => t.areaId === areaId).map((t) => t.sortOrder));
     setTables((list) => [
       ...list,
-      { id, areaId, name: `B${String(n).padStart(2, "0")}`, posX: 800, posY: 450, ...size, shape, rotation: 0, seats: 4, sortOrder, status: "empty", isNew: true },
+      {
+        id,
+        areaId,
+        name: `B${String(n).padStart(2, "0")}`,
+        posX: logicalStage.width / 2,
+        posY: logicalStage.height / 2,
+        ...size,
+        shape,
+        rotation: 0,
+        seats: 4,
+        sortOrder,
+        status: "empty",
+        isNew: true,
+      },
     ]);
     setSelected({ type: "table", id });
     setTool("select");
@@ -4092,11 +4600,25 @@ function FloorEditorDrawer() {
   // --- Decor ops ---
   const addDecor = (kind: DecorKind) => {
     if (!areaId) return;
+    if (areas.find((area) => area.id === areaId)?.deleted) return;
     const id = nextDraftId("dec");
     const size = decorDefaultSize(kind);
     setDecor((list) => [
       ...list,
-      { id, areaId, kind, label: DECOR_LABEL[kind], assetKey: `${kind}_mock`, posX: 800, posY: 450, ...size, rotation: 0, zIndex: 1, isLocked: false, isNew: true },
+      {
+        id,
+        areaId,
+        kind,
+        label: DECOR_LABEL[kind],
+        assetKey: `${kind}_mock`,
+        posX: logicalStage.width / 2,
+        posY: logicalStage.height / 2,
+        ...size,
+        rotation: 0,
+        zIndex: 1,
+        isLocked: false,
+        isNew: true,
+      },
     ]);
     setSelected({ type: "decor", id });
     setTool("select");
@@ -4118,7 +4640,7 @@ function FloorEditorDrawer() {
     setSelected({ type: kind, id: obj.id });
     setMobileTab("props");
     if (tool !== "select" || obj.isLocked) return;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    try { (e.target as HTMLElement).setPointerCapture?.(e.pointerId); } catch { /* noop */ }
     const p = toLogical(e.clientX, e.clientY);
     dragRef.current = { kind, id: obj.id, offX: p.x - obj.posX, offY: p.y - obj.posY };
   };
@@ -4126,8 +4648,8 @@ function FloorEditorDrawer() {
     const d = dragRef.current;
     if (!d) return;
     const p = toLogical(e.clientX, e.clientY);
-    const nx = Math.max(0, Math.min(1600, snapVal(p.x - d.offX)));
-    const ny = Math.max(0, Math.min(900, snapVal(p.y - d.offY)));
+    const nx = Math.max(0, Math.min(logicalStage.width, snapVal(p.x - d.offX)));
+    const ny = Math.max(0, Math.min(logicalStage.height, snapVal(p.y - d.offY)));
     if (d.kind === "table") patchTable(d.id, { posX: nx, posY: ny });
     else patchDecor(d.id, { posX: nx, posY: ny });
   };
@@ -4139,15 +4661,47 @@ function FloorEditorDrawer() {
   };
 
   // --- Derived ---
+  const currentArea = areas.find((area) => area.id === areaId) ?? null;
   const areaTables = tables.filter((t) => t.areaId === areaId);
   const areaDecor = decor.filter((d) => d.areaId === areaId);
   const selectedTable = selected?.type === "table" ? tables.find((t) => t.id === selected.id) ?? null : null;
   const selectedDecor = selected?.type === "decor" ? decor.find((d) => d.id === selected.id) ?? null : null;
   const isEmptyArea = areaTables.filter((t) => !t.deleted).length === 0 && areaDecor.filter((d) => !d.deleted).length === 0;
+  const activeAreaCount = areas.filter((area) => !area.deleted).length;
 
-  const handleSave = () => {
-    toast.success("Đã lưu layout (mock)");
-    setDirty(false);
+  const handleSave = async () => {
+    if (saveFloorMutation.isPending) return;
+    const sourcePlan = baseFloorPlan ?? floorQuery.data;
+    if (!sourcePlan) {
+      toast.error("Sơ đồ chưa tải xong.");
+      return;
+    }
+
+    const changes = buildFloorPlanChangesFromDrafts({
+      base: sourcePlan,
+      areas,
+      tables,
+      decor,
+      actorId: currentEmployee?.id,
+    });
+    if (!hasFloorPlanChanges(changes)) {
+      setDirty(false);
+      toast.success("Không có thay đổi cần lưu.");
+      return;
+    }
+
+    try {
+      await saveFloorMutation.mutateAsync({ changes });
+      const refreshed = await floorQuery.refetch();
+      if (refreshed.data) {
+        seedDraftFromFloorPlan(refreshed.data);
+      } else {
+        setDirty(false);
+      }
+      toast.success("Đã lưu sơ đồ.");
+    } catch (error) {
+      toast.error(toToastError(error));
+    }
   };
   const handleCancel = () => {
     if (dirty) setConfirmCancel(true);
@@ -4169,7 +4723,7 @@ function FloorEditorDrawer() {
           </h2>
           <p>
             <span className="sync-dot" />
-            {areaTables.filter((t) => !t.deleted).length} bàn · trạng thái chỉ hiển thị · mock
+            {areaTables.filter((t) => !t.deleted).length} bàn · {activeAreaCount} khu · online
           </p>
         </div>
         <div className="header-actions fe-header-actions">
@@ -4186,8 +4740,14 @@ function FloorEditorDrawer() {
             <button className="status-chip" data-testid="add-area-button" onClick={addArea}>+ Khu</button>
           </div>
           <Button variant="text" onClick={handleCancel}>Huỷ</Button>
-          <Button variant="contained" startIcon={<Save size={15} />} data-testid="save-floor-button" onClick={handleSave}>
-            Lưu layout mock
+          <Button
+            variant="contained"
+            startIcon={<Save size={15} />}
+            data-testid="save-floor-button"
+            onClick={handleSave}
+            disabled={!dirty || saveFloorMutation.isPending}
+          >
+            {saveFloorMutation.isPending ? "Đang lưu..." : "Lưu sơ đồ"}
           </Button>
         </div>
       </header>
@@ -4221,7 +4781,13 @@ function FloorEditorDrawer() {
                     <div className="emp-field-label">Thêm bàn</div>
                     <div className="fe-lib-grid">
                       {(["round", "square", "rectangle"] as TableShape[]).map((shape) => (
-                        <button key={shape} className="fe-lib-btn" data-testid={`add-table-${shape}`} onClick={() => addTable(shape)}>
+                        <button
+                          key={shape}
+                          className="fe-lib-btn"
+                          data-testid={`add-table-${shape}`}
+                          onClick={() => addTable(shape)}
+                          disabled={currentArea?.deleted}
+                        >
                           <span className={`fe-lib-icon shape-${shape}`} />
                           {SHAPE_LABEL[shape]}
                         </button>
@@ -4233,7 +4799,7 @@ function FloorEditorDrawer() {
                     <div className="emp-field-label">Trang trí</div>
                     <div className="fe-lib-grid">
                       {DECOR_LIBRARY.map((kind) => (
-                        <button key={kind} className="fe-lib-btn" onClick={() => addDecor(kind)}>
+                        <button key={kind} className="fe-lib-btn" onClick={() => addDecor(kind)} disabled={currentArea?.deleted}>
                           <span className={`fe-lib-icon decor-${kind}`} />
                           {DECOR_LABEL[kind]}
                         </button>
@@ -4259,7 +4825,7 @@ function FloorEditorDrawer() {
               {/* Center: canvas */}
               <section className={`pane menu-pane${mobileTab === "canvas" ? " tab-active" : ""}`}>
                 <div className="pane-head">
-                  <span>Canvas 1600×900</span>
+                  <span>Canvas {logicalStage.width}×{logicalStage.height}</span>
                   <span className="muted">{tool === "pan" ? "Pan" : "Chọn / kéo"}</span>
                 </div>
                 <div className="pane-scroll fe-canvas-scroll">
@@ -4274,6 +4840,7 @@ function FloorEditorDrawer() {
                         key={d.id}
                         className={`decor-node decor-${d.kind}${selected?.type === "decor" && selected.id === d.id ? " selected" : ""}${d.deleted ? " deleted" : ""}${d.isLocked ? " locked" : ""}`}
                         style={{ ...nodeStyle(d), zIndex: d.zIndex }}
+                        data-testid={`fe-decor-${d.id}`}
                         onPointerDown={(e) => onNodePointerDown(e, "decor", d)}
                         onPointerMove={onNodePointerMove}
                         onPointerUp={onNodePointerUp}
@@ -4383,8 +4950,41 @@ function FloorEditorDrawer() {
                         {selectedDecor.deleted ? "Khôi phục" : "Xoá trang trí"}
                       </Button>
                     </>
+                  ) : currentArea ? (
+                    <>
+                      <TextField
+                        label="Tên khu"
+                        value={currentArea.name}
+                        onChange={(e) => patchArea(currentArea.id, { name: e.target.value })}
+                        size="small"
+                        fullWidth
+                        inputProps={{ "data-testid": "fe-area-name-input" }}
+                      />
+                      <TextField
+                        label="Thứ tự"
+                        value={String(currentArea.sortOrder)}
+                        onChange={(e) => patchArea(currentArea.id, { sortOrder: toInt(e.target.value) })}
+                        size="small"
+                        fullWidth
+                        inputProps={{ inputMode: "numeric" }}
+                      />
+                      {currentArea.deleted && (
+                        <div className="menu-tombstone">
+                          Khu đang đánh dấu xoá. Không thêm bàn hoặc trang trí mới vào khu này.
+                        </div>
+                      )}
+                      <Button
+                        variant="outlined"
+                        color={currentArea.deleted ? "primary" : "error"}
+                        startIcon={currentArea.deleted ? <RotateCcw size={15} /> : <Trash2 size={15} />}
+                        onClick={() => toggleDeleteArea(currentArea.id)}
+                      >
+                        {currentArea.deleted ? "Khôi phục khu" : "Xoá khu"}
+                      </Button>
+                      <p className="muted">Chọn bàn hoặc trang trí trên canvas để chỉnh layout chi tiết.</p>
+                    </>
                   ) : (
-                    <p className="muted" style={{ padding: 8 }}>Chọn bàn hoặc trang trí trên canvas, hoặc thêm từ thư viện công cụ.</p>
+                    <p className="muted" style={{ padding: 8 }}>Thêm khu để bắt đầu chỉnh sơ đồ.</p>
                   )}
                 </div>
               </aside>
@@ -4411,11 +5011,10 @@ function FloorEditorDrawer() {
 
 type ReportRange = "today" | "7days" | "month" | "custom";
 type ReportSection = "overview" | "hourly" | "top" | "orders";
-type ReportPayMethod = "cash" | "qr" | "bank_transfer";
 
 interface RpHour { label: string; revenue: number; orders: number; }
 interface RpTopItem { name: string; qty: number; revenue: number; }
-interface RpOrder { id: string; orderNo: number; time: string; table: string; total: number; method: ReportPayMethod; }
+interface RpOrder { id: string; orderNo: number; time: string; table: string; total: number; method: string; }
 interface RpDataset {
   revenue: number;
   paidOrders: number;
@@ -4427,114 +5026,62 @@ interface RpDataset {
   orders: RpOrder[];
 }
 
-const sumRevenue = (rows: RpHour[]) => rows.reduce((s, r) => s + r.revenue, 0);
-const sumOrders = (rows: RpHour[]) => rows.reduce((s, r) => s + r.orders, 0);
+function buildReportDatasetFromReports(
+  reports: CoreReport[],
+  reportDates: string[],
+  orders: OrderSummary[],
+  tables: Map<string, string>,
+): RpDataset {
+  const revenue = reports.reduce((sum, report) => sum + report.revenue, 0);
+  const paidOrders = reports.reduce((sum, report) => sum + report.paidOrders, 0);
+  const topCounts = new Map<string, { qty: number; revenue: number }>();
 
-function buildReportDataset(range: ReportRange): RpDataset {
-  if (range === "custom") {
-    return { revenue: 0, paidOrders: 0, avgTicket: 0, topItemName: "—", voidCount: 0, hourly: [], topItems: [], orders: [] };
+  for (const report of reports) {
+    if (report.topItemName && report.topItemName !== "-") {
+      const current = topCounts.get(report.topItemName) ?? { qty: 0, revenue: 0 };
+      topCounts.set(report.topItemName, {
+        qty: current.qty + 1,
+        revenue: current.revenue + report.revenue,
+      });
+    }
   }
-  if (range === "today") {
-    const hourly: RpHour[] = [
-      { label: "7–9h", revenue: 320000, orders: 9 },
-      { label: "9–11h", revenue: 540000, orders: 14 },
-      { label: "11–13h", revenue: 880000, orders: 22 },
-      { label: "13–15h", revenue: 460000, orders: 12 },
-      { label: "15–17h", revenue: 610000, orders: 16 },
-      { label: "17–19h", revenue: 920000, orders: 24 },
-      { label: "19–21h", revenue: 700000, orders: 18 },
-    ];
-    const paidOrders = sumOrders(hourly);
-    const revenue = sumRevenue(hourly);
-    return {
-      revenue,
-      paidOrders,
-      avgTicket: Math.round(revenue / paidOrders),
-      topItemName: "Trà đào",
-      voidCount: 3,
-      hourly,
-      topItems: [
-        { name: "Trà đào", qty: 39, revenue: 1638000 },
-        { name: "Cà phê sữa", qty: 64, revenue: 1856000 },
-        { name: "Bạc xỉu", qty: 48, revenue: 1536000 },
-        { name: "Matcha latte", qty: 22, revenue: 1078000 },
-        { name: "Bánh mì que", qty: 31, revenue: 775000 },
-      ],
-      orders: [
-        { id: "r-1", orderNo: 112, time: "20:48", table: "B01", total: 210000, method: "cash" },
-        { id: "r-2", orderNo: 109, time: "19:05", table: "B04", total: 170000, method: "qr" },
-        { id: "r-3", orderNo: 108, time: "18:32", table: "Mang đi", total: 60000, method: "cash" },
-        { id: "r-4", orderNo: 107, time: "18:11", table: "B06", total: 80000, method: "bank_transfer" },
-        { id: "r-5", orderNo: 106, time: "17:40", table: "B02", total: 120000, method: "cash" },
-        { id: "r-6", orderNo: 103, time: "15:10", table: "B03", total: 140000, method: "qr" },
-      ],
-    };
-  }
-  if (range === "7days") {
-    const hourly: RpHour[] = [
-      { label: "T2", revenue: 5200000, orders: 132 },
-      { label: "T3", revenue: 4800000, orders: 121 },
-      { label: "T4", revenue: 6100000, orders: 154 },
-      { label: "T5", revenue: 5500000, orders: 139 },
-      { label: "T6", revenue: 7900000, orders: 198 },
-      { label: "T7", revenue: 9200000, orders: 232 },
-      { label: "CN", revenue: 8400000, orders: 211 },
-    ];
-    const paidOrders = sumOrders(hourly);
-    const revenue = sumRevenue(hourly);
-    return {
-      revenue,
-      paidOrders,
-      avgTicket: Math.round(revenue / paidOrders),
-      topItemName: "Cà phê sữa",
-      voidCount: 21,
-      hourly,
-      topItems: [
-        { name: "Cà phê sữa", qty: 412, revenue: 11948000 },
-        { name: "Trà đào", qty: 286, revenue: 12012000 },
-        { name: "Bạc xỉu", qty: 244, revenue: 7808000 },
-        { name: "Matcha latte", qty: 158, revenue: 7742000 },
-        { name: "Cold brew", qty: 121, revenue: 5929000 },
-      ],
-      orders: [
-        { id: "r-1", orderNo: 642, time: "CN 20:48", table: "B07", total: 320000, method: "qr" },
-        { id: "r-2", orderNo: 631, time: "CN 19:05", table: "B02", total: 210000, method: "cash" },
-        { id: "r-3", orderNo: 588, time: "T7 18:32", table: "Mang đi", total: 95000, method: "cash" },
-        { id: "r-4", orderNo: 540, time: "T7 12:11", table: "B05", total: 180000, method: "bank_transfer" },
-        { id: "r-5", orderNo: 512, time: "T6 17:40", table: "B01", total: 240000, method: "cash" },
-      ],
-    };
-  }
-  // month
-  const hourly: RpHour[] = [
-    { label: "Tuần 1", revenue: 22000000, orders: 552 },
-    { label: "Tuần 2", revenue: 25000000, orders: 624 },
-    { label: "Tuần 3", revenue: 19000000, orders: 481 },
-    { label: "Tuần 4", revenue: 28000000, orders: 703 },
-  ];
-  const paidOrders = sumOrders(hourly);
-  const revenue = sumRevenue(hourly);
+
+  const topItems: RpTopItem[] = [...topCounts.entries()]
+    .map(([name, value]) => ({ name, qty: value.qty, revenue: value.revenue }))
+    .sort((a, b) => b.qty - a.qty || b.revenue - a.revenue);
+
+  const singleDay = reportDates.length === 1;
+  const hourly: RpHour[] = singleDay
+    ? (reports[0]?.hourlyRevenue ?? []).map((bucket) => ({
+        label: bucket.label === "--" ? "--" : `${bucket.label}h`,
+        revenue: bucket.revenue,
+        orders: 0,
+      }))
+    : reports.map((report) => ({
+        label: shortBusinessDate(report.businessDate),
+        revenue: report.revenue,
+        orders: report.paidOrders,
+      }));
+
   return {
     revenue,
     paidOrders,
-    avgTicket: Math.round(revenue / paidOrders),
-    topItemName: "Trà đào",
-    voidCount: 88,
+    avgTicket: paidOrders ? Math.round(revenue / paidOrders) : 0,
+    topItemName: topItems[0]?.name ?? "-",
+    voidCount: orders.filter((order) => order.status === "void").length,
     hourly,
-    topItems: [
-      { name: "Trà đào", qty: 1180, revenue: 49560000 },
-      { name: "Cà phê sữa", qty: 1642, revenue: 47618000 },
-      { name: "Bạc xỉu", qty: 980, revenue: 31360000 },
-      { name: "Matcha latte", qty: 612, revenue: 29988000 },
-      { name: "Sinh tố bơ", qty: 421, revenue: 20629000 },
-    ],
-    orders: [
-      { id: "r-1", orderNo: 2412, time: "28/06 20:48", table: "B07", total: 360000, method: "qr" },
-      { id: "r-2", orderNo: 2380, time: "27/06 19:05", table: "B02", total: 250000, method: "cash" },
-      { id: "r-3", orderNo: 2201, time: "24/06 12:32", table: "Mang đi", total: 120000, method: "cash" },
-      { id: "r-4", orderNo: 2098, time: "21/06 18:11", table: "B05", total: 290000, method: "bank_transfer" },
-      { id: "r-5", orderNo: 1990, time: "18/06 17:40", table: "B01", total: 210000, method: "cash" },
-    ],
+    topItems,
+    orders: orders
+      .filter((order) => order.status === "paid")
+      .slice(0, 20)
+      .map((order) => ({
+        id: order.id,
+        orderNo: order.orderNo,
+        time: formatBusinessDate(order.businessDate),
+        table: tableLabelForOrder(order, tables),
+        total: order.total,
+        method: "paid",
+      })),
   };
 }
 
@@ -4542,21 +5089,40 @@ function ReportSettingsDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
   const allowed = canAccessModule(currentEmployee, "report");
+  const settingsQuery = useStoreSettingsQuery();
+  const floorQuery = useFloorPlanQuery();
 
   const [range, setRange] = useState<ReportRange>("today");
   const [section, setSection] = useState<ReportSection>("overview");
-  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<{ type: "hour" | "item"; key: string } | null>(null);
   const [mobileTab, setMobileTab] = useState<"nav" | "main" | "detail">("main");
+  const timezone = settingsQuery.data?.timezone ?? DEFAULT_TIMEZONE;
+  const today = businessDateInTimezone(new Date(), timezone);
+  const [customFrom, setCustomFrom] = useState(today);
+  const [customTo, setCustomTo] = useState(today);
+  const selectedRange = useMemo(
+    () => businessRangeFor(range, today, customFrom, customTo),
+    [customFrom, customTo, range, today],
+  );
+  const reportDates = useMemo(() => enumerateBusinessDates(selectedRange), [selectedRange]);
+  const reportFilters = useMemo(() => reportDates.map((businessDate) => ({ businessDate })), [reportDates]);
+  const reportQueries = useCoreReportsQuery(reportFilters);
+  const reportHistoryQuery = useOrderHistoryQuery({ ...selectedRange, page: 1, pageSize: 20 });
+  const tables = useMemo(() => tableNameMap(floorQuery.data), [floorQuery.data]);
+  const reports = reportQueries
+    .map((query) => query.data)
+    .filter((report): report is CoreReport => Boolean(report));
+  const loading = reportQueries.some((query) => query.isLoading) || reportHistoryQuery.isLoading;
+  const reportError = reportQueries.find((query) => query.isError)?.error ?? (reportHistoryQuery.isError ? reportHistoryQuery.error : null);
 
-  const dataset = useMemo(() => buildReportDataset(range), [range]);
+  const dataset = useMemo(
+    () => buildReportDatasetFromReports(reports, reportDates, reportHistoryQuery.data?.items ?? [], tables),
+    [reportDates, reportHistoryQuery.data?.items, reports, tables],
+  );
 
   useEffect(() => {
-    setLoading(true);
     setSelected(null);
-    const t = setTimeout(() => setLoading(false), 260);
-    return () => clearTimeout(t);
-  }, [range]);
+  }, [selectedRange.fromDate, selectedRange.toDate]);
 
   const hasData = dataset.paidOrders > 0;
   const maxHour = dataset.hourly.reduce((m, h) => (h.revenue > m.revenue ? h : m), dataset.hourly[0] ?? { label: "—", revenue: 0, orders: 0 });
@@ -4565,7 +5131,7 @@ function ReportSettingsDrawer() {
     const counts: Record<string, number> = {};
     dataset.orders.forEach((o) => { counts[o.method] = (counts[o.method] ?? 0) + 1; });
     const entry = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-    return entry ? (PAY_METHOD_LABEL[entry[0]] ?? entry[0]) : "—";
+    return entry ? (entry[0] === "paid" ? "Đã TT" : (PAY_METHOD_LABEL[entry[0]] ?? entry[0])) : "—";
   })();
 
   const dateChips: Array<{ key: ReportRange; label: string }> = [
@@ -4641,7 +5207,7 @@ function ReportSettingsDrawer() {
       <header className="drawer-header">
         <div className="title-stack">
           <h2>Báo cáo</h2>
-          <p><span className="sync-dot" />Chỉ tính đơn đã thanh toán · mock</p>
+          <p><span className="sync-dot" />Chỉ tính đơn đã thanh toán · online</p>
         </div>
         <div className="header-actions fe-header-actions">
           <div className="fe-area-tabs">
@@ -4651,7 +5217,29 @@ function ReportSettingsDrawer() {
               </button>
             ))}
           </div>
-          <Button variant="outlined" startIcon={<Download size={15} />} onClick={() => toast("Xuất báo cáo sẽ làm sau (mock)")}>
+          {range === "custom" && (
+            <div className="hx-date-chips">
+              <TextField
+                type="date"
+                size="small"
+                label="Từ"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                inputProps={{ "data-testid": "report-from-date" }}
+              />
+              <TextField
+                type="date"
+                size="small"
+                label="Đến"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                inputProps={{ "data-testid": "report-to-date" }}
+              />
+            </div>
+          )}
+          <Button variant="outlined" startIcon={<Download size={15} />} onClick={() => toast("Xuất báo cáo sẽ làm sau.")}>
             Xuất
           </Button>
           <Button variant="outlined" onClick={closeDrawer}>Đóng</Button>
@@ -4700,6 +5288,21 @@ function ReportSettingsDrawer() {
                   <div className="tw-skeleton-card" style={{ height: 88 }} />
                   <div className="tw-skeleton-card" style={{ height: 200 }} />
                 </div>
+              ) : reportError ? (
+                <div className="tw-empty-state">
+                  <AlertTriangle size={32} color="#b45309" />
+                  <p>{toToastError(reportError)}</p>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      reportQueries.forEach((query) => void query.refetch());
+                      void reportHistoryQuery.refetch();
+                    }}
+                  >
+                    Tải lại
+                  </Button>
+                </div>
               ) : !hasData ? (
                 <>
                   {metricsRow}
@@ -4745,7 +5348,7 @@ function ReportSettingsDrawer() {
                         {dataset.hourly.map((h) => (
                           <tr key={h.label} className={selected?.type === "hour" && selected.key === h.label ? "selected" : ""} onClick={() => pickHour(h.label)}>
                             <td>{h.label}</td>
-                            <td>{h.orders}</td>
+                            <td>{h.orders || "—"}</td>
                             <td><strong className="price-text">{formatCompactVnd(h.revenue)}</strong></td>
                           </tr>
                         ))}
@@ -4762,7 +5365,7 @@ function ReportSettingsDrawer() {
                       onClick={() => pickItem(it.name)}
                     >
                       <span className="rp-top-rank">{idx + 1}</span>
-                      <span className="rp-top-name">{it.name}<small>{it.qty} ly</small></span>
+                      <span className="rp-top-name">{it.name}<small>{it.qty} ngày top</small></span>
                       <span className="rp-bar"><span className="rp-bar-fill" style={{ width: `${(it.revenue / maxTopRevenue) * 100}%` }} /></span>
                       <span className="rp-top-rev price-text">{formatCompactVnd(it.revenue)}</span>
                     </button>
@@ -4778,7 +5381,7 @@ function ReportSettingsDrawer() {
                           <td><strong>#{o.orderNo}</strong></td>
                           <td className="muted">{o.time}</td>
                           <td>{o.table}</td>
-                          <td>{PAY_METHOD_LABEL[o.method] ?? o.method}</td>
+                          <td>{o.method === "paid" ? "Đã TT" : (PAY_METHOD_LABEL[o.method] ?? o.method)}</td>
                           <td><strong className="price-text">{formatCompactVnd(o.total)}</strong></td>
                         </tr>
                       ))}
@@ -4806,7 +5409,7 @@ function ReportSettingsDrawer() {
                     <div className="rp-detail-card">
                       <div className="rp-card-head">Mốc {h.label}</div>
                       <div className="tw-detail-row"><span>Doanh thu</span><strong className="price-text">{formatVnd(h.revenue)}</strong></div>
-                      <div className="tw-detail-row"><span>Số đơn</span><strong>{h.orders}</strong></div>
+                      <div className="tw-detail-row"><span>Số đơn</span><strong>{h.orders || "—"}</strong></div>
                       <div className="tw-detail-row"><span>% doanh thu</span><strong>{Math.round((h.revenue / dataset.revenue) * 100)}%</strong></div>
                     </div>
                   );
@@ -4818,9 +5421,9 @@ function ReportSettingsDrawer() {
                   return (
                     <div className="rp-detail-card">
                       <div className="rp-card-head">{it.name}</div>
-                      <div className="tw-detail-row"><span>Đã bán</span><strong>{it.qty} ly</strong></div>
-                      <div className="tw-detail-row"><span>Doanh thu</span><strong className="price-text">{formatVnd(it.revenue)}</strong></div>
-                      <div className="tw-detail-row"><span>Đơn giá TB</span><strong>{formatVnd(Math.round(it.revenue / it.qty))}</strong></div>
+                      <div className="tw-detail-row"><span>Xuất hiện</span><strong>{it.qty} ngày top</strong></div>
+                      <div className="tw-detail-row"><span>Doanh thu ngày top</span><strong className="price-text">{formatVnd(it.revenue)}</strong></div>
+                      <div className="tw-detail-row"><span>TB ngày top</span><strong>{formatVnd(Math.round(it.revenue / Math.max(1, it.qty)))}</strong></div>
                     </div>
                   );
                 })()

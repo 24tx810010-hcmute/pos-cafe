@@ -28,6 +28,7 @@ import type {
   PayOrderResult,
   PrintReceipt,
   PrintTicket,
+  ReportFilter,
   StoreSession,
   StoreSettings,
   StoreSettingsUpdate,
@@ -462,8 +463,8 @@ class MockPaymentRepo implements IPaymentRepo {
 class MockReportRepo implements IReportRepo {
   constructor(private readonly state: MockState) {}
 
-  async getCoreReport(): Promise<CoreReport> {
-    const paidOrders = this.state.orders.filter((order) => order.status === "paid");
+  async getCoreReport(filter: ReportFilter): Promise<CoreReport> {
+    const paidOrders = this.state.orders.filter((order) => order.status === "paid" && order.businessDate === filter.businessDate);
     const revenue = paidOrders.reduce((sum, order) => sum + order.total, 0);
     const hourlyRevenue = new Map<string, number>();
     const topItems = new Map<string, number>();
@@ -479,7 +480,7 @@ class MockReportRepo implements IReportRepo {
     }
 
     return {
-      businessDate: todayBusinessDate,
+      businessDate: filter.businessDate,
       revenue,
       paidOrders: paidOrders.length,
       averageTicket: paidOrders.length ? Math.round(revenue / paidOrders.length) : 0,
