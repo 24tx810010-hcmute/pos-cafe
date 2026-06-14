@@ -24,13 +24,14 @@ describe("orderFlow", () => {
     const order = await getMockOrder();
     const draft = orderDetailToDraft(order);
 
-    expect(draft[0]).toEqual({
-      id: "oi-b02-1",
+    expect(draft[0]).toMatchObject({
       menuItemId: "mi-ca-phe-sua",
       quantity: 2,
       note: "Ít đá",
-      options: [{ id: "oio-b02-1", optionValueId: "ov-size-m" }],
+      options: [expect.objectContaining({ optionValueId: "ov-size-m" })],
     });
+    expect(draft[0].id).not.toBe("oi-b02-1");
+    expect(draft[0].options[0].id).not.toBe("oio-b02-1");
     expect(draft[0]).not.toHaveProperty("itemName");
     expect(draft[0]).not.toHaveProperty("unitPrice");
   });
@@ -81,8 +82,8 @@ describe("orderFlow", () => {
     expect(isDraftChangedFromOrder(order, draft)).toBe(false);
     expect(getOrderPrimaryAction(order, draft)).toBe("payment");
 
-    const changed = draft.map((item) =>
-      item.id === "oi-b02-1" ? { ...item, quantity: item.quantity + 1 } : item,
+    const changed = draft.map((item, index) =>
+      index === 0 ? { ...item, quantity: item.quantity + 1 } : item,
     );
     expect(isDraftChangedFromOrder(order, changed)).toBe(true);
     expect(getOrderPrimaryAction(order, changed)).toBe("submit");

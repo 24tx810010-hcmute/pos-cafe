@@ -52,7 +52,7 @@ async function createOpenOrderOnFirstTable(page: Page) {
 async function payFirstOccupiedTable(page: Page) {
   await page.getByTestId("floor-view").locator(".table-node.occupied").first().click();
   await expect(page.getByTestId("order-drawer")).toBeVisible();
-  await page.getByRole("button", { name: "Thanh toán" }).click();
+  await page.getByTestId("submit-order-button-footer").click();
   await expect(page.getByTestId("payment-drawer")).toBeVisible();
   await expect(page.getByTestId("pay-button")).toBeEnabled();
   await page.getByTestId("pay-button").click();

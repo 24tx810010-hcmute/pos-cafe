@@ -44,12 +44,12 @@ export type PayOrderFlowInput = {
 const createClientId = (): string => crypto.randomUUID();
 
 export const snapshotToDraft = (item: OrderItemSnapshot): SubmitOrderDraftItem => ({
-  id: item.id,
+  id: createClientId(),
   menuItemId: item.menuItemId,
   quantity: item.quantity,
   note: item.note ?? null,
   options: item.options.map((option) => ({
-    id: option.id,
+    id: createClientId(),
     optionValueId: option.optionValueId,
   })),
 });

@@ -106,7 +106,7 @@ test("payment drawer exposes complete action for occupied table", async ({ page 
   await page.goto("/");
   await loginAsAdmin(page);
   await page.getByTestId("table-tbl-b02").click();
-  await page.getByRole("button", { name: "Thanh toán" }).click();
+  await page.getByTestId("submit-order-button-footer").click();
   await expect(page.getByTestId("payment-drawer")).toBeVisible();
   await expect(page.getByTestId("pay-button")).toBeVisible();
 });

@@ -69,6 +69,8 @@ import {
   adjustDraftQuantity,
   buildCartLines,
   calculateCartTotal,
+  getOrderPrimaryAction,
+  isDraftChangedFromOrder,
   orderDetailToDraft,
   useFloorPlanQuery,
   useMenuQuery,
@@ -3211,7 +3213,16 @@ function OrderDrawer() {
   const cartLines = useMemo(() => (menu ? buildCartLines(menu, draftItems) : []), [draftItems, menu]);
   const total = calculateCartTotal(cartLines);
   const isDirty = draftItems.length > 0;
+  const draftChanged = isDraftChangedFromOrder(orderDetail, draftItems);
+  const primaryAction = getOrderPrimaryAction(orderDetail, draftItems);
   const submitDisabled = submitMutation.isPending || menuQuery.isError || orderQuery.isError || (!!context?.orderId && orderQuery.isLoading);
+  const primaryDisabled =
+    primaryAction === "payment" ? !orderDetail || submitMutation.isPending : submitDisabled;
+  const primaryActionLabel = submitMutation.isPending
+    ? "Đang gửi..."
+    : primaryAction === "payment"
+      ? "Thanh toán"
+      : "In/Gửi đơn";
 
   const handleClose = () => {
     if (isDirty && !orderDetail) { setConfirmClose(true); return; }
@@ -3260,6 +3271,15 @@ function OrderDrawer() {
     );
   };
 
+  const runPrimaryAction = () => {
+    if (primaryAction === "payment" && orderDetail) {
+      openPayment(orderDetail.id);
+      return;
+    }
+
+    submitOrder();
+  };
+
   const updateNote = (id: string, note: string) => {
     setDraftItems(draftItems.map((d) => (d.id === id ? { ...d, note: note || null } : d)));
   };
@@ -3304,18 +3324,22 @@ function OrderDrawer() {
         </div>
         <div className="header-actions">
           <Button variant="outlined" onClick={handleClose}>Đóng</Button>
-          {orderDetail && (
-            <Button variant="outlined" startIcon={<CreditCard size={16} />} onClick={() => openPayment(orderDetail.id)}>
+          {orderDetail && draftChanged && (
+            <Button
+              variant="outlined"
+              startIcon={<CreditCard size={16} />}
+              disabled
+            >
               Thanh toán
             </Button>
           )}
           <Button
             variant="contained"
             data-testid="submit-order-button"
-            disabled={submitDisabled}
-            onClick={submitOrder}
+            disabled={primaryDisabled}
+            onClick={runPrimaryAction}
           >
-            {submitMutation.isPending ? "Đang gửi..." : "In/Gửi đơn"}
+            {primaryActionLabel}
           </Button>
         </div>
       </header>
@@ -3460,10 +3484,10 @@ function OrderDrawer() {
                 variant="contained"
                 fullWidth
                 data-testid="submit-order-button-footer"
-                disabled={submitDisabled}
-                onClick={submitOrder}
+                disabled={primaryDisabled}
+                onClick={runPrimaryAction}
               >
-                In/Gửi đơn
+                {primaryActionLabel}
               </Button>
             </footer>
           </aside>
