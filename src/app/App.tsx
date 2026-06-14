@@ -2921,6 +2921,25 @@ function FloorWorkspace() {
     allTables.find((t) => t.id === tableId)?.status === "occupied" ||
     orders.some((o) => o.tableId === tableId);
 
+  const openTableOrder = async (table: FloorTable, cachedOrder?: OrderSummary) => {
+    if (cachedOrder) {
+      openOrder({
+        orderId: cachedOrder.id,
+        tableId: table.id,
+        orderType: "dine_in",
+      });
+      return;
+    }
+
+    const refreshed = await openOrdersQuery.refetch();
+    const freshOrder = refreshed.data?.find((order) => order.tableId === table.id);
+    openOrder({
+      orderId: freshOrder?.id ?? null,
+      tableId: table.id,
+      orderType: "dine_in",
+    });
+  };
+
   const filteredTables = allTables.filter((t) => {
     if (tableFilter === "empty") return !isOccupied(t.id);
     if (tableFilter === "occupied") return isOccupied(t.id);
@@ -3070,13 +3089,7 @@ function FloorWorkspace() {
                       data-testid={`table-${table.id}`}
                       key={table.id}
                       style={stageStyle(table.posX, table.posY, table.width, table.height)}
-                      onClick={() =>
-                        openOrder({
-                          orderId: openOrderSummary?.id ?? null,
-                          tableId: table.id,
-                          orderType: "dine_in",
-                        })
-                      }
+                      onClick={() => void openTableOrder(table, openOrderSummary)}
                     >
                       <strong className="table-name">{table.name}</strong>
                       <span className="table-seats">{table.seats} chỗ</span>

@@ -7,6 +7,7 @@ describe("posInvalidation", () => {
   it("invalidates every server-state surface affected by an order mutation", async () => {
     const queryClient = {
       invalidateQueries: vi.fn().mockResolvedValue(undefined),
+      refetchQueries: vi.fn().mockResolvedValue(undefined),
     } as unknown as QueryClient;
 
     await invalidateAfterOrderMutation(queryClient, "ord-b02");
@@ -22,6 +23,14 @@ describe("posInvalidation", () => {
     });
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
       queryKey: posQueryKeys.order("ord-b02"),
+    });
+    expect(queryClient.refetchQueries).toHaveBeenCalledWith({
+      queryKey: posQueryKeys.openOrders,
+      type: "active",
+    });
+    expect(queryClient.refetchQueries).toHaveBeenCalledWith({
+      queryKey: posQueryKeys.floorPlan,
+      type: "active",
     });
   });
 });

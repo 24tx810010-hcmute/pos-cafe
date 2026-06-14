@@ -11,6 +11,11 @@ export const invalidateAfterOrderMutation = async (
     queryClient.invalidateQueries({ queryKey: posQueryKeys.reportsRoot }),
     orderId ? queryClient.invalidateQueries({ queryKey: posQueryKeys.order(orderId) }) : Promise.resolve(),
   ]);
+
+  await Promise.all([
+    queryClient.refetchQueries({ queryKey: posQueryKeys.openOrders, type: "active" }),
+    queryClient.refetchQueries({ queryKey: posQueryKeys.floorPlan, type: "active" }),
+  ]);
 };
 
 export const invalidateAfterCatalogMutation = async (queryClient: QueryClient): Promise<void> => {
