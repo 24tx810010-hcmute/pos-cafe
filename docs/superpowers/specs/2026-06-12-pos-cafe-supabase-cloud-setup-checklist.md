@@ -169,11 +169,13 @@ Chạy local app với Supabase mode:
 ```powershell
 npm run build
 npm run test
-npm run smoke
+npm run smoke:supabase
 npm run dev
 ```
 
-Lưu ý hiện tại: smoke Playwright trong repo vẫn là mock-specific vì test chờ employee id mock như `emp-admin`. Khi `.env.local` đặt `VITE_DATA_MODE=supabase`, `npm run smoke` có thể fail ở passcode vì chưa có UI pairing/create-store/pair session thật. Để test responsive/mock baseline, chạy:
+`npm run smoke:supabase` dùng `playwright.supabase.config.ts` và chạy trên port riêng `5174`. Test mặc định tạo store thật qua UI, lấy Store Key/Admin PIN từ màn result, unlock admin, tạo + thanh toán order, rồi kiểm tra history/report. Không commit Store Key thật vào docs.
+
+Lưu ý: `npm run smoke` vẫn là mock responsive baseline. Khi `.env.local` đặt `VITE_DATA_MODE=supabase`, để test responsive/mock baseline, chạy:
 
 ```powershell
 $env:VITE_DATA_MODE='mock'; npm run smoke; Remove-Item Env:\VITE_DATA_MODE
@@ -201,6 +203,16 @@ Manual:
 - Browser B pay order.
 - Browser A thấy table empty/report cập nhật.
 
+Realtime E2E automated:
+
+```powershell
+$env:RUN_SUPABASE_REALTIME_E2E='1'
+npm run smoke:supabase
+Remove-Item Env:\RUN_SUPABASE_REALTIME_E2E
+```
+
+Điều kiện: migration `supabase/migrations/004_realtime_publication.sql` phải được apply lên Supabase cloud để add các bảng `orders`, `payments`, `tables`, menu và floor tables vào publication `supabase_realtime`. Nếu chưa apply, test 2-browser sẽ skip mặc định; nếu force chạy thì browser B không nhận `postgres_changes`. Migration này đã được apply trên cloud project hiện tại trong phase 2026-06-14 và realtime E2E đã pass.
+
 Validation log 2026-06-12:
 
 - `.env.local` Supabase mode có URL + anon key hợp lệ.
@@ -209,6 +221,12 @@ Validation log 2026-06-12:
 - RPC checks pass: `hash_employee_pin`, `verify_employee_pin`, `submit_order_changes`, `pay_order`, `clear_demo_data`.
 - Cloud E2E trực tiếp pass: create store test, seed tối thiểu, verify admin PIN, submit dine-in order, negative `PAYMENT_AMOUNT_TOO_LOW`, blocked `OPEN_ORDERS_BLOCK_CLEAR_DEMO`, pay order, clear demo seed rows.
 - Một store test đầu tiên bị dừng giữa chừng do assert sai trong script kiểm tra; store test thứ hai pass và đã clear demo seed rows. Nếu cần dọn sạch tuyệt đối, xử lý bằng Supabase dashboard/service-role dưới xác nhận riêng.
+
+Validation log 2026-06-14:
+
+- `npm run smoke:supabase` pass single-browser UI E2E: create store thật, seed demo, admin PIN, submit order, pay cash, history/report hiển thị paid order.
+- 2-browser realtime E2E ban đầu phát hiện cloud chưa publish `orders/tables/payments` qua Realtime; migration `004_realtime_publication.sql` đã thêm vào repo.
+- Sau khi user apply migration `004` lên Supabase cloud, `RUN_SUPABASE_REALTIME_E2E=1 npm run smoke:supabase` pass 2 tests: single-browser create/pay/history/report và 2-browser realtime invalidation table status.
 
 ---
 

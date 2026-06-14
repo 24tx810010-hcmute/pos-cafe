@@ -1,7 +1,7 @@
 # POS Cafe Integration Checklist
 
 > Vai trò: checklist cho phase nối nhánh UI với nhánh logic/adapters. File này dùng sau khi UI mock/production component split đã ổn, không dùng để merge trực tiếp vào `codex/code-foundation`.
-> Trạng thái 2026-06-14: UI checkpoint `codex/code-foundation` đã push tới `6009b47`; branch tích hợp `codex/ui-logic-integration` đã merge `codex/stream-db-rpc`, push merge commit `1c420d9`, push binding nền UI thật `47f17f6`, push Employees slice `4d7d1ae`, rồi implement local Menu/Floor editor changeset save và Report/History polish.
+> Trạng thái 2026-06-14: UI checkpoint `codex/code-foundation` đã push tới `6009b47`; branch tích hợp `codex/ui-logic-integration` đã merge `codex/stream-db-rpc`, push merge commit `1c420d9`, push binding nền UI thật `47f17f6`, push Employees slice `4d7d1ae`, push Menu/Floor editor + Report/History polish `9b58732`, rồi implement local Supabase UI E2E + realtime publication migration. Sau khi user apply migration `004` lên cloud, Supabase 2-browser realtime UI E2E đã pass.
 
 ---
 
@@ -28,7 +28,9 @@ Status 2026-06-13:
 - Validation sau Floor editor slice đã pass: `npm run test -- floorEditorDrawer`, `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `npm run test` (19 files/71 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep Supabase/UI.
 - Report/History polish đã implement local: Order History drawer query qua `order.listOrderHistory(filter)`, detail qua `order.getOrder`, custom date range + pagination; Report drawer aggregate nhiều daily `report.getCoreReport({ businessDate })` qua `useCoreReportsQuery`, dùng history query cho recent paid orders, và mock report repo lọc đúng `businessDate`.
 - Validation sau Report/History polish đã pass: `npm run test -- reportHistoryDrawer`, `npm run test` (20 files/75 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep Supabase/UI.
-- Việc còn lại của phase này: chạy Supabase-mode UI E2E có Store Key/test account rõ ràng.
+- Supabase UI E2E local đã thêm: `playwright.supabase.config.ts`, script `npm run smoke:supabase`, test tạo store thật qua UI, lấy Store Key/Admin PIN từ UI, unlock admin, tạo + thanh toán dine-in order, kiểm tra history/report. Runtime ports cache singleton để tránh Supabase GoTrue warning trong React StrictMode dev.
+- Validation Supabase UI E2E đã pass: `npm run smoke:supabase` mặc định chạy single-browser path; sau khi user apply migration `004_realtime_publication.sql` lên Supabase cloud, `RUN_SUPABASE_REALTIME_E2E=1 npm run smoke:supabase` pass 2 tests, gồm 2-browser realtime invalidation table status.
+- Việc còn lại của phase này: commit/push code + docs nếu user yêu cầu, rồi chuyển sang Demo Hardening/Polish.
 
 ---
 
