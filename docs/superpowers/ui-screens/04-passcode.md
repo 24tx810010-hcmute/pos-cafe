@@ -5,7 +5,7 @@
 ## Preflight
 
 - Kiem tra `git status --short --branch`.
-- Branch dung: `codex/code-foundation` hoac branch UI user chi dinh.
+- Branch dung: `ui-foundation` hoac branch UI user chi dinh.
 - Sai branch + clean thi switch; sai branch + dirty thi bao user.
 
 ## Mock-only Scope
@@ -60,4 +60,3 @@
 - Admin/cashier mock login vao POS Floor.
 - Current employee khong can persist sau refresh.
 - Khong route moi.
-

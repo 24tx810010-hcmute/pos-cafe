@@ -14,7 +14,7 @@ git branch --show-current
 git ls-tree -r --name-only HEAD | rg "^(docs/|pos-cafe-context\.md)"
 ```
 
-- Branch dung: `codex/code-foundation` hoac branch UI user chi dinh.
+- Branch dung: `ui-foundation` hoac branch UI user chi dinh.
 - Sai branch + clean: switch ve branch dung.
 - Sai branch + dirty: dung lai, bao user, khong discard.
 - Khong sua docs branch, khong copy folder docs vao code branch.

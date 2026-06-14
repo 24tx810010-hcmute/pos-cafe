@@ -5,7 +5,7 @@
 ## Preflight
 
 - Chay `git status --short --branch` trong `D:\Workspace\pos-cafe-code`.
-- Nhanh dung: `codex/code-foundation` hoac branch UI user chi dinh tach tu no.
+- Nhanh dung: `ui-foundation` hoac branch UI user chi dinh tach tu no.
 - Neu sai nhanh va worktree sach, switch ve nhanh dung; neu co thay doi chua commit, bao user va khong discard.
 
 ## Mock-only Scope
@@ -51,4 +51,3 @@
 - Co the vao Store Pairing va Create Store tu landing.
 - Khong tao route moi, URL khong doi.
 - Text khong tran tren width 740x360.
-

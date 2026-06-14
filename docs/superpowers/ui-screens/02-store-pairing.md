@@ -5,7 +5,7 @@
 ## Preflight
 
 - Chay `git status --short --branch`.
-- Nhanh dung mac dinh: `codex/code-foundation` hoac branch UI user chi dinh.
+- Nhanh dung mac dinh: `ui-foundation` hoac branch UI user chi dinh.
 - Neu sai nhanh va clean, switch giup user; neu dirty, dung lai bao user.
 
 ## Mock-only Scope
@@ -57,4 +57,3 @@
 - Sai format co error ro.
 - Valid format vao Passcode.
 - Khong co route moi, khong backend call.
-

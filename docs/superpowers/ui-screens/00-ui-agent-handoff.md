@@ -14,8 +14,8 @@ git branch --show-current
 git ls-tree -r --name-only HEAD | rg "^(docs/|pos-cafe-context\.md)"
 ```
 
-- Nhanh dung mac dinh: `codex/code-foundation`, hoac branch UI duoc user chi dinh va phai duoc tach tu `codex/code-foundation`.
-- Neu dang sai nhanh va worktree sach: switch ve nhanh dung giup user, vi du `git switch codex/code-foundation`.
+- Nhanh dung mac dinh: `ui-foundation`, hoac branch UI duoc user chi dinh va phai duoc tach tu `ui-foundation`.
+- Neu dang sai nhanh va worktree sach: switch ve nhanh dung giup user, vi du `git switch ui-foundation`.
 - Neu dang sai nhanh nhung co thay doi chua commit: dung lai va bao user, khong discard, khong reset.
 - Lenh `git ls-tree... | rg` khong duoc tra ket qua; neu co `docs/` hoac `pos-cafe-context.md` trong code branch thi bao user.
 

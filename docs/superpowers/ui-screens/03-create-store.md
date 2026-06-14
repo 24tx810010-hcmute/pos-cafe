@@ -5,7 +5,7 @@
 ## Preflight
 
 - Chay `git status --short --branch` va xac nhan branch dung.
-- Neu sai branch va clean: `git switch codex/code-foundation` hoac branch UI user chi dinh.
+- Neu sai branch va clean: `git switch ui-foundation` hoac branch UI user chi dinh.
 - Neu co thay doi chua commit: dung lai, khong reset.
 
 ## Mock-only Scope
@@ -57,4 +57,3 @@
 - User co the tao store mock va sang Passcode.
 - Store Key chi nam trong success result, khong persist vao session UI.
 - Khong backend/auth/schema call.
-

@@ -3,14 +3,14 @@
 > Ngày chốt: 2026-06-11
 > Vai trò: hướng dẫn nối UI thật với core/ports/adapters sau giai đoạn UI mock.
 > Không phải spec cho UI mock-only agent; UI mock package vẫn nằm ở `docs/superpowers/ui-screens/`.
-> Trạng thái 2026-06-14: branch `codex/ui-logic-integration` đã có UI checkpoint + logic adapters merge sẵn. Binding nền UI thật đã push ở commit `47f17f6`; Employees binding slice đã push ở commit `4d7d1ae`; Menu/Floor editor changeset save và Report/History polish đã implement local; dùng file này cho Supabase-mode E2E tiếp theo.
+> Trạng thái 2026-06-14: UI logic binding đã hoàn tất và merge về `main`. File này giữ lại contract/preflight nếu cần mở slice UI mới.
 
 ## 1. Preflight cho agent implement
 
 - Bạn nhận file này như tài liệu binding UI thật với logic. Không sửa nhánh `docs` trừ khi chủ dự án yêu cầu.
 - Khi implement code, làm ở code worktree `D:\Workspace\pos-cafe-code`.
 - Trước khi làm, chạy `git status --short --branch`.
-- Nhánh đúng mặc định là branch code hiện tại được user chỉ định, thường tách từ `codex/code-foundation` hoặc branch đã chứa DB/RPC foundation.
+- Nhánh đúng mặc định là branch code hiện tại được user chỉ định, thường tách từ `ui-foundation` hoặc branch đã chứa DB/RPC foundation.
 - Nếu sai nhánh và worktree sạch, switch về nhánh đúng giúp user. Nếu có thay đổi chưa commit, dừng và báo user; không discard.
 - Không commit/push nếu user chưa yêu cầu rõ.
 

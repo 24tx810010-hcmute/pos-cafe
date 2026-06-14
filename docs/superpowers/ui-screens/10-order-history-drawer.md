@@ -5,7 +5,7 @@
 ## Preflight
 
 - Trong `D:\Workspace\pos-cafe-code`, chay `git status --short --branch`.
-- Nhanh dung la `codex/code-foundation` hoac branch UI user chi dinh.
+- Nhanh dung la `ui-foundation` hoac branch UI user chi dinh.
 - Sai branch + clean: switch ve nhanh dung. Sai branch + dirty: dung lai va bao user.
 
 ## Mock-only Scope
@@ -57,4 +57,3 @@
 - Cashier and admin can view history mock.
 - Filters/search visually work with mock data.
 - No backend query beyond existing mock ports if used.
-

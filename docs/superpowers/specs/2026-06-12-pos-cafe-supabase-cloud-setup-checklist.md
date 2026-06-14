@@ -9,7 +9,7 @@
 
 - Có Supabase project cloud mới hoặc project demo đã được user xác nhận dùng cho POS Cafe.
 - Có quyền project owner/admin để chỉnh Auth, SQL Editor, Realtime.
-- Code branch dùng để test cloud là integration branch đã qua checklist integration, hoặc `codex/stream-db-rpc` nếu chỉ test adapter/RPC không UI thật.
+- Branch dùng để test cloud hiện tại là `main`; nếu dùng preview branch riêng thì phải là branch đã qua checklist integration.
 - Không apply migration bằng thao tác dashboard rời rạc rồi quên commit. Nếu cần đổi schema/RPC, sửa file migration trong repo trước.
 
 ---

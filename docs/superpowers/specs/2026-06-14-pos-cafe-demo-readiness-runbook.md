@@ -4,15 +4,15 @@
 
 ## 1. Trạng thái code cần dùng
 
-- Code branch demo hiện tại: `codex/ui-logic-integration`.
-- Docs branch hiện tại: `docs`.
+- Code branch demo hiện tại: `main`.
+- Docs branch hiện tại: `docs`; `main` đã có bản docs mới nhất sau merge.
 - Supabase cloud đã apply migrations `001` -> `004`, gồm realtime publication migration `004_realtime_publication.sql`.
 - Supabase UI E2E đã pass:
   - Single browser: create store -> passcode -> order -> payment -> history/report.
   - 2 browser realtime: browser A tạo order, browser B thấy table occupied; browser B pay, browser A thấy table empty.
 - Verification mới nhất 2026-06-14: `RUN_SUPABASE_REALTIME_E2E=1 npm run smoke:supabase` pass 2/2.
 
-Nếu deploy từ Vercel trước khi merge main, cấu hình Vercel cần trỏ đúng branch `codex/ui-logic-integration` hoặc cần merge branch này theo quyết định riêng.
+Deploy Vercel nên trỏ `main`. Nếu dùng preview branch riêng, cần smoke lại đúng preview URL trước demo.
 
 ## 2. Env bắt buộc
 
