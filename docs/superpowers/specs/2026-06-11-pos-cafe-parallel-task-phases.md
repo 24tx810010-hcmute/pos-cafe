@@ -375,6 +375,8 @@ Status 2026-06-14b: Supabase single-browser UI E2E đã implement local. Thêm `
 
 Status 2026-06-14c: User đã apply migration `004_realtime_publication.sql` lên Supabase cloud và realtime UI E2E đã pass. `RUN_SUPABASE_REALTIME_E2E=1 npm run smoke:supabase` chạy 2 tests: single-browser create/pay/history/report và 2-browser realtime invalidation table status qua cùng Store Key. Kết quả: 2 passed. Chưa push/commit theo yêu cầu; phần còn lại là commit/push phase Supabase UI E2E nếu user yêu cầu, rồi sang Demo Hardening.
 
+Status 2026-06-14d: Supabase UI E2E + realtime migration đã push code commit `9ccfd48` và docs commit `f95d767`. Demo Hardening slice đầu đã implement local trên `codex/ui-logic-integration`: UI error toast formatter có title/message, order submit error tự refetch menu hoặc order/floor theo `UiError.action`, payment conflict tự refetch order/floor, payment/order/floor/takeaway/settings/menu editor/floor editor có loading/error states rõ hơn, clear-demo chặn khi open-order check đang loading/error và retry được, overlay clear-demo chỉ đóng khi click backdrop, và copy settings bỏ "mock". Test mới `demoHardening.test.tsx` cover clear-demo loading/error guard, payment error state, payment conflict refetch. Validation pass: `npm run test -- demoHardening uiError` (15 tests), `npm run test` (21 files/80 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `npm run smoke:supabase` (1 passed/1 skipped). Chưa push/commit theo yêu cầu.
+
 Tasks chung:
 
 - Duy trì runtime switch:
@@ -398,8 +400,8 @@ Done khi:
 
 Tasks:
 
-- Add loading/error/empty states cho mọi drawer.
-- Add toasts rõ cho conflict, unavailable menu, insufficient cash, clear-demo blocked.
+- Add loading/error/empty states cho mọi drawer. Slice 2026-06-14d đã cover payment/order/floor/takeaway/settings/menu editor/floor editor; report/history đã cover ở phase trước.
+- Add toasts rõ cho conflict, unavailable menu, insufficient cash, clear-demo blocked. Slice 2026-06-14d đã dùng `UiError.action` cho order/payment/clear-demo và toast title+message.
 - Add Vercel deploy config nếu cần.
 - Supabase setup checklist đã có ở `2026-06-12-pos-cafe-supabase-cloud-setup-checklist.md`; khi có project/env thật thì chạy theo checklist:
   - project cloud

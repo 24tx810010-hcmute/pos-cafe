@@ -28,6 +28,7 @@ Status implementation 2026-06-13:
 - Validation sau Floor editor slice đã pass: `npm run test -- floorEditorDrawer`, `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `npm run test` (19 files/71 tests), `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep.
 - Report/History polish: Order History drawer dùng `useOrderHistoryQuery` + `useOrderDetailQuery`, có custom date range, server pagination, loading/error/empty state, không còn dataset mock. Report drawer dùng `useCoreReportsQuery` để aggregate daily `report.getCoreReport({ businessDate })` cho hôm nay/7 ngày/tháng/custom, dùng `useOrderHistoryQuery` cho recent paid orders, và mock report repo lọc đúng `businessDate` như Supabase.
 - Validation sau Report/History polish đã pass: `npm run test -- reportHistoryDrawer`, `npm run test` (20 files/75 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep.
+- Validation sau Demo Hardening slice đầu đã pass: `npm run test -- demoHardening uiError`, `npm run test` (21 files/80 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `npm run smoke:supabase` (1 passed/1 skipped). Slice này thêm error toast title/message, clear-demo loading/error guard, payment/order conflict refetch, và drawer loading/error states.
 - Còn lại: chạy Supabase-mode UI E2E với Store Key/test account rõ ràng.
 
 ## 2. Boundary bắt buộc

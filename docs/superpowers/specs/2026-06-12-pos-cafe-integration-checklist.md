@@ -1,7 +1,7 @@
 # POS Cafe Integration Checklist
 
 > Vai trò: checklist cho phase nối nhánh UI với nhánh logic/adapters. File này dùng sau khi UI mock/production component split đã ổn, không dùng để merge trực tiếp vào `codex/code-foundation`.
-> Trạng thái 2026-06-14: UI checkpoint `codex/code-foundation` đã push tới `6009b47`; branch tích hợp `codex/ui-logic-integration` đã merge `codex/stream-db-rpc`, push merge commit `1c420d9`, push binding nền UI thật `47f17f6`, push Employees slice `4d7d1ae`, push Menu/Floor editor + Report/History polish `9b58732`, rồi implement local Supabase UI E2E + realtime publication migration. Sau khi user apply migration `004` lên cloud, Supabase 2-browser realtime UI E2E đã pass.
+> Trạng thái 2026-06-14: UI checkpoint `codex/code-foundation` đã push tới `6009b47`; branch tích hợp `codex/ui-logic-integration` đã merge `codex/stream-db-rpc`, push merge commit `1c420d9`, push binding nền UI thật `47f17f6`, push Employees slice `4d7d1ae`, push Menu/Floor editor + Report/History polish `9b58732`, push Supabase UI E2E + realtime migration `9ccfd48`, rồi implement local Demo Hardening slice đầu.
 
 ---
 
@@ -30,7 +30,10 @@ Status 2026-06-13:
 - Validation sau Report/History polish đã pass: `npm run test -- reportHistoryDrawer`, `npm run test` (20 files/75 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `git diff --check`, boundary grep Supabase/UI.
 - Supabase UI E2E local đã thêm: `playwright.supabase.config.ts`, script `npm run smoke:supabase`, test tạo store thật qua UI, lấy Store Key/Admin PIN từ UI, unlock admin, tạo + thanh toán dine-in order, kiểm tra history/report. Runtime ports cache singleton để tránh Supabase GoTrue warning trong React StrictMode dev.
 - Validation Supabase UI E2E đã pass: `npm run smoke:supabase` mặc định chạy single-browser path; sau khi user apply migration `004_realtime_publication.sql` lên Supabase cloud, `RUN_SUPABASE_REALTIME_E2E=1 npm run smoke:supabase` pass 2 tests, gồm 2-browser realtime invalidation table status.
-- Việc còn lại của phase này: commit/push code + docs nếu user yêu cầu, rồi chuyển sang Demo Hardening/Polish.
+- Supabase UI E2E + realtime migration đã push code commit `9ccfd48`; docs status push commit `f95d767`.
+- Demo Hardening local đã thêm: toast lỗi có title/message từ `UiError`, refetch theo action cho order/payment/clear-demo, loading/error states cho payment/order/floor/takeaway/settings/menu editor/floor editor, clear-demo guard loading/error + retry, và `demoHardening.test.tsx`.
+- Validation sau Demo Hardening slice: `npm run test -- demoHardening uiError` (15 tests), `npm run test` (21 files/80 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `npm run smoke:supabase` (1 passed/1 skipped).
+- Việc còn lại của phase này: `git diff --check` + boundary grep sau docs, rồi commit/push code + docs nếu user yêu cầu.
 
 ---
 
