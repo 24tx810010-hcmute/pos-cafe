@@ -25,7 +25,7 @@ export type CartLine = {
   total: number;
 };
 
-export type OrderPrimaryAction = "submit" | "payment";
+export type OrderPrimaryAction = "submit" | "payment" | "closed";
 
 export type SubmitOrderFlowInput = {
   context: OrderFlowContext;
@@ -145,7 +145,13 @@ export const isDraftChangedFromOrder = (
 export const getOrderPrimaryAction = (
   order: OrderDetail | null,
   draftItems: SubmitOrderDraftItem[],
-): OrderPrimaryAction => (order && !isDraftChangedFromOrder(order, draftItems) ? "payment" : "submit");
+): OrderPrimaryAction => {
+  if (order && order.status !== "open") {
+    return "closed";
+  }
+
+  return order && !isDraftChangedFromOrder(order, draftItems) ? "payment" : "submit";
+};
 
 export const submitOrderAndPrint = async (
   ports: AppPorts,

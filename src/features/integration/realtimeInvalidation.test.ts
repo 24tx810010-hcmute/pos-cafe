@@ -10,6 +10,7 @@ import {
 const createQueryClientDouble = (): QueryClient =>
   ({
     invalidateQueries: vi.fn().mockResolvedValue(undefined),
+    refetchQueries: vi.fn().mockResolvedValue(undefined),
   }) as unknown as QueryClient;
 
 describe("realtimeInvalidation", () => {
@@ -27,6 +28,10 @@ describe("realtimeInvalidation", () => {
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: posQueryKeys.floorPlan });
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: posQueryKeys.ordersRoot });
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: posQueryKeys.reportsRoot });
+    expect(queryClient.refetchQueries).toHaveBeenCalledWith({ queryKey: posQueryKeys.menu, type: "active" });
+    expect(queryClient.refetchQueries).toHaveBeenCalledWith({ queryKey: posQueryKeys.floorPlan, type: "active" });
+    expect(queryClient.refetchQueries).toHaveBeenCalledWith({ queryKey: posQueryKeys.ordersRoot, type: "active" });
+    expect(queryClient.refetchQueries).toHaveBeenCalledWith({ queryKey: posQueryKeys.reportsRoot, type: "active" });
   });
 
   it("starts realtime invalidation through the realtime port and returns cleanup", () => {

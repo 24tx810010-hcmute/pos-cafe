@@ -142,4 +142,19 @@ describe("Demo hardening", () => {
     await waitFor(() => expect(paySpy).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(getOrderSpy.mock.calls.length).toBeGreaterThan(callsBeforePayment));
   });
+
+  it("disables payment when the order was already paid on another device", async () => {
+    renderAppWithPorts({ drawer: "payment", paymentOrderId: "ord-b02" }, (_ports, state) => {
+      const order = state.orders.find((candidate) => candidate.id === "ord-b02");
+      if (order) {
+        order.status = "paid";
+        order.paidAt = new Date().toISOString();
+        order.lockVersion += 1;
+      }
+    });
+
+    expect(await screen.findByTestId("payment-closed-state")).toBeInTheDocument();
+    expect(screen.getByTestId("pay-button")).toBeDisabled();
+    expect(screen.getByTestId("pay-button-footer")).toBeDisabled();
+  });
 });

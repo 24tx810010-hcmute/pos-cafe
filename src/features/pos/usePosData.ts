@@ -3,6 +3,11 @@ import type { OrderHistoryFilter, ReportFilter } from "@/domain";
 import { posQueryKeys } from "@/features/shared/queryKeys";
 import { usePorts } from "@/ports/portsContext";
 
+const liveSyncQueryOptions = {
+  refetchInterval: 5_000,
+  refetchIntervalInBackground: true,
+};
+
 export const useMenuQuery = () => {
   const ports = usePorts();
   return useQuery({ queryKey: posQueryKeys.menu, queryFn: () => ports.menu.getMenu() });
@@ -10,12 +15,20 @@ export const useMenuQuery = () => {
 
 export const useFloorPlanQuery = () => {
   const ports = usePorts();
-  return useQuery({ queryKey: posQueryKeys.floorPlan, queryFn: () => ports.floorPlan.getFloorPlan() });
+  return useQuery({
+    queryKey: posQueryKeys.floorPlan,
+    queryFn: () => ports.floorPlan.getFloorPlan(),
+    ...liveSyncQueryOptions,
+  });
 };
 
 export const useOpenOrdersQuery = () => {
   const ports = usePorts();
-  return useQuery({ queryKey: posQueryKeys.openOrders, queryFn: () => ports.order.listOpenOrders() });
+  return useQuery({
+    queryKey: posQueryKeys.openOrders,
+    queryFn: () => ports.order.listOpenOrders(),
+    ...liveSyncQueryOptions,
+  });
 };
 
 export const useTakeawayOpenOrdersQuery = () => {
@@ -23,6 +36,7 @@ export const useTakeawayOpenOrdersQuery = () => {
   return useQuery({
     queryKey: posQueryKeys.takeawayOpenOrders,
     queryFn: () => ports.order.listTakeawayOpenOrders(),
+    ...liveSyncQueryOptions,
   });
 };
 
@@ -32,6 +46,7 @@ export const useOrderDetailQuery = (orderId: string | null) => {
     queryKey: posQueryKeys.order(orderId),
     queryFn: () => ports.order.getOrder(orderId!),
     enabled: !!orderId,
+    ...liveSyncQueryOptions,
   });
 };
 

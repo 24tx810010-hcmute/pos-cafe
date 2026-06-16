@@ -3217,10 +3217,18 @@ function OrderDrawer() {
   const primaryAction = getOrderPrimaryAction(orderDetail, draftItems);
   const submitDisabled = submitMutation.isPending || menuQuery.isError || orderQuery.isError || (!!context?.orderId && orderQuery.isLoading);
   const primaryDisabled =
-    primaryAction === "payment" ? !orderDetail || submitMutation.isPending : submitDisabled;
+    primaryAction === "closed"
+      ? true
+      : primaryAction === "payment"
+        ? !orderDetail || submitMutation.isPending
+        : submitDisabled;
   const primaryActionLabel = submitMutation.isPending
     ? "Đang gửi..."
-    : primaryAction === "payment"
+    : primaryAction === "closed"
+      ? orderDetail?.status === "paid"
+        ? "Đã thanh toán"
+        : "Đơn đã đóng"
+      : primaryAction === "payment"
       ? "Thanh toán"
       : "In/Gửi đơn";
 
@@ -3272,6 +3280,11 @@ function OrderDrawer() {
   };
 
   const runPrimaryAction = () => {
+    if (primaryAction === "closed") {
+      toast("Đơn này đã được cập nhật trên thiết bị khác.");
+      return;
+    }
+
     if (primaryAction === "payment" && orderDetail) {
       openPayment(orderDetail.id);
       return;
@@ -3324,7 +3337,7 @@ function OrderDrawer() {
         </div>
         <div className="header-actions">
           <Button variant="outlined" onClick={handleClose}>Đóng</Button>
-          {orderDetail && draftChanged && (
+          {orderDetail && draftChanged && primaryAction !== "closed" && (
             <Button
               variant="outlined"
               startIcon={<CreditCard size={16} />}
@@ -3355,6 +3368,15 @@ function OrderDrawer() {
             <Button size="small" variant="outlined" onClick={() => void orderQuery.refetch()}>
               Thử lại
             </Button>
+          </div>
+        )}
+        {primaryAction === "closed" && (
+          <div className="drawer-alert" data-testid="order-closed-state">
+            <AlertTriangle size={18} />
+            <div>
+              <strong>Đơn đã được cập nhật</strong>
+              <p>Thiết bị khác đã thanh toán hoặc đóng đơn này. Quay lại sơ đồ để xem trạng thái mới nhất.</p>
+            </div>
           </div>
         )}
         <div className="three-pane">
@@ -3514,11 +3536,25 @@ function PaymentDrawer() {
 
   const changeAmount = receivedAmount - (order?.total ?? 0);
   const insufficient = receivedAmount < (order?.total ?? 0);
+  const orderClosed = !!order && order.status !== "open";
+  const paymentDisabled = !order || orderClosed || orderQuery.isError || insufficient || payMutation.isPending;
+  const paymentButtonLabel = orderClosed
+    ? order.status === "paid"
+      ? "Đơn đã thanh toán"
+      : "Đơn đã đóng"
+    : payMutation.isPending
+      ? "Đang xử lý..."
+      : "Hoàn tất thanh toán";
 
   const table = order?.tableId ? floorPlanQuery.data?.tables.find((t) => t.id === order.tableId) : null;
 
   const payOrder = () => {
     if (!order || !currentEmployee) return;
+
+    if (orderClosed) {
+      toast("Đơn này đã được cập nhật trên thiết bị khác.");
+      return;
+    }
 
     if (payMethod !== "cash") {
       toast("QR/chuyển khoản đang là placeholder; MVP thanh toán bằng tiền mặt.");
@@ -3570,11 +3606,11 @@ function PaymentDrawer() {
           <Button
             variant="contained"
             data-testid="pay-button"
-            disabled={!order || orderQuery.isError || insufficient || payMutation.isPending}
+            disabled={paymentDisabled}
             onClick={payOrder}
             color={insufficient ? "error" : "primary"}
           >
-            {payMutation.isPending ? "Đang xử lý..." : "Hoàn tất"}
+            {paymentButtonLabel}
           </Button>
         </div>
       </header>
@@ -3646,6 +3682,16 @@ function PaymentDrawer() {
           <aside className="panel payment-panel">
             <div className="panel-head">Thanh toán</div>
             <div className="panel-scroll payment-panel-body">
+              {orderClosed && (
+                <div className="drawer-alert" data-testid="payment-closed-state">
+                  <AlertTriangle size={18} />
+                  <div>
+                    <strong>Đơn đã được cập nhật</strong>
+                    <p>Thiết bị khác đã thanh toán hoặc đóng đơn này. Quay lại sơ đồ để xem trạng thái mới nhất.</p>
+                  </div>
+                </div>
+              )}
+
               {/* Method segmented */}
               <div className="pay-method-group">
                 {(["cash", "qr", "bank"] as const).map((m) => (
@@ -3725,11 +3771,11 @@ function PaymentDrawer() {
                 fullWidth
                 size="large"
                 data-testid="pay-button-footer"
-                disabled={!order || orderQuery.isError || insufficient || payMutation.isPending}
+                disabled={paymentDisabled}
                 onClick={payOrder}
                 sx={{ borderRadius: "8px", fontWeight: 800, fontSize: 16 }}
               >
-                {payMutation.isPending ? "Đang xử lý..." : "Hoàn tất thanh toán"}
+                {paymentButtonLabel}
               </Button>
             </div>
           </aside>

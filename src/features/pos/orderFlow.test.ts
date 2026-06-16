@@ -89,6 +89,14 @@ describe("orderFlow", () => {
     expect(getOrderPrimaryAction(order, changed)).toBe("submit");
   });
 
+  it("marks paid or void orders as closed for primary actions", async () => {
+    const order = await getMockOrder();
+    const paidOrder: OrderDetail = { ...order, status: "paid" };
+    const draft = orderDetailToDraft(paidOrder);
+
+    expect(getOrderPrimaryAction(paidOrder, draft)).toBe("closed");
+  });
+
   it("submits order changes through the order port and prints the returned ticket", async () => {
     const ports = createMockPorts();
     const printSpy = vi.spyOn(ports.print, "renderOrderTicket");
