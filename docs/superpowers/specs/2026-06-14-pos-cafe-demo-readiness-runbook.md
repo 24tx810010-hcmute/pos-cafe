@@ -10,7 +10,10 @@
 - Supabase UI E2E đã pass:
   - Single browser: create store -> passcode -> order -> payment -> history/report.
   - 2 browser realtime: browser A tạo order, browser B thấy table occupied; browser B pay, browser A thấy table empty.
-- Verification mới nhất 2026-06-14: `RUN_SUPABASE_REALTIME_E2E=1 npm run smoke:supabase` pass 2/2.
+- Verification mới nhất 2026-06-16:
+  - `RUN_SUPABASE_REALTIME_E2E=1 npm run smoke:supabase` pass 2/2.
+  - Live Playwright 2-browser đã kiểm tra floor sync/payment trên public URL.
+  - Live hardening đã xử lý stale payment drawer: nếu hai thiết bị cùng mở thanh toán cùng order, thiết bị chưa bấm pay sẽ tự khóa payment khi order đã được thiết bị khác thanh toán/đóng.
 
 Deploy Vercel nên trỏ `main`. Nếu dùng preview branch riêng, cần smoke lại đúng preview URL trước demo.
 
@@ -49,6 +52,13 @@ $env:RUN_SUPABASE_REALTIME_E2E='1'
 npm run smoke:supabase
 Remove-Item Env:\RUN_SUPABASE_REALTIME_E2E
 ```
+
+   - Nếu có thời gian, chạy thêm manual/live check trên public URL:
+     - Browser A tạo order.
+     - Browser B thanh toán order đó.
+     - Browser A thấy bàn về `Trống`.
+     - Tạo order thứ hai, A và B cùng mở payment drawer.
+     - Browser B thanh toán; browser A phải thấy cảnh báo order đã cập nhật và nút payment bị disabled.
 
 4. Chuẩn bị mạng.
    - Wi-Fi chính.
@@ -102,6 +112,14 @@ Option B - dùng store đã chuẩn bị:
 5. Browser B mở thanh toán, thanh toán tiền mặt.
 6. Browser A thấy bàn empty lại.
 
+### Demo payment sync edge case
+
+1. Browser A tạo order ở một bàn trống.
+2. Browser A mở payment drawer nhưng chưa bấm thanh toán.
+3. Browser B mở cùng order và bấm thanh toán.
+4. Browser A phải tự chuyển sang trạng thái order đã cập nhật: nút thanh toán disabled, có cảnh báo, không bấm pay stale được.
+5. Nếu muốn giải thích kỹ: realtime event chỉ là signal, UI refetch order detail/open orders/floor plan; polling active query 5s là lớp hồi phục khi tab vừa login/pair miss event.
+
 ### Demo report/history
 
 1. Mở `Lịch sử`, chọn đơn vừa paid.
@@ -151,6 +169,7 @@ Realtime chậm:
 
 - Bấm `Làm mới` trên màn Sơ đồ bàn.
 - Giải thích realtime trong MVP dùng signal để invalidate/refetch, không patch state thủ công.
+- Nếu đang ở payment drawer, chờ tối đa vài giây để order detail refetch/polling cập nhật trạng thái paid/closed; nếu vẫn chưa cập nhật, bấm `Quay lại` rồi mở lại bàn.
 
 Store demo bị bẩn:
 
@@ -187,3 +206,4 @@ Remove-Item Env:\VITE_DATA_MODE
 - Hotspot backup sẵn.
 - `npm run smoke:supabase` pass trong ngày demo.
 - `RUN_SUPABASE_REALTIME_E2E=1 npm run smoke:supabase` pass nếu có thời gian kiểm tra realtime.
+- Manual live check stale payment drawer pass nếu demo có phần 2 thiết bị.

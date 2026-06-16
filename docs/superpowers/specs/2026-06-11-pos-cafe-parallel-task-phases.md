@@ -381,6 +381,8 @@ Status 2026-06-14e: Demo Readiness đã thêm runbook `2026-06-14-pos-cafe-demo-
 
 Status 2026-06-14f: Code + docs đã squash-merge về `main` và push. Validation trên `main` pass: `npm run test` (21 files/80 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `git diff --check`. Bước tiếp theo là deploy verification trên Vercel/Supabase env thật và diễn tập demo 2 thiết bị.
 
+Status 2026-06-16: Vercel deploy verification và live payment sync hardening đã hoàn tất trên `main`. Sau khi live test phát hiện case stale payment drawer (browser A và B cùng mở thanh toán cùng một order; B thanh toán trước; A vẫn giữ nút pay enabled và chỉ lỗi khi bấm), code đã được harden bằng active refetch khi realtime event đến, polling hồi phục 5s cho floor/open orders/order detail, và trạng thái closed cho paid/void order để disable payment button + hiện cảnh báo đã cập nhật. Trước đó cũng đã fix payment path cho existing order bằng cách sinh fresh UUID cho draft item/option khi mở lại order cũ, tránh `INVALID_ORDER_ITEMS` khi submit lại. Validation pass trước push: `npm run test -- realtimeInvalidation orderFlow demoHardening`, `npm run test` (21 files/82 tests), `npm run build`, `VITE_DATA_MODE=supabase npm run build`, `VITE_DATA_MODE=mock npm run smoke` (13 passed/7 skipped), `RUN_SUPABASE_REALTIME_E2E=1 npm run smoke:supabase` (2 passed), `git diff --check`. Live deployment sau push đổi bundle thành deployment mới và cần final rehearsal trên live URL trước demo.
+
 Tasks chung:
 
 - Duy trì runtime switch:
@@ -395,7 +397,8 @@ Tasks chung:
 
 Done khi:
 
-- 2 máy/browser cùng store thấy order/table status update qua refetch realtime.
+- 2 máy/browser cùng store thấy order/table status update qua realtime/refetch và polling fallback.
+- Nếu 2 máy cùng mở payment drawer cho một order, máy còn lại tự khóa payment sau khi order được thiết bị khác thanh toán/đóng.
 - Create store + seed demo + passcode + order + payment + report chạy end-to-end.
 
 ---
@@ -420,6 +423,7 @@ Done khi:
 - `npm run build`, `npm run test`, `npm run smoke` xanh.
 - Demo checklist trong docs hoàn chỉnh.
 - Không còn `RPC_NOT_IMPLEMENTED` ở flow MVP đang dùng.
+- Live final rehearsal pass trên public URL, gồm payment sync/stale drawer.
 
 ---
 
