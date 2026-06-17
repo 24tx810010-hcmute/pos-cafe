@@ -57,7 +57,7 @@ const openClearDemoDialog = async () => {
 
   await screen.findByTestId("settings-drawer");
   await screen.findByRole("button", { name: "Mục" });
-  await user.click(screen.getByRole("button", { name: "Demo" }));
+  await user.click(screen.getByRole("button", { name: "Dữ liệu mẫu" }));
   fireEvent.click(screen.getByTestId("open-clear-demo"));
 
   return user;
