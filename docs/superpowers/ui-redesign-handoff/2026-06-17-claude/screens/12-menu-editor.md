@@ -21,13 +21,13 @@ Make menu management feel like a finished admin tool. Admin should understand ca
 
 ### Header
 
-- Title: "Quan ly menu".
-- Dirty badge: "Chua luu".
+- Title: "Quản lý menu".
+- Dirty badge: "Chưa lưu".
 - Summary: active category count + active item count.
 - Actions:
-  - "Huy"
-  - "Xem truoc"
-  - Primary: "Luu menu"
+  - "Hủy"
+  - "Xem trước"
+  - Primary: "Lưu menu"
 
 ### Navigation / Categories
 
@@ -37,7 +37,7 @@ Make menu management feel like a finished admin tool. Admin should understand ca
   - Add category button.
   - Reorder controls only visible on hover or in compact action menu.
 - Deleted category:
-  - Use "Dang cho xoa" user-facing label.
+  - Use "Đang chờ xóa" user-facing label.
   - Restore action clear.
 
 ### Items
@@ -66,14 +66,14 @@ Advanced can be collapsed by default if screen is cramped.
 
 ### Dirty Confirm
 
-- Title: "Bo thay doi menu?"
-- Body: "Cac chinh sua chua luu se bi huy."
-- Buttons: "O lai" and "Bo thay doi".
+- Title: "Bỏ thay đổi menu?"
+- Body: "Các chỉnh sửa chưa lưu sẽ bị hủy."
+- Buttons: "Ở lại" and "Bỏ thay đổi".
 
 ## Layout Spec
 
 - Desktop: 3 pane OK, but props pane should not look like a long debug form.
-- Tablet/phone landscape: use tabs "Danh muc", "Mon", "Chi tiet".
+- Tablet/phone landscape: use tabs "Danh mục", "Món", "Chi tiết".
 - Sticky save actions.
 
 ## Files To Touch

@@ -18,13 +18,13 @@ First screen must make the user choose one of two real tasks: pair an existing s
 - Keep first viewport focused on action, not long explanation.
 - Use a compact brand header: logo/wordmark + one sentence.
 - Two large action tiles:
-  - "Da co quan" / pair device.
-  - "Tao quan moi" / create store.
+  - "Đã có quán" / pair device.
+  - "Tạo quán mới" / create store.
 - Each tile needs icon, title, one-line benefit, and clear hover/focus state.
 - Add a small reassurance row below choices:
-  - "Dung cho nhieu thiet bi"
-  - "Nhan vien dang nhap bang PIN"
-  - "Du lieu dong bo theo cua hang"
+  - "Dùng cho nhiều thiết bị"
+  - "Nhân viên đăng nhập bằng PIN"
+  - "Dữ liệu đồng bộ theo cửa hàng"
 - Do not mention data mode, backend, Supabase, mock, config, DB.
 
 ## Layout Spec

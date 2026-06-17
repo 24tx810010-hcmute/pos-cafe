@@ -12,16 +12,16 @@ Payment should feel decisive and trustworthy. Cashier needs total, received amou
 ## Current Problems
 
 - Flow is fairly strong, but blank receipt/summary areas can feel under-designed.
-- Completion CTA can compete between header and body.
+- Completion CTA đang cạnh tranh giữa header và body.
 - Non-cash methods should be hidden/disabled cleanly if not ready.
 
 ## Redesign Requirements
 
 ### Header
 
-- Title: "Thanh toan - Don #123".
+- Title: "Thanh toán - Đơn #123".
 - Subtitle: table/order type + short instruction.
-- Primary CTA: "Hoan tat thanh toan".
+- Primary CTA: "Hoàn tất thanh toán".
 - If insufficient cash, CTA disabled and amount warning visible.
 
 ### Main Body
@@ -42,7 +42,7 @@ Payment should feel decisive and trustworthy. Cashier needs total, received amou
 ### Insufficient Cash
 
 - Show warning near received amount:
-  - "Khach dua chua du. Con thieu X."
+  - "Khách đưa chưa đủ. Còn thiếu X."
 - Disable finish button.
 - Button text should not turn into error label; keep disabled CTA plus warning.
 
@@ -51,7 +51,7 @@ Payment should feel decisive and trustworthy. Cashier needs total, received amou
 - If order was paid/closed by another device:
   - Show blocked state.
   - CTA disabled.
-  - Provide "Tai lai don" or "Quay lai so do".
+  - Provide "Tải lại đơn" or "Quay lại sơ đồ".
 
 ## Layout Spec
 
@@ -72,4 +72,3 @@ Payment should feel decisive and trustworthy. Cashier needs total, received amou
 - [ ] Change amount is visually obvious.
 - [ ] Non-cash unavailable state does not say mock/MVP/placeholder.
 - [ ] Closed/stale state looks intentional.
-

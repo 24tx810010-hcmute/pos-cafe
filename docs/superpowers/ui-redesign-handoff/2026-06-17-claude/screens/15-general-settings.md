@@ -15,13 +15,13 @@ Let admin update store display info and receipt footer. Hide technical/read-only
 ## Redesign Requirements
 
 - Header:
-  - Title: "Cai dat chung"
+  - Title: "Cài đặt chung"
   - Dirty badge
-  - Actions: "Huy", "Luu cai dat"
+  - Actions: "Hủy", "Lưu cài đặt"
 - Sections:
-  - Thong tin quan
-  - Hoa don
-  - Bao tri du lieu
+  - Thông tin quán
+  - Hóa đơn
+  - Bảo trì dữ liệu
 - Hide or collapse:
   - timezone
   - currency
@@ -30,7 +30,7 @@ Let admin update store display info and receipt footer. Hide technical/read-only
   - Useful if editing receipt fields.
   - Should not take huge space if only one field.
 - Maintenance:
-  - "Du lieu mau" section should be lower priority and visually separated.
+  - "Dữ liệu mẫu" section should be lower priority and visually separated.
   - Destructive action uses danger style.
 
 ## Layout Spec
@@ -51,4 +51,3 @@ Let admin update store display info and receipt footer. Hide technical/read-only
 - [ ] Save disabled when not dirty.
 - [ ] Maintenance action clearly destructive.
 - [ ] No "config", "demo data", "seed" copy.
-

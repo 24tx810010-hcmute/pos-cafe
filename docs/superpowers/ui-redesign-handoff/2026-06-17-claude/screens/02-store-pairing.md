@@ -15,13 +15,13 @@ Let a device join an existing store with minimal friction. This screen should fe
 ## Redesign Requirements
 
 - Main form area:
-  - Title: "Ghep thiet bi voi quan"
-  - Short help: "Nhap Store Key do quan ly cung cap."
+  - Title: "Ghép thiết bị với quán"
+  - Short help: "Nhập Store Key do quản lý cung cấp."
   - Input label: "Store Key"
   - Placeholder must be generic sample, not a real store key.
-  - Primary CTA: "Ghep thiet bi"
+  - Primary CTA: "Ghép thiết bị"
 - Side/support area:
-  - Show 2-3 concise facts: multiple devices, staff PIN login, can change store.
+  - Show 2-3 concise facts: multiple devices, staff PIN login, and change-store support.
   - Use icons and short text.
 - Error state:
   - Invalid format: clear example.
@@ -45,4 +45,3 @@ Let a device join an existing store with minimal friction. This screen should fe
 - [ ] Error message is user-actionable.
 - [ ] CTA disabled/loading state is clear.
 - [ ] Screen fits in 844x390 without important controls below fold.
-

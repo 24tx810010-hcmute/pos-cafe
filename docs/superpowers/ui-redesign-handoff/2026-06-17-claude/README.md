@@ -1,31 +1,51 @@
 # POS Cafe UI Redesign Handoff - 2026-06-17
 
-Folder nay la bo yeu cau de dua cho mot AI khac, vi du Claude, thuc hien phase polish/redesign UI. Day la docs-only branch; khong implement UI trong branch `docs`.
+Folder này là bộ yêu cầu để đưa cho một AI khác, ví dụ Claude, thực hiện phase polish/redesign UI. Đây là docs-only branch; không implement UI trong branch `docs`.
 
-## Muc Tieu
+## Mục Tiêu
 
-Lam lai UI de demo POS Cafe trong tinh trang chuyen nghiep hon, de thao tac hon, va khong con cam giac prototype/debug/admin panel ghep lai. Scope la UI/UX polish tren code hien co, khong viet lai business logic.
+Làm lại UI để demo POS Cafe trong tình trạng chuyên nghiệp hơn, dễ thao tác hơn, và không còn cảm giác prototype/debug/admin panel ghép lại. Scope là UI/UX polish trên code hiện có, không viết lại business logic.
 
-## Cach Su Dung Folder Nay
+## Cách Sử Dụng Folder Này
 
-1. Dua toan bo folder nay cho AI implementer.
-2. Bat AI doc file nay truoc, sau do doc `00-claude-entrypoint.md`, `01-global-redesign-rules.md`, `02-implementation-map.md`, va file screen can lam.
-3. Implement trong code worktree/branch rieng tu `main`, khong lam tren `docs`.
-4. Sau moi nhom screen, chay test/build/smoke theo `implementation/02-testing-checklist.md`.
-5. Khong squash merge neu user yeu cau giu lich su commit.
+1. Đưa toàn bộ folder này cho AI implementer.
+2. Bắt AI đọc file này trước, sau đó đọc `00-claude-entrypoint.md`, `01-global-redesign-rules.md`, `02-implementation-map.md`, và file screen cần làm.
+3. Implement trong code worktree/branch riêng được tạo từ `main`, không làm trên `docs`.
+4. Không merge branch UI vào `main`; chủ dự án sẽ tự review và merge sau.
+5. Sau mỗi nhóm screen, chạy test/build/smoke theo `implementation/02-testing-checklist.md`.
+6. Không squash merge nếu user yêu cầu giữ lịch sử commit.
+
+## Branch Policy Cho Implementer
+
+Implementer phải tạo branch riêng từ `main` trước khi sửa UI:
+
+```powershell
+cd D:\Workspace\pos-cafe
+git switch main
+git pull --ff-only origin main
+git switch -c ui-redesign-<scope>
+```
+
+Quy tắc:
+
+- Không dùng branch `main` để sửa trực tiếp.
+- Không dùng branch `docs` để implement UI.
+- Không tạo branch có chữ `codex`.
+- Không merge vào `main` sau khi làm xong; chỉ push branch UI và báo lại cho chủ dự án.
+- Nếu worktree đang dirty với thay đổi không phải của implementer, dừng lại và báo user.
 
 ## Current Code Context
 
-- Code branch da merge UI copy polish vao `main` ngay 2026-06-17.
-- UI source chinh: `src/app/App.tsx`.
-- CSS chinh: `src/styles.css`.
-- App dung Vite + React + TypeScript + MUI + lucide-react + zustand + TanStack Query.
-- Data mode co `mock` va `supabase`; UI polish khong duoc pha logic cua hai mode.
-- Docs audit goc co screenshot: `docs/superpowers/ui-audit/2026-06-16-desktop/`.
+- Code branch đã merge UI copy polish vào `main` ngày 2026-06-17.
+- UI source chính: `src/app/App.tsx`.
+- CSS chính: `src/styles.css`.
+- App dùng Vite + React + TypeScript + MUI + lucide-react + zustand + TanStack Query.
+- Data mode có `mock` và `supabase`; UI polish không được phá logic của hai mode.
+- Docs audit gốc có screenshot: `docs/superpowers/ui-audit/2026-06-16-desktop/`.
 
 ## Screen Files
 
-Lam theo thu tu uu tien neu khong co chi dinh khac:
+Làm theo thứ tự ưu tiên nếu không có chỉ định khác:
 
 1. [Global rules](01-global-redesign-rules.md)
 2. [Implementation map](02-implementation-map.md)
@@ -40,18 +60,17 @@ Lam theo thu tu uu tien neu khong co chi dinh khac:
 
 ## Non-Negotiables
 
-- Khong sua schema, migrations, domain public types, Supabase repo logic, hay ports interface tru khi co yeu cau rieng.
-- Khong them route/browser URL moi; app van la single-page POS with internal state/drawers.
-- Khong de text user-facing co: `mock`, `Supabase`, `DB`, `MVP`, `placeholder`, `seed`, `tombstone`, `deactivate`, `raw Store Key`, `config`.
-- Khong show field read-only neu field do khong giup cashier/admin ra quyet dinh.
-- Khong lam landing page marketing. First screen phai phuc vu dang nhap/ghep thiet bi.
-- Khong tao branch co chu `codex`.
-- Khong commit docs vao `main`.
+- Không sửa schema, migrations, domain public types, Supabase repo logic, hay ports interface trừ khi có yêu cầu riêng.
+- Không thêm route/browser URL mới; app vẫn là single-page POS with internal state/drawers.
+- Không để text user-facing có: `mock`, `Supabase`, `DB`, `MVP`, `placeholder`, `seed`, `tombstone`, `deactivate`, `raw Store Key`, `config`.
+- Không show field read-only nếu field đó không giúp cashier/admin ra quyết định.
+- Không làm landing page marketing. First screen phải phục vụ đăng nhập/ghép thiết bị.
+- Không commit docs vào `main`.
 
-## Deliverable Mong Doi
+## Deliverable Mong Đợi
 
-- UI code polish tren code branch rieng.
+- UI code polish trên branch riêng tạo từ `main`.
 - Tests/build pass.
-- Playwright/browser screenshots cho desktop 1440x900 va phone landscape 844x390 cho cac flow demo chinh.
-- PR hoac merge commit ro rang, khong squash neu user yeu cau giu commit history.
+- Playwright/browser screenshots cho desktop 1440x900 và phone landscape 844x390 cho các flow demo chính.
+- Push branch UI để chủ dự án tự review/merge.
 

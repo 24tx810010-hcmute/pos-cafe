@@ -1,10 +1,10 @@
 # Claude Entrypoint
 
-Ban la AI implementer duoc giao polish/redesign UI cho POS Cafe. Hay doc file nay truoc khi lam.
+Bạn là AI implementer được giao polish/redesign UI cho POS Cafe. Hãy đọc file này trước khi làm.
 
-## Bat Buoc Lam Truoc Khi Sua Code
+## Bắt Buộc Làm Trước Khi Sửa Code
 
-Chay trong code worktree, khong chay trong docs worktree:
+Chạy trong code worktree, không chạy trong docs worktree:
 
 ```powershell
 cd D:\Workspace\pos-cafe
@@ -15,43 +15,60 @@ npm run test
 npm run build
 ```
 
-Neu branch hien tai khong phai branch UI rieng hoac worktree dang dirty voi thay doi khong phai cua ban, dung lai va bao user. Khong reset, khong checkout force, khong discard thay doi cua nguoi khac.
+Nếu branch hiện tại không phải branch UI riêng hoặc worktree đang dirty với thay đổi không phải của bạn, dừng lại và báo user. Không reset, không checkout force, không discard thay đổi của người khác.
 
-## Cach Doc Tai Lieu
+## Branch Policy Bắt Buộc
 
-1. Doc `README.md`.
-2. Doc `01-global-redesign-rules.md`.
-3. Doc `02-implementation-map.md`.
-4. Doc file screen dang lam trong `screens/`.
-5. Sau moi screen hoac nhom screen, doc lai `implementation/02-testing-checklist.md`.
+Trước khi implement UI, tạo branch riêng từ `main`:
 
-## Scope Dung
+```powershell
+git switch main
+git pull --ff-only origin main
+git switch -c ui-redesign-<scope>
+```
 
-Ban chi lam UI/UX polish:
+Quy tắc:
+
+- Không sửa trực tiếp trên `main`.
+- Không sửa UI trên `docs`.
+- Không tạo branch có chữ `codex`.
+- Không merge vào `main`; chủ dự án sẽ tự merge sau.
+- Khi xong, push branch UI và báo commit/branch/test result.
+
+## Cách Đọc Tài Liệu
+
+1. Đọc `README.md`.
+2. Đọc `01-global-redesign-rules.md`.
+3. Đọc `02-implementation-map.md`.
+4. Đọc file screen đang làm trong `screens/`.
+5. Sau mỗi screen hoặc nhóm screen, đọc lại `implementation/02-testing-checklist.md`.
+
+## Scope Đúng
+
+Bạn chỉ làm UI/UX polish:
 
 - Re-layout panes, headers, tables, cards, drawers, dialogs.
-- Doi copy, CTA, hierarchy, spacing, responsive constraints.
-- Them small UI helpers/components neu giam lap code that su.
-- Them/update tests cho UI visible copy, render state, dirty dialog, va critical flow.
+- Đổi copy, CTA, hierarchy, spacing, responsive constraints.
+- Thêm small UI helpers/components nếu giảm lặp code thật sự.
+- Thêm/update tests cho UI visible copy, render state, dirty dialog, và critical flow.
 
-Ban khong lam:
+Bạn không làm:
 
-- Khong doi schema database.
-- Khong doi Supabase RPC, migrations, RLS.
-- Khong doi domain model neu chi de dep UI.
-- Khong lam mock-only behavior chen vao Supabase flow.
-- Khong them route moi.
-- Khong dua docs folder vao code branch/main.
+- Không đổi schema database.
+- Không đổi Supabase RPC, migrations, RLS.
+- Không đổi domain model nếu chỉ để đẹp UI.
+- Không làm mock-only behavior chèn vào Supabase flow.
+- Không thêm route mới.
+- Không đưa docs folder vào code branch/main.
 
-## Output Format Khi Bao Ket Qua
+## Output Format Khi Báo Kết Quả
 
-Moi lan ket thuc mot nhom viec, bao:
+Mỗi lần kết thúc một nhóm việc, báo:
 
-- Screens da polish.
-- Files da sua.
-- Screenshots/viewport da verify.
-- Commands da chay va ket qua.
-- Risk con lai.
+- Screens đã polish.
+- Files đã sửa.
+- Screenshots/viewport đã verify.
+- Commands đã chạy và kết quả.
+- Risk còn lại.
 
-Khong noi "xong" neu chua chay verification.
-
+Không nói "xong" nếu chưa chạy verification.

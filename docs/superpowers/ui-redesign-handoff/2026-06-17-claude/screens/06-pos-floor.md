@@ -17,20 +17,20 @@ This is the main cashier screen. It must immediately show table status, open ord
 
 ### Header
 
-- Title: "So do ban".
+- Title: "Sơ đồ bàn".
 - Subtitle: employee + online status + count summary.
 - Header actions:
-  - Mang di
-  - Lam moi
-  - Tao don nhanh only if it opens a real new order context; otherwise demote/remove.
+  - Mang đi
+  - Làm mới
+  - Tạo đơn nhanh only if it opens a real new order context; otherwise demote/remove.
 
 ### Left Summary
 
 - Show areas as segmented control or compact list, not both left and top unless needed.
 - Show counts:
   - Trong
-  - Dang phuc vu
-  - Mang di
+  - Đang phục vụ
+  - Mang đi
 - Legend should be compact and not consume prime space.
 
 ### Floor Stage
@@ -48,7 +48,7 @@ This is the main cashier screen. It must immediately show table status, open ord
 
 - Make this panel more useful:
   - Order number.
-  - Table or "Mang di".
+  - Table or "Mang đi".
   - Total.
   - Time/open age if available.
   - One obvious click target to reopen.

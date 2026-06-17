@@ -1,6 +1,6 @@
 # 00 - Screen Inventory
 
-Day la danh sach day du cac screen/state can xem khi polish UI. Neu implementer bo qua mot muc, phai ghi ro ly do trong PR/summary.
+Đây là danh sách đầy đủ các screen/state cần xem khi polish UI. Nếu implementer bỏ qua một mục, phải ghi rõ lý do trong PR/summary.
 
 ## Preauth
 

@@ -15,11 +15,11 @@ Kitchen/Barista queue should look like an optional but real workflow, not a mock
 ## Redesign Requirements
 
 - Header:
-  - Title: "Bep / Pha che"
+  - Title: "Bếp / Pha chế"
   - Waiting count + online indicator.
-  - Status chips: Dang cho, Da xong, Tat ca.
+  - Status chips: Đang chờ, Đã xong, Tất cả.
 - Station filter:
-  - "Tat ca", "Pha che", "Banh".
+  - "Tất cả", "Pha chế", "Bánh".
   - Keep count badges.
 - Queue:
   - Tickets should show:
@@ -27,7 +27,7 @@ Kitchen/Barista queue should look like an optional but real workflow, not a mock
     - Age/time.
     - Items grouped by station.
     - Notes/options.
-    - CTA: "Danh dau xong".
+    - CTA: "Đánh dấu xong".
 - Detail:
   - Auto-select first waiting ticket.
   - If detail pane empty, show next action.
@@ -55,4 +55,3 @@ Kitchen/Barista queue should look like an optional but real workflow, not a mock
 - [ ] Tickets are readable at 1440x900 and 844x390.
 - [ ] Mark done/undo still updates local UI state.
 - [ ] Empty filtered state looks intentional.
-

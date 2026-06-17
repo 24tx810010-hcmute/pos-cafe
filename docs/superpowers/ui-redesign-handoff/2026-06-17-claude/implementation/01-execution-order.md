@@ -1,6 +1,6 @@
 # Execution Order
 
-Neu user khong chi dinh khac, lam theo thu tu nay de giam risk demo.
+Nếu user không chỉ định khác, làm theo thứ tự này để giảm risk demo.
 
 ## Phase 1 - Core Demo Journey
 
@@ -11,8 +11,8 @@ Neu user khong chi dinh khac, lam theo thu tu nay de giam risk demo.
 
 Acceptance phase 1:
 
-- Cashier co the nhin ban, mo don, them mon, gui don, thanh toan ma khong bi khung UI rong/roi.
-- Desktop 1440x900 va phone landscape 844x390 khong overlap.
+- Cashier có thể nhìn bàn, mở đơn, thêm món, gửi đơn, thanh toán mà không bị khung UI rỗng/rối.
+- Desktop 1440x900 và phone landscape 844x390 không overlap.
 - `npm run test`, `npm run build`, `VITE_DATA_MODE=mock npm run smoke` pass.
 
 ## Phase 2 - Admin Tools High Risk
@@ -23,9 +23,9 @@ Acceptance phase 1:
 
 Acceptance phase 2:
 
-- Admin drawers khong con cam giac debug panel.
-- Advanced/read-only controls duoc an hoac gom lai.
-- Dirty/save/confirm states van hoat dong.
+- Admin drawers không còn cảm giác debug panel.
+- Advanced/read-only controls được ẩn hoặc gom lại.
+- Dirty/save/confirm states vẫn hoạt động.
 - `npm run test -- menuEditorDrawer floorEditorDrawer reportHistoryDrawer` pass.
 
 ## Phase 3 - Supporting Screens
@@ -40,7 +40,7 @@ Acceptance phase 2:
 
 Acceptance phase 3:
 
-- List/detail screens auto-select or provide clear next action.
+- List/detail screens auto-select hoặc provide clear next action.
 - Empty/error/loading states look designed, not blank.
 - Optional/future functionality is hidden or framed as unavailable without prototype language.
 

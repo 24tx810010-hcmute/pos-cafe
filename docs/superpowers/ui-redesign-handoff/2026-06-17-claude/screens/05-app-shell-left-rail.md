@@ -15,22 +15,22 @@ Make navigation predictable and professional. The shell must support fast cashie
 ## Redesign Requirements
 
 - Rail items:
-  - Ban
-  - Mang di
-  - Lich su
-  - Nhan vien
+  - Bàn
+  - Mang đi
+  - Lịch sử
+  - Nhân viên
   - Menu
-  - So do
-  - Bao cao
-  - Bep
-  - Thanh toan
-  - Cai dat
-  - Khoa
+  - Sơ đồ
+  - Báo cáo
+  - Bếp
+  - Thanh toán
+  - Cài đặt
+  - Khóa
 - Use icon + text. Do not use icon-only rail on desktop.
 - Active item must be obvious.
 - Disabled item:
   - Keep visible only if useful for admin demo.
-  - Add tooltip/title: "Can quyen quan ly" if disabled.
+  - Add tooltip/title: "Cần quyền quản lý" if disabled.
 - Employee badge:
   - Show employee name/role compactly, not only initials if space allows.
 
@@ -38,7 +38,7 @@ Make navigation predictable and professional. The shell must support fast cashie
 
 - Desktop rail width can be 92-116px if labels fit.
 - Phone landscape: rail can become icon-only with tooltips only if labels would break; otherwise keep short labels.
-- Rail bottom lock action must not be mistaken for logout/destructive action; use "Khoa" with lock icon.
+- Rail bottom lock action must not be mistaken for logout/destructive action; use "Khóa" with lock icon.
 
 ## Files To Touch
 
@@ -51,4 +51,3 @@ Make navigation predictable and professional. The shell must support fast cashie
 - [ ] Active state clear.
 - [ ] Disabled state readable and not broken-looking.
 - [ ] Opening/closing drawers does not shift rail layout.
-

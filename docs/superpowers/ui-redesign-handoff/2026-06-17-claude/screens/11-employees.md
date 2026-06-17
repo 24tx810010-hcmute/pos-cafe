@@ -15,9 +15,9 @@ Let admin manage staff names, roles, PINs, and active status clearly.
 ## Redesign Requirements
 
 - Header:
-  - Title: "Nhan vien"
+  - Title: "Nhân viên"
   - Summary: active count + admin/cashier count if useful.
-  - Primary CTA: "Them nhan vien".
+  - Primary CTA: "Thêm nhân viên".
 - List:
   - Staff name.
   - Role in Vietnamese.
@@ -25,9 +25,9 @@ Let admin manage staff names, roles, PINs, and active status clearly.
   - Search/filter if list grows; not required for small mock list.
 - Detail/form:
   - Fields grouped:
-    - Thong tin: name, role.
-    - Dang nhap: PIN reset/change.
-    - Trang thai: active/inactive.
+    - Thông tin: name, role.
+    - Đăng nhập: PIN reset/change.
+    - Trạng thái: active/inactive.
   - Hide raw IDs.
   - Icon-only actions need tooltip/title.
 - Destructive actions:

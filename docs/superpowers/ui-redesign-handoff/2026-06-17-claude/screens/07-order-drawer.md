@@ -21,14 +21,14 @@ Cashier must add items and submit/payment with minimal friction. Order drawer is
 
 ### Header
 
-- Title: "Ban B01 - Don moi" or "Mang di - Don #123".
+- Title: "Bàn B01 - Đơn mới" or "Mang đi - Đơn #123".
 - Status row:
-  - order type chip: "Tai ban" or "Mang di"
-  - "Chua gui", "Da gui", or "Da thanh toan"
+  - order type chip: "Tại bàn" or "Mang đi"
+  - "Chưa gửi", "Đã gửi", or "Đã thanh toán"
   - online indicator
 - Header actions:
-  - Secondary: "Dong"
-  - Primary: "In/Gui don" or "Thanh toan"
+  - Secondary: "Đóng"
+  - Primary: "In/Gửi đơn" or "Thanh toán"
 - If existing order has unsaved changes, payment button disabled with explanation near cart, not just disabled in header.
 
 ### Menu Area
@@ -50,11 +50,11 @@ Cashier must add items and submit/payment with minimal friction. Order drawer is
 
 ### Dirty Close Confirm
 
-- Title: "Bo don chua gui?"
-- Body: "Cac mon vua chon se khong duoc luu."
+- Title: "Bỏ đơn chưa gửi?"
+- Body: "Các món vừa chọn sẽ không được lưu."
 - Buttons:
-  - Secondary: "Tiep tuc chinh sua"
-  - Destructive: "Bo don"
+  - Secondary: "Tiếp tục chỉnh sửa"
+  - Destructive: "Bỏ đơn"
 
 ## Layout Spec
 

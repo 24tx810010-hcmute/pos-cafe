@@ -1,37 +1,37 @@
 # Global Redesign Rules
 
-Ap dung cho tat ca man hinh va popup.
+Áp dụng cho tất cả màn hình và popup.
 
 ## Product Positioning
 
-POS Cafe la app van hanh cho quan ca phe: cashier can tao don nhanh, admin can chinh menu/ban/nhan vien, quan ly can xem doanh thu. UI phai uu tien thao tac lap lai, scan nhanh, it giai thich noi bo.
+POS Cafe là app vận hành cho quán cà phê: cashier cần tạo đơn nhanh, admin cần chỉnh menu/bàn/nhân viên, quản lý cần xem doanh thu. UI phải ưu tiên thao tác lặp lại, scan nhanh, ít giải thích nội bộ.
 
-Khong lam UI theo huong landing marketing, dashboard trang tri, hay demo prototype. Moi screen can co muc dich nghiep vu ro rang.
+Không làm UI theo hướng landing marketing, dashboard trang trí, hay demo prototype. Mỗi screen cần có mục đích nghiệp vụ rõ ràng.
 
 ## Layout Principles
 
-- Desktop 1440x900 la viewport demo chinh.
-- Phone landscape 844x390 va tablet landscape 1024x600 phai dung duoc.
-- Phone portrait chi hien rotate guidance.
-- App shell khong nen page-scroll; tung pane/drawer tu scroll.
-- Header cua drawer sticky; CTA save/pay/submit nen nam o header hoac footer sticky.
-- Khong long card trong card. Chi dung card cho item lap lai, dialog, hoac form panel can frame that su.
-- Card radius toi da 8px.
-- Khong dung decorative gradient/orb/blob/background.
-- Text khong duoc tran nut, card, row, badge.
+- Desktop 1440x900 là viewport demo chính.
+- Phone landscape 844x390 và tablet landscape 1024x600 phải dùng được.
+- Phone portrait chỉ hiện rotate guidance.
+- App shell không nên page-scroll; từng pane/drawer tự scroll.
+- Header của drawer sticky; CTA save/pay/submit nên nằm ở header hoặc footer sticky.
+- Không lồng card trong card. Chỉ dùng card cho item lặp lại, dialog, hoặc form panel cần frame thật sự.
+- Card radius tối đa 8px.
+- Không dùng decorative gradient/orb/blob/background.
+- Text không được tràn nút, card, row, badge.
 
 ## Visual Direction
 
 - Professional POS, dense but readable.
-- Surface nen it vien hon hien tai; dung divider va whitespace co chu dich.
-- Mau chinh: teal `#0F766E`; dung them neutral slate, green success, amber warning, red danger.
-- Khong de UI thanh mot mau teal/slate don dieu. Dung mau phu nhe cho status, station, payment, area.
-- Typography: title screen ro, pane heading nho hon, row labels gon.
-- Icon: dung lucide-react neu co icon phu hop; icon-only button phai co `title`/tooltip.
+- Surface nên ít viền hơn hiện tại; dùng divider và whitespace có chủ đích.
+- Màu chính: teal `#0F766E`; dùng thêm neutral slate, green success, amber warning, red danger.
+- Không để UI thành một màu teal/slate đơn điệu. Dùng màu phụ nhẹ cho status, station, payment, area.
+- Typography: title screen rõ, pane heading nhỏ hơn, row labels gọn.
+- Icon: dùng lucide-react nếu có icon phù hợp; icon-only button phải có `title`/tooltip.
 
 ## Copy Hygiene
 
-Cam user-facing text co cac tu/cum:
+Cấm user-facing text có các từ/cụm:
 
 - `mock`
 - `Supabase`
@@ -43,45 +43,45 @@ Cam user-facing text co cac tu/cum:
 - `deactivate`
 - `raw Store Key`
 - `config`
-- `draft` neu hien bang tieng Anh
+- `draft` nếu hiện bằng tiếng Anh
 - `paid order`, `void`
 
-Dung tieng Viet san pham:
+Dùng tiếng Việt sản phẩm:
 
-- "Don moi", "Don chua gui", "Da thanh toan", "Don da huy".
-- "Tai ban" thay cho "Dine-in".
-- "Nhan vien" thay cho "NV" neu khong gian cho phep.
-- "Thanh toan" thay cho "TT/QR".
-- "Du lieu mau" thay cho "Demo data" neu screen danh cho admin.
+- "Đơn mới", "Đơn chưa gửi", "Đã thanh toán", "Đơn đã hủy".
+- "Tại bàn" thay cho "Dine-in".
+- "Nhân viên" thay cho "NV" nếu không gian cho phép.
+- "Thanh toán" thay cho "TT/QR".
+- "Dữ liệu mẫu" thay cho "Demo data" nếu screen dành cho admin.
 
 ## Read-Only Field Rules
 
-Chi show read-only field khi no giup quyet dinh:
+Chỉ show read-only field khi nó giúp quyết định:
 
-- Tot: trang thai ban, tong tien, so mon, nhan vien tao don, payment status.
-- Can an/bot: timezone, currency, internal version, raw id, z-index, asset key, canvas size, status chi de debug.
-- Neu can show advanced field trong editor, dua vao "Nang cao" collapsed section.
+- Tốt: trạng thái bàn, tổng tiền, số món, nhân viên tạo đơn, payment status.
+- Cần ẩn/bớt: timezone, currency, internal version, raw id, z-index, asset key, canvas size, status chỉ để debug.
+- Nếu cần show advanced field trong editor, đưa vào "Nâng cao" collapsed section.
 
 ## Interaction Rules
 
-- Primary CTA phai ro: "In/Gui don", "Thanh toan", "Hoan tat thanh toan", "Luu menu", "Luu so do".
-- Secondary action phai nho hon: "Huy", "Dong", "Thu lai".
-- Dirty state phai co badge nho va confirm dialog ro.
-- Empty state khong chi la text trong vung rong; can co CTA hoac next action.
-- Loading state khong lam layout nhay.
-- Error state phai co retry action neu co query.
+- Primary CTA phải rõ: "In/Gửi đơn", "Thanh toán", "Hoàn tất thanh toán", "Lưu menu", "Lưu sơ đồ".
+- Secondary action phải nhỏ hơn: "Hủy", "Đóng", "Thử lại".
+- Dirty state phải có badge nhỏ và confirm dialog rõ.
+- Empty state không chỉ là text trong vùng rộng; cần có CTA hoặc next action.
+- Loading state không làm layout nhảy.
+- Error state phải có retry action nếu có query.
 
 ## Responsive Rules
 
-- Desktop: co the dung 3 pane neu workflow can.
-- Tablet/phone landscape: giam ve 2 pane hoac tabs, khong ep 3 pane qua chat.
-- Pane widths phai co `minmax`, `min-width: 0`, `overflow: auto`.
-- Button text dai phai wrap hoac doi label ngan hon; khong de cat chu.
-- Floor plan van giu logical stage scale-to-fit, khong luu viewport pixel.
+- Desktop: có thể dùng 3 pane nếu workflow cần.
+- Tablet/phone landscape: giảm về 2 pane hoặc tabs, không ép 3 pane quá chật.
+- Pane widths phải có `minmax`, `min-width: 0`, `overflow: auto`.
+- Button text dài phải wrap hoặc đổi label ngắn hơn; không để cắt chữ.
+- Floor plan vẫn giữ logical stage scale-to-fit, không lưu viewport pixel.
 
 ## Testing Rules
 
-Sau moi nhom UI polish:
+Sau mỗi nhóm UI polish:
 
 ```powershell
 npm run test
@@ -89,13 +89,13 @@ npm run build
 git diff --check
 ```
 
-Neu cham POS/order/payment:
+Nếu chạm POS/order/payment:
 
 ```powershell
 VITE_DATA_MODE=mock npm run smoke
 ```
 
-Neu cham copy:
+Nếu chạm copy:
 
 ```powershell
 npm run test -- demoCopyPolish

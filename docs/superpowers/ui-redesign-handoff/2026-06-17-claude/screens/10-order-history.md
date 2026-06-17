@@ -16,7 +16,7 @@ Help cashier/manager find past orders quickly. The screen should feel like an op
 ## Redesign Requirements
 
 - Header:
-  - Title: "Lich su don"
+  - Title: "Lịch sử đơn"
   - Date filter chips in header or top filter bar.
   - Search field with clear placeholder.
 - Filter pane:
@@ -25,8 +25,8 @@ Help cashier/manager find past orders quickly. The screen should feel like an op
   - Revenue/paid orders summary for current page/range.
 - List/table:
   - Auto-select first row if available.
-  - Status badges: "Da thanh toan", "Dang mo", "Da huy".
-  - Type: "Tai ban" or "Mang di".
+  - Status badges: "Đã thanh toán", "Đang mở", "Đã hủy".
+  - Type: "Tại bàn" or "Mang đi".
   - Employee column only if data is meaningful; hide or de-emphasize if always empty.
 - Detail pane:
   - Show selected order metadata and items.

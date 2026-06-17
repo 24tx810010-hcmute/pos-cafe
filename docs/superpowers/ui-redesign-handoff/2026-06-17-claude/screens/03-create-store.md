@@ -11,7 +11,7 @@ Create a new store and show credentials once in a way that is calm, clear, and n
 
 ## Current Problems
 
-- The form has read-only timezone and disabled seed checkbox that do not help the user.
+- The form has read-only timezone and disabled seed checkbox that does not help the user.
 - Success state exposes sensitive-looking data correctly, but visual hierarchy can be improved.
 - The disabled "prepare sample data" checkbox should either be hidden or framed as automatic setup, not a fake option.
 
@@ -19,12 +19,12 @@ Create a new store and show credentials once in a way that is calm, clear, and n
 
 ### Form State
 
-- Required field: "Ten quan".
-- Optional field: "Dia chi" only if it affects receipt preview; otherwise keep it compact.
+- Required field: "Tên quán".
+- Optional field: "Địa chỉ" only if it affects receipt preview; otherwise keep it compact.
 - Hide timezone/currency read-only fields from create flow.
-- Do not show a disabled checkbox for sample data. Replace with small note: "He thong se tao san menu va so do mau de ban bat dau nhanh."
-- Primary CTA: "Tao quan".
-- Secondary: "Da co quan? Ghep thiet bi".
+- Do not show a disabled checkbox for sample data. Replace with small note: "Hệ thống sẽ tạo sẵn menu và sơ đồ mẫu để bạn bắt đầu nhanh."
+- Primary CTA: "Tạo quán".
+- Secondary: "Đã có quán? Ghép thiết bị".
 
 ### Success State
 
@@ -34,8 +34,8 @@ Create a new store and show credentials once in a way that is calm, clear, and n
   - Admin PIN
 - Each credential card has copy button with clear feedback.
 - Warning copy:
-  - "Luu lai Store Key va Admin PIN. Ban se can chung de dang nhap thiet bi khac."
-- Primary CTA: "Vao man hinh PIN".
+  - "Lưu lại Store Key và Admin PIN. Bạn sẽ cần chúng để đăng nhập thiết bị khác."
+- Primary CTA: "Vào màn hình PIN".
 - Do not use warning icon if it makes state feel dangerous; use info style.
 
 ## Layout Spec

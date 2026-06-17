@@ -28,22 +28,22 @@ Let admin edit areas, tables, and decor without exposing canvas/debug tooling. P
 
 ### Header
 
-- Title: "Quan ly so do ban".
-- Dirty badge: "Chua luu".
+- Title: "Quản lý sơ đồ bàn".
+- Dirty badge: "Chưa lưu".
 - Area selector in header can stay if compact.
 - Actions:
-  - "Huy"
-  - Primary: "Luu so do"
+  - "Hủy"
+  - Primary: "Lưu sơ đồ"
 
 ### Tool Pane
 
 Group tools:
 
 - Add:
-  - Ban tron
-  - Ban vuong
-  - Ban chu nhat
-  - Trang tri
+  - Bàn tròn
+  - Bàn vuông
+  - Bàn chữ nhật
+  - Trang trí
 - View:
   - Zoom out
   - Zoom percentage
@@ -51,14 +51,14 @@ Group tools:
   - 100%
   - Snap toggle
 
-Avoid showing "Pan". Use "Di chuyen khung nhin".
+Avoid showing "Pan". Use "Di chuyển khung nhìn".
 
 ### Stage
 
-- Header label: "Khu vuc thiet ke".
+- Header label: "Khu vực thiết kế".
 - Grid should be subtle.
 - Selected table has clear outline/handles if possible.
-- Empty area CTA: "Them ban dau tien".
+- Empty area CTA: "Thêm bàn đầu tiên".
 
 ### Properties Pane
 
@@ -79,13 +79,13 @@ Advanced collapsed:
 
 Read-only table status copy:
 
-- "Trang thai lay tu don dang mo."
+- "Trạng thái lấy từ đơn đang mở."
 
 ### Dirty Confirm
 
-- Title: "Bo thay doi so do?"
-- Body: "Cac thay doi chua luu se bi huy."
-- Buttons: "O lai" and "Bo thay doi".
+- Title: "Bỏ thay đổi sơ đồ?"
+- Body: "Các thay đổi chưa lưu sẽ bị hủy."
+- Buttons: "Ở lại" and "Bỏ thay đổi".
 
 ## Files To Touch
 
@@ -100,4 +100,3 @@ Read-only table status copy:
 - [ ] Existing table update does not include viewport pixels.
 - [ ] Deleted table/decor tombstones remain in payload but word is not visible.
 - [ ] Stage responsive scale still verified by `%` style in tests.
-

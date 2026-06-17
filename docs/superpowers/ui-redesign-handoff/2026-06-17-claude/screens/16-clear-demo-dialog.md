@@ -14,25 +14,25 @@ Let admin reset sample data safely, without exposing implementation details.
 
 ## Redesign Requirements
 
-- Title: "Dat lai du lieu mau".
+- Title: "Đặt lại dữ liệu mẫu".
 - Body:
-  - "Thao tac nay chi dat lai du lieu mau co san, khong xoa du lieu nguoi dung tu tao."
+  - "Thao tác này chỉ đặt lại dữ liệu mẫu có sẵn, không xóa dữ liệu người dùng tự tạo."
 - Safety info:
-  - "He thong se chan neu con don dang mo va giu lai tai khoan quan ly hien tai."
+  - "Hệ thống sẽ chặn nếu còn đơn đang mở và giữ lại tài khoản quản lý hiện tại."
 - States:
   - Loading: checking open orders.
-  - Blocked: show open order count and action "Dong cac don dang mo truoc".
+  - Blocked: show open order count and action "Đóng các đơn đang mở trước".
   - Error: retry check.
   - Ready: show checklist and confirmation input.
 - Checklist labels:
-  - Menu mau
-  - So do ban mau
-  - Trang tri mau
-  - Nhan vien mau
-  - Giu lai tai khoan quan ly
+  - Menu mẫu
+  - Sơ đồ bàn mẫu
+  - Trang trí mẫu
+  - Nhân viên mẫu
+  - Giữ lại tài khoản quản lý
 - Buttons:
-  - Secondary: "Huy"
-  - Destructive: "Dat lai du lieu"
+  - Secondary: "Hủy"
+  - Destructive: "Đặt lại dữ liệu"
 
 ## Layout Spec
 

@@ -16,16 +16,16 @@ Make reporting look credible even with small or empty data. Manager should see r
 ## Redesign Requirements
 
 - Header:
-  - Title: "Bao cao"
+  - Title: "Báo cáo"
   - Range selector.
-  - Export button only if useful; if not implemented, hide or disable with user-facing "Chua ho tro".
+  - Export button only if useful; if not implemented, hide or disable with user-facing "Chưa hỗ trợ".
 - Overview:
   - Metric cards: revenue, paid orders, average order, top item.
   - Use stronger metric hierarchy.
 - Chart:
   - If no data, show designed empty state:
-    - "Chua co don da thanh toan trong khoang nay."
-    - CTA: maybe "Xem hom nay" or "Lam moi".
+    - "Chưa có đơn đã thanh toán trong khoảng này."
+    - CTA: maybe "Xem hôm nay" or "Làm mới".
   - Do not show a huge empty chart.
 - Top items:
   - Show ranked list with revenue/quantity.
@@ -33,7 +33,7 @@ Make reporting look credible even with small or empty data. Manager should see r
   - Paid orders table only.
   - Payment method labels in Vietnamese.
 - Detail pane:
-  - If no selection, show "Chon moc thoi gian hoac mon de xem chi tiet."
+  - If no selection, show "Chọn mốc thời gian hoặc món để xem chi tiết."
 
 ## Layout Spec
 
@@ -50,7 +50,6 @@ Make reporting look credible even with small or empty data. Manager should see r
 ## Acceptance Checklist
 
 - [ ] Empty report state looks intentional.
-- [ ] No "paid order", "void", "Da TT" visible.
+- [ ] No "paid order", "void", "Đã TT" visible.
 - [ ] Date range changes update state without visual break.
 - [ ] Metric cards fit and are readable.
-

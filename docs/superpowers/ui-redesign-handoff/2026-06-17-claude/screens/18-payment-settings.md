@@ -8,28 +8,28 @@ Payment settings should not expose unfinished features as prototype labels. It s
 
 ## Current Problems
 
-- Audit version had "QR/CK mock", "Luu mock", "Sau MVP", placeholder language. Copy polish cleaned this, but layout still needs product framing.
+- Audit version had "QR/CK mock", "Lưu mock", "Sau MVP", placeholder language. Copy polish cleaned this, but layout still needs product framing.
 - Cash method is always on, but currently consumes too much configuration space.
 - QR/bank fields may suggest real integration when not fully supported.
 
 ## Redesign Requirements
 
 - Header:
-  - Title: "Cai dat thanh toan"
-  - Subtitle: "Phuong thuc thanh toan"
-  - Actions: "Huy", "Luu cai dat"
+  - Title: "Cài đặt thanh toán"
+  - Subtitle: "Phương thức thanh toán"
+  - Actions: "Hủy", "Lưu cài đặt"
 - Method list:
-  - Tien mat: always available, active.
-  - QR: if not fully real, show "Chua kich hoat" or hide behind disabled card.
-  - Chuyen khoan: same.
-  - Khac: hide unless there is a user reason to show.
+  - Tiền mặt: always available, active.
+  - QR: if not fully real, show "Chưa kích hoạt" or hide behind disabled card.
+  - Chuyển khoản: same.
+  - Khác: hide unless there is a user reason to show.
 - Cash panel:
-  - Simple info: "Tien mat la phuong thuc mac dinh va luon kha dung."
+  - Simple info: "Tiền mặt là phương thức mặc định và luôn khả dụng."
   - No toggle.
 - QR/bank panel:
   - If editable, label fields as receipt display info only.
   - If not supported, show compact unavailable state:
-    - "Phuong thuc nay chua duoc kich hoat cho thanh toan thuc te."
+    - "Phương thức này chưa được kích hoạt cho thanh toán thực tế."
     - No fake JSON/placeholder wording.
 - Preview:
   - Only show if fields affect receipt.
@@ -50,6 +50,5 @@ Payment settings should not expose unfinished features as prototype labels. It s
 
 - [ ] No "mock", "MVP", "placeholder", "Optional".
 - [ ] Unsupported methods look intentionally unavailable.
-- [ ] Save button label is "Luu cai dat".
+- [ ] Save button label is "Lưu cài đặt".
 - [ ] Cash method cannot be disabled accidentally.
-

@@ -1,6 +1,6 @@
 # Testing Checklist
 
-Chay checklist nay truoc khi noi da xong.
+Chạy checklist này trước khi nói đã xong.
 
 ## Required Commands
 

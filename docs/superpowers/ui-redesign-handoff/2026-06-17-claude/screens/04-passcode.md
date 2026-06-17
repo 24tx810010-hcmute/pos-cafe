@@ -8,7 +8,7 @@ Staff should choose their name and enter PIN quickly. This is one of the stronge
 
 ## Current Problems
 
-- Role/status chips can use English/internal role names.
+- Role/status chips không nên dùng English/internal role names.
 - Employee grid is functional but can be more scan-friendly for cashier use.
 - Rotate guidance copy previously mentioned editor; keep product language only.
 
@@ -16,14 +16,14 @@ Staff should choose their name and enter PIN quickly. This is one of the stronge
 
 - Employee cards:
   - Name prominent.
-  - Role in Vietnamese: "Quan ly", "Thu ngan", "Bep".
+  - Role in Vietnamese: "Quản lý", "Thu ngân", "Bếp".
   - Active status can be omitted unless inactive staff are shown.
 - PIN keypad:
   - Large touch targets.
   - Clear disabled/enabled state for unlock.
   - Error message near PIN display, not as random toast only.
 - Store/change-store action:
-  - Keep "Doi quan / Go ghep" visible but low priority.
+  - Keep "Đổi quán / Gỡ ghép" visible but low priority.
 
 ## Layout Spec
 
@@ -39,8 +39,7 @@ Staff should choose their name and enter PIN quickly. This is one of the stronge
 
 ## Acceptance Checklist
 
-- [ ] Staff can unlock with mouse/touch without small target issues.
+- [ ] Nhân viên có thể mở khóa bằng mouse/touch mà không gặp vấn đề target quá nhỏ.
 - [ ] No English role labels in visible UI unless intentional.
-- [ ] Rotate guidance says "man hinh ngang", not technical layout/editor words.
+- [ ] Rotate guidance says "màn hình ngang", not technical layout/editor words.
 - [ ] No overflow on 844x390.
-

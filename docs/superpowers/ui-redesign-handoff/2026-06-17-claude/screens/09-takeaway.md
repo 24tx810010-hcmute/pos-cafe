@@ -15,9 +15,9 @@ Manage takeaway orders without feeling like a secondary/debug screen.
 ## Redesign Requirements
 
 - Header:
-  - Title: "Don mang di"
+  - Title: "Đơn mang đi"
   - Summary: open count + paid count if useful.
-  - Primary CTA: "Tao don mang di".
+  - Primary CTA: "Tạo đơn mang đi".
 - Left/list:
   - Open orders first.
   - Paid orders visually quieter.
@@ -25,8 +25,8 @@ Manage takeaway orders without feeling like a secondary/debug screen.
 - Detail:
   - Auto-select first order when list has items.
   - If no selection, show useful empty state with CTA.
-  - For open order: actions "Mo don", "Thanh toan".
-  - For paid order: action "In lai" if implemented; otherwise hide.
+  - For open order: actions "Mở đơn", "Thanh toán".
+  - For paid order: action "In lại" if implemented; otherwise hide.
 
 ## Layout Spec
 
@@ -44,5 +44,4 @@ Manage takeaway orders without feeling like a secondary/debug screen.
 - [ ] First order auto-selected or clear next action shown.
 - [ ] Open vs paid visually distinct.
 - [ ] Buttons fit and are not too narrow.
-- [ ] No "Da TT" abbreviation.
-
+- [ ] No "Đã TT" abbreviation.
