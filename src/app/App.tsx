@@ -174,7 +174,7 @@ function RotateGuidance() {
       <section className="rotate-card">
         <Store size={36} color="#0F766E" />
         <h1>Xoay ngang thiết bị</h1>
-        <p className="muted">POS dùng layout landscape để giữ đủ bàn, menu, thanh toán, báo cáo và editor.</p>
+        <p className="muted">POS dùng màn hình ngang để giữ đủ bàn, menu, thanh toán và báo cáo.</p>
       </section>
     </div>
   );
@@ -215,7 +215,7 @@ function LandingScreen() {
             <span>Thiết lập quán và nhận Store Key + Admin PIN.</span>
           </button>
         </div>
-        <p className="landing-note">Một URL duy nhất, dữ liệu chạy qua mock hoặc Supabase theo cấu hình.</p>
+        <p className="landing-note">Vào quán hiện có hoặc tạo quán mới để bắt đầu ca bán.</p>
       </div>
     </main>
   );
@@ -284,7 +284,7 @@ function StorePairingScreen() {
                 onChange={(e) => { setKey(e.target.value); setError(""); }}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 error={!!error}
-                helperText={error || "Sau khi ghép, thiết bị chỉ lưu phiên cửa hàng, không lưu raw Store Key."}
+                helperText={error || "Sau khi ghép, thiết bị chỉ lưu phiên đăng nhập của quán."}
                 fullWidth
                 size="small"
                 inputProps={{ "data-testid": "store-key-input" }}
@@ -405,7 +405,7 @@ function CreateStoreScreen() {
             </div>
 
             <p className="create-store-warning">
-              ⚠ Store Key chỉ hiển thị một lần. Không lưu raw Store Key trong app state.
+              Lưu lại Store Key và Admin PIN. Bạn sẽ cần chúng để đăng nhập thiết bị khác.
             </p>
 
             <Button variant="contained" data-testid="go-passcode" onClick={() => setScreen("passcode")}>
@@ -423,7 +423,7 @@ function CreateStoreScreen() {
               <div className="preauth-field">
                 <TextField
                   label="Tên quán"
-                  placeholder="Cafe Demo"
+                  placeholder="Cafe Sáng"
                   value={storeName}
                   onChange={(e) => { setStoreName(e.target.value); setNameError(""); }}
                   onKeyDown={(e) => e.key === "Enter" && handleCreate()}
@@ -459,7 +459,7 @@ function CreateStoreScreen() {
               <div className="create-store-check-row">
                 <input type="checkbox" id="seed-demo" defaultChecked disabled />
                 <label htmlFor="seed-demo" style={{ color: "var(--muted)", fontSize: 13 }}>
-                  Seed dữ liệu demo
+                  Chuẩn bị dữ liệu mẫu ban đầu
                 </label>
               </div>
 
@@ -700,7 +700,7 @@ function AppShell() {
           <RailButton
             active={drawer === "employees"}
             icon={<Users size={18} />}
-            label="NV"
+            label="Nhân viên"
             onClick={() => guardedOpen("employees", "employees")}
             disabled={!canAccess("employees")}
           />
@@ -735,7 +735,7 @@ function AppShell() {
           <RailButton
             active={drawer === "paymentSettings"}
             icon={<QrCode size={18} />}
-            label="TT/QR"
+            label="Thanh toán"
             onClick={() => guardedOpen("paymentSettings", "settings")}
             disabled={!canAccess("settings")}
           />
@@ -943,7 +943,7 @@ function TakeawayDrawer() {
                         <div className="tw-card-top">
                           <span className="tw-order-no">#{ord.orderNo}</span>
                           <span className={`tw-status-badge ${isPaid ? "badge-paid" : "badge-open"}`}>
-                            {isPaid ? "Đã TT" : "Đang mở"}
+                            {isPaid ? "Đã thanh toán" : "Đang mở"}
                           </span>
                         </div>
                         <div className="tw-card-meta">
@@ -1147,7 +1147,7 @@ const tableNameMap = (floorPlan: FloorPlan | undefined): Map<string, string> =>
 
 const tableLabelForOrder = (order: Pick<OrderSummary, "orderType" | "tableId">, tables: Map<string, string>): string => {
   if (order.orderType === "takeaway") return "Mang đi";
-  if (!order.tableId) return "Dine-in";
+  if (!order.tableId) return "Tại bàn";
   return tables.get(order.tableId) ?? order.tableId;
 };
 
@@ -1222,14 +1222,14 @@ function OrderHistoryDrawer() {
 
   const statusChips: Array<{ key: HistoryStatusFilter; label: string }> = [
     { key: "all", label: "Tất cả" },
-    { key: "paid", label: "Đã TT" },
+    { key: "paid", label: "Đã thanh toán" },
     { key: "void", label: "Đã huỷ" },
     { key: "open", label: "Đang mở" },
   ];
 
   const orderTypeChips: Array<{ key: HistoryOrderTypeFilter; label: string }> = [
     { key: "all", label: "Tất cả" },
-    { key: "dine_in", label: "Dine-in" },
+    { key: "dine_in", label: "Tại bàn" },
     { key: "takeaway", label: "Mang đi" },
   ];
 
@@ -1237,7 +1237,7 @@ function OrderHistoryDrawer() {
 
   const statusBadgeClass = (status: string) =>
     status === "paid" ? "hx-badge paid" : status === "void" ? "hx-badge void" : "hx-badge open";
-  const statusLabel = (s: string) => s === "paid" ? "Đã TT" : s === "void" ? "Đã huỷ" : "Đang mở";
+  const statusLabel = (s: string) => s === "paid" ? "Đã thanh toán" : s === "void" ? "Đã huỷ" : "Đang mở";
 
   return (
     <section className="drawer-overlay" data-testid="order-history-drawer">
@@ -1335,7 +1335,7 @@ function OrderHistoryDrawer() {
                   <strong className="price-text">{formatVnd(pageRevenue)}</strong>
                 </div>
                 <div className="hx-summary-row">
-                  <span>Số đơn TT</span>
+                  <span>Số đơn đã thanh toán</span>
                   <strong>{historyRows.filter((o) => o.status === "paid").length}</strong>
                 </div>
                 <div className="hx-summary-row">
@@ -1379,7 +1379,7 @@ function OrderHistoryDrawer() {
                         <th>Ngày</th>
                         <th>Mã đơn</th>
                         <th>Bàn / Loại</th>
-                        <th>NV</th>
+                        <th>Nhân viên</th>
                         <th>Tổng tiền</th>
                         <th>Trạng thái</th>
                       </tr>
@@ -1456,7 +1456,7 @@ function OrderHistoryDrawer() {
                     <span>Loại</span>
                     <strong>
                       <span className={`hx-type-pill ${selected.orderType}`}>
-                        {selected.orderType === "takeaway" ? "Mang đi" : `Dine-in · ${selected.tableLabel}`}
+                        {selected.orderType === "takeaway" ? "Mang đi" : `Tại bàn · ${selected.tableLabel}`}
                       </span>
                     </strong>
                   </div>
@@ -2089,7 +2089,7 @@ function PaymentSettingsDrawer() {
     }
     setAccountError("");
     setBase(form);
-    toast.success("Đã lưu cài đặt thanh toán (mock)");
+    toast.success("Đã lưu cài đặt thanh toán");
   };
   const handleCancel = () => {
     if (dirty) setConfirmCancel(true);
@@ -2130,12 +2130,12 @@ function PaymentSettingsDrawer() {
       <header className="drawer-header">
         <div className="title-stack">
           <h2>Cài đặt thanh toán {dirty && <span className="dirty-badge" data-testid="payment-dirty-badge">Chưa lưu</span>}</h2>
-          <p><span className="sync-dot" />Optional · QR/CK mock</p>
+          <p><span className="sync-dot" />Phương thức thanh toán · online</p>
         </div>
         <div className="header-actions">
           <Button variant="text" onClick={handleCancel}>Huỷ</Button>
           <Button variant="contained" startIcon={<Save size={15} />} data-testid="save-payment-button" onClick={handleSave}>
-            Lưu mock
+            Lưu cài đặt
           </Button>
         </div>
       </header>
@@ -2161,7 +2161,7 @@ function PaymentSettingsDrawer() {
                   >
                     <span className={`pay-dot${m.on ? " on" : ""}`} />
                     {m.label}
-                    {m.disabled ? <span className="pay-soon">Sau MVP</span> : <span className="hx-filter-count">{m.on ? "Bật" : "Tắt"}</span>}
+                    {m.disabled ? <span className="pay-soon">Chưa bật</span> : <span className="hx-filter-count">{m.on ? "Bật" : "Tắt"}</span>}
                   </button>
                 ))}
               </div>
@@ -2178,7 +2178,7 @@ function PaymentSettingsDrawer() {
                     <span className="emp-field-label">Tiền mặt</span>
                     <span className="status-pill status-active">● Luôn bật</span>
                   </div>
-                  <p className="muted">Tiền mặt luôn bật cho POS. Không thể tắt trong bản mock.</p>
+                  <p className="muted">Tiền mặt là phương thức mặc định và luôn khả dụng.</p>
                 </>
               ) : method === "qr" ? (
                 <>
@@ -2190,7 +2190,7 @@ function PaymentSettingsDrawer() {
                     </div>
                   </div>
                   <TextField
-                    label="QR info (JSON mock)"
+                    label="Thông tin QR"
                     value={form.qrInfo}
                     onChange={(e) => patch({ qrInfo: e.target.value })}
                     size="small"
@@ -2203,7 +2203,7 @@ function PaymentSettingsDrawer() {
                   <button className={`menu-chip-toggle${form.showQrOnBill ? " on" : ""}`} disabled={!form.qrEnabled} onClick={() => patch({ showQrOnBill: !form.showQrOnBill })}>
                     {form.showQrOnBill ? "✓ Hiện QR trên hoá đơn" : "Hiện QR trên hoá đơn"}
                   </button>
-                  <p className="muted">QR chỉ là placeholder mock, không tạo mã thật.</p>
+                  <p className="muted">QR chưa được kích hoạt cho thanh toán thực tế.</p>
                 </>
               ) : method === "bank" ? (
                 <>
@@ -2231,7 +2231,7 @@ function PaymentSettingsDrawer() {
               ) : (
                 <div className="tw-empty-state">
                   <CreditCard size={30} color="#94a3b8" />
-                  <p>Phương thức khác — <strong>Sau MVP</strong>.</p>
+                  <p>Phương thức khác chưa được bật.</p>
                 </div>
               )}
             </div>
@@ -2242,8 +2242,8 @@ function PaymentSettingsDrawer() {
             <div className="pane-head">Xem trước hoá đơn</div>
             <div className="pane-scroll">
               <div className="set-receipt">
-                <strong className="set-receipt-name">POS Demo</strong>
-                <span className="set-receipt-addr">01 Demo Street</span>
+                <strong className="set-receipt-name">Tên quán</strong>
+                <span className="set-receipt-addr">Địa chỉ quán</span>
                 <div className="set-receipt-divider" />
                 <div className="set-receipt-line"><span>Cà phê sữa × 2</span><span>58.000</span></div>
                 <div className="set-receipt-line"><span>Trà đào × 1</span><span>42.000</span></div>
@@ -2350,7 +2350,7 @@ function KitchenQueueDrawer() {
   const [mobileTab, setMobileTab] = useState<"station" | "queue" | "detail">("queue");
 
   const statusOf = (id: string) => statusById[id] ?? "waiting";
-  const markDone = (id: string) => { setStatusById((p) => ({ ...p, [id]: "done" })); toast.success("Đã đánh dấu xong (mock)"); };
+  const markDone = (id: string) => { setStatusById((p) => ({ ...p, [id]: "done" })); toast.success("Đã đánh dấu xong"); };
   const undoDone = (id: string) => setStatusById((p) => ({ ...p, [id]: "waiting" }));
 
   const stationItems = (t: KitchenTicket) => (station === "all" ? t.items : t.items.filter((i) => i.station === station));
@@ -2401,7 +2401,7 @@ function KitchenQueueDrawer() {
       <header className="drawer-header">
         <div className="title-stack">
           <h2>Bếp / Pha chế</h2>
-          <p><span className="sync-dot" />{waitingCount} vé đang chờ · realtime mock</p>
+          <p><span className="sync-dot" />{waitingCount} vé đang chờ · online</p>
         </div>
         <div className="header-actions fe-header-actions">
           <div className="fe-area-tabs">
@@ -2437,7 +2437,7 @@ function KitchenQueueDrawer() {
               </div>
               <div className="kq-optional-note">
                 <ChefHat size={15} />
-                <span>Màn bếp là seam tuỳ chọn (optional) cho bản tương lai — hiện chỉ mock cục bộ.</span>
+                <span>Lọc theo trạm để chia vé cho pha chế hoặc bếp.</span>
               </div>
             </div>
           </aside>
@@ -2449,7 +2449,6 @@ function KitchenQueueDrawer() {
               <span className="muted">{tickets.length} vé</span>
             </div>
             <div className="pane-scroll">
-              <div className="kq-offline">⚠ Realtime bếp là mock — cập nhật cục bộ, không đồng bộ thiết bị khác.</div>
               {tickets.length === 0 ? (
                 <div className="tw-empty-state">
                   <ChefHat size={32} color="#94a3b8" />
@@ -2610,7 +2609,7 @@ function GeneralSettingsDrawer() {
     { key: "info", label: "Thông tin" },
     { key: "bill", label: "Hoá đơn" },
     { key: "system", label: "Hệ thống" },
-    { key: "demo", label: "Demo" },
+    { key: "demo", label: "Dữ liệu mẫu" },
   ];
 
   const tabBtn = (key: "nav" | "form" | "preview", label: string) => (
@@ -2725,12 +2724,12 @@ function GeneralSettingsDrawer() {
                         <span className="emp-field-label">Realtime</span>
                         <span className="status-pill status-active">● online</span>
                       </div>
-                      <p className="muted">Múi giờ và tiền tệ cố định trong bản demo.</p>
+                      <p className="muted">Múi giờ và tiền tệ đang dùng cho toàn bộ hoá đơn.</p>
                     </>
                   ) : (
                     <div className="set-demo-box">
-                      <strong>Dữ liệu demo</strong>
-                      <p className="muted">Chỉ clear dữ liệu seed demo, không xoá dữ liệu do người dùng tự tạo.</p>
+                      <strong>Dữ liệu mẫu</strong>
+                      <p className="muted">Chỉ đặt lại dữ liệu mẫu có sẵn, không xoá dữ liệu người dùng tự tạo.</p>
                       <Button
                         variant="outlined"
                         color="error"
@@ -2741,7 +2740,7 @@ function GeneralSettingsDrawer() {
                           setClearOpen(true);
                         }}
                       >
-                        Clear demo data
+                        Đặt lại dữ liệu mẫu
                       </Button>
                     </div>
                   )}
@@ -2800,12 +2799,12 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
   const ready = openOrdersQuery.isSuccess && !blocked && confirmText.trim().toUpperCase() === "CLEAR";
   const processing = clearDemoMutation.isPending;
 
-  const checklist = ["Menu demo", "Sơ đồ bàn demo", "Decor demo", "Cashier demo (deactivate)", "Giữ lại 1 admin"];
+  const checklist = ["Menu mẫu", "Sơ đồ bàn mẫu", "Trang trí mẫu", "Nhân viên mẫu", "Giữ lại tài khoản quản lý"];
 
   const handleClear = () => {
     clearDemoMutation.mutate(undefined, {
       onSuccess: () => {
-        toast.success("Đã clear demo data");
+        toast.success("Đã đặt lại dữ liệu mẫu");
         onClose();
       },
       onError: (error) => {
@@ -2829,17 +2828,17 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
       <div className="confirm-dialog clear-demo-dialog" data-testid="clear-demo-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="clear-demo-head">
           <AlertTriangle size={20} color="#b45309" />
-          <h3>Clear demo data</h3>
+          <h3>Đặt lại dữ liệu mẫu</h3>
         </div>
-        <p>Thao tác này chỉ xoá/tombstone dữ liệu demo đã seed, không xoá dữ liệu người dùng tự tạo.</p>
+        <p>Thao tác này chỉ đặt lại dữ liệu mẫu có sẵn, không xoá dữ liệu người dùng tự tạo.</p>
         <div className="clear-demo-real">
-          Hệ thống chặn nếu còn đơn đang mở, tombstone menu/sơ đồ/decor demo, deactivate cashier demo, giữ lại 1 admin.
+          Hệ thống chặn khi còn đơn đang mở và giữ lại tài khoản quản lý hiện tại.
         </div>
 
         {checkingOpenOrders ? (
           <div className="clear-demo-blocked" data-testid="clear-demo-loading">
             <strong>Đang kiểm tra đơn đang mở...</strong>
-            <span className="muted">Chờ hệ thống tải danh sách đơn trước khi cho phép clear demo.</span>
+            <span className="muted">Chờ hệ thống tải danh sách đơn trước khi cho phép đặt lại dữ liệu mẫu.</span>
           </div>
         ) : openOrdersError ? (
           <div className="clear-demo-blocked" data-testid="clear-demo-error">
@@ -2854,7 +2853,7 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
         ) : blocked ? (
           <div className="clear-demo-blocked" data-testid="clear-demo-blocked">
             <strong>Còn {openCount} đơn đang mở</strong>
-            <span className="muted">Đóng hết đơn đang mở trước khi clear demo.</span>
+            <span className="muted">Đóng hết đơn đang mở trước khi đặt lại dữ liệu mẫu.</span>
             <div className="clear-demo-blocked-actions">
               <Button variant="contained" size="small" onClick={onClose}>Đóng đơn đang mở trước</Button>
             </div>
@@ -2886,7 +2885,7 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
             disabled={!ready || processing || checkingOpenOrders || openOrdersError}
             onClick={handleClear}
           >
-            {processing ? "Đang xử lý..." : "Clear demo"}
+            {processing ? "Đang xử lý..." : "Đặt lại dữ liệu"}
           </Button>
         </div>
       </div>
@@ -2980,7 +2979,7 @@ function FloorWorkspace() {
           >
             Làm mới
           </Button>
-          <Button variant="contained" onClick={() => toast("Tạo đơn nhanh sẽ dùng draft order.")}>
+          <Button variant="contained" onClick={() => toast("Tạo đơn nhanh sẽ mở form đơn mới.")}>
             Tạo đơn nhanh
           </Button>
         </div>
@@ -3122,7 +3121,7 @@ function FloorWorkspace() {
                 </Button>
               </div>
             ) : dineInOrders.length === 0 ? (
-              <p className="floor-orders-empty">Chưa có đơn dine-in.</p>
+              <p className="floor-orders-empty">Chưa có đơn tại bàn.</p>
             ) : (
               dineInOrders.map((ord) => {
                 const table = floorPlan?.tables.find((t) => t.id === ord.tableId);
@@ -3298,7 +3297,7 @@ function OrderDrawer() {
   };
 
   const orderTypeLabel = context?.orderType === "takeaway" ? "Mang đi" : `Bàn ${table?.name ?? "?"}`;
-  const titleLabel = orderDetail ? `${orderTypeLabel} · Đơn #${orderDetail.orderNo}` : `${orderTypeLabel} · Draft mới`;
+  const titleLabel = orderDetail ? `${orderTypeLabel} · Đơn #${orderDetail.orderNo}` : `${orderTypeLabel} · Đơn mới`;
 
   // Category color swatches for visual variety
   const catColors: Record<string, string> = {
@@ -3315,10 +3314,10 @@ function OrderDrawer() {
         <div className="confirm-overlay">
           <div className="confirm-dialog">
             <h3>Bỏ thay đổi?</h3>
-            <p>Draft chưa gửi sẽ bị xoá.</p>
+            <p>Đơn chưa gửi sẽ bị xoá.</p>
             <div className="confirm-actions">
               <Button variant="outlined" onClick={() => setConfirmClose(false)}>Tiếp tục soạn</Button>
-              <Button variant="contained" color="error" onClick={() => { setConfirmClose(false); closeDrawer(); }}>Bỏ draft</Button>
+              <Button variant="contained" color="error" onClick={() => { setConfirmClose(false); closeDrawer(); }}>Bỏ đơn nháp</Button>
             </div>
           </div>
         </div>
@@ -3329,9 +3328,9 @@ function OrderDrawer() {
           <h2>{titleLabel}</h2>
           <p>
             <span className={`order-type-chip ${context?.orderType === "takeaway" ? "takeaway" : "dine-in"}`}>
-              {context?.orderType === "takeaway" ? "Mang đi" : "Dine-in"}
+              {context?.orderType === "takeaway" ? "Mang đi" : "Tại bàn"}
             </span>
-            {orderDetail ? ` · v${orderDetail.lockVersion}` : " · Draft chưa ghi DB"}
+            {orderDetail ? " · Đã gửi" : " · Chưa gửi"}
             {" · "}<span className="sync-dot" />online
           </p>
         </div>
@@ -3496,7 +3495,7 @@ function OrderDrawer() {
                   </div>
                 ))
               ) : (
-                <p className="cart-empty-hint">Chọn món từ menu để tạo draft.</p>
+                <p className="cart-empty-hint">Chọn món từ menu để tạo đơn.</p>
               )}
             </div>
             <footer className="cart-footer">
@@ -3557,7 +3556,7 @@ function PaymentDrawer() {
     }
 
     if (payMethod !== "cash") {
-      toast("QR/chuyển khoản đang là placeholder; MVP thanh toán bằng tiền mặt.");
+      toast("Hiện chỉ hỗ trợ thanh toán tiền mặt.");
       return;
     }
 
@@ -3638,7 +3637,7 @@ function PaymentDrawer() {
             <div className="panel-scroll payment-info-body">
               <div className="payment-info-row">
                 <span>Loại</span>
-                <strong>{order?.orderType === "takeaway" ? "Mang đi" : "Dine-in"}</strong>
+                <strong>{order?.orderType === "takeaway" ? "Mang đi" : "Tại bàn"}</strong>
               </div>
               {table && (
                 <div className="payment-info-row">
@@ -4228,7 +4227,7 @@ function MenuEditorDrawer() {
       <header className="drawer-header">
         <div className="title-stack">
           <h2>
-            Menu Editor {dirty && <span className="dirty-badge" data-testid="menu-dirty-badge">Chưa lưu</span>}
+            Quản lý menu {dirty && <span className="dirty-badge" data-testid="menu-dirty-badge">Chưa lưu</span>}
           </h2>
           <p>
             <span className="sync-dot" />
@@ -4499,7 +4498,7 @@ function MenuEditorDrawer() {
                       <Button variant="outlined" color={selectedCategory.deleted ? "primary" : "error"} onClick={() => toggleDeleteCategory(selectedCategory.id)}>
                         {selectedCategory.deleted ? "Khôi phục danh mục" : "Xoá danh mục"}
                       </Button>
-                      <p className="muted">Chọn một món để chỉnh sửa chi tiết và nhóm tuỳ chọn. Xoá là tombstone, vẫn hoàn tác được.</p>
+                      <p className="muted">Chọn một món để chỉnh sửa chi tiết và nhóm tuỳ chọn. Mục đã xoá vẫn có thể hoàn tác trước khi lưu.</p>
                     </>
                   ) : (
                     <p className="muted" style={{ padding: 8 }}>Chọn món hoặc danh mục để chỉnh sửa.</p>
@@ -4955,7 +4954,7 @@ function FloorEditorDrawer() {
       <header className="drawer-header">
         <div className="title-stack">
           <h2>
-            Floor-Plan Editor {dirty && <span className="dirty-badge" data-testid="floor-dirty-badge">Chưa lưu</span>}
+            Quản lý sơ đồ bàn {dirty && <span className="dirty-badge" data-testid="floor-dirty-badge">Chưa lưu</span>}
           </h2>
           <p>
             <span className="sync-dot" />
@@ -5018,7 +5017,7 @@ function FloorEditorDrawer() {
                       <MousePointer2 size={14} /> Chọn
                     </button>
                     <button className={`menu-mini-btn wide${tool === "pan" ? " on" : ""}`} onClick={() => setTool("pan")} title="Di chuyển khung nhìn">
-                      <Hand size={14} /> Pan
+                      <Hand size={14} /> Di chuyển
                     </button>
                   </div>
 
@@ -5058,7 +5057,7 @@ function FloorEditorDrawer() {
                       <button className="menu-mini-btn" title="Thu nhỏ" onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.2).toFixed(1)))}><ZoomOut size={14} /></button>
                       <span className="fe-zoom-label">{Math.round(zoom * 100)}%</span>
                       <button className="menu-mini-btn" title="Phóng to" onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.2).toFixed(1)))}><ZoomIn size={14} /></button>
-                      <button className="menu-mini-btn" onClick={() => setZoom(1)}>Reset</button>
+                      <button className="menu-mini-btn" onClick={() => setZoom(1)}>100%</button>
                     </div>
                     <button className={`menu-mini-btn wide${snap ? " on" : ""}`} onClick={() => setSnap((s) => !s)}>
                       <Magnet size={14} /> Bắt lưới {snap ? "Bật" : "Tắt"}
@@ -5070,8 +5069,8 @@ function FloorEditorDrawer() {
               {/* Center: canvas */}
               <section className={`pane menu-pane${mobileTab === "canvas" ? " tab-active" : ""}`}>
                 <div className="pane-head">
-                  <span>Canvas {logicalStage.width}×{logicalStage.height}</span>
-                  <span className="muted">{tool === "pan" ? "Pan" : "Chọn / kéo"}</span>
+                  <span>Khu vực thiết kế</span>
+                  <span className="muted">{tool === "pan" ? "Di chuyển khung nhìn" : "Chọn / kéo"}</span>
                 </div>
                 <div className="pane-scroll fe-canvas-scroll">
                   <div
@@ -5164,7 +5163,7 @@ function FloorEditorDrawer() {
                       <Button variant="outlined" color={selectedTable.deleted ? "primary" : "error"} startIcon={selectedTable.deleted ? <RotateCcw size={15} /> : <Trash2 size={15} />} onClick={() => toggleDeleteTable(selectedTable.id)}>
                         {selectedTable.deleted ? "Khôi phục bàn" : "Xoá bàn"}
                       </Button>
-                      <p className="muted">Editor chỉ chỉnh layout — không ghi đè trạng thái bàn.</p>
+                      <p className="muted">Chỉ chỉnh vị trí và kích thước; trạng thái bàn lấy từ đơn đang mở.</p>
                     </>
                   ) : selectedDecor ? (
                     <>
@@ -5176,7 +5175,7 @@ function FloorEditorDrawer() {
                           ))}
                         </div>
                       </div>
-                      <TextField label="Asset" value={selectedDecor.assetKey} onChange={(e) => patchDecor(selectedDecor.id, { assetKey: e.target.value })} size="small" fullWidth />
+                      <TextField label="Mã trang trí" value={selectedDecor.assetKey} onChange={(e) => patchDecor(selectedDecor.id, { assetKey: e.target.value })} size="small" fullWidth />
                       <TextField label="Nhãn" value={selectedDecor.label ?? ""} onChange={(e) => patchDecor(selectedDecor.id, { label: e.target.value })} size="small" fullWidth />
                       <div className="menu-minmax">
                         <TextField label="X" value={String(selectedDecor.posX)} disabled={selectedDecor.isLocked} onChange={(e) => patchDecor(selectedDecor.id, { posX: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
@@ -5186,7 +5185,7 @@ function FloorEditorDrawer() {
                       </div>
                       <div className="menu-minmax">
                         <TextField label="Xoay (°)" value={String(selectedDecor.rotation)} onChange={(e) => patchDecor(selectedDecor.id, { rotation: toInt(e.target.value) % 360 })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Z-index" value={String(selectedDecor.zIndex)} onChange={(e) => patchDecor(selectedDecor.id, { zIndex: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                        <TextField label="Lớp hiển thị" value={String(selectedDecor.zIndex)} onChange={(e) => patchDecor(selectedDecor.id, { zIndex: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
                       </div>
                       <button className={`menu-mini-btn wide${selectedDecor.isLocked ? " on" : ""}`} onClick={() => patchDecor(selectedDecor.id, { isLocked: !selectedDecor.isLocked })}>
                         {selectedDecor.isLocked ? <Lock size={14} /> : <Unlock size={14} />} {selectedDecor.isLocked ? "Đã khoá (không kéo)" : "Khoá vị trí"}
@@ -5226,7 +5225,7 @@ function FloorEditorDrawer() {
                       >
                         {currentArea.deleted ? "Khôi phục khu" : "Xoá khu"}
                       </Button>
-                      <p className="muted">Chọn bàn hoặc trang trí trên canvas để chỉnh layout chi tiết.</p>
+                      <p className="muted">Chọn bàn hoặc trang trí trên khu vực thiết kế để chỉnh chi tiết.</p>
                     </>
                   ) : (
                     <p className="muted" style={{ padding: 8 }}>Thêm khu để bắt đầu chỉnh sơ đồ.</p>
@@ -5376,7 +5375,7 @@ function ReportSettingsDrawer() {
     const counts: Record<string, number> = {};
     dataset.orders.forEach((o) => { counts[o.method] = (counts[o.method] ?? 0) + 1; });
     const entry = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-    return entry ? (entry[0] === "paid" ? "Đã TT" : (PAY_METHOD_LABEL[entry[0]] ?? entry[0])) : "—";
+    return entry ? (entry[0] === "paid" ? "Đã thanh toán" : (PAY_METHOD_LABEL[entry[0]] ?? entry[0])) : "—";
   })();
 
   const dateChips: Array<{ key: ReportRange; label: string }> = [
@@ -5425,7 +5424,7 @@ function ReportSettingsDrawer() {
   const metricsRow = (
     <div className="report-metrics">
       <Metric label="Doanh thu" value={formatVnd(dataset.revenue)} />
-      <Metric label="Số đơn đã TT" value={`${dataset.paidOrders}`} />
+      <Metric label="Số đơn đã thanh toán" value={`${dataset.paidOrders}`} />
       <Metric label="Trung bình đơn" value={formatVnd(dataset.avgTicket)} />
       <Metric label="Top món" value={dataset.topItemName} />
     </div>
@@ -5516,7 +5515,7 @@ function ReportSettingsDrawer() {
               </div>
               <div className="rp-note" style={{ marginTop: 12 }}>
                 <strong>{dateChips.find((d) => d.key === range)?.label}</strong>
-                <span>Chỉ tính paid order, loại void.</span>
+                <span>Chỉ tính đơn đã thanh toán, không tính đơn đã huỷ.</span>
               </div>
             </div>
           </aside>
@@ -5626,7 +5625,7 @@ function ReportSettingsDrawer() {
                           <td><strong>#{o.orderNo}</strong></td>
                           <td className="muted">{o.time}</td>
                           <td>{o.table}</td>
-                          <td>{o.method === "paid" ? "Đã TT" : (PAY_METHOD_LABEL[o.method] ?? o.method)}</td>
+                          <td>{o.method === "paid" ? "Đã thanh toán" : (PAY_METHOD_LABEL[o.method] ?? o.method)}</td>
                           <td><strong className="price-text">{formatCompactVnd(o.total)}</strong></td>
                         </tr>
                       ))}
@@ -5643,7 +5642,7 @@ function ReportSettingsDrawer() {
             <div className="pane-scroll rp-detail">
               <div className="rp-note">
                 <strong>Ghi chú</strong>
-                <span>Chỉ tính paid order, loại void ({dataset.voidCount} đơn huỷ).</span>
+                <span>Chỉ tính đơn đã thanh toán, không tính đơn đã huỷ ({dataset.voidCount} đơn huỷ).</span>
               </div>
 
               {selected?.type === "hour" ? (
