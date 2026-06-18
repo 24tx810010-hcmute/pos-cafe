@@ -11,6 +11,7 @@ import {
   Download,
   Eye,
   Hand,
+  Info,
   KeyRound,
   LayoutDashboard,
   LayoutGrid,
@@ -18,11 +19,13 @@ import {
   LogIn,
   Magnet,
   Minus,
+  MonitorSmartphone,
   MousePointer2,
   Pencil,
   Plus,
   QrCode,
   ReceiptText,
+  RefreshCw,
   RotateCcw,
   Save,
   Settings,
@@ -215,7 +218,20 @@ function LandingScreen() {
             <span>Thiết lập quán và nhận Store Key + Admin PIN.</span>
           </button>
         </div>
-        <p className="landing-note">Vào quán hiện có hoặc tạo quán mới để bắt đầu ca bán.</p>
+        <div className="landing-reassure">
+          <div className="landing-reassure-item">
+            <MonitorSmartphone size={16} className="landing-reassure-icon" />
+            <span>Dùng được trên máy tính, máy tính bảng và điện thoại nằm ngang.</span>
+          </div>
+          <div className="landing-reassure-item">
+            <KeyRound size={16} className="landing-reassure-icon" />
+            <span>Nhân viên đăng nhập nhanh bằng mã PIN riêng.</span>
+          </div>
+          <div className="landing-reassure-item">
+            <RefreshCw size={16} className="landing-reassure-icon" />
+            <span>Dữ liệu đồng bộ tức thời giữa các thiết bị cùng quán.</span>
+          </div>
+        </div>
       </div>
     </main>
   );
@@ -273,7 +289,7 @@ function StorePairingScreen() {
           <div className="preauth-form">
             <div className="title-stack" style={{ marginBottom: 20 }}>
               <h2>Ghép thiết bị với quán</h2>
-              <p>Nhập Store Key do chủ quán cung cấp để ghép thiết bị.</p>
+              <p>Nhập Store Key do quản lý cung cấp để ghép thiết bị vào quán.</p>
             </div>
 
             <div className="preauth-field">
@@ -284,7 +300,7 @@ function StorePairingScreen() {
                 onChange={(e) => { setKey(e.target.value); setError(""); }}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 error={!!error}
-                helperText={error || "Sau khi ghép, thiết bị chỉ lưu phiên đăng nhập của quán."}
+                helperText={error || "Mỗi thiết bị chỉ cần ghép một lần với quán."}
                 fullWidth
                 size="small"
                 inputProps={{ "data-testid": "store-key-input" }}
@@ -309,11 +325,15 @@ function StorePairingScreen() {
           <aside className="preauth-notes">
             <div className="preauth-note-item">
               <Store size={16} className="preauth-note-icon" />
-              <p>Một Store Key có thể dùng cho nhiều thiết bị.</p>
+              <p>Một Store Key dùng được cho nhiều thiết bị trong cùng quán.</p>
             </div>
             <div className="preauth-note-item">
-              <LogIn size={16} className="preauth-note-icon" />
-              <p>Sau khi ghép, mỗi ngày nhân viên chọn tên và nhập PIN.</p>
+              <KeyRound size={16} className="preauth-note-icon" />
+              <p>Mỗi ngày nhân viên chọn tên và nhập mã PIN để vào ca.</p>
+            </div>
+            <div className="preauth-note-item">
+              <RotateCcw size={16} className="preauth-note-icon" />
+              <p>Có thể đổi quán bất cứ lúc nào từ màn hình đăng nhập.</p>
             </div>
           </aside>
         </div>
@@ -404,8 +424,9 @@ function CreateStoreScreen() {
               </div>
             </div>
 
-            <p className="create-store-warning">
-              Lưu lại Store Key và Admin PIN. Bạn sẽ cần chúng để đăng nhập thiết bị khác.
+            <p className="create-store-info">
+              <Info size={15} className="create-store-info-icon" />
+              Lưu lại Store Key và Admin PIN. Bạn sẽ cần chúng để đăng nhập trên thiết bị khác.
             </p>
 
             <Button variant="contained" data-testid="go-passcode" onClick={() => setScreen("passcode")}>
@@ -446,22 +467,10 @@ function CreateStoreScreen() {
                 />
               </div>
 
-              <div className="preauth-field">
-                <TextField
-                  label="Múi giờ"
-                  value="Asia/Ho_Chi_Minh"
-                  disabled
-                  fullWidth
-                  size="small"
-                />
-              </div>
-
-              <div className="create-store-check-row">
-                <input type="checkbox" id="seed-demo" defaultChecked disabled />
-                <label htmlFor="seed-demo" style={{ color: "var(--muted)", fontSize: 13 }}>
-                  Chuẩn bị dữ liệu mẫu ban đầu
-                </label>
-              </div>
+              <p className="create-store-hint">
+                <Info size={15} className="create-store-hint-icon" />
+                Hệ thống sẽ tạo sẵn menu và sơ đồ mẫu để bạn bắt đầu nhanh.
+              </p>
 
               <Button
                 variant="contained"
@@ -470,7 +479,7 @@ function CreateStoreScreen() {
                 disabled={loading}
                 onClick={handleCreate}
               >
-                {loading ? "Đang tạo quán..." : "Tạo quán mới"}
+                {loading ? "Đang tạo quán..." : "Tạo quán"}
               </Button>
 
               <button className="preauth-link" onClick={() => setScreen("storePairing")}>
@@ -505,6 +514,8 @@ function PasscodeScreen() {
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [shaking, setShaking] = useState(false);
+
+  const roleLabel: Record<string, string> = { admin: "Quản lý", cashier: "Thu ngân", kitchen: "Bếp" };
 
   const now = new Date();
   const dateStr = now.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
@@ -608,10 +619,10 @@ function PasscodeScreen() {
                 data-testid={`employee-${employee.id}`}
                 onClick={() => { setSelectedEmployeeId(employee.id); setPinError(""); setPin(""); }}
               >
-                <strong>{employee.name}</strong>
+                <strong className="employee-card-name">{employee.name}</strong>
                 <div className="employee-card-meta">
-                  <span className="role-pill">{employee.role}</span>
-                  <span className="status-pill status-active">● active</span>
+                  <span className="role-pill">{roleLabel[employee.role] ?? employee.role}</span>
+                  {!employee.isActive && <span className="status-pill status-inactive">Tạm nghỉ</span>}
                 </div>
               </button>
             ))}
@@ -667,7 +678,7 @@ function AppShell() {
     openDrawer(module);
   };
 
-  const roleLabel: Record<string, string> = { admin: "Admin", cashier: "Thu ngân", kitchen: "Bếp" };
+  const roleLabel: Record<string, string> = { admin: "Quản lý", cashier: "Thu ngân", kitchen: "Bếp" };
 
   return (
     <main className="app-shell" data-testid="app-shell">
@@ -675,8 +686,11 @@ function AppShell() {
         <div className="rail-top">
           <div className="rail-logo">P</div>
           {currentEmployee && (
-            <div className="rail-employee-badge" title={`${currentEmployee.name} · ${currentEmployee.role}`}>
-              <div className="rail-employee-initial">{currentEmployee.name.charAt(0).toUpperCase()}</div>
+            <div
+              className="rail-employee-badge"
+              title={`${currentEmployee.name} · ${roleLabel[currentEmployee.role] ?? currentEmployee.role}`}
+            >
+              <span className="rail-employee-name">{currentEmployee.name}</span>
               <span className="rail-employee-role">{roleLabel[currentEmployee.role] ?? currentEmployee.role}</span>
             </div>
           )}
@@ -801,7 +815,7 @@ function RailButton({
   );
   if (disabled) {
     return (
-      <Tooltip title="Không có quyền" placement="right" arrow>
+      <Tooltip title="Cần quyền quản lý" placement="right" arrow>
         <span style={{ display: "contents" }}>{btn}</span>
       </Tooltip>
     );
@@ -834,13 +848,6 @@ function TakeawayDrawer() {
     { key: "today", label: "Hôm nay" },
   ];
 
-  const timeBuckets = [
-    { label: "Sáng (6–11h)" },
-    { label: "Trưa (11–14h)" },
-    { label: "Chiều (14–18h)" },
-    { label: "Tối (18–24h)" },
-  ];
-
   const displayOrders: Array<{ id: string; orderNo: number; total: number; status?: string; createdAt?: string; itemCount?: number; note?: string | null; employeeName?: string }> =
     filter === "open"
       ? takeawayOpen.map((o) => ({ id: o.id, orderNo: o.orderNo, total: o.total }))
@@ -850,12 +857,20 @@ function TakeawayDrawer() {
 
   const selectedPaidOrder = filter !== "open" ? MOCK_PAID_TAKEAWAY.find((o) => o.id === selectedId) : null;
 
+  useEffect(() => {
+    if (!selectedId && displayOrders.length > 0) {
+      setSelectedId(displayOrders[0].id);
+    }
+  }, [displayOrders, selectedId]);
+
   return (
     <section className="drawer-overlay" data-testid="takeaway-drawer">
       <header className="drawer-header">
         <div className="title-stack">
           <h2>Đơn mang đi</h2>
-          <p><span className="sync-dot" /> {takeawayOpen.length} đơn đang mở · online</p>
+          <p>
+            <span className="sync-dot" /> {takeawayOpen.length} đơn đang mở · {MOCK_PAID_TAKEAWAY.length} đã thanh toán
+          </p>
         </div>
         <div className="header-actions">
           <div className="tw-filter-chips">
@@ -881,23 +896,8 @@ function TakeawayDrawer() {
       </header>
 
       <div className="drawer-body">
-        <div className="three-pane">
-          {/* Left: time buckets */}
-          <aside className="pane tw-left-pane">
-            <div className="pane-head">Khung giờ</div>
-            <div className="pane-scroll">
-              <button className="tw-bucket-btn active" onClick={() => setSelectedId(null)}>
-                Tất cả ({displayOrders.length})
-              </button>
-              {timeBuckets.map((bucket) => (
-                <button key={bucket.label} className="tw-bucket-btn">
-                  {bucket.label}
-                </button>
-              ))}
-            </div>
-          </aside>
-
-          {/* Center: order list */}
+        <div className="tw-two-pane">
+          {/* Left: order list */}
           <section className="pane">
             <div className="pane-head">
               <span>Danh sách</span>
@@ -989,7 +989,18 @@ function TakeawayDrawer() {
             <div className="pane-head">Chi tiết đơn</div>
             <div className="pane-scroll">
               {!selectedId ? (
-                <p className="muted" style={{ padding: 16 }}>Chọn đơn để xem chi tiết.</p>
+                <div className="tw-empty-state">
+                  <ClipboardList size={30} color="#94a3b8" />
+                  <p>Chưa có đơn để xem. Tạo đơn mang đi để bắt đầu.</p>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<Plus size={15} />}
+                    onClick={() => { closeDrawer(); openOrder({ orderId: null, tableId: null, orderType: "takeaway" }); }}
+                  >
+                    Tạo đơn mang đi
+                  </Button>
+                </div>
               ) : selectedPaidOrder ? (
                 <div className="tw-detail-body">
                   <div className="tw-detail-row"><span>Đơn số</span><strong>#{selectedPaidOrder.orderNo}</strong></div>
@@ -2958,7 +2969,7 @@ function FloorWorkspace() {
         <div className="title-stack">
           <h1>Sơ đồ bàn</h1>
           <p>
-            <span className="sync-dot" /> {currentEmployee?.name} · {allTables.length} bàn · realtime online
+            <span className="sync-dot" /> {currentEmployee?.name} · {occupiedCount} bàn đang phục vụ · {emptyCount} trống
           </p>
         </div>
         <div className="header-actions">
@@ -2979,7 +2990,11 @@ function FloorWorkspace() {
           >
             Làm mới
           </Button>
-          <Button variant="contained" onClick={() => toast("Tạo đơn nhanh sẽ mở form đơn mới.")}>
+          <Button
+            variant="contained"
+            startIcon={<Plus size={15} />}
+            onClick={() => openOrder({ orderId: null, tableId: null, orderType: "takeaway" })}
+          >
             Tạo đơn nhanh
           </Button>
         </div>
@@ -3095,7 +3110,9 @@ function FloorWorkspace() {
                       <strong className="table-name">{table.name}</strong>
                       <span className="table-seats">{table.seats} chỗ</span>
                       {openOrderSummary ? (
-                        <small className="table-amount">{formatCompactVnd(openOrderSummary.total)}</small>
+                        <small className="table-amount">
+                          #{openOrderSummary.orderNo} · {formatCompactVnd(openOrderSummary.total)}
+                        </small>
                       ) : (
                         <small className="table-empty-label">Trống</small>
                       )}
@@ -3135,8 +3152,10 @@ function FloorWorkspace() {
                       <strong>{table?.name ?? ord.tableId}</strong>
                       <span className="floor-order-no">#{ord.orderNo}</span>
                     </div>
-                    <div className="floor-order-card-amount">{formatCompactVnd(ord.total)}</div>
-                    <div className="floor-order-card-items">{formatCompactVnd(ord.total)}</div>
+                    <div className="floor-order-card-foot">
+                      <span className="floor-order-card-status">Đang phục vụ</span>
+                      <span className="floor-order-card-amount">{formatCompactVnd(ord.total)}</span>
+                    </div>
                   </button>
                 );
               })
@@ -3313,11 +3332,11 @@ function OrderDrawer() {
       {confirmClose && (
         <div className="confirm-overlay">
           <div className="confirm-dialog">
-            <h3>Bỏ thay đổi?</h3>
-            <p>Đơn chưa gửi sẽ bị xoá.</p>
+            <h3>Bỏ đơn chưa gửi?</h3>
+            <p>Các món vừa chọn sẽ không được lưu.</p>
             <div className="confirm-actions">
-              <Button variant="outlined" onClick={() => setConfirmClose(false)}>Tiếp tục soạn</Button>
-              <Button variant="contained" color="error" onClick={() => { setConfirmClose(false); closeDrawer(); }}>Bỏ đơn nháp</Button>
+              <Button variant="outlined" onClick={() => setConfirmClose(false)}>Tiếp tục chỉnh sửa</Button>
+              <Button variant="contained" color="error" onClick={() => { setConfirmClose(false); closeDrawer(); }}>Bỏ đơn</Button>
             </div>
           </div>
         </div>
@@ -3330,7 +3349,8 @@ function OrderDrawer() {
             <span className={`order-type-chip ${context?.orderType === "takeaway" ? "takeaway" : "dine-in"}`}>
               {context?.orderType === "takeaway" ? "Mang đi" : "Tại bàn"}
             </span>
-            {orderDetail ? " · Đã gửi" : " · Chưa gửi"}
+            {" · "}
+            {orderDetail?.status === "paid" ? "Đã thanh toán" : orderDetail ? "Đã gửi" : "Chưa gửi"}
             {" · "}<span className="sync-dot" />online
           </p>
         </div>
@@ -3499,6 +3519,9 @@ function OrderDrawer() {
               )}
             </div>
             <footer className="cart-footer">
+              {orderDetail && draftChanged && primaryAction !== "closed" && (
+                <p className="cart-pay-hint">Gửi đơn để lưu thay đổi trước khi thanh toán.</p>
+              )}
               <div className="total-row"><span>Tạm tính</span><strong>{formatVnd(total)}</strong></div>
               <div className="total-row final"><span>Tổng</span><strong>{formatVnd(total)}</strong></div>
               <Button
@@ -3527,7 +3550,6 @@ function PaymentDrawer() {
   const payMutation = usePayOrderMutation();
   const order = orderQuery.data;
   const [receivedAmount, setReceivedAmount] = useState(0);
-  const [payMethod, setPayMethod] = useState<"cash" | "qr" | "bank">("cash");
 
   useEffect(() => {
     if (order) setReceivedAmount(order.total);
@@ -3552,11 +3574,6 @@ function PaymentDrawer() {
 
     if (orderClosed) {
       toast("Đơn này đã được cập nhật trên thiết bị khác.");
-      return;
-    }
-
-    if (payMethod !== "cash") {
-      toast("Hiện chỉ hỗ trợ thanh toán tiền mặt.");
       return;
     }
 
@@ -3686,24 +3703,23 @@ function PaymentDrawer() {
                   <AlertTriangle size={18} />
                   <div>
                     <strong>Đơn đã được cập nhật</strong>
-                    <p>Thiết bị khác đã thanh toán hoặc đóng đơn này. Quay lại sơ đồ để xem trạng thái mới nhất.</p>
+                    <p>Thiết bị khác đã thanh toán hoặc đóng đơn này. Tải lại để xem trạng thái mới nhất.</p>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      sx={{ mt: 1 }}
+                      onClick={() => { void orderQuery.refetch(); void floorPlanQuery.refetch(); }}
+                    >
+                      Tải lại đơn
+                    </Button>
                   </div>
                 </div>
               )}
 
-              {/* Method segmented */}
-              <div className="pay-method-group">
-                {(["cash", "qr", "bank"] as const).map((m) => (
-                  <button
-                    key={m}
-                    className={`pay-method-btn ${payMethod === m ? "active" : ""} ${m !== "cash" ? "disabled-method" : ""}`}
-                    onClick={() => m === "cash" && setPayMethod(m)}
-                    title={m !== "cash" ? "Tính năng sẽ ra sau" : undefined}
-                  >
-                    {m === "cash" ? "Tiền mặt" : m === "qr" ? "QR / VietQR" : "Chuyển khoản"}
-                    {m !== "cash" && <span className="method-soon">Sau</span>}
-                  </button>
-                ))}
+              {/* Cash payment */}
+              <div className="pay-method-note">
+                <CreditCard size={15} />
+                <span>Thanh toán tiền mặt</span>
               </div>
 
               {/* Received amount */}
@@ -3716,10 +3732,17 @@ function PaymentDrawer() {
                   size="small"
                   fullWidth
                   error={insufficient}
-                  helperText={insufficient ? "Tiền khách chưa đủ" : " "}
+                  helperText=" "
                   inputProps={{ min: 0, step: 1000 }}
                 />
               </div>
+
+              {insufficient && (
+                <div className="pay-insufficient-warning" data-testid="payment-insufficient-warning">
+                  <AlertTriangle size={15} />
+                  <span>Khách đưa chưa đủ. Còn thiếu {formatVnd(Math.abs(changeAmount))}.</span>
+                </div>
+              )}
 
               {/* Quick cash buttons */}
               <div className="pay-quick-label">Chọn nhanh</div>
@@ -3755,7 +3778,7 @@ function PaymentDrawer() {
                 </div>
                 <div className="pay-change-divider" />
                 <div className="pay-change-row highlight">
-                  <span>{insufficient ? "⚠ Còn thiếu" : "Tiền thối"}</span>
+                  <span>{insufficient ? "Còn thiếu" : "Tiền thối lại"}</span>
                   <strong className={insufficient ? "text-danger" : "price-text"}>
                     {formatVnd(Math.abs(changeAmount))}
                   </strong>
