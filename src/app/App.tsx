@@ -4,6 +4,7 @@ import {
   BarChart3,
   CheckCircle2,
   ChefHat,
+  ChevronRight,
   ClipboardList,
   Coffee,
   Copy,
@@ -11,6 +12,7 @@ import {
   Download,
   Eye,
   Hand,
+  Info,
   KeyRound,
   LayoutDashboard,
   LayoutGrid,
@@ -18,11 +20,13 @@ import {
   LogIn,
   Magnet,
   Minus,
+  MonitorSmartphone,
   MousePointer2,
   Pencil,
   Plus,
   QrCode,
   ReceiptText,
+  RefreshCw,
   RotateCcw,
   Save,
   Settings,
@@ -215,7 +219,20 @@ function LandingScreen() {
             <span>Thiết lập quán và nhận Store Key + Admin PIN.</span>
           </button>
         </div>
-        <p className="landing-note">Vào quán hiện có hoặc tạo quán mới để bắt đầu ca bán.</p>
+        <div className="landing-reassure">
+          <div className="landing-reassure-item">
+            <MonitorSmartphone size={16} className="landing-reassure-icon" />
+            <span>Dùng được trên máy tính, máy tính bảng và điện thoại nằm ngang.</span>
+          </div>
+          <div className="landing-reassure-item">
+            <KeyRound size={16} className="landing-reassure-icon" />
+            <span>Nhân viên đăng nhập nhanh bằng mã PIN riêng.</span>
+          </div>
+          <div className="landing-reassure-item">
+            <RefreshCw size={16} className="landing-reassure-icon" />
+            <span>Dữ liệu đồng bộ tức thời giữa các thiết bị cùng quán.</span>
+          </div>
+        </div>
       </div>
     </main>
   );
@@ -273,7 +290,7 @@ function StorePairingScreen() {
           <div className="preauth-form">
             <div className="title-stack" style={{ marginBottom: 20 }}>
               <h2>Ghép thiết bị với quán</h2>
-              <p>Nhập Store Key do chủ quán cung cấp để ghép thiết bị.</p>
+              <p>Nhập Store Key do quản lý cung cấp để ghép thiết bị vào quán.</p>
             </div>
 
             <div className="preauth-field">
@@ -284,7 +301,7 @@ function StorePairingScreen() {
                 onChange={(e) => { setKey(e.target.value); setError(""); }}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 error={!!error}
-                helperText={error || "Sau khi ghép, thiết bị chỉ lưu phiên đăng nhập của quán."}
+                helperText={error || "Mỗi thiết bị chỉ cần ghép một lần với quán."}
                 fullWidth
                 size="small"
                 inputProps={{ "data-testid": "store-key-input" }}
@@ -309,11 +326,15 @@ function StorePairingScreen() {
           <aside className="preauth-notes">
             <div className="preauth-note-item">
               <Store size={16} className="preauth-note-icon" />
-              <p>Một Store Key có thể dùng cho nhiều thiết bị.</p>
+              <p>Một Store Key dùng được cho nhiều thiết bị trong cùng quán.</p>
             </div>
             <div className="preauth-note-item">
-              <LogIn size={16} className="preauth-note-icon" />
-              <p>Sau khi ghép, mỗi ngày nhân viên chọn tên và nhập PIN.</p>
+              <KeyRound size={16} className="preauth-note-icon" />
+              <p>Mỗi ngày nhân viên chọn tên và nhập mã PIN để vào ca.</p>
+            </div>
+            <div className="preauth-note-item">
+              <RotateCcw size={16} className="preauth-note-icon" />
+              <p>Có thể đổi quán bất cứ lúc nào từ màn hình đăng nhập.</p>
             </div>
           </aside>
         </div>
@@ -404,8 +425,9 @@ function CreateStoreScreen() {
               </div>
             </div>
 
-            <p className="create-store-warning">
-              Lưu lại Store Key và Admin PIN. Bạn sẽ cần chúng để đăng nhập thiết bị khác.
+            <p className="create-store-info">
+              <Info size={15} className="create-store-info-icon" />
+              Lưu lại Store Key và Admin PIN. Bạn sẽ cần chúng để đăng nhập trên thiết bị khác.
             </p>
 
             <Button variant="contained" data-testid="go-passcode" onClick={() => setScreen("passcode")}>
@@ -446,22 +468,10 @@ function CreateStoreScreen() {
                 />
               </div>
 
-              <div className="preauth-field">
-                <TextField
-                  label="Múi giờ"
-                  value="Asia/Ho_Chi_Minh"
-                  disabled
-                  fullWidth
-                  size="small"
-                />
-              </div>
-
-              <div className="create-store-check-row">
-                <input type="checkbox" id="seed-demo" defaultChecked disabled />
-                <label htmlFor="seed-demo" style={{ color: "var(--muted)", fontSize: 13 }}>
-                  Chuẩn bị dữ liệu mẫu ban đầu
-                </label>
-              </div>
+              <p className="create-store-hint">
+                <Info size={15} className="create-store-hint-icon" />
+                Hệ thống sẽ tạo sẵn menu và sơ đồ mẫu để bạn bắt đầu nhanh.
+              </p>
 
               <Button
                 variant="contained"
@@ -470,7 +480,7 @@ function CreateStoreScreen() {
                 disabled={loading}
                 onClick={handleCreate}
               >
-                {loading ? "Đang tạo quán..." : "Tạo quán mới"}
+                {loading ? "Đang tạo quán..." : "Tạo quán"}
               </Button>
 
               <button className="preauth-link" onClick={() => setScreen("storePairing")}>
@@ -505,6 +515,8 @@ function PasscodeScreen() {
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [shaking, setShaking] = useState(false);
+
+  const roleLabel: Record<string, string> = { admin: "Quản lý", cashier: "Thu ngân", kitchen: "Bếp" };
 
   const now = new Date();
   const dateStr = now.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
@@ -608,10 +620,10 @@ function PasscodeScreen() {
                 data-testid={`employee-${employee.id}`}
                 onClick={() => { setSelectedEmployeeId(employee.id); setPinError(""); setPin(""); }}
               >
-                <strong>{employee.name}</strong>
+                <strong className="employee-card-name">{employee.name}</strong>
                 <div className="employee-card-meta">
-                  <span className="role-pill">{employee.role}</span>
-                  <span className="status-pill status-active">● active</span>
+                  <span className="role-pill">{roleLabel[employee.role] ?? employee.role}</span>
+                  {!employee.isActive && <span className="status-pill status-inactive">Tạm nghỉ</span>}
                 </div>
               </button>
             ))}
@@ -667,7 +679,7 @@ function AppShell() {
     openDrawer(module);
   };
 
-  const roleLabel: Record<string, string> = { admin: "Admin", cashier: "Thu ngân", kitchen: "Bếp" };
+  const roleLabel: Record<string, string> = { admin: "Quản lý", cashier: "Thu ngân", kitchen: "Bếp" };
 
   return (
     <main className="app-shell" data-testid="app-shell">
@@ -675,8 +687,11 @@ function AppShell() {
         <div className="rail-top">
           <div className="rail-logo">P</div>
           {currentEmployee && (
-            <div className="rail-employee-badge" title={`${currentEmployee.name} · ${currentEmployee.role}`}>
-              <div className="rail-employee-initial">{currentEmployee.name.charAt(0).toUpperCase()}</div>
+            <div
+              className="rail-employee-badge"
+              title={`${currentEmployee.name} · ${roleLabel[currentEmployee.role] ?? currentEmployee.role}`}
+            >
+              <span className="rail-employee-name">{currentEmployee.name}</span>
               <span className="rail-employee-role">{roleLabel[currentEmployee.role] ?? currentEmployee.role}</span>
             </div>
           )}
@@ -801,7 +816,7 @@ function RailButton({
   );
   if (disabled) {
     return (
-      <Tooltip title="Không có quyền" placement="right" arrow>
+      <Tooltip title="Cần quyền quản lý" placement="right" arrow>
         <span style={{ display: "contents" }}>{btn}</span>
       </Tooltip>
     );
@@ -834,13 +849,6 @@ function TakeawayDrawer() {
     { key: "today", label: "Hôm nay" },
   ];
 
-  const timeBuckets = [
-    { label: "Sáng (6–11h)" },
-    { label: "Trưa (11–14h)" },
-    { label: "Chiều (14–18h)" },
-    { label: "Tối (18–24h)" },
-  ];
-
   const displayOrders: Array<{ id: string; orderNo: number; total: number; status?: string; createdAt?: string; itemCount?: number; note?: string | null; employeeName?: string }> =
     filter === "open"
       ? takeawayOpen.map((o) => ({ id: o.id, orderNo: o.orderNo, total: o.total }))
@@ -850,12 +858,20 @@ function TakeawayDrawer() {
 
   const selectedPaidOrder = filter !== "open" ? MOCK_PAID_TAKEAWAY.find((o) => o.id === selectedId) : null;
 
+  useEffect(() => {
+    if (!selectedId && displayOrders.length > 0) {
+      setSelectedId(displayOrders[0].id);
+    }
+  }, [displayOrders, selectedId]);
+
   return (
     <section className="drawer-overlay" data-testid="takeaway-drawer">
       <header className="drawer-header">
         <div className="title-stack">
           <h2>Đơn mang đi</h2>
-          <p><span className="sync-dot" /> {takeawayOpen.length} đơn đang mở · online</p>
+          <p>
+            <span className="sync-dot" /> {takeawayOpen.length} đơn đang mở · {MOCK_PAID_TAKEAWAY.length} đã thanh toán
+          </p>
         </div>
         <div className="header-actions">
           <div className="tw-filter-chips">
@@ -881,23 +897,8 @@ function TakeawayDrawer() {
       </header>
 
       <div className="drawer-body">
-        <div className="three-pane">
-          {/* Left: time buckets */}
-          <aside className="pane tw-left-pane">
-            <div className="pane-head">Khung giờ</div>
-            <div className="pane-scroll">
-              <button className="tw-bucket-btn active" onClick={() => setSelectedId(null)}>
-                Tất cả ({displayOrders.length})
-              </button>
-              {timeBuckets.map((bucket) => (
-                <button key={bucket.label} className="tw-bucket-btn">
-                  {bucket.label}
-                </button>
-              ))}
-            </div>
-          </aside>
-
-          {/* Center: order list */}
+        <div className="tw-two-pane">
+          {/* Left: order list */}
           <section className="pane">
             <div className="pane-head">
               <span>Danh sách</span>
@@ -989,7 +990,18 @@ function TakeawayDrawer() {
             <div className="pane-head">Chi tiết đơn</div>
             <div className="pane-scroll">
               {!selectedId ? (
-                <p className="muted" style={{ padding: 16 }}>Chọn đơn để xem chi tiết.</p>
+                <div className="tw-empty-state">
+                  <ClipboardList size={30} color="#94a3b8" />
+                  <p>Chưa có đơn để xem. Tạo đơn mang đi để bắt đầu.</p>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<Plus size={15} />}
+                    onClick={() => { closeDrawer(); openOrder({ orderId: null, tableId: null, orderType: "takeaway" }); }}
+                  >
+                    Tạo đơn mang đi
+                  </Button>
+                </div>
               ) : selectedPaidOrder ? (
                 <div className="tw-detail-body">
                   <div className="tw-detail-row"><span>Đơn số</span><strong>#{selectedPaidOrder.orderNo}</strong></div>
@@ -1213,6 +1225,16 @@ function OrderHistoryDrawer() {
     }
   }, [historyQuery.data, page, totalPages]);
 
+  // Auto-select first available order so the detail pane is never idle on load.
+  // Keeps the current selection if it is still in the filtered list; re-picks the
+  // first row when data arrives or filters change so no stale detail lingers.
+  useEffect(() => {
+    if (filtered.length === 0) return;
+    if (selectedId && filtered.some((o) => o.id === selectedId)) return;
+    setSelectedId(filtered[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyQuery.data, statusFilter, orderTypeFilter, search]);
+
   const dateRangeChips: Array<{ key: HistoryDateRange; label: string }> = [
     { key: "today", label: "Hôm nay" },
     { key: "7days", label: "7 ngày" },
@@ -1390,7 +1412,7 @@ function OrderHistoryDrawer() {
                           key={o.id}
                           className={`hx-row${selectedId === o.id ? " selected" : ""}`}
                           data-testid={`history-row-${o.id}`}
-                          onClick={() => setSelectedId(selectedId === o.id ? null : o.id)}
+                          onClick={() => setSelectedId(o.id)}
                         >
                           <td className="muted">{o.createdAt}</td>
                           <td><strong>#{o.orderNo}</strong></td>
@@ -1413,7 +1435,7 @@ function OrderHistoryDrawer() {
                       <div
                         key={o.id}
                         className={`hx-history-card${selectedId === o.id ? " selected" : ""}`}
-                        onClick={() => setSelectedId(selectedId === o.id ? null : o.id)}
+                        onClick={() => setSelectedId(o.id)}
                       >
                         <div className="hx-hcard-top">
                           <strong>#{o.orderNo}</strong>
@@ -1530,7 +1552,7 @@ interface EmpForm {
   confirmPin: string;
 }
 
-const EMP_ROLE_LABEL: Record<EmployeeRole, string> = { admin: "Admin", cashier: "Thu ngân", kitchen: "Bếp" };
+const EMP_ROLE_LABEL: Record<EmployeeRole, string> = { admin: "Quản lý", cashier: "Thu ngân", kitchen: "Bếp" };
 const EMP_ROLE_ORDER: EmployeeRole[] = ["admin", "cashier", "kitchen"];
 const EMPTY_EMP_FORM: EmpForm = { name: "", role: "cashier", isActive: true, newPin: "", confirmPin: "" };
 
@@ -1639,7 +1661,7 @@ function EmployeesDrawer() {
 
   const filterChips: Array<{ key: EmpFilter; label: string }> = [
     { key: "all", label: "Tất cả" },
-    { key: "admin", label: "Admin" },
+    { key: "admin", label: "Quản lý" },
     { key: "cashier", label: "Thu ngân" },
     { key: "kitchen", label: "Bếp" },
     { key: "inactive", label: "Tạm khoá" },
@@ -1650,6 +1672,10 @@ function EmployeesDrawer() {
     ? "Lỗi tải nhân viên"
     : `${employees.length} nhân viên · online`;
   const pinResetEmployee = pinResetTarget ? employees.find((e) => e.id === pinResetTarget) : null;
+  const activeAdminCount = employees.filter((e) => e.role === "admin" && e.isActive).length;
+  // The store must always keep one active manager who can reach this screen.
+  const isLastActiveAdmin = (emp: Pick<EmployeeRecord, "role" | "isActive">) =>
+    emp.role === "admin" && emp.isActive && activeAdminCount <= 1;
 
   const toggleActive = (id: string) => {
     const target = employees.find((e) => e.id === id);
@@ -1662,6 +1688,10 @@ function EmployeesDrawer() {
     const nextActive = !target.isActive;
     if (!nextActive && currentEmployee?.id === id) {
       toast.error("Không thể tạm khoá tài khoản đang đăng nhập.");
+      return;
+    }
+    if (!nextActive && isLastActiveAdmin(target)) {
+      toast.error("Cần giữ ít nhất một quản lý đang hoạt động.");
       return;
     }
 
@@ -1694,6 +1724,10 @@ function EmployeesDrawer() {
     if (isSaving) return;
     if (selectedRecord && currentEmployee?.id === selectedRecord.id && !form.isActive) {
       toast.error("Không thể tạm khoá tài khoản đang đăng nhập.");
+      return;
+    }
+    if (selectedRecord && !form.isActive && isLastActiveAdmin(selectedRecord)) {
+      toast.error("Cần giữ ít nhất một quản lý đang hoạt động.");
       return;
     }
 
@@ -1919,25 +1953,41 @@ function EmployeesDrawer() {
                     </div>
                   </div>
 
-                  <div className="emp-field">
-                    <span className="emp-field-label">Trạng thái</span>
-                    <div className="emp-segment">
-                      <button
-                        className={`emp-segment-btn${form.isActive ? " active" : ""}`}
-                        data-testid="employee-active-button"
-                        onClick={() => setForm((f) => ({ ...f, isActive: true }))}
-                      >
-                        Đang hoạt động
-                      </button>
-                      <button
-                        className={`emp-segment-btn${form.isActive ? "" : " active danger"}`}
-                        data-testid="employee-inactive-button"
-                        onClick={() => setForm((f) => ({ ...f, isActive: false }))}
-                      >
-                        Tạm khoá
-                      </button>
-                    </div>
-                  </div>
+                  {(() => {
+                    const lockSelf = selectedRecord != null && currentEmployee?.id === selectedRecord.id;
+                    const lockLastAdmin = selectedRecord != null && isLastActiveAdmin(selectedRecord);
+                    const lockDisabled = lockSelf || lockLastAdmin;
+                    return (
+                      <div className="emp-field">
+                        <span className="emp-field-label">Trạng thái</span>
+                        <div className="emp-segment">
+                          <button
+                            className={`emp-segment-btn${form.isActive ? " active" : ""}`}
+                            data-testid="employee-active-button"
+                            onClick={() => setForm((f) => ({ ...f, isActive: true }))}
+                          >
+                            Đang hoạt động
+                          </button>
+                          <button
+                            className={`emp-segment-btn${form.isActive ? "" : " active danger"}`}
+                            data-testid="employee-inactive-button"
+                            disabled={lockDisabled}
+                            title={lockDisabled ? "Không thể tạm khoá tài khoản này" : undefined}
+                            onClick={() => setForm((f) => ({ ...f, isActive: false }))}
+                          >
+                            Tạm khoá
+                          </button>
+                        </div>
+                        {lockDisabled && (
+                          <span className="emp-field-hint">
+                            {lockSelf
+                              ? "Không thể tạm khoá tài khoản đang đăng nhập."
+                              : "Cần giữ ít nhất một quản lý đang hoạt động."}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <div className="emp-pin-section">
                     <div className="emp-field-label">{selectedId === "new" ? "Đặt PIN" : "Đặt lại PIN"}</div>
@@ -2059,7 +2109,7 @@ const INITIAL_PAYMENT: PaymentForm = {
   bankName: "",
   accountNo: "",
   accountHolder: "",
-  qrInfo: '{\n  "provider": "vietqr",\n  "bankBin": "970415",\n  "template": "compact"\n}',
+  qrInfo: "",
   showQrOnBill: false,
 };
 
@@ -2100,7 +2150,6 @@ function PaymentSettingsDrawer() {
     { key: "cash", label: "Tiền mặt", on: true },
     { key: "qr", label: "QR", on: form.qrEnabled },
     { key: "bank", label: "Chuyển khoản", on: form.bankEnabled },
-    { key: "other", label: "Khác", on: false, disabled: true },
   ];
 
   const tabBtn = (key: "nav" | "form" | "preview", label: string) => (
@@ -2190,20 +2239,22 @@ function PaymentSettingsDrawer() {
                     </div>
                   </div>
                   <TextField
-                    label="Thông tin QR"
+                    label="Nội dung hiển thị cạnh mã QR"
                     value={form.qrInfo}
                     onChange={(e) => patch({ qrInfo: e.target.value })}
+                    placeholder="VD: Quét mã để chuyển khoản"
+                    helperText="Chỉ là thông tin hiển thị trên hoá đơn in."
                     size="small"
                     fullWidth
                     multiline
-                    minRows={4}
+                    minRows={2}
                     disabled={!form.qrEnabled}
                     inputProps={{ "data-testid": "qr-info-input" }}
                   />
                   <button className={`menu-chip-toggle${form.showQrOnBill ? " on" : ""}`} disabled={!form.qrEnabled} onClick={() => patch({ showQrOnBill: !form.showQrOnBill })}>
                     {form.showQrOnBill ? "✓ Hiện QR trên hoá đơn" : "Hiện QR trên hoá đơn"}
                   </button>
-                  <p className="muted">QR chưa được kích hoạt cho thanh toán thực tế.</p>
+                  <p className="muted">Phương thức này chưa được kích hoạt cho thanh toán thực tế.</p>
                 </>
               ) : method === "bank" ? (
                 <>
@@ -2227,11 +2278,12 @@ function PaymentSettingsDrawer() {
                     inputProps={{ inputMode: "numeric", "data-testid": "account-no-input" }}
                   />
                   <TextField label="Chủ tài khoản" value={form.accountHolder} onChange={(e) => patch({ accountHolder: e.target.value })} size="small" fullWidth disabled={!form.bankEnabled} />
+                  <p className="muted">Thông tin tài khoản chỉ hiển thị trên hoá đơn; chưa kích hoạt thanh toán thực tế.</p>
                 </>
               ) : (
                 <div className="tw-empty-state">
                   <CreditCard size={30} color="#94a3b8" />
-                  <p>Phương thức khác chưa được bật.</p>
+                  <p>Phương thức này chưa được kích hoạt.</p>
                 </div>
               )}
             </div>
@@ -2267,7 +2319,7 @@ function PaymentSettingsDrawer() {
                 {form.qrEnabled && form.showQrOnBill && (
                   <div className="pay-qr-placeholder" data-testid="pay-qr-preview">
                     <QrCode size={64} />
-                    <span>QR mô phỏng</span>
+                    <span>{form.qrInfo.trim() || "Quét để thanh toán"}</span>
                   </div>
                 )}
 
@@ -2366,6 +2418,15 @@ function KitchenQueueDrawer() {
   const waitingCount = KITCHEN_TICKETS.filter((t) => statusOf(t.id) === "waiting").length;
   const doneCount = KITCHEN_TICKETS.filter((t) => statusOf(t.id) === "done").length;
   const selected = KITCHEN_TICKETS.find((t) => t.id === selectedId) ?? null;
+
+  // Keep the detail pane busy: auto-select the first ticket in the current filter
+  // (the first waiting ticket on open) and re-pick when the visible queue changes.
+  useEffect(() => {
+    if (tickets.length === 0) return;
+    if (selectedId && tickets.some((t) => t.id === selectedId)) return;
+    setSelectedId(tickets[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, station, statusById]);
 
   const statusChips: Array<{ key: KitchenStatusFilter; label: string; count: number }> = [
     { key: "waiting", label: "Đang chờ", count: waitingCount },
@@ -2527,7 +2588,7 @@ function KitchenQueueDrawer() {
   );
 }
 
-type SettingsSection = "info" | "bill" | "system" | "demo";
+type SettingsSection = "info" | "bill" | "demo";
 interface SettingsForm {
   displayName: string;
   address: string;
@@ -2549,8 +2610,6 @@ function GeneralSettingsDrawer() {
   const [nameError, setNameError] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
-
-  const timezone = settingsQuery.data?.timezone ?? "Asia/Saigon";
 
   useEffect(() => {
     if (settingsQuery.data && !seeded) {
@@ -2606,9 +2665,8 @@ function GeneralSettingsDrawer() {
   };
 
   const sections: Array<{ key: SettingsSection; label: string }> = [
-    { key: "info", label: "Thông tin" },
+    { key: "info", label: "Thông tin quán" },
     { key: "bill", label: "Hoá đơn" },
-    { key: "system", label: "Hệ thống" },
     { key: "demo", label: "Dữ liệu mẫu" },
   ];
 
@@ -2714,17 +2772,7 @@ function GeneralSettingsDrawer() {
                     </>
                   ) : section === "bill" ? (
                     <>
-                      <TextField label="Chân hoá đơn (bill footer)" value={form.billFooter} onChange={(e) => patch({ billFooter: e.target.value })} size="small" fullWidth multiline minRows={3} helperText="Hiển thị cuối hoá đơn in." />
-                    </>
-                  ) : section === "system" ? (
-                    <>
-                      <TextField label="Múi giờ" value={timezone} size="small" fullWidth disabled />
-                      <TextField label="Tiền tệ" value="VND" size="small" fullWidth disabled />
-                      <div className="fe-status-row">
-                        <span className="emp-field-label">Realtime</span>
-                        <span className="status-pill status-active">● online</span>
-                      </div>
-                      <p className="muted">Múi giờ và tiền tệ đang dùng cho toàn bộ hoá đơn.</p>
+                      <TextField label="Chân hoá đơn" value={form.billFooter} onChange={(e) => patch({ billFooter: e.target.value })} size="small" fullWidth multiline minRows={3} helperText="Hiển thị cuối hoá đơn in." />
                     </>
                   ) : (
                     <div className="set-demo-box">
@@ -2958,7 +3006,7 @@ function FloorWorkspace() {
         <div className="title-stack">
           <h1>Sơ đồ bàn</h1>
           <p>
-            <span className="sync-dot" /> {currentEmployee?.name} · {allTables.length} bàn · realtime online
+            <span className="sync-dot" /> {currentEmployee?.name} · {occupiedCount} bàn đang phục vụ · {emptyCount} trống
           </p>
         </div>
         <div className="header-actions">
@@ -2979,7 +3027,11 @@ function FloorWorkspace() {
           >
             Làm mới
           </Button>
-          <Button variant="contained" onClick={() => toast("Tạo đơn nhanh sẽ mở form đơn mới.")}>
+          <Button
+            variant="contained"
+            startIcon={<Plus size={15} />}
+            onClick={() => openOrder({ orderId: null, tableId: null, orderType: "takeaway" })}
+          >
             Tạo đơn nhanh
           </Button>
         </div>
@@ -3095,7 +3147,9 @@ function FloorWorkspace() {
                       <strong className="table-name">{table.name}</strong>
                       <span className="table-seats">{table.seats} chỗ</span>
                       {openOrderSummary ? (
-                        <small className="table-amount">{formatCompactVnd(openOrderSummary.total)}</small>
+                        <small className="table-amount">
+                          #{openOrderSummary.orderNo} · {formatCompactVnd(openOrderSummary.total)}
+                        </small>
                       ) : (
                         <small className="table-empty-label">Trống</small>
                       )}
@@ -3135,8 +3189,10 @@ function FloorWorkspace() {
                       <strong>{table?.name ?? ord.tableId}</strong>
                       <span className="floor-order-no">#{ord.orderNo}</span>
                     </div>
-                    <div className="floor-order-card-amount">{formatCompactVnd(ord.total)}</div>
-                    <div className="floor-order-card-items">{formatCompactVnd(ord.total)}</div>
+                    <div className="floor-order-card-foot">
+                      <span className="floor-order-card-status">Đang phục vụ</span>
+                      <span className="floor-order-card-amount">{formatCompactVnd(ord.total)}</span>
+                    </div>
                   </button>
                 );
               })
@@ -3313,11 +3369,11 @@ function OrderDrawer() {
       {confirmClose && (
         <div className="confirm-overlay">
           <div className="confirm-dialog">
-            <h3>Bỏ thay đổi?</h3>
-            <p>Đơn chưa gửi sẽ bị xoá.</p>
+            <h3>Bỏ đơn chưa gửi?</h3>
+            <p>Các món vừa chọn sẽ không được lưu.</p>
             <div className="confirm-actions">
-              <Button variant="outlined" onClick={() => setConfirmClose(false)}>Tiếp tục soạn</Button>
-              <Button variant="contained" color="error" onClick={() => { setConfirmClose(false); closeDrawer(); }}>Bỏ đơn nháp</Button>
+              <Button variant="outlined" onClick={() => setConfirmClose(false)}>Tiếp tục chỉnh sửa</Button>
+              <Button variant="contained" color="error" onClick={() => { setConfirmClose(false); closeDrawer(); }}>Bỏ đơn</Button>
             </div>
           </div>
         </div>
@@ -3330,7 +3386,8 @@ function OrderDrawer() {
             <span className={`order-type-chip ${context?.orderType === "takeaway" ? "takeaway" : "dine-in"}`}>
               {context?.orderType === "takeaway" ? "Mang đi" : "Tại bàn"}
             </span>
-            {orderDetail ? " · Đã gửi" : " · Chưa gửi"}
+            {" · "}
+            {orderDetail?.status === "paid" ? "Đã thanh toán" : orderDetail ? "Đã gửi" : "Chưa gửi"}
             {" · "}<span className="sync-dot" />online
           </p>
         </div>
@@ -3499,6 +3556,9 @@ function OrderDrawer() {
               )}
             </div>
             <footer className="cart-footer">
+              {orderDetail && draftChanged && primaryAction !== "closed" && (
+                <p className="cart-pay-hint">Gửi đơn để lưu thay đổi trước khi thanh toán.</p>
+              )}
               <div className="total-row"><span>Tạm tính</span><strong>{formatVnd(total)}</strong></div>
               <div className="total-row final"><span>Tổng</span><strong>{formatVnd(total)}</strong></div>
               <Button
@@ -3527,7 +3587,6 @@ function PaymentDrawer() {
   const payMutation = usePayOrderMutation();
   const order = orderQuery.data;
   const [receivedAmount, setReceivedAmount] = useState(0);
-  const [payMethod, setPayMethod] = useState<"cash" | "qr" | "bank">("cash");
 
   useEffect(() => {
     if (order) setReceivedAmount(order.total);
@@ -3552,11 +3611,6 @@ function PaymentDrawer() {
 
     if (orderClosed) {
       toast("Đơn này đã được cập nhật trên thiết bị khác.");
-      return;
-    }
-
-    if (payMethod !== "cash") {
-      toast("Hiện chỉ hỗ trợ thanh toán tiền mặt.");
       return;
     }
 
@@ -3686,24 +3740,23 @@ function PaymentDrawer() {
                   <AlertTriangle size={18} />
                   <div>
                     <strong>Đơn đã được cập nhật</strong>
-                    <p>Thiết bị khác đã thanh toán hoặc đóng đơn này. Quay lại sơ đồ để xem trạng thái mới nhất.</p>
+                    <p>Thiết bị khác đã thanh toán hoặc đóng đơn này. Tải lại để xem trạng thái mới nhất.</p>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      sx={{ mt: 1 }}
+                      onClick={() => { void orderQuery.refetch(); void floorPlanQuery.refetch(); }}
+                    >
+                      Tải lại đơn
+                    </Button>
                   </div>
                 </div>
               )}
 
-              {/* Method segmented */}
-              <div className="pay-method-group">
-                {(["cash", "qr", "bank"] as const).map((m) => (
-                  <button
-                    key={m}
-                    className={`pay-method-btn ${payMethod === m ? "active" : ""} ${m !== "cash" ? "disabled-method" : ""}`}
-                    onClick={() => m === "cash" && setPayMethod(m)}
-                    title={m !== "cash" ? "Tính năng sẽ ra sau" : undefined}
-                  >
-                    {m === "cash" ? "Tiền mặt" : m === "qr" ? "QR / VietQR" : "Chuyển khoản"}
-                    {m !== "cash" && <span className="method-soon">Sau</span>}
-                  </button>
-                ))}
+              {/* Cash payment */}
+              <div className="pay-method-note">
+                <CreditCard size={15} />
+                <span>Thanh toán tiền mặt</span>
               </div>
 
               {/* Received amount */}
@@ -3716,10 +3769,17 @@ function PaymentDrawer() {
                   size="small"
                   fullWidth
                   error={insufficient}
-                  helperText={insufficient ? "Tiền khách chưa đủ" : " "}
+                  helperText=" "
                   inputProps={{ min: 0, step: 1000 }}
                 />
               </div>
+
+              {insufficient && (
+                <div className="pay-insufficient-warning" data-testid="payment-insufficient-warning">
+                  <AlertTriangle size={15} />
+                  <span>Khách đưa chưa đủ. Còn thiếu {formatVnd(Math.abs(changeAmount))}.</span>
+                </div>
+              )}
 
               {/* Quick cash buttons */}
               <div className="pay-quick-label">Chọn nhanh</div>
@@ -3755,7 +3815,7 @@ function PaymentDrawer() {
                 </div>
                 <div className="pay-change-divider" />
                 <div className="pay-change-row highlight">
-                  <span>{insufficient ? "⚠ Còn thiếu" : "Tiền thối"}</span>
+                  <span>{insufficient ? "Còn thiếu" : "Tiền thối lại"}</span>
                   <strong className={insufficient ? "text-danger" : "price-text"}>
                     {formatVnd(Math.abs(changeAmount))}
                   </strong>
@@ -3996,6 +4056,9 @@ function MenuEditorDrawer() {
   const [preview, setPreview] = useState(false);
   const [mobileTab, setMobileTab] = useState<MenuTab>("item");
   const [confirmCancel, setConfirmCancel] = useState(false);
+  // Advanced item fields (sort order + option groups) stay collapsed by default
+  // so the basic name/price/category/availability fields lead the props pane.
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const seedDraftFromMenu = (catalog: MenuCatalog) => {
     setBaseMenu(catalog);
@@ -4297,7 +4360,11 @@ function MenuEditorDrawer() {
                         >
                           <div className="menu-cat-main">
                             <strong>{c.name || "(chưa đặt tên)"}</strong>
-                            <span className="muted">{items.filter((i) => i.categoryId === c.id && !i.deleted).length} món</span>
+                            {c.deleted ? (
+                              <span className="menu-pending-del">Đang chờ xóa</span>
+                            ) : (
+                              <span className="muted">{items.filter((i) => i.categoryId === c.id && !i.deleted).length} món</span>
+                            )}
                           </div>
                           <div className="menu-cat-actions" onClick={(e) => e.stopPropagation()}>
                             <button className="menu-mini-btn" disabled={idx === 0} onClick={() => moveCategory(c.id, -1)}>↑</button>
@@ -4415,14 +4482,6 @@ function MenuEditorDrawer() {
                           ))}
                         </div>
                       </div>
-                      <TextField
-                        label="Thứ tự"
-                        value={String(selectedItem.sortOrder)}
-                        onChange={(e) => patchItem(selectedItem.id, { sortOrder: toInt(e.target.value) })}
-                        size="small"
-                        fullWidth
-                        inputProps={{ inputMode: "numeric" }}
-                      />
                       <div className="menu-field">
                         <span className="emp-field-label">Trạng thái</span>
                         <div className="emp-segment">
@@ -4432,10 +4491,32 @@ function MenuEditorDrawer() {
                       </div>
                       {selectedItem.deleted && (
                         <div className="menu-tombstone">
-                          Món đang đánh dấu xoá.
+                          Đang chờ xóa.
                           <button className="menu-mini-btn" onClick={() => toggleDeleteItem(selectedItem.id)}><RotateCcw size={13} /> Khôi phục</button>
                         </div>
                       )}
+
+                      <button
+                        type="button"
+                        className={`menu-advanced-toggle${advancedOpen ? " open" : ""}`}
+                        aria-expanded={advancedOpen}
+                        onClick={() => setAdvancedOpen((v) => !v)}
+                      >
+                        <ChevronRight size={15} className="menu-advanced-caret" />
+                        Nâng cao
+                        <span className="muted">Thứ tự · nhóm tuỳ chọn</span>
+                      </button>
+
+                      {advancedOpen && (
+                      <div className="menu-advanced-body">
+                      <TextField
+                        label="Thứ tự"
+                        value={String(selectedItem.sortOrder)}
+                        onChange={(e) => patchItem(selectedItem.id, { sortOrder: toInt(e.target.value) })}
+                        size="small"
+                        fullWidth
+                        inputProps={{ inputMode: "numeric" }}
+                      />
 
                       <div className="menu-section">
                         <div className="menu-section-head">
@@ -4490,6 +4571,8 @@ function MenuEditorDrawer() {
                           ))
                         )}
                       </div>
+                      </div>
+                      )}
                     </>
                   ) : selectedCategory ? (
                     <>
@@ -4513,8 +4596,8 @@ function MenuEditorDrawer() {
       {confirmCancel && (
         <div className="confirm-overlay" onClick={() => setConfirmCancel(false)}>
           <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
-            <h3>Bỏ thay đổi?</h3>
-            <p>Các chỉnh sửa menu chưa lưu sẽ bị huỷ.</p>
+            <h3>Bỏ thay đổi menu?</h3>
+            <p>Các chỉnh sửa chưa lưu sẽ bị huỷ.</p>
             <div className="confirm-actions">
               <Button variant="outlined" onClick={() => setConfirmCancel(false)}>Ở lại</Button>
               <Button variant="contained" color="error" onClick={() => { setConfirmCancel(false); closeDrawer(); }}>Bỏ thay đổi</Button>
@@ -4733,6 +4816,9 @@ function FloorEditorDrawer() {
   const [dirty, setDirty] = useState(false);
   const [mobileTab, setMobileTab] = useState<FloorTab>("canvas");
   const [confirmCancel, setConfirmCancel] = useState(false);
+  // Geometry/asset fields are secondary to name/seats/shape, so keep them folded
+  // away under an "Nâng cao" section until the admin needs precise control.
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ kind: "table" | "decor"; id: string; offX: number; offY: number } | null>(null);
@@ -5128,10 +5214,7 @@ function FloorEditorDrawer() {
                   {selectedTable ? (
                     <>
                       <TextField label="Tên bàn" value={selectedTable.name} onChange={(e) => patchTable(selectedTable.id, { name: e.target.value })} size="small" fullWidth inputProps={{ "data-testid": "fe-table-name-input" }} />
-                      <div className="menu-minmax">
-                        <TextField label="Số chỗ" value={String(selectedTable.seats)} onChange={(e) => patchTable(selectedTable.id, { seats: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Xoay (°)" value={String(selectedTable.rotation)} onChange={(e) => patchTable(selectedTable.id, { rotation: toInt(e.target.value) % 360 })} size="small" inputProps={{ inputMode: "numeric" }} />
-                      </div>
+                      <TextField label="Số chỗ" value={String(selectedTable.seats)} onChange={(e) => patchTable(selectedTable.id, { seats: toInt(e.target.value) })} size="small" fullWidth inputProps={{ inputMode: "numeric" }} />
                       <div className="menu-field">
                         <span className="emp-field-label">Hình dạng</span>
                         <div className="emp-segment">
@@ -5141,12 +5224,6 @@ function FloorEditorDrawer() {
                             </button>
                           ))}
                         </div>
-                      </div>
-                      <div className="menu-minmax">
-                        <TextField label="X" value={String(selectedTable.posX)} onChange={(e) => patchTable(selectedTable.id, { posX: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Y" value={String(selectedTable.posY)} onChange={(e) => patchTable(selectedTable.id, { posY: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Rộng" value={String(selectedTable.width)} onChange={(e) => patchTable(selectedTable.id, { width: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Cao" value={String(selectedTable.height)} onChange={(e) => patchTable(selectedTable.id, { height: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
                       </div>
                       <div className="menu-field">
                         <span className="emp-field-label">Khu vực</span>
@@ -5163,7 +5240,29 @@ function FloorEditorDrawer() {
                       <Button variant="outlined" color={selectedTable.deleted ? "primary" : "error"} startIcon={selectedTable.deleted ? <RotateCcw size={15} /> : <Trash2 size={15} />} onClick={() => toggleDeleteTable(selectedTable.id)}>
                         {selectedTable.deleted ? "Khôi phục bàn" : "Xoá bàn"}
                       </Button>
-                      <p className="muted">Chỉ chỉnh vị trí và kích thước; trạng thái bàn lấy từ đơn đang mở.</p>
+                      <p className="muted">Trạng thái bàn lấy từ đơn đang mở.</p>
+
+                      <button
+                        type="button"
+                        className={`menu-advanced-toggle${advancedOpen ? " open" : ""}`}
+                        aria-expanded={advancedOpen}
+                        onClick={() => setAdvancedOpen((v) => !v)}
+                      >
+                        <ChevronRight size={15} className="menu-advanced-caret" />
+                        Nâng cao
+                        <span className="muted">Vị trí · kích thước · xoay</span>
+                      </button>
+                      {advancedOpen && (
+                        <div className="menu-advanced-body">
+                          <div className="menu-minmax">
+                            <TextField label="X" value={String(selectedTable.posX)} onChange={(e) => patchTable(selectedTable.id, { posX: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Y" value={String(selectedTable.posY)} onChange={(e) => patchTable(selectedTable.id, { posY: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Rộng" value={String(selectedTable.width)} onChange={(e) => patchTable(selectedTable.id, { width: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Cao" value={String(selectedTable.height)} onChange={(e) => patchTable(selectedTable.id, { height: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                          </div>
+                          <TextField label="Xoay (°)" value={String(selectedTable.rotation)} onChange={(e) => patchTable(selectedTable.id, { rotation: toInt(e.target.value) % 360 })} size="small" fullWidth inputProps={{ inputMode: "numeric" }} />
+                        </div>
+                      )}
                     </>
                   ) : selectedDecor ? (
                     <>
@@ -5175,24 +5274,38 @@ function FloorEditorDrawer() {
                           ))}
                         </div>
                       </div>
-                      <TextField label="Mã trang trí" value={selectedDecor.assetKey} onChange={(e) => patchDecor(selectedDecor.id, { assetKey: e.target.value })} size="small" fullWidth />
                       <TextField label="Nhãn" value={selectedDecor.label ?? ""} onChange={(e) => patchDecor(selectedDecor.id, { label: e.target.value })} size="small" fullWidth />
-                      <div className="menu-minmax">
-                        <TextField label="X" value={String(selectedDecor.posX)} disabled={selectedDecor.isLocked} onChange={(e) => patchDecor(selectedDecor.id, { posX: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Y" value={String(selectedDecor.posY)} disabled={selectedDecor.isLocked} onChange={(e) => patchDecor(selectedDecor.id, { posY: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Rộng" value={String(selectedDecor.width)} onChange={(e) => patchDecor(selectedDecor.id, { width: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Cao" value={String(selectedDecor.height)} onChange={(e) => patchDecor(selectedDecor.id, { height: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                      </div>
-                      <div className="menu-minmax">
-                        <TextField label="Xoay (°)" value={String(selectedDecor.rotation)} onChange={(e) => patchDecor(selectedDecor.id, { rotation: toInt(e.target.value) % 360 })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Lớp hiển thị" value={String(selectedDecor.zIndex)} onChange={(e) => patchDecor(selectedDecor.id, { zIndex: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                      </div>
                       <button className={`menu-mini-btn wide${selectedDecor.isLocked ? " on" : ""}`} onClick={() => patchDecor(selectedDecor.id, { isLocked: !selectedDecor.isLocked })}>
                         {selectedDecor.isLocked ? <Lock size={14} /> : <Unlock size={14} />} {selectedDecor.isLocked ? "Đã khoá (không kéo)" : "Khoá vị trí"}
                       </button>
                       <Button variant="outlined" color={selectedDecor.deleted ? "primary" : "error"} startIcon={selectedDecor.deleted ? <RotateCcw size={15} /> : <Trash2 size={15} />} onClick={() => toggleDeleteDecor(selectedDecor.id)}>
                         {selectedDecor.deleted ? "Khôi phục" : "Xoá trang trí"}
                       </Button>
+
+                      <button
+                        type="button"
+                        className={`menu-advanced-toggle${advancedOpen ? " open" : ""}`}
+                        aria-expanded={advancedOpen}
+                        onClick={() => setAdvancedOpen((v) => !v)}
+                      >
+                        <ChevronRight size={15} className="menu-advanced-caret" />
+                        Nâng cao
+                        <span className="muted">Vị trí · kích thước · lớp</span>
+                      </button>
+                      {advancedOpen && (
+                        <div className="menu-advanced-body">
+                          <div className="menu-minmax">
+                            <TextField label="X" value={String(selectedDecor.posX)} disabled={selectedDecor.isLocked} onChange={(e) => patchDecor(selectedDecor.id, { posX: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Y" value={String(selectedDecor.posY)} disabled={selectedDecor.isLocked} onChange={(e) => patchDecor(selectedDecor.id, { posY: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Rộng" value={String(selectedDecor.width)} onChange={(e) => patchDecor(selectedDecor.id, { width: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Cao" value={String(selectedDecor.height)} onChange={(e) => patchDecor(selectedDecor.id, { height: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                          </div>
+                          <div className="menu-minmax">
+                            <TextField label="Xoay (°)" value={String(selectedDecor.rotation)} onChange={(e) => patchDecor(selectedDecor.id, { rotation: toInt(e.target.value) % 360 })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Lớp hiển thị" value={String(selectedDecor.zIndex)} onChange={(e) => patchDecor(selectedDecor.id, { zIndex: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                          </div>
+                        </div>
+                      )}
                     </>
                   ) : currentArea ? (
                     <>
@@ -5240,8 +5353,8 @@ function FloorEditorDrawer() {
       {confirmCancel && (
         <div className="confirm-overlay" onClick={() => setConfirmCancel(false)}>
           <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
-            <h3>Bỏ thay đổi?</h3>
-            <p>Các chỉnh sửa sơ đồ chưa lưu sẽ bị huỷ.</p>
+            <h3>Bỏ thay đổi sơ đồ?</h3>
+            <p>Các thay đổi chưa lưu sẽ bị huỷ.</p>
             <div className="confirm-actions">
               <Button variant="outlined" onClick={() => setConfirmCancel(false)}>Ở lại</Button>
               <Button variant="contained" color="error" onClick={() => { setConfirmCancel(false); closeDrawer(); }}>Bỏ thay đổi</Button>
@@ -5483,9 +5596,13 @@ function ReportSettingsDrawer() {
               />
             </div>
           )}
-          <Button variant="outlined" startIcon={<Download size={15} />} onClick={() => toast("Xuất báo cáo sẽ làm sau.")}>
-            Xuất
-          </Button>
+          <Tooltip title="Chưa hỗ trợ">
+            <span>
+              <Button variant="outlined" startIcon={<Download size={15} />} disabled>
+                Xuất
+              </Button>
+            </span>
+          </Tooltip>
           <Button variant="outlined" onClick={closeDrawer}>Đóng</Button>
         </div>
       </header>
@@ -5553,6 +5670,23 @@ function ReportSettingsDrawer() {
                   <div className="tw-empty-state">
                     <BarChart3 size={32} color="#94a3b8" />
                     <p>Chưa có đơn đã thanh toán trong khoảng này.</p>
+                    {range === "today" ? (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<RefreshCw size={15} />}
+                        onClick={() => {
+                          reportQueries.forEach((query) => void query.refetch());
+                          void reportHistoryQuery.refetch();
+                        }}
+                      >
+                        Làm mới
+                      </Button>
+                    ) : (
+                      <Button variant="outlined" size="small" onClick={() => setRange("today")}>
+                        Xem hôm nay
+                      </Button>
+                    )}
                   </div>
                 </>
               ) : section === "overview" ? (
@@ -5673,6 +5807,7 @@ function ReportSettingsDrawer() {
                 })()
               ) : (
                 <>
+                  <p className="rp-detail-hint muted">Chọn mốc thời gian hoặc món để xem chi tiết.</p>
                   <div className="rp-detail-card">
                     <div className="rp-card-head">Tổng quan nhanh</div>
                     <div className="tw-detail-row"><span>Giờ cao điểm</span><strong>{hasData ? maxHour.label : "—"}</strong></div>

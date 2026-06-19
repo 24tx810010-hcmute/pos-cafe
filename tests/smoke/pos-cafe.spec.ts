@@ -63,7 +63,7 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await page.getByTestId("report-settings").getByRole("button", { name: "7 ngày" }).click();
   await expect(page.getByTestId("report-settings").getByText("Doanh thu", { exact: true })).toBeVisible();
 
-  await page.locator(".rail-action").filter({ hasText: "NV" }).click();
+  await page.locator(".rail-action").filter({ hasText: "Nhân viên" }).click();
   await expect(page.getByTestId("employees-drawer")).toBeVisible();
   await expect(page.getByTestId("add-employee-button")).toBeVisible();
 
@@ -71,7 +71,7 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await expect(page.getByTestId("kitchen-drawer")).toBeVisible();
   await page.getByTestId("kitchen-done-kt-1").click();
 
-  await page.locator(".rail-action").filter({ hasText: "TT/QR" }).click();
+  await page.locator(".rail-action").filter({ hasText: "Thanh toán" }).click();
   const payDrawer = page.getByTestId("payment-settings-drawer");
   await expect(payDrawer).toBeVisible();
   await expect(page.getByTestId("save-payment-button")).toBeVisible();
@@ -94,8 +94,8 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
     await expect(settingsNavTab).toBeVisible();
     await settingsNavTab.click();
   }
-  await expect(settingsDrawer.getByRole("button", { name: "Demo", exact: true })).toBeVisible();
-  await settingsDrawer.getByRole("button", { name: "Demo", exact: true }).click();
+  await expect(settingsDrawer.getByRole("button", { name: "Dữ liệu mẫu", exact: true })).toBeVisible();
+  await settingsDrawer.getByRole("button", { name: "Dữ liệu mẫu", exact: true }).click();
   await page.getByTestId("open-clear-demo").click();
   await expect(page.getByTestId("clear-demo-dialog")).toBeVisible();
   expect(page.url()).toBe(initialUrl);
