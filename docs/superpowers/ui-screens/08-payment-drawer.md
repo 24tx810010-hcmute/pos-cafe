@@ -19,10 +19,10 @@
   - "Thanh toan - Don #..."
   - Close, optional print preview.
   - Primary button "Hoan tat".
-- Body 3 vung:
-  - Trai: order info/table/customer type.
-  - Giua: item snapshot/list bill.
-  - Phai: payment panel.
+- Body toi da 2 pane:
+  - Main: bill snapshot/list with order info folded into header or summary rows.
+  - Side: payment panel.
+  - Do not keep a separate order-info pane.
 - Payment panel:
   - Tong tien large.
   - Input "Tien khach dua".
@@ -49,7 +49,7 @@
 
 ## Responsive
 
-- Desktop/tablet: 3 vung, payment panel right sticky.
+- Desktop/tablet: 2 pane, payment controls right sticky.
 - Phone landscape: right panel visible, amount buttons wrap without overflow; Hoan tat visible.
 - Portrait: rotate guidance.
 

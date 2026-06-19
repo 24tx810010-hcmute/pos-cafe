@@ -299,7 +299,7 @@ Tasks:
   - decor built-in asset picker: plant/wall/counter/door/decor
   - Save không ghi đè `tables.status`.
 - Responsive editor:
-  - giữ 3 vùng trên landscape
+  - giữ tối đa 2 pane trên landscape
   - pane scroll riêng
   - phone landscape vẫn đủ Save.
 

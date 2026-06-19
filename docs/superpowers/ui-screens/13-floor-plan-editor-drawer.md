@@ -20,10 +20,10 @@
   - Area tabs: Tang tret, Lau 1, Them khu.
   - Dirty badge.
   - Buttons: "Huy", "Luu layout mock".
-- Body 3 vung:
-  - Trai: tools/library.
-  - Giua: canvas stage 1600x900 scale-to-fit.
-  - Phai: properties panel.
+- Body toi da 2 pane:
+  - Main: toolbar plus canvas stage 1600x900 scale-to-fit.
+  - Side: inspector/properties panel.
+  - Tools/library must live in toolbar or collapsed sections, not a third pane.
 - Tools/library:
   - Select, Pan, Table, Decor.
   - Table shapes: round, square, rectangle.

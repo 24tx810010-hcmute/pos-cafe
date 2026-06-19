@@ -20,10 +20,10 @@
   - Title "Lich su don".
   - Date range compact: Hom nay, 7 ngay, Thang nay, Tuy chon.
   - Search input "Tim ma don / ban".
-- Body 3 vung:
-  - Trai: filters status/payment type/order type.
-  - Giua: table/list orders.
-  - Phai: selected order detail.
+- Body toi da 2 pane:
+  - Main: table/list orders with status/payment/type filters in toolbar tabs.
+  - Side: selected order detail.
+  - Filter controls must not become a third pane.
 - Table columns:
   - Gio, Ma don, Ban/Mang di, Tong tien, Trang thai, Nhan vien.
 - Detail:

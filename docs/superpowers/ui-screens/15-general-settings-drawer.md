@@ -19,10 +19,10 @@
   - "Cai dat chung".
   - Dirty badge.
   - Buttons: "Huy", "Luu cai dat mock".
-- Body 3 vung:
-  - Trai: settings nav (Thong tin, Hoa don, He thong, Demo).
-  - Giua: form sections.
-  - Phai: preview.
+- Body toi da 2 pane:
+  - Main: settings section tabs plus form sections.
+  - Side: preview only when useful.
+  - Settings nav must not become a third pane.
 - Form fields:
   - Ten hien thi quan.
   - Dia chi.
@@ -50,7 +50,7 @@
 
 ## Responsive
 
-- Desktop: 3 vung.
+- Desktop: toi da 2 pane; filter/status/category khong thanh pane thu ba.
 - Tablet: preview right narrower.
 - Phone landscape: nav compact tabs, preview collapsible, save visible.
 - Portrait: rotate guidance.

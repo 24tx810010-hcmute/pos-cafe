@@ -5,13 +5,14 @@ Give this file to the Core POS implementer/Claude. It is the only entrypoint the
 ## Required Reading Order
 
 1. `shared-rules.md`
-2. `two-column-layout-rules.md`
-3. `visual-acceptance-checklist.md`
-4. `core/01-preauth-shell.md`
-5. `core/02-pos-floor.md`
-6. `core/03-order-drawer.md`
-7. `core/04-payment-drawer.md`
-8. `core/05-takeaway.md`
+2. `tailwind-first-rules.md`
+3. `two-column-layout-rules.md`
+4. `visual-acceptance-checklist.md`
+5. `core/01-preauth-shell.md`
+6. `core/02-pos-floor.md`
+7. `core/03-order-drawer.md`
+8. `core/04-payment-drawer.md`
+9. `core/05-takeaway.md`
 
 If you cannot access these files, stop and ask for them. Do not infer the redesign from memory.
 
@@ -68,6 +69,9 @@ Also run these static checks and fix user-visible issues:
 ```powershell
 rg -n "mock|Supabase|DB|MVP|placeholder|seed|tombstone|config|raw Store Key|paid order|void|Draft|Dine-in" src/app src/styles.css
 rg -n "three-pane|payment-three-pane|menu-three-pane|rp-three-pane|fe-three-pane" src/app/App.tsx src/styles.css
+rg -n "^[ \t]*(display|width|height|padding|margin|border|background|color|font|grid|flex|position|top|right|bottom|left|box-shadow|text-|line-height|overflow|opacity|cursor|transition|align|justify|gap|z-index|transform|outline|min-|max-|place-|white-space|vertical-align|border-radius|border-color|border-style|border-width|box-sizing|resize|pointer-events|object-fit|letter-spacing):" src/styles.css
+rg -n "@apply" src/styles.css
 ```
 
 A touched Core POS screen must not remain on `.three-pane` or `.payment-three-pane`.
+A touched Core POS screen must not add plain custom CSS declarations. Use Tailwind utilities or Tailwind `@apply`.

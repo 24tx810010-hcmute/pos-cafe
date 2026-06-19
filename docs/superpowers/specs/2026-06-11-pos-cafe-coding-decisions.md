@@ -37,7 +37,7 @@
 - App body/shell không phải vùng scroll chính; shell/drawer cố định theo viewport.
 - Header/action bar của module sticky; từng pane nội dung tự `overflow: auto`.
 - MUI dùng cho controls phổ biến: Button, Input, Dialog, Tabs, Table.
-- Tailwind/custom CSS dùng cho layout, POS surface, floor plan, dense dashboard.
+- Tailwind-first dùng cho layout, POS surface, floor plan, dense dashboard. Không sinh thêm plain custom CSS cho layout UI; dùng Tailwind utilities hoặc `@apply`, chỉ giữ CSS raw cho token, keyframes, viewport guards, MUI descendant override, hoặc floor-stage runtime behavior.
 - Form dùng **React Hook Form + Zod**.
 - UI mặc định dùng tiếng Việt.
 - Primary color MVP: teal `#0F766E`; neutral modern palette, reusable beyond cafe.
@@ -47,11 +47,8 @@
   - large desktop: `80-90vw`, max around `1440px`
   - medium/tablet: `90-96vw`
   - small width: `100vw`
-- Module layout giữ cùng mental model 3 vùng trên mọi màn ngang:
-  - trái: category/filter/navigation dọc, scroll riêng
-  - giữa: content chính như menu items, floor canvas, report table/chart
-  - phải: selected item/cart/payment summary/properties, scroll riêng
-- Order drawer dùng category trái, menu grid giữa, cart panel phải; cart footer tổng tiền + nút chính sticky dưới.
+- Module layout demo giữ tối đa 2 pane chính trên mọi màn ngang; filter/category/status chuyển thành toolbar, tabs, accordion, hoặc inline summary thay vì pane thứ ba.
+- Order drawer dùng menu/catalog + cart; category là top tabs/segment, cart footer tổng tiền + nút chính sticky dưới.
 - Admin editor drawers dùng split-pane/pane scroll riêng; phone landscape vẫn đủ chức năng, chỉ compact spacing/width.
 - Floor view/editor dùng pan/zoom canvas riêng, không dựa vào page scroll.
 - UI reference source: `docs/superpowers/ui-prototype/pos-cafe-ui-reference.html`; screenshot: `docs/superpowers/assets/pos-cafe-ui-overview.png`.

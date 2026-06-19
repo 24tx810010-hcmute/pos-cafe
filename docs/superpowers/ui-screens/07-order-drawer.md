@@ -20,10 +20,10 @@
   - Title: "Ban B01 - Don #..." hoac "Mang di - Draft moi".
   - Chips: dine-in/takeaway, lock version mock, sync status.
   - Actions: "Dong", "Thanh toan" neu existing no dirty, "In/Gui don".
-- Body 3 vung:
-  - Trai: vertical categories (Ca phe, Tra, Da xay, Banh).
-  - Giua: menu grid cards.
-  - Phai: cart summary.
+- Body toi da 2 pane:
+  - Main: category tabs/segment plus menu grid cards.
+  - Side: cart summary.
+  - Category/filter controls must not become a third pane.
 - Menu item card:
   - Ten mon, gia, category, availability.
   - Placeholder image/icon hoac color swatch.

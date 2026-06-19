@@ -19,10 +19,10 @@
   - Title "Don mang di".
   - Button "Tao don mang di".
   - Filter chips: Dang mo, Da thanh toan, Hom nay.
-- Body 3 vung:
-  - Trai: filters/time buckets.
-  - Giua: list/table order cards.
-  - Phai: selected takeaway detail.
+- Body toi da 2 pane:
+  - Main: list/table order cards with filters/time buckets in toolbar tabs.
+  - Side: selected takeaway detail.
+  - Filter controls must not become a third pane.
 - Order card:
   - Order no, time, item count, total, status.
   - Actions: "Mo don", "Thanh toan".

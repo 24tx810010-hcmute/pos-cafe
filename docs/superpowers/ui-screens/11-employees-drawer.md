@@ -18,10 +18,10 @@
 - Header sticky:
   - "Quan ly nhan vien".
   - Button "Them nhan vien".
-- Body 3 vung:
-  - Trai: role filters Admin, Thu ngan, Bep, Tam khoa.
-  - Giua: employee table/cards.
-  - Phai: form detail/properties.
+- Body toi da 2 pane:
+  - Main: employee table/cards with role filters in toolbar tabs.
+  - Side: form detail/properties.
+  - Role filters must not become a third pane.
 - Employee row/card:
   - Avatar initials, name, role, active status, last unlock mock.
   - Actions: edit, reset PIN, lock/unlock.
@@ -46,7 +46,7 @@
 
 ## Responsive
 
-- Desktop: 3 vung ro.
+- Desktop: toi da 2 pane ro; filter/status/category khong thanh pane thu ba.
 - Tablet: filters narrow, form right 320px.
 - Phone landscape: form can become right drawer tab; save button sticky visible.
 - Portrait: rotate guidance.

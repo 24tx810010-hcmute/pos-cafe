@@ -22,10 +22,10 @@
 - Subheader/filter:
   - Area tabs: Tang tret, Lau 1, San vuon optional.
   - Status chips: Tat ca, Trong, Dang phuc vu.
-- Body 3 vung:
-  - Trai: danh sach khu/legend/table summary.
-  - Giua: floor canvas logical 1600x900 scale-to-fit.
-  - Phai: open orders / takeaway summary / recent activity.
+- Body toi da 2 pane:
+  - Main: floor canvas logical 1600x900 scale-to-fit.
+  - Side: open orders / takeaway summary / recent activity.
+  - Area tabs, legend, and status filters live in toolbar or inline summary, not a separate pane.
 - Canvas:
   - Ban co shape round/square/rectangle, ten ban, seats, status.
   - Decor: plant/wall/counter/door render nhe, khong click order.
@@ -48,7 +48,7 @@
 
 ## Responsive
 
-- Desktop: 3 vung ro.
+- Desktop: toi da 2 pane ro; filter/status/category khong thanh pane thu ba.
 - Tablet: left compact, right narrower.
 - Phone landscape: canvas chiem trung tam, side panes co the collapse thanh tabs/rail nho nhung van truy cap du.
 - Portrait: rotate guidance.

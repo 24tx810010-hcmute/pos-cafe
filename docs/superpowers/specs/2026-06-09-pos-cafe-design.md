@@ -221,8 +221,8 @@ UI target:
 - UI mặc định dùng tiếng Việt.
 - App shell dùng left rail (icon + label) để chuyển module.
 - App body/shell không scroll tự do; drawer/module cố định theo viewport, header/action bar sticky, từng pane nội dung tự `overflow: auto`.
-- Trên mọi màn ngang, module giữ cùng mental model 3 vùng: trái là category/filter/navigation dọc, giữa là nội dung chính, phải là detail/cart/payment summary/properties.
-- POS order screen dùng category dọc bên trái, menu item grid ở giữa, cart/order summary bên phải; cart item list scroll riêng, tổng tiền + nút chính sticky dưới.
+- Trên mọi màn ngang, module demo giữ tối đa 2 pane chính; category/filter/navigation/status nằm trong toolbar, tabs, accordion, hoặc inline summary thay vì pane thứ ba.
+- POS order screen dùng category tabs/toolbar, menu/catalog pane và cart/order summary pane; cart item list scroll riêng, tổng tiền + nút chính sticky dưới.
 - Admin editor dùng split-pane cùng mô hình: danh sách/canvas ở vùng chính, panel thuộc tính bên phải; phone landscape vẫn đủ chức năng nhưng compact hơn.
 - Floor view/editor dùng pan/zoom canvas riêng, không phụ thuộc page scroll.
 - UI responsive reference: `docs/superpowers/ui-prototype/pos-cafe-responsive-shell.html`; kiểm tra tablet/phone landscape bằng `docs/superpowers/assets/pos-cafe-ui-tablet-1024x600.png`, `docs/superpowers/assets/pos-cafe-ui-phone-844x390.png`, và `docs/superpowers/assets/pos-cafe-ui-phone-740x360.png`.

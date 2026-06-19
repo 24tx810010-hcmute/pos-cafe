@@ -20,6 +20,9 @@ Use this file for both implementers. Read it before any screen-specific file.
 - Keep UI/features calling existing hooks and ports.
 - Do not import Supabase client, Supabase row shapes, store keys, or adapter internals into UI code.
 - Main UI files are `src/app/App.tsx` and `src/styles.css`.
+- Read `tailwind-first-rules.md` before changing any UI file.
+- Styling must be Tailwind-first. Use JSX Tailwind utilities or Tailwind `@apply` for shared legacy selectors.
+- Do not add new plain custom CSS for normal layout, spacing, borders, colors, cards, drawers, lists, tables, or buttons.
 - You may split components only when it reduces real complexity and keeps behavior unchanged.
 - Preserve existing business behavior: store pairing, PIN login, order submit, payment, editor save, report, and admin mutations.
 
@@ -83,6 +86,9 @@ Static checks before reporting:
 ```powershell
 rg -n "mock|Supabase|DB|MVP|placeholder|seed|tombstone|config|raw Store Key|paid order|void|Draft|Dine-in" src/app src/styles.css
 rg -n "three-pane|payment-three-pane|menu-three-pane|rp-three-pane|fe-three-pane" src/app/App.tsx src/styles.css
+rg -n "^[ \t]*(display|width|height|padding|margin|border|background|color|font|grid|flex|position|top|right|bottom|left|box-shadow|text-|line-height|overflow|opacity|cursor|transition|align|justify|gap|z-index|transform|outline|min-|max-|place-|white-space|vertical-align|border-radius|border-color|border-style|border-width|box-sizing|resize|pointer-events|object-fit|letter-spacing):" src/styles.css
+rg -n "@apply" src/styles.css
 ```
 
 The second command may find legacy CSS/classes only if they are unused by touched screens. Do not keep a touched screen on a 3-pane layout.
+The third command should only find approved CSS exception areas, usually `:root` or documented floor-stage/runtime styling. Normal screen styling must be Tailwind utilities or `@apply`.

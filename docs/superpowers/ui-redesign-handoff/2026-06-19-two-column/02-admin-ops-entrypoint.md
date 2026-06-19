@@ -5,13 +5,14 @@ Give this file to the Admin/Ops implementer/Claude. It is the only entrypoint th
 ## Required Reading Order
 
 1. `shared-rules.md`
-2. `two-column-layout-rules.md`
-3. `visual-acceptance-checklist.md`
-4. `admin/01-history-employees-kitchen.md`
-5. `admin/02-menu-editor.md`
-6. `admin/03-floor-editor.md`
-7. `admin/04-report-settings-payment.md`
-8. `admin/05-dialogs-copy-cleanup.md`
+2. `tailwind-first-rules.md`
+3. `two-column-layout-rules.md`
+4. `visual-acceptance-checklist.md`
+5. `admin/01-history-employees-kitchen.md`
+6. `admin/02-menu-editor.md`
+7. `admin/03-floor-editor.md`
+8. `admin/04-report-settings-payment.md`
+9. `admin/05-dialogs-copy-cleanup.md`
 
 If you cannot access these files, stop and ask for them. Do not infer the redesign from memory.
 
@@ -73,6 +74,9 @@ Also run these static checks and fix user-visible issues:
 ```powershell
 rg -n "mock|Supabase|DB|MVP|placeholder|seed|tombstone|config|raw Store Key|paid order|void|Draft|Dine-in" src/app src/styles.css
 rg -n "three-pane|payment-three-pane|menu-three-pane|rp-three-pane|fe-three-pane" src/app/App.tsx src/styles.css
+rg -n "^[ \t]*(display|width|height|padding|margin|border|background|color|font|grid|flex|position|top|right|bottom|left|box-shadow|text-|line-height|overflow|opacity|cursor|transition|align|justify|gap|z-index|transform|outline|min-|max-|place-|white-space|vertical-align|border-radius|border-color|border-style|border-width|box-sizing|resize|pointer-events|object-fit|letter-spacing):" src/styles.css
+rg -n "@apply" src/styles.css
 ```
 
 A touched Admin/Ops screen must not remain on `.three-pane`, `.menu-three-pane`, `.rp-three-pane`, or `.fe-three-pane`.
+A touched Admin/Ops screen must not add plain custom CSS declarations. Use Tailwind utilities or Tailwind `@apply`.

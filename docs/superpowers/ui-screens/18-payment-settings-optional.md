@@ -18,10 +18,10 @@
 - Header:
   - "Cai dat thanh toan".
   - Buttons "Huy", "Luu mock".
-- Body 3 vung:
-  - Trai: payment methods nav (Tien mat, QR, Chuyen khoan, Khac).
-  - Giua: form config.
-  - Phai: bill/payment preview.
+- Body toi da 2 pane:
+  - Main: payment method tabs plus config form.
+  - Side: bill/payment preview only when useful.
+  - Method navigation must not become a third pane.
 - Form fields:
   - Cash enabled toggle (on/disabled).
   - Bank name, account no, account holder.

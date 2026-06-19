@@ -34,7 +34,7 @@ git ls-tree -r --name-only HEAD | rg "^(docs/|pos-cafe-context\.md)"
 - Ngon ngu UI: tieng Viet.
 - Style: POS van hanh, day du thong tin, de scan, khong lam landing marketing.
 - Primary color: teal `#0F766E`; neutral surfaces, slate text, warning/error ro rang.
-- Dung MUI controls cho Button/Input/Dialog/Tabs/Table neu phu hop; layout co the dung Tailwind/CSS.
+- Dung MUI controls cho Button/Input/Dialog/Tabs/Table neu phu hop; layout phai dung Tailwind-first. Khong sinh plain custom CSS cho layout UI; dung Tailwind utilities hoac `@apply`, chi giu CSS raw cho token/keyframes/viewport guard/MUI override/floor-stage runtime behavior.
 - Dung lucide icons trong button neu co icon phu hop.
 - Card radius toi da 8px; khong long card trong card.
 - Khong dung gradient/orb/bokeh lam nen.
@@ -49,10 +49,7 @@ git ls-tree -r --name-only HEAD | rg "^(docs/|pos-cafe-context\.md)"
   - Desktop lon: `80-90vw`, max khoang `1440px`.
   - Tablet/medium: `90-96vw`.
   - Small/phone landscape: `100vw`.
-- Mental model 3 vung tren landscape:
-  - Trai: navigation/filter/category.
-  - Giua: noi dung chinh.
-  - Phai: detail/cart/payment/properties.
+- Mental model toi da 2 pane chinh tren landscape. Navigation/filter/category/status phai nam trong toolbar, tabs, accordion, hoac inline summary thay vi pane thu ba.
 - Header/action bar sticky trong drawer; footer hanh dong quan trong sticky neu co tong tien/save/pay.
 
 ## Interactions

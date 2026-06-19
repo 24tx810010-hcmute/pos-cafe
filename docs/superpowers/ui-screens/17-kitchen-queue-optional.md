@@ -19,10 +19,10 @@
   - "Bep / Pha che".
   - Filters: Dang cho, Da xong, Tat ca.
   - Sync status mock.
-- Body 3 vung:
-  - Trai: station/filter (Tat ca, Pha che, Banh).
-  - Giua: queue cards by order.
-  - Phai: selected ticket detail.
+- Body toi da 2 pane:
+  - Main: station/filter tabs plus queue cards by order.
+  - Side: selected ticket detail.
+  - Station filters must not become a third pane.
 - Ticket card:
   - Order no, table/takeaway, elapsed time, items count.
   - Item lines with options and notes.
@@ -43,7 +43,7 @@
 
 ## Responsive
 
-- Desktop: 3 vung.
+- Desktop: toi da 2 pane; filter/status/category khong thanh pane thu ba.
 - Tablet/phone landscape: queue cards central, detail collapsible.
 - Portrait: rotate guidance.
 

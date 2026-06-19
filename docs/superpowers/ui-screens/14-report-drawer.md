@@ -19,10 +19,10 @@
   - "Bao cao".
   - Date filter: Hom nay, 7 ngay, Thang nay, Tuy chon.
   - Export button disabled/mock.
-- Body 3 vung:
-  - Trai: filter/navigation report sections.
-  - Giua: charts and tables.
-  - Phai: insights/detail.
+- Body toi da 2 pane:
+  - Main: section tabs plus charts and tables.
+  - Side: insights/detail only when useful.
+  - Report navigation/filter controls must not become a third pane.
 - Main metrics:
   - Doanh thu.
   - So don paid.

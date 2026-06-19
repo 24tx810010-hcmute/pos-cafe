@@ -20,10 +20,10 @@
   - Title "Menu Editor".
   - Dirty badge "Chua luu" khi co thay doi.
   - Buttons: "Huy", "Xem truoc", "Luu mock".
-- Body 3 vung:
-  - Trai: categories sortable list.
-  - Giua: menu item grid/list theo category.
-  - Phai: properties panel cho selected category/item/option.
+- Body toi da 2 pane:
+  - Main: category tabs/toolbar plus menu item grid/list.
+  - Side: properties panel for selected category/item/option.
+  - Category management must not become a third pane.
 - Category list:
   - Add category, rename, sort order, delete/tombstone visual.
 - Item grid:
