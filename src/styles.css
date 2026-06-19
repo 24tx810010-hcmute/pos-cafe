@@ -2406,6 +2406,9 @@ textarea {
 .emp-segment-btn:hover { border-color: var(--primary); }
 .emp-segment-btn.active { border-color: var(--primary-line); background: var(--primary-soft); color: var(--primary); }
 .emp-segment-btn.active.danger { border-color: #fecaca; background: #fef2f2; color: var(--danger); }
+.emp-segment-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.emp-segment-btn:disabled:hover { border-color: var(--line); }
+.emp-field-hint { font-size: 11.5px; color: var(--muted); }
 
 .emp-pin-section {
   display: grid;
@@ -2513,6 +2516,24 @@ textarea {
 .menu-cat-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu-cat-main .muted { font-size: 11px; }
 .menu-cat-actions { display: flex; gap: 6px; flex-shrink: 0; }
+/* Reorder/delete controls stay quiet until the row is hovered or active. */
+.menu-cat-row .menu-cat-actions { opacity: 0; transition: opacity 0.15s; }
+.menu-cat-row:hover .menu-cat-actions,
+.menu-cat-row.active .menu-cat-actions,
+.menu-cat-row.deleted .menu-cat-actions { opacity: 1; }
+@media (hover: none) {
+  .menu-cat-row .menu-cat-actions { opacity: 1; }
+}
+.menu-pending-del {
+  align-self: start;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--warning);
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  padding: 0 8px;
+}
 
 /* Item grid */
 .menu-item-grid {
@@ -2587,6 +2608,26 @@ textarea {
 /* Properties */
 .menu-props { display: grid; gap: 12px; align-content: start; }
 .menu-field { display: grid; gap: 6px; }
+.menu-advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: left;
+}
+.menu-advanced-toggle:hover { border-color: var(--primary); }
+.menu-advanced-toggle .muted { margin-left: auto; font-weight: 600; font-size: 11px; }
+.menu-advanced-caret { transition: transform 0.15s; flex-shrink: 0; }
+.menu-advanced-toggle.open .menu-advanced-caret { transform: rotate(90deg); }
+.menu-advanced-body { display: grid; gap: 12px; }
 .menu-tombstone {
   display: flex;
   align-items: center;
@@ -2784,6 +2825,7 @@ textarea {
 .rp-table td:last-child, .rp-table th:last-child { text-align: right; }
 
 .rp-detail { display: grid; gap: 12px; align-content: start; }
+.rp-detail-hint { font-size: 12px; margin: 0; }
 .rp-note {
   display: grid; gap: 3px;
   background: var(--primary-soft);

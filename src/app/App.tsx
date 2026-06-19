@@ -4,6 +4,7 @@ import {
   BarChart3,
   CheckCircle2,
   ChefHat,
+  ChevronRight,
   ClipboardList,
   Coffee,
   Copy,
@@ -1224,6 +1225,16 @@ function OrderHistoryDrawer() {
     }
   }, [historyQuery.data, page, totalPages]);
 
+  // Auto-select first available order so the detail pane is never idle on load.
+  // Keeps the current selection if it is still in the filtered list; re-picks the
+  // first row when data arrives or filters change so no stale detail lingers.
+  useEffect(() => {
+    if (filtered.length === 0) return;
+    if (selectedId && filtered.some((o) => o.id === selectedId)) return;
+    setSelectedId(filtered[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyQuery.data, statusFilter, orderTypeFilter, search]);
+
   const dateRangeChips: Array<{ key: HistoryDateRange; label: string }> = [
     { key: "today", label: "Hôm nay" },
     { key: "7days", label: "7 ngày" },
@@ -1401,7 +1412,7 @@ function OrderHistoryDrawer() {
                           key={o.id}
                           className={`hx-row${selectedId === o.id ? " selected" : ""}`}
                           data-testid={`history-row-${o.id}`}
-                          onClick={() => setSelectedId(selectedId === o.id ? null : o.id)}
+                          onClick={() => setSelectedId(o.id)}
                         >
                           <td className="muted">{o.createdAt}</td>
                           <td><strong>#{o.orderNo}</strong></td>
@@ -1424,7 +1435,7 @@ function OrderHistoryDrawer() {
                       <div
                         key={o.id}
                         className={`hx-history-card${selectedId === o.id ? " selected" : ""}`}
-                        onClick={() => setSelectedId(selectedId === o.id ? null : o.id)}
+                        onClick={() => setSelectedId(o.id)}
                       >
                         <div className="hx-hcard-top">
                           <strong>#{o.orderNo}</strong>
@@ -1541,7 +1552,7 @@ interface EmpForm {
   confirmPin: string;
 }
 
-const EMP_ROLE_LABEL: Record<EmployeeRole, string> = { admin: "Admin", cashier: "Thu ngân", kitchen: "Bếp" };
+const EMP_ROLE_LABEL: Record<EmployeeRole, string> = { admin: "Quản lý", cashier: "Thu ngân", kitchen: "Bếp" };
 const EMP_ROLE_ORDER: EmployeeRole[] = ["admin", "cashier", "kitchen"];
 const EMPTY_EMP_FORM: EmpForm = { name: "", role: "cashier", isActive: true, newPin: "", confirmPin: "" };
 
@@ -1650,7 +1661,7 @@ function EmployeesDrawer() {
 
   const filterChips: Array<{ key: EmpFilter; label: string }> = [
     { key: "all", label: "Tất cả" },
-    { key: "admin", label: "Admin" },
+    { key: "admin", label: "Quản lý" },
     { key: "cashier", label: "Thu ngân" },
     { key: "kitchen", label: "Bếp" },
     { key: "inactive", label: "Tạm khoá" },
@@ -1661,6 +1672,10 @@ function EmployeesDrawer() {
     ? "Lỗi tải nhân viên"
     : `${employees.length} nhân viên · online`;
   const pinResetEmployee = pinResetTarget ? employees.find((e) => e.id === pinResetTarget) : null;
+  const activeAdminCount = employees.filter((e) => e.role === "admin" && e.isActive).length;
+  // The store must always keep one active manager who can reach this screen.
+  const isLastActiveAdmin = (emp: Pick<EmployeeRecord, "role" | "isActive">) =>
+    emp.role === "admin" && emp.isActive && activeAdminCount <= 1;
 
   const toggleActive = (id: string) => {
     const target = employees.find((e) => e.id === id);
@@ -1673,6 +1688,10 @@ function EmployeesDrawer() {
     const nextActive = !target.isActive;
     if (!nextActive && currentEmployee?.id === id) {
       toast.error("Không thể tạm khoá tài khoản đang đăng nhập.");
+      return;
+    }
+    if (!nextActive && isLastActiveAdmin(target)) {
+      toast.error("Cần giữ ít nhất một quản lý đang hoạt động.");
       return;
     }
 
@@ -1705,6 +1724,10 @@ function EmployeesDrawer() {
     if (isSaving) return;
     if (selectedRecord && currentEmployee?.id === selectedRecord.id && !form.isActive) {
       toast.error("Không thể tạm khoá tài khoản đang đăng nhập.");
+      return;
+    }
+    if (selectedRecord && !form.isActive && isLastActiveAdmin(selectedRecord)) {
+      toast.error("Cần giữ ít nhất một quản lý đang hoạt động.");
       return;
     }
 
@@ -1930,25 +1953,41 @@ function EmployeesDrawer() {
                     </div>
                   </div>
 
-                  <div className="emp-field">
-                    <span className="emp-field-label">Trạng thái</span>
-                    <div className="emp-segment">
-                      <button
-                        className={`emp-segment-btn${form.isActive ? " active" : ""}`}
-                        data-testid="employee-active-button"
-                        onClick={() => setForm((f) => ({ ...f, isActive: true }))}
-                      >
-                        Đang hoạt động
-                      </button>
-                      <button
-                        className={`emp-segment-btn${form.isActive ? "" : " active danger"}`}
-                        data-testid="employee-inactive-button"
-                        onClick={() => setForm((f) => ({ ...f, isActive: false }))}
-                      >
-                        Tạm khoá
-                      </button>
-                    </div>
-                  </div>
+                  {(() => {
+                    const lockSelf = selectedRecord != null && currentEmployee?.id === selectedRecord.id;
+                    const lockLastAdmin = selectedRecord != null && isLastActiveAdmin(selectedRecord);
+                    const lockDisabled = lockSelf || lockLastAdmin;
+                    return (
+                      <div className="emp-field">
+                        <span className="emp-field-label">Trạng thái</span>
+                        <div className="emp-segment">
+                          <button
+                            className={`emp-segment-btn${form.isActive ? " active" : ""}`}
+                            data-testid="employee-active-button"
+                            onClick={() => setForm((f) => ({ ...f, isActive: true }))}
+                          >
+                            Đang hoạt động
+                          </button>
+                          <button
+                            className={`emp-segment-btn${form.isActive ? "" : " active danger"}`}
+                            data-testid="employee-inactive-button"
+                            disabled={lockDisabled}
+                            title={lockDisabled ? "Không thể tạm khoá tài khoản này" : undefined}
+                            onClick={() => setForm((f) => ({ ...f, isActive: false }))}
+                          >
+                            Tạm khoá
+                          </button>
+                        </div>
+                        {lockDisabled && (
+                          <span className="emp-field-hint">
+                            {lockSelf
+                              ? "Không thể tạm khoá tài khoản đang đăng nhập."
+                              : "Cần giữ ít nhất một quản lý đang hoạt động."}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <div className="emp-pin-section">
                     <div className="emp-field-label">{selectedId === "new" ? "Đặt PIN" : "Đặt lại PIN"}</div>
@@ -2070,7 +2109,7 @@ const INITIAL_PAYMENT: PaymentForm = {
   bankName: "",
   accountNo: "",
   accountHolder: "",
-  qrInfo: '{\n  "provider": "vietqr",\n  "bankBin": "970415",\n  "template": "compact"\n}',
+  qrInfo: "",
   showQrOnBill: false,
 };
 
@@ -2111,7 +2150,6 @@ function PaymentSettingsDrawer() {
     { key: "cash", label: "Tiền mặt", on: true },
     { key: "qr", label: "QR", on: form.qrEnabled },
     { key: "bank", label: "Chuyển khoản", on: form.bankEnabled },
-    { key: "other", label: "Khác", on: false, disabled: true },
   ];
 
   const tabBtn = (key: "nav" | "form" | "preview", label: string) => (
@@ -2201,20 +2239,22 @@ function PaymentSettingsDrawer() {
                     </div>
                   </div>
                   <TextField
-                    label="Thông tin QR"
+                    label="Nội dung hiển thị cạnh mã QR"
                     value={form.qrInfo}
                     onChange={(e) => patch({ qrInfo: e.target.value })}
+                    placeholder="VD: Quét mã để chuyển khoản"
+                    helperText="Chỉ là thông tin hiển thị trên hoá đơn in."
                     size="small"
                     fullWidth
                     multiline
-                    minRows={4}
+                    minRows={2}
                     disabled={!form.qrEnabled}
                     inputProps={{ "data-testid": "qr-info-input" }}
                   />
                   <button className={`menu-chip-toggle${form.showQrOnBill ? " on" : ""}`} disabled={!form.qrEnabled} onClick={() => patch({ showQrOnBill: !form.showQrOnBill })}>
                     {form.showQrOnBill ? "✓ Hiện QR trên hoá đơn" : "Hiện QR trên hoá đơn"}
                   </button>
-                  <p className="muted">QR chưa được kích hoạt cho thanh toán thực tế.</p>
+                  <p className="muted">Phương thức này chưa được kích hoạt cho thanh toán thực tế.</p>
                 </>
               ) : method === "bank" ? (
                 <>
@@ -2238,11 +2278,12 @@ function PaymentSettingsDrawer() {
                     inputProps={{ inputMode: "numeric", "data-testid": "account-no-input" }}
                   />
                   <TextField label="Chủ tài khoản" value={form.accountHolder} onChange={(e) => patch({ accountHolder: e.target.value })} size="small" fullWidth disabled={!form.bankEnabled} />
+                  <p className="muted">Thông tin tài khoản chỉ hiển thị trên hoá đơn; chưa kích hoạt thanh toán thực tế.</p>
                 </>
               ) : (
                 <div className="tw-empty-state">
                   <CreditCard size={30} color="#94a3b8" />
-                  <p>Phương thức khác chưa được bật.</p>
+                  <p>Phương thức này chưa được kích hoạt.</p>
                 </div>
               )}
             </div>
@@ -2278,7 +2319,7 @@ function PaymentSettingsDrawer() {
                 {form.qrEnabled && form.showQrOnBill && (
                   <div className="pay-qr-placeholder" data-testid="pay-qr-preview">
                     <QrCode size={64} />
-                    <span>QR mô phỏng</span>
+                    <span>{form.qrInfo.trim() || "Quét để thanh toán"}</span>
                   </div>
                 )}
 
@@ -2377,6 +2418,15 @@ function KitchenQueueDrawer() {
   const waitingCount = KITCHEN_TICKETS.filter((t) => statusOf(t.id) === "waiting").length;
   const doneCount = KITCHEN_TICKETS.filter((t) => statusOf(t.id) === "done").length;
   const selected = KITCHEN_TICKETS.find((t) => t.id === selectedId) ?? null;
+
+  // Keep the detail pane busy: auto-select the first ticket in the current filter
+  // (the first waiting ticket on open) and re-pick when the visible queue changes.
+  useEffect(() => {
+    if (tickets.length === 0) return;
+    if (selectedId && tickets.some((t) => t.id === selectedId)) return;
+    setSelectedId(tickets[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, station, statusById]);
 
   const statusChips: Array<{ key: KitchenStatusFilter; label: string; count: number }> = [
     { key: "waiting", label: "Đang chờ", count: waitingCount },
@@ -2538,7 +2588,7 @@ function KitchenQueueDrawer() {
   );
 }
 
-type SettingsSection = "info" | "bill" | "system" | "demo";
+type SettingsSection = "info" | "bill" | "demo";
 interface SettingsForm {
   displayName: string;
   address: string;
@@ -2560,8 +2610,6 @@ function GeneralSettingsDrawer() {
   const [nameError, setNameError] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
-
-  const timezone = settingsQuery.data?.timezone ?? "Asia/Saigon";
 
   useEffect(() => {
     if (settingsQuery.data && !seeded) {
@@ -2617,9 +2665,8 @@ function GeneralSettingsDrawer() {
   };
 
   const sections: Array<{ key: SettingsSection; label: string }> = [
-    { key: "info", label: "Thông tin" },
+    { key: "info", label: "Thông tin quán" },
     { key: "bill", label: "Hoá đơn" },
-    { key: "system", label: "Hệ thống" },
     { key: "demo", label: "Dữ liệu mẫu" },
   ];
 
@@ -2725,17 +2772,7 @@ function GeneralSettingsDrawer() {
                     </>
                   ) : section === "bill" ? (
                     <>
-                      <TextField label="Chân hoá đơn (bill footer)" value={form.billFooter} onChange={(e) => patch({ billFooter: e.target.value })} size="small" fullWidth multiline minRows={3} helperText="Hiển thị cuối hoá đơn in." />
-                    </>
-                  ) : section === "system" ? (
-                    <>
-                      <TextField label="Múi giờ" value={timezone} size="small" fullWidth disabled />
-                      <TextField label="Tiền tệ" value="VND" size="small" fullWidth disabled />
-                      <div className="fe-status-row">
-                        <span className="emp-field-label">Realtime</span>
-                        <span className="status-pill status-active">● online</span>
-                      </div>
-                      <p className="muted">Múi giờ và tiền tệ đang dùng cho toàn bộ hoá đơn.</p>
+                      <TextField label="Chân hoá đơn" value={form.billFooter} onChange={(e) => patch({ billFooter: e.target.value })} size="small" fullWidth multiline minRows={3} helperText="Hiển thị cuối hoá đơn in." />
                     </>
                   ) : (
                     <div className="set-demo-box">
@@ -4019,6 +4056,9 @@ function MenuEditorDrawer() {
   const [preview, setPreview] = useState(false);
   const [mobileTab, setMobileTab] = useState<MenuTab>("item");
   const [confirmCancel, setConfirmCancel] = useState(false);
+  // Advanced item fields (sort order + option groups) stay collapsed by default
+  // so the basic name/price/category/availability fields lead the props pane.
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const seedDraftFromMenu = (catalog: MenuCatalog) => {
     setBaseMenu(catalog);
@@ -4320,7 +4360,11 @@ function MenuEditorDrawer() {
                         >
                           <div className="menu-cat-main">
                             <strong>{c.name || "(chưa đặt tên)"}</strong>
-                            <span className="muted">{items.filter((i) => i.categoryId === c.id && !i.deleted).length} món</span>
+                            {c.deleted ? (
+                              <span className="menu-pending-del">Đang chờ xóa</span>
+                            ) : (
+                              <span className="muted">{items.filter((i) => i.categoryId === c.id && !i.deleted).length} món</span>
+                            )}
                           </div>
                           <div className="menu-cat-actions" onClick={(e) => e.stopPropagation()}>
                             <button className="menu-mini-btn" disabled={idx === 0} onClick={() => moveCategory(c.id, -1)}>↑</button>
@@ -4438,14 +4482,6 @@ function MenuEditorDrawer() {
                           ))}
                         </div>
                       </div>
-                      <TextField
-                        label="Thứ tự"
-                        value={String(selectedItem.sortOrder)}
-                        onChange={(e) => patchItem(selectedItem.id, { sortOrder: toInt(e.target.value) })}
-                        size="small"
-                        fullWidth
-                        inputProps={{ inputMode: "numeric" }}
-                      />
                       <div className="menu-field">
                         <span className="emp-field-label">Trạng thái</span>
                         <div className="emp-segment">
@@ -4455,10 +4491,32 @@ function MenuEditorDrawer() {
                       </div>
                       {selectedItem.deleted && (
                         <div className="menu-tombstone">
-                          Món đang đánh dấu xoá.
+                          Đang chờ xóa.
                           <button className="menu-mini-btn" onClick={() => toggleDeleteItem(selectedItem.id)}><RotateCcw size={13} /> Khôi phục</button>
                         </div>
                       )}
+
+                      <button
+                        type="button"
+                        className={`menu-advanced-toggle${advancedOpen ? " open" : ""}`}
+                        aria-expanded={advancedOpen}
+                        onClick={() => setAdvancedOpen((v) => !v)}
+                      >
+                        <ChevronRight size={15} className="menu-advanced-caret" />
+                        Nâng cao
+                        <span className="muted">Thứ tự · nhóm tuỳ chọn</span>
+                      </button>
+
+                      {advancedOpen && (
+                      <div className="menu-advanced-body">
+                      <TextField
+                        label="Thứ tự"
+                        value={String(selectedItem.sortOrder)}
+                        onChange={(e) => patchItem(selectedItem.id, { sortOrder: toInt(e.target.value) })}
+                        size="small"
+                        fullWidth
+                        inputProps={{ inputMode: "numeric" }}
+                      />
 
                       <div className="menu-section">
                         <div className="menu-section-head">
@@ -4513,6 +4571,8 @@ function MenuEditorDrawer() {
                           ))
                         )}
                       </div>
+                      </div>
+                      )}
                     </>
                   ) : selectedCategory ? (
                     <>
@@ -4536,8 +4596,8 @@ function MenuEditorDrawer() {
       {confirmCancel && (
         <div className="confirm-overlay" onClick={() => setConfirmCancel(false)}>
           <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
-            <h3>Bỏ thay đổi?</h3>
-            <p>Các chỉnh sửa menu chưa lưu sẽ bị huỷ.</p>
+            <h3>Bỏ thay đổi menu?</h3>
+            <p>Các chỉnh sửa chưa lưu sẽ bị huỷ.</p>
             <div className="confirm-actions">
               <Button variant="outlined" onClick={() => setConfirmCancel(false)}>Ở lại</Button>
               <Button variant="contained" color="error" onClick={() => { setConfirmCancel(false); closeDrawer(); }}>Bỏ thay đổi</Button>
@@ -4756,6 +4816,9 @@ function FloorEditorDrawer() {
   const [dirty, setDirty] = useState(false);
   const [mobileTab, setMobileTab] = useState<FloorTab>("canvas");
   const [confirmCancel, setConfirmCancel] = useState(false);
+  // Geometry/asset fields are secondary to name/seats/shape, so keep them folded
+  // away under an "Nâng cao" section until the admin needs precise control.
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ kind: "table" | "decor"; id: string; offX: number; offY: number } | null>(null);
@@ -5151,10 +5214,7 @@ function FloorEditorDrawer() {
                   {selectedTable ? (
                     <>
                       <TextField label="Tên bàn" value={selectedTable.name} onChange={(e) => patchTable(selectedTable.id, { name: e.target.value })} size="small" fullWidth inputProps={{ "data-testid": "fe-table-name-input" }} />
-                      <div className="menu-minmax">
-                        <TextField label="Số chỗ" value={String(selectedTable.seats)} onChange={(e) => patchTable(selectedTable.id, { seats: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Xoay (°)" value={String(selectedTable.rotation)} onChange={(e) => patchTable(selectedTable.id, { rotation: toInt(e.target.value) % 360 })} size="small" inputProps={{ inputMode: "numeric" }} />
-                      </div>
+                      <TextField label="Số chỗ" value={String(selectedTable.seats)} onChange={(e) => patchTable(selectedTable.id, { seats: toInt(e.target.value) })} size="small" fullWidth inputProps={{ inputMode: "numeric" }} />
                       <div className="menu-field">
                         <span className="emp-field-label">Hình dạng</span>
                         <div className="emp-segment">
@@ -5164,12 +5224,6 @@ function FloorEditorDrawer() {
                             </button>
                           ))}
                         </div>
-                      </div>
-                      <div className="menu-minmax">
-                        <TextField label="X" value={String(selectedTable.posX)} onChange={(e) => patchTable(selectedTable.id, { posX: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Y" value={String(selectedTable.posY)} onChange={(e) => patchTable(selectedTable.id, { posY: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Rộng" value={String(selectedTable.width)} onChange={(e) => patchTable(selectedTable.id, { width: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Cao" value={String(selectedTable.height)} onChange={(e) => patchTable(selectedTable.id, { height: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
                       </div>
                       <div className="menu-field">
                         <span className="emp-field-label">Khu vực</span>
@@ -5186,7 +5240,29 @@ function FloorEditorDrawer() {
                       <Button variant="outlined" color={selectedTable.deleted ? "primary" : "error"} startIcon={selectedTable.deleted ? <RotateCcw size={15} /> : <Trash2 size={15} />} onClick={() => toggleDeleteTable(selectedTable.id)}>
                         {selectedTable.deleted ? "Khôi phục bàn" : "Xoá bàn"}
                       </Button>
-                      <p className="muted">Chỉ chỉnh vị trí và kích thước; trạng thái bàn lấy từ đơn đang mở.</p>
+                      <p className="muted">Trạng thái bàn lấy từ đơn đang mở.</p>
+
+                      <button
+                        type="button"
+                        className={`menu-advanced-toggle${advancedOpen ? " open" : ""}`}
+                        aria-expanded={advancedOpen}
+                        onClick={() => setAdvancedOpen((v) => !v)}
+                      >
+                        <ChevronRight size={15} className="menu-advanced-caret" />
+                        Nâng cao
+                        <span className="muted">Vị trí · kích thước · xoay</span>
+                      </button>
+                      {advancedOpen && (
+                        <div className="menu-advanced-body">
+                          <div className="menu-minmax">
+                            <TextField label="X" value={String(selectedTable.posX)} onChange={(e) => patchTable(selectedTable.id, { posX: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Y" value={String(selectedTable.posY)} onChange={(e) => patchTable(selectedTable.id, { posY: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Rộng" value={String(selectedTable.width)} onChange={(e) => patchTable(selectedTable.id, { width: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Cao" value={String(selectedTable.height)} onChange={(e) => patchTable(selectedTable.id, { height: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                          </div>
+                          <TextField label="Xoay (°)" value={String(selectedTable.rotation)} onChange={(e) => patchTable(selectedTable.id, { rotation: toInt(e.target.value) % 360 })} size="small" fullWidth inputProps={{ inputMode: "numeric" }} />
+                        </div>
+                      )}
                     </>
                   ) : selectedDecor ? (
                     <>
@@ -5198,24 +5274,38 @@ function FloorEditorDrawer() {
                           ))}
                         </div>
                       </div>
-                      <TextField label="Mã trang trí" value={selectedDecor.assetKey} onChange={(e) => patchDecor(selectedDecor.id, { assetKey: e.target.value })} size="small" fullWidth />
                       <TextField label="Nhãn" value={selectedDecor.label ?? ""} onChange={(e) => patchDecor(selectedDecor.id, { label: e.target.value })} size="small" fullWidth />
-                      <div className="menu-minmax">
-                        <TextField label="X" value={String(selectedDecor.posX)} disabled={selectedDecor.isLocked} onChange={(e) => patchDecor(selectedDecor.id, { posX: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Y" value={String(selectedDecor.posY)} disabled={selectedDecor.isLocked} onChange={(e) => patchDecor(selectedDecor.id, { posY: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Rộng" value={String(selectedDecor.width)} onChange={(e) => patchDecor(selectedDecor.id, { width: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Cao" value={String(selectedDecor.height)} onChange={(e) => patchDecor(selectedDecor.id, { height: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                      </div>
-                      <div className="menu-minmax">
-                        <TextField label="Xoay (°)" value={String(selectedDecor.rotation)} onChange={(e) => patchDecor(selectedDecor.id, { rotation: toInt(e.target.value) % 360 })} size="small" inputProps={{ inputMode: "numeric" }} />
-                        <TextField label="Lớp hiển thị" value={String(selectedDecor.zIndex)} onChange={(e) => patchDecor(selectedDecor.id, { zIndex: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                      </div>
                       <button className={`menu-mini-btn wide${selectedDecor.isLocked ? " on" : ""}`} onClick={() => patchDecor(selectedDecor.id, { isLocked: !selectedDecor.isLocked })}>
                         {selectedDecor.isLocked ? <Lock size={14} /> : <Unlock size={14} />} {selectedDecor.isLocked ? "Đã khoá (không kéo)" : "Khoá vị trí"}
                       </button>
                       <Button variant="outlined" color={selectedDecor.deleted ? "primary" : "error"} startIcon={selectedDecor.deleted ? <RotateCcw size={15} /> : <Trash2 size={15} />} onClick={() => toggleDeleteDecor(selectedDecor.id)}>
                         {selectedDecor.deleted ? "Khôi phục" : "Xoá trang trí"}
                       </Button>
+
+                      <button
+                        type="button"
+                        className={`menu-advanced-toggle${advancedOpen ? " open" : ""}`}
+                        aria-expanded={advancedOpen}
+                        onClick={() => setAdvancedOpen((v) => !v)}
+                      >
+                        <ChevronRight size={15} className="menu-advanced-caret" />
+                        Nâng cao
+                        <span className="muted">Vị trí · kích thước · lớp</span>
+                      </button>
+                      {advancedOpen && (
+                        <div className="menu-advanced-body">
+                          <div className="menu-minmax">
+                            <TextField label="X" value={String(selectedDecor.posX)} disabled={selectedDecor.isLocked} onChange={(e) => patchDecor(selectedDecor.id, { posX: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Y" value={String(selectedDecor.posY)} disabled={selectedDecor.isLocked} onChange={(e) => patchDecor(selectedDecor.id, { posY: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Rộng" value={String(selectedDecor.width)} onChange={(e) => patchDecor(selectedDecor.id, { width: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Cao" value={String(selectedDecor.height)} onChange={(e) => patchDecor(selectedDecor.id, { height: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                          </div>
+                          <div className="menu-minmax">
+                            <TextField label="Xoay (°)" value={String(selectedDecor.rotation)} onChange={(e) => patchDecor(selectedDecor.id, { rotation: toInt(e.target.value) % 360 })} size="small" inputProps={{ inputMode: "numeric" }} />
+                            <TextField label="Lớp hiển thị" value={String(selectedDecor.zIndex)} onChange={(e) => patchDecor(selectedDecor.id, { zIndex: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
+                          </div>
+                        </div>
+                      )}
                     </>
                   ) : currentArea ? (
                     <>
@@ -5263,8 +5353,8 @@ function FloorEditorDrawer() {
       {confirmCancel && (
         <div className="confirm-overlay" onClick={() => setConfirmCancel(false)}>
           <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
-            <h3>Bỏ thay đổi?</h3>
-            <p>Các chỉnh sửa sơ đồ chưa lưu sẽ bị huỷ.</p>
+            <h3>Bỏ thay đổi sơ đồ?</h3>
+            <p>Các thay đổi chưa lưu sẽ bị huỷ.</p>
             <div className="confirm-actions">
               <Button variant="outlined" onClick={() => setConfirmCancel(false)}>Ở lại</Button>
               <Button variant="contained" color="error" onClick={() => { setConfirmCancel(false); closeDrawer(); }}>Bỏ thay đổi</Button>
@@ -5506,9 +5596,13 @@ function ReportSettingsDrawer() {
               />
             </div>
           )}
-          <Button variant="outlined" startIcon={<Download size={15} />} onClick={() => toast("Xuất báo cáo sẽ làm sau.")}>
-            Xuất
-          </Button>
+          <Tooltip title="Chưa hỗ trợ">
+            <span>
+              <Button variant="outlined" startIcon={<Download size={15} />} disabled>
+                Xuất
+              </Button>
+            </span>
+          </Tooltip>
           <Button variant="outlined" onClick={closeDrawer}>Đóng</Button>
         </div>
       </header>
@@ -5576,6 +5670,23 @@ function ReportSettingsDrawer() {
                   <div className="tw-empty-state">
                     <BarChart3 size={32} color="#94a3b8" />
                     <p>Chưa có đơn đã thanh toán trong khoảng này.</p>
+                    {range === "today" ? (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<RefreshCw size={15} />}
+                        onClick={() => {
+                          reportQueries.forEach((query) => void query.refetch());
+                          void reportHistoryQuery.refetch();
+                        }}
+                      >
+                        Làm mới
+                      </Button>
+                    ) : (
+                      <Button variant="outlined" size="small" onClick={() => setRange("today")}>
+                        Xem hôm nay
+                      </Button>
+                    )}
                   </div>
                 </>
               ) : section === "overview" ? (
@@ -5696,6 +5807,7 @@ function ReportSettingsDrawer() {
                 })()
               ) : (
                 <>
+                  <p className="rp-detail-hint muted">Chọn mốc thời gian hoặc món để xem chi tiết.</p>
                   <div className="rp-detail-card">
                     <div className="rp-card-head">Tổng quan nhanh</div>
                     <div className="tw-detail-row"><span>Giờ cao điểm</span><strong>{hasData ? maxHour.label : "—"}</strong></div>

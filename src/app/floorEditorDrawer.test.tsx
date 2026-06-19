@@ -92,6 +92,7 @@ describe("FloorEditorDrawer", () => {
     await user.click(await screen.findByTestId("fe-table-tbl-b01"));
     await user.clear(screen.getByTestId("fe-table-name-input"));
     await user.type(screen.getByTestId("fe-table-name-input"), "B01A");
+    await user.click(screen.getByRole("button", { name: /Nâng cao/ }));
     await user.clear(screen.getByLabelText("X"));
     await user.type(screen.getByLabelText("X"), "300");
     await user.click(screen.getByTestId("save-floor-button"));
