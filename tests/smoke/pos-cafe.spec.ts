@@ -52,8 +52,6 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await page.locator(".rail-action").filter({ hasText: "Sơ đồ" }).click();
   await expect(page.getByTestId("floor-editor")).toBeVisible();
   await expect(page.getByTestId("save-floor-button")).toBeVisible();
-  const toolsTab = page.locator(".menu-tab-btn", { hasText: "Công cụ" });
-  if (await toolsTab.isVisible()) await toolsTab.click();
   await page.getByTestId("add-table-round").click();
   await expect(page.getByTestId("floor-dirty-badge")).toBeVisible();
   await expect(page.getByTestId("fe-table-name-input")).toBeVisible();
@@ -75,27 +73,17 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   const payDrawer = page.getByTestId("payment-settings-drawer");
   await expect(payDrawer).toBeVisible();
   await expect(page.getByTestId("save-payment-button")).toBeVisible();
-  const payNavTab = page.locator(".menu-tab-btn", { hasText: "Phương thức" });
-  if (await payNavTab.isVisible()) await payNavTab.click();
   await payDrawer.getByRole("button", { name: "QR" }).click();
   await payDrawer.getByRole("button", { name: "Bật", exact: true }).click();
   await payDrawer.getByRole("button", { name: "Hiện QR trên hoá đơn" }).click();
-  if (await payNavTab.isVisible()) {
-    await page.locator(".menu-tab-btn", { hasText: "Xem trước" }).click();
-  }
   await expect(page.getByTestId("pay-qr-preview")).toBeVisible();
 
   await page.locator(".rail-action").filter({ hasText: "Cài đặt" }).click();
   const settingsDrawer = page.getByTestId("settings-drawer");
   await expect(settingsDrawer).toBeVisible();
   await expect(page.getByTestId("save-settings-button")).toBeVisible();
-  const settingsNavTab = settingsDrawer.getByRole("button", { name: "Mục", exact: true });
-  if ((page.viewportSize()?.width ?? 9999) <= 900) {
-    await expect(settingsNavTab).toBeVisible();
-    await settingsNavTab.click();
-  }
-  await expect(settingsDrawer.getByRole("button", { name: "Dữ liệu mẫu", exact: true })).toBeVisible();
-  await settingsDrawer.getByRole("button", { name: "Dữ liệu mẫu", exact: true }).click();
+  await expect(settingsDrawer.getByRole("button", { name: "Bảo trì dữ liệu", exact: true })).toBeVisible();
+  await settingsDrawer.getByRole("button", { name: "Bảo trì dữ liệu", exact: true }).click();
   await page.getByTestId("open-clear-demo").click();
   await expect(page.getByTestId("clear-demo-dialog")).toBeVisible();
   expect(page.url()).toBe(initialUrl);

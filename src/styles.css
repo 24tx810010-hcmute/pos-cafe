@@ -2475,6 +2475,105 @@ textarea {
 }
 .menu-tab-btn.active { border-color: var(--primary-line); background: var(--primary-soft); color: var(--primary); }
 
+/* ===== Two-region layouts (list/detail, catalog/detail, canvas/inspector) ===== */
+.two-region {
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(280px, 360px);
+  gap: 10px;
+}
+.two-region.canvas-region { grid-template-columns: minmax(340px, 1fr) minmax(290px, 350px); }
+@media (max-width: 900px) {
+  .two-region,
+  .two-region.canvas-region { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Section tabs row (report / settings / payment) and inline filter bars */
+.section-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 1px 2px 2px;
+  scrollbar-width: thin;
+}
+.section-tabs .menu-tab-btn { flex: 0 1 auto; }
+
+/* Order history toolbar + summary */
+.hx-filter-bar { gap: 6px; }
+.hx-filter-divider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 24px;
+  margin: 2px 4px;
+  background: var(--line);
+}
+.hx-summary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 12px;
+  color: var(--muted);
+}
+.hx-summary-strip strong { color: var(--ink); }
+
+/* Menu catalog: category tabs inside the catalog pane head */
+.menu-catalog-head { gap: 10px; }
+.menu-cat-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  min-width: 0;
+  flex: 1 1 auto;
+  scrollbar-width: thin;
+}
+.menu-cat-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.menu-cat-tab:hover { border-color: var(--primary); }
+.menu-cat-tab.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+.menu-cat-tab.deleted { text-decoration: line-through; opacity: 0.7; }
+.menu-cat-tab.add { border-style: dashed; color: var(--muted); }
+.menu-cat-tab .menu-pending-del { padding: 0 6px; }
+
+/* Floor toolbar */
+.fe-toolbar { gap: 8px; padding-bottom: 4px; }
+.fe-tb-group { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.fe-tb-label { font-size: 12px; font-weight: 800; color: var(--muted); }
+.fe-tb-sep { width: 1px; align-self: stretch; min-height: 26px; background: var(--line); margin: 0 2px; }
+
+/* Receipt preview embedded inside a settings/payment section */
+.set-preview-block { display: grid; gap: 6px; border-top: 1px dashed var(--line); padding-top: 12px; }
+.pay-method-tab { gap: 8px; }
+.pay-state { font-size: 11px; font-weight: 700; color: var(--muted); }
+
+/* Report selected-detail card highlight */
+.rp-selected-detail { border: 1px solid var(--primary-line); background: var(--primary-soft); }
+
 .menu-mini-btn {
   display: inline-flex;
   align-items: center;
@@ -3001,7 +3100,7 @@ textarea {
 }
 .pay-bank-box strong { font-size: 13px; }
 
-.pay-qr-placeholder {
+.pay-qr-preview {
   display: grid;
   justify-items: center;
   gap: 6px;
@@ -3012,4 +3111,4 @@ textarea {
   color: var(--ink);
   background: white;
 }
-.pay-qr-placeholder span { font-size: 11px; color: var(--muted); }
+.pay-qr-preview span { font-size: 11px; color: var(--muted); }

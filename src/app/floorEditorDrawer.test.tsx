@@ -66,8 +66,7 @@ describe("FloorEditorDrawer", () => {
     const user = userEvent.setup();
     const { saveSpy, state } = renderFloorEditor();
 
-    await user.click(await screen.findByRole("button", { name: "Công cụ" }));
-    await user.click(screen.getByTestId("add-table-round"));
+    await user.click(await screen.findByTestId("add-table-round"));
     await user.click(screen.getByTestId("save-floor-button"));
 
     await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
