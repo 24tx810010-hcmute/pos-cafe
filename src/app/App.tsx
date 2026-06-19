@@ -288,7 +288,7 @@ function StorePairingScreen() {
 
         <div className="preauth-body">
           <div className="preauth-form">
-            <div className="title-stack" style={{ marginBottom: 20 }}>
+            <div className="title-stack mb-5">
               <h2>Ghép thiết bị với quán</h2>
               <p>Nhập Store Key do quản lý cung cấp để ghép thiết bị vào quán.</p>
             </div>
@@ -437,7 +437,7 @@ function CreateStoreScreen() {
         ) : (
           <div className="preauth-body">
             <div className="preauth-form">
-              <div className="title-stack" style={{ marginBottom: 20 }}>
+              <div className="title-stack mb-5">
                 <h2>Tạo quán mới</h2>
                 <p>Thiết lập thông tin quán để nhận Store Key và Admin PIN.</p>
               </div>
@@ -593,8 +593,7 @@ function PasscodeScreen() {
           <p className="passcode-brand-hint">Nhân viên chọn tên và nhập PIN để mở phiên làm việc.</p>
         </div>
         <span
-          className="pair-strip"
-          style={{ cursor: "pointer", width: "fit-content" }}
+          className="pair-strip w-fit cursor-pointer"
           onClick={unpair}
         >
           ← Đổi quán / Gỡ ghép
@@ -650,7 +649,7 @@ function PasscodeScreen() {
             data-testid="unlock-button"
             disabled={!selectedEmployeeId || pin.length < 4 || verifyMutation.isPending}
             onClick={verifyPin}
-            sx={{ borderRadius: "8px", fontWeight: 700 }}
+            className="!rounded-pos !font-bold"
           >
             {verifyMutation.isPending ? "..." : "Mở khoá"}
           </Button>
@@ -817,7 +816,7 @@ function RailButton({
   if (disabled) {
     return (
       <Tooltip title="Cần quyền quản lý" placement="right" arrow>
-        <span style={{ display: "contents" }}>{btn}</span>
+        <span className="contents">{btn}</span>
       </Tooltip>
     );
   }
@@ -1016,7 +1015,7 @@ function TakeawayDrawer() {
                   </div>
                 </div>
               ) : detailQuery.isLoading ? (
-                <p className="muted" style={{ padding: 16 }}>Đang tải...</p>
+                <p className="muted p-4">Đang tải...</p>
               ) : detailQuery.isError ? (
                 <div className="tw-empty-state" data-testid="takeaway-detail-error-state">
                   <AlertTriangle size={30} color="#b45309" />
@@ -1060,7 +1059,7 @@ function TakeawayDrawer() {
                   </div>
                 </div>
               ) : (
-                <p className="muted" style={{ padding: 16 }}>Không tìm thấy đơn.</p>
+                <p className="muted p-4">Không tìm thấy đơn.</p>
               )}
             </div>
           </aside>
@@ -1307,7 +1306,7 @@ function OrderHistoryDrawer() {
             placeholder="Tìm mã đơn / bàn..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); handleFilterChange(); }}
-            sx={{ maxWidth: 200 }}
+            className="max-w-[200px]"
             inputProps={{ "data-testid": "history-search" }}
           />
           <Button variant="outlined" onClick={closeDrawer}>Đóng</Button>
@@ -1459,7 +1458,7 @@ function OrderHistoryDrawer() {
             <div className="pane-head">Chi tiết đơn</div>
             <div className="pane-scroll">
               {!selected ? (
-                <p className="muted" style={{ padding: 16 }}>Chọn đơn để xem chi tiết.</p>
+                <p className="muted p-4">Chọn đơn để xem chi tiết.</p>
               ) : (
                 <div className="tw-detail-body">
                   <div className="tw-detail-row"><span>Đơn số</span><strong>#{selected.orderNo}</strong></div>
@@ -1483,7 +1482,7 @@ function OrderHistoryDrawer() {
                     <div className="tw-detail-row"><span>Thanh toán</span><strong>{PAY_METHOD_LABEL[selected.payMethod] ?? selected.payMethod}</strong></div>
                   )}
                   <div className="tw-detail-divider" />
-                  <div className="hx-filter-label" style={{ marginBottom: 4 }}>Món</div>
+                  <div className="hx-filter-label mb-1">Món</div>
                   {detailQuery.isLoading ? (
                     <p className="muted">Đang tải chi tiết...</p>
                   ) : detailQuery.isError ? (
@@ -1902,7 +1901,7 @@ function EmployeesDrawer() {
             <div className="pane-head">{selectedId === "new" ? "Thêm nhân viên" : "Chi tiết"}</div>
             <div className="pane-scroll">
               {!selectedId ? (
-                <p className="muted" style={{ padding: 8 }}>
+                <p className="muted p-2">
                   Chọn nhân viên để xem / sửa, hoặc bấm “Thêm nhân viên”.
                 </p>
               ) : (
@@ -2492,7 +2491,7 @@ function KitchenQueueDrawer() {
             <div className="pane-head">Chi tiết vé</div>
             <div className="pane-scroll rp-detail">
               {!selected ? (
-                <p className="muted" style={{ padding: 8 }}>Chọn một vé để xem chi tiết.</p>
+                <p className="muted p-2">Chọn một vé để xem chi tiết.</p>
               ) : (
                 <>
                   <div className="rp-detail-card">
@@ -2648,7 +2647,7 @@ function GeneralSettingsDrawer() {
             </Button>
           </div>
         ) : !seeded ? (
-          <p className="muted" style={{ padding: 16 }}>Đang tải cài đặt...</p>
+          <p className="muted p-4">Đang tải cài đặt...</p>
         ) : (
           <>
             <div className="section-tabs">
@@ -2943,7 +2942,7 @@ function FloorWorkspace() {
         {/* Main region: floor canvas */}
         <section className="floor-shell" data-testid="floor-view">
           <div className="floor-filter-bar">
-            <div className="area-tabs" style={{ borderBottom: "none", padding: "6px 12px", flex: 1 }}>
+            <div className="area-tabs !flex-1 !border-b-0 !px-3 !py-1.5">
               {floorPlan?.areas.map((area) => (
                 <button
                   className={`area-tab ${area.id === areaId ? "active" : ""}`}
@@ -3025,7 +3024,7 @@ function FloorWorkspace() {
 
         {/* Right open orders panel */}
         <aside className="floor-orders-panel">
-          <div className="floor-side-title" style={{ padding: "12px 14px 8px" }}>Đơn đang mở · {dineInOrders.length}</div>
+          <div className="floor-side-title !px-3.5 !pb-2 !pt-3">Đơn đang mở · {dineInOrders.length}</div>
           <div className="floor-orders-list">
             {openOrdersQuery.isLoading ? (
               <p className="floor-orders-empty">Đang tải đơn đang mở...</p>
@@ -3062,7 +3061,7 @@ function FloorWorkspace() {
           </div>
           {takeawayOrders.length > 0 && (
             <>
-              <div className="floor-side-title" style={{ padding: "10px 14px 8px", borderTop: "1px solid var(--line)" }}>
+              <div className="floor-side-title border-t border-pos-line !px-3.5 !pb-2 !pt-2.5">
                 Mang đi · {takeawayOrders.length}
               </div>
               <div className="floor-orders-list">
@@ -3318,12 +3317,12 @@ function OrderDrawer() {
                 placeholder="Tìm món..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                sx={{ maxWidth: 180 }}
+                className="max-w-[180px]"
               />
             </div>
             <div className="pane-scroll">
               {menuQuery.isLoading ? (
-                <p className="muted" style={{ padding: 12 }}>Đang tải menu...</p>
+                <p className="muted p-3">Đang tải menu...</p>
               ) : menuQuery.isError ? (
                 <div className="tw-empty-state" data-testid="order-menu-error-state">
                   <AlertTriangle size={30} color="#b45309" />
@@ -3334,7 +3333,7 @@ function OrderDrawer() {
                   </Button>
                 </div>
               ) : items.length === 0 ? (
-                <p className="muted" style={{ padding: 12 }}>Không có món.</p>
+                <p className="muted p-3">Không có món.</p>
               ) : (
                 <div className="menu-grid">
                   {items.map((item) => (
@@ -3373,7 +3372,7 @@ function OrderDrawer() {
                       <strong className="price-text">{formatCompactVnd(line.total)}</strong>
                     </div>
                     {line.optionText && (
-                      <div className="cart-line muted" style={{ fontSize: 12 }}>
+                      <div className="cart-line muted text-xs">
                         <span>{line.optionText}</span>
                       </div>
                     )}
@@ -3493,7 +3492,7 @@ function PaymentDrawer() {
           <div className="title-stack"><h2>Thanh toán</h2></div>
           <div className="header-actions"><Button variant="outlined" onClick={closeDrawer}>Đóng</Button></div>
         </header>
-        <div className="drawer-body"><p className="muted" style={{ padding: 16 }}>Không tìm thấy đơn.</p></div>
+        <div className="drawer-body"><p className="muted p-4">Không tìm thấy đơn.</p></div>
       </section>
     );
   }
@@ -3573,7 +3572,7 @@ function PaymentDrawer() {
                 </div>
               </div>
               {orderQuery.isLoading ? (
-                <p className="muted" style={{ padding: 12 }}>Đang tải đơn...</p>
+                <p className="muted p-3">Đang tải đơn...</p>
               ) : (
                 <CartSnapshotList order={order} />
               )}
@@ -3593,7 +3592,7 @@ function PaymentDrawer() {
                     <Button
                       size="small"
                       variant="outlined"
-                      sx={{ mt: 1 }}
+                      className="!mt-1"
                       onClick={() => { void orderQuery.refetch(); void floorPlanQuery.refetch(); }}
                     >
                       Tải lại đơn
@@ -3681,7 +3680,7 @@ function PaymentDrawer() {
                 data-testid="pay-button-footer"
                 disabled={paymentDisabled}
                 onClick={payOrder}
-                sx={{ borderRadius: "8px", fontWeight: 800, fontSize: 16 }}
+                className="!rounded-pos !text-base !font-extrabold"
               >
                 {paymentButtonLabel}
               </Button>
@@ -4161,7 +4160,7 @@ function MenuEditorDrawer() {
             </Button>
           </div>
         ) : !seeded ? (
-          <p className="muted" style={{ padding: 16 }}>Đang tải menu...</p>
+          <p className="muted p-4">Đang tải menu...</p>
         ) : (
           <>
             <div className="two-region">
@@ -4399,7 +4398,7 @@ function MenuEditorDrawer() {
                       <p className="muted">Chọn một món để chỉnh sửa chi tiết và nhóm tuỳ chọn. Mục đã xoá vẫn có thể hoàn tác trước khi lưu.</p>
                     </>
                   ) : (
-                    <p className="muted" style={{ padding: 8 }}>Chọn món hoặc danh mục để chỉnh sửa.</p>
+                    <p className="muted p-2">Chọn món hoặc danh mục để chỉnh sửa.</p>
                   )}
                 </div>
               </aside>
@@ -4888,7 +4887,7 @@ function FloorEditorDrawer() {
             </Button>
           </div>
         ) : !seeded ? (
-          <p className="muted" style={{ padding: 16 }}>Đang tải sơ đồ...</p>
+          <p className="muted p-4">Đang tải sơ đồ...</p>
         ) : (
           <>
             <div className="section-tabs fe-toolbar">
@@ -5126,7 +5125,7 @@ function FloorEditorDrawer() {
                       <p className="muted">Chọn bàn hoặc trang trí trên khu vực thiết kế để chỉnh chi tiết.</p>
                     </>
                   ) : (
-                    <p className="muted" style={{ padding: 8 }}>Thêm khu để bắt đầu chỉnh sơ đồ.</p>
+                    <p className="muted p-2">Thêm khu để bắt đầu chỉnh sơ đồ.</p>
                   )}
                 </div>
               </aside>
@@ -5433,8 +5432,8 @@ function ReportSettingsDrawer() {
             ) : null}
               {loading ? (
                 <div className="rp-skel-wrap">
-                  <div className="tw-skeleton-card" style={{ height: 88 }} />
-                  <div className="tw-skeleton-card" style={{ height: 200 }} />
+                  <div className="tw-skeleton-card !h-[88px]" />
+                  <div className="tw-skeleton-card !h-[200px]" />
                 </div>
               ) : reportError ? (
                 <div className="tw-empty-state">

@@ -49,11 +49,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
             containerClassName="app-toaster"
             toastOptions={{
               duration: 2400,
-              style: {
-                borderRadius: 8,
-                fontSize: 13,
-                maxWidth: "min(360px, calc(100vw - 24px))",
-              },
+              className: "max-w-[min(360px,calc(100vw-24px))] rounded-pos text-[13px]",
             }}
           />
         </QueryClientProvider>
