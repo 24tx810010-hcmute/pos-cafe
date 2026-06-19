@@ -3006,7 +3006,7 @@ function FloorWorkspace() {
         <div className="title-stack">
           <h1>Sơ đồ bàn</h1>
           <p>
-            <span className="sync-dot" /> {currentEmployee?.name} · {occupiedCount} bàn đang phục vụ · {emptyCount} trống
+            <span className="sync-dot" /> {currentEmployee?.name} · Trống {emptyCount} · Đang phục vụ {occupiedCount} · Mang đi {takeawayOrders.length}
           </p>
         </div>
         <div className="header-actions">
@@ -3038,47 +3038,7 @@ function FloorWorkspace() {
       </header>
 
       <div className="workspace-body floor-workspace-body">
-        {/* Left summary panel */}
-        <aside className="floor-side-panel">
-          <div className="floor-side-section">
-            <div className="floor-side-title">Khu vực</div>
-            {floorPlan?.areas.map((area) => (
-              <button
-                key={area.id}
-                className={`floor-area-item ${area.id === areaId ? "active" : ""}`}
-                onClick={() => setActiveAreaId(area.id)}
-              >
-                {area.name}
-              </button>
-            ))}
-          </div>
-          <div className="floor-side-section">
-            <div className="floor-side-title">Tổng quan</div>
-            <div className="floor-stat-row">
-              <span className="floor-stat-dot dot-empty" />
-              <span>Trống</span>
-              <strong>{emptyCount}</strong>
-            </div>
-            <div className="floor-stat-row">
-              <span className="floor-stat-dot dot-occupied" />
-              <span>Đang phục vụ</span>
-              <strong>{occupiedCount}</strong>
-            </div>
-            <div className="floor-stat-row">
-              <span className="floor-stat-dot dot-takeaway" />
-              <span>Mang đi</span>
-              <strong>{takeawayOrders.length}</strong>
-            </div>
-          </div>
-          <div className="floor-side-section floor-legend">
-            <div className="floor-side-title">Chú giải</div>
-            <div className="floor-legend-item"><span className="legend-box empty" />Trống</div>
-            <div className="floor-legend-item"><span className="legend-box occupied" />Đang phục vụ</div>
-            <div className="floor-legend-item"><span className="legend-box decor" />Trang trí</div>
-          </div>
-        </aside>
-
-        {/* Center canvas */}
+        {/* Main region: floor canvas */}
         <section className="floor-shell" data-testid="floor-view">
           <div className="floor-filter-bar">
             <div className="area-tabs" style={{ borderBottom: "none", padding: "6px 12px", flex: 1 }}>
@@ -3435,12 +3395,11 @@ function OrderDrawer() {
             </div>
           </div>
         )}
-        <div className="three-pane">
-          {/* Left: Categories */}
-          <aside className="pane">
-            <div className="pane-head">Danh mục</div>
-            <div className="pane-scroll">
-              <div className="category-list">
+        <div className="order-two-pane">
+          {/* Main: Menu catalog with category tabs in toolbar */}
+          <section className="pane order-menu-pane">
+            <div className="menu-toolbar">
+              <div className="menu-cat-tabs">
                 {menu?.categories.map((cat) => (
                   <button
                     key={cat.id}
@@ -3452,19 +3411,12 @@ function OrderDrawer() {
                   </button>
                 ))}
               </div>
-            </div>
-          </aside>
-
-          {/* Center: Menu grid */}
-          <section className="pane">
-            <div className="pane-head">
-              <span>Menu</span>
               <TextField
                 size="small"
                 placeholder="Tìm món..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                sx={{ maxWidth: 160 }}
+                sx={{ maxWidth: 180 }}
               />
             </div>
             <div className="pane-scroll">
@@ -3684,45 +3636,40 @@ function PaymentDrawer() {
             </Button>
           </div>
         ) : (
-        <div className="payment-three-pane">
-          {/* Left: Order info */}
-          <aside className="panel payment-info-panel">
-            <div className="panel-head">Thông tin đơn</div>
-            <div className="panel-scroll payment-info-body">
-              <div className="payment-info-row">
-                <span>Loại</span>
-                <strong>{order?.orderType === "takeaway" ? "Mang đi" : "Tại bàn"}</strong>
-              </div>
-              {table && (
-                <div className="payment-info-row">
-                  <span>Bàn</span>
-                  <strong>{table.name}</strong>
-                </div>
-              )}
-              <div className="payment-info-row">
-                <span>Đơn số</span>
-                <strong>#{order?.orderNo ?? "—"}</strong>
-              </div>
-              <div className="payment-info-row">
-                <span>Nhân viên</span>
-                <strong>{currentEmployee?.name ?? "—"}</strong>
-              </div>
-              <div className="payment-info-row">
-                <span>Ngày</span>
-                <strong>{order?.businessDate ?? new Date().toLocaleDateString("vi-VN")}</strong>
-              </div>
-              <div className="payment-info-divider" />
-              <div className="payment-info-row total">
-                <span>Tổng cần thu</span>
-                <strong className="price-text payment-total-large">{formatVnd(order?.total ?? 0)}</strong>
-              </div>
-            </div>
-          </aside>
-
-          {/* Center: Bill snapshot */}
+        <div className="payment-two-pane">
+          {/* Main: bill summary (order info folded in) + receipt */}
           <section className="panel">
-            <div className="panel-head">Hoá đơn tạm</div>
+            <div className="panel-head">Hoá đơn</div>
             <div className="panel-scroll">
+              <div className="payment-info-body">
+                <div className="payment-info-row">
+                  <span>Loại</span>
+                  <strong>{order?.orderType === "takeaway" ? "Mang đi" : "Tại bàn"}</strong>
+                </div>
+                {table && (
+                  <div className="payment-info-row">
+                    <span>Bàn</span>
+                    <strong>{table.name}</strong>
+                  </div>
+                )}
+                <div className="payment-info-row">
+                  <span>Đơn số</span>
+                  <strong>#{order?.orderNo ?? "—"}</strong>
+                </div>
+                <div className="payment-info-row">
+                  <span>Nhân viên</span>
+                  <strong>{currentEmployee?.name ?? "—"}</strong>
+                </div>
+                <div className="payment-info-row">
+                  <span>Ngày</span>
+                  <strong>{order?.businessDate ?? new Date().toLocaleDateString("vi-VN")}</strong>
+                </div>
+                <div className="payment-info-divider" />
+                <div className="payment-info-row total">
+                  <span>Tổng cần thu</span>
+                  <strong className="price-text payment-total-large">{formatVnd(order?.total ?? 0)}</strong>
+                </div>
+              </div>
               {orderQuery.isLoading ? (
                 <p className="muted" style={{ padding: 12 }}>Đang tải đơn...</p>
               ) : (
@@ -3731,7 +3678,7 @@ function PaymentDrawer() {
             </div>
           </section>
 
-          {/* Right: Payment panel */}
+          {/* Right: Payment controls */}
           <aside className="panel payment-panel">
             <div className="panel-head">Thanh toán</div>
             <div className="panel-scroll payment-panel-body">
