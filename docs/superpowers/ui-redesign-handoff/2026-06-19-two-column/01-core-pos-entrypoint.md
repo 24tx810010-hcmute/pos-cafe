@@ -47,7 +47,8 @@ Make the cashier journey look and feel like a real cafe POS. The visible layout 
 ## Files You Will Likely Touch
 
 - `src/app/App.tsx`
-- `src/styles.css`
+- `src/tailwind.css`
+- `tailwind.config.ts` / Tailwind plugin style layer, only when a legacy semantic selector cannot be safely inlined into TSX.
 - UI tests only when visible text/selectors change.
 
 Preserve existing hooks, ports, and business flow.
@@ -67,12 +68,13 @@ git diff --check
 Also run these static checks and fix user-visible issues:
 
 ```powershell
-rg -n "mock|Supabase|DB|MVP|placeholder|seed|tombstone|config|raw Store Key|paid order|void|Draft|Dine-in" src/app src/styles.css
-rg -n "three-pane|payment-three-pane|menu-three-pane|rp-three-pane|fe-three-pane" src/app/App.tsx src/styles.css
-rg -n "^[ \t]*(display|width|height|padding|margin|border|background|color|font|grid|flex|position|top|right|bottom|left|box-shadow|text-|line-height|overflow|opacity|cursor|transition|align|justify|gap|z-index|transform|outline|min-|max-|place-|white-space|vertical-align|border-radius|border-color|border-style|border-width|box-sizing|resize|pointer-events|object-fit|letter-spacing):" src/styles.css
-rg -n "@apply" src/styles.css
-Get-Content src/styles.css
+rg -n "mock|Supabase|DB|MVP|placeholder|seed|tombstone|config|raw Store Key|paid order|void|Draft|Dine-in" src/app src/tailwind.css
+rg -n "three-pane|payment-three-pane|menu-three-pane|rp-three-pane|fe-three-pane" src/app/App.tsx src/tailwind.css
+rg -n "^[ \t]*(display|width|height|padding|margin|border|background|color|font|grid|flex|position|top|right|bottom|left|box-shadow|text-|line-height|overflow|opacity|cursor|transition|align|justify|gap|z-index|transform|outline|min-|max-|place-|white-space|vertical-align|border-radius|border-color|border-style|border-width|box-sizing|resize|pointer-events|object-fit|letter-spacing):" src/tailwind.css
+rg -n "@apply" src/tailwind.css
+Test-Path src/styles.css
+Get-Content src/tailwind.css
 ```
 
 A touched Core POS screen must not remain on `.three-pane` or `.payment-three-pane`.
-A touched Core POS screen must not add plain custom CSS declarations or expand `src/styles.css`. Use Tailwind utilities in JSX; if a legacy semantic selector cannot be safely inlined, keep it in the Tailwind plugin/config layer.
+A touched Core POS screen must not add plain custom CSS declarations or expand `src/tailwind.css`. Use Tailwind utilities in JSX; if a legacy semantic selector cannot be safely inlined, keep it in the Tailwind plugin/config layer.

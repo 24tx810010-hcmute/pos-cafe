@@ -67,7 +67,7 @@ Order:
 Before reporting done, inspect visible UI and run:
 
 ```powershell
-rg -n "mock|Supabase|DB|MVP|placeholder|seed|tombstone|config|raw Store Key|paid order|void|Draft|Dine-in|deactivate" src/app src/styles.css
+rg -n "mock|Supabase|DB|MVP|placeholder|seed|tombstone|config|raw Store Key|paid order|void|Draft|Dine-in|deactivate" src/app src/tailwind.css
 ```
 
 Test files may contain banned words for guard tests. User-visible code should not.
