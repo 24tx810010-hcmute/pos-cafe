@@ -136,8 +136,7 @@ describe("demo copy polish", () => {
     const { container } = renderApp({ drawer: "settings" });
 
     expect(await screen.findByTestId("settings-drawer")).toBeInTheDocument();
-    await screen.findByRole("button", { name: "Mục" });
-    await user.click(await screen.findByRole("button", { name: "Dữ liệu mẫu" }));
+    await user.click(await screen.findByRole("button", { name: "Bảo trì dữ liệu" }));
     await user.click(screen.getByTestId("open-clear-demo"));
     expect(await screen.findByTestId("clear-demo-dialog")).toBeInTheDocument();
 

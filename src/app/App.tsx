@@ -1314,61 +1314,37 @@ function OrderHistoryDrawer() {
         </div>
       </header>
 
-      <div className="drawer-body">
-        <div className="three-pane">
-          {/* Left: filter pane */}
-          <aside className="pane hx-filter-pane">
-            <div className="pane-head">Lọc</div>
-            <div className="pane-scroll">
-              <div className="hx-filter-section">
-                <div className="hx-filter-label">Trạng thái</div>
-                {statusChips.map((sc) => (
-                  <button
-                    key={sc.key}
-                    className={`tw-bucket-btn ${statusFilter === sc.key ? "active" : ""}`}
-                    onClick={() => { setStatusFilter(sc.key); handleFilterChange(); }}
-                  >
-                    {sc.label}
-                    <span className="hx-filter-count">
-                      {sc.key === "all" ? historyRows.length : historyRows.filter((o) => o.status === sc.key).length}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <div className="hx-filter-section" style={{ marginTop: 12 }}>
-                <div className="hx-filter-label">Loại đơn</div>
-                {orderTypeChips.map((oc) => (
-                  <button
-                    key={oc.key}
-                    className={`tw-bucket-btn ${orderTypeFilter === oc.key ? "active" : ""}`}
-                    onClick={() => { setOrderTypeFilter(oc.key); handleFilterChange(); }}
-                  >
-                    {oc.label}
-                    <span className="hx-filter-count">
-                      {oc.key === "all" ? historyRows.length : historyRows.filter((o) => o.orderType === oc.key).length}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <div className="hx-filter-section hx-summary-box" style={{ marginTop: 16 }}>
-                <div className="hx-filter-label">Tổng trang này</div>
-                <div className="hx-summary-row">
-                  <span>Doanh thu</span>
-                  <strong className="price-text">{formatVnd(pageRevenue)}</strong>
-                </div>
-                <div className="hx-summary-row">
-                  <span>Số đơn đã thanh toán</span>
-                  <strong>{historyRows.filter((o) => o.status === "paid").length}</strong>
-                </div>
-                <div className="hx-summary-row">
-                  <span>Đã huỷ</span>
-                  <strong>{historyRows.filter((o) => o.status === "void").length}</strong>
-                </div>
-              </div>
-            </div>
-          </aside>
+      <div className="drawer-body menu-editor-body">
+        <div className="section-tabs hx-filter-bar">
+          {statusChips.map((sc) => (
+            <button
+              key={sc.key}
+              className={`status-chip ${statusFilter === sc.key ? "active" : ""}`}
+              onClick={() => { setStatusFilter(sc.key); handleFilterChange(); }}
+            >
+              {sc.label}
+              <span className="hx-filter-count">
+                {sc.key === "all" ? historyRows.length : historyRows.filter((o) => o.status === sc.key).length}
+              </span>
+            </button>
+          ))}
+          <span className="hx-filter-divider" aria-hidden="true" />
+          {orderTypeChips.map((oc) => (
+            <button
+              key={oc.key}
+              className={`status-chip ${orderTypeFilter === oc.key ? "active" : ""}`}
+              onClick={() => { setOrderTypeFilter(oc.key); handleFilterChange(); }}
+            >
+              {oc.label}
+              <span className="hx-filter-count">
+                {oc.key === "all" ? historyRows.length : historyRows.filter((o) => o.orderType === oc.key).length}
+              </span>
+            </button>
+          ))}
+        </div>
 
-          {/* Center: table list */}
+        <div className="two-region">
+          {/* List */}
           <section className="pane">
             <div className="pane-head">
               <span>Danh sách đơn</span>
@@ -1390,10 +1366,24 @@ function OrderHistoryDrawer() {
               ) : filtered.length === 0 ? (
                 <div className="tw-empty-state">
                   <ReceiptText size={32} color="#94a3b8" />
-                  <p>Chưa có đơn nào trong khoảng đã chọn.</p>
+                  <p>Chưa có đơn đã thanh toán trong khoảng này.</p>
+                  {dateRange === "today" ? (
+                    <Button variant="outlined" size="small" startIcon={<RefreshCw size={15} />} onClick={() => void historyQuery.refetch()}>
+                      Làm mới
+                    </Button>
+                  ) : (
+                    <Button variant="outlined" size="small" onClick={() => { setDateRange("today"); handleFilterChange(); }}>
+                      Xem hôm nay
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <>
+                  <div className="hx-summary-strip">
+                    <span>Doanh thu trang này <strong className="price-text">{formatVnd(pageRevenue)}</strong></span>
+                    <span>Đã thanh toán <strong>{historyRows.filter((o) => o.status === "paid").length}</strong></span>
+                    <span>Đã huỷ <strong>{historyRows.filter((o) => o.status === "void").length}</strong></span>
+                  </div>
                   {/* Desktop/tablet table */}
                   <table className="hx-table">
                     <thead>
@@ -1822,28 +1812,22 @@ function EmployeesDrawer() {
         </div>
       </header>
 
-      <div className="drawer-body">
-        <div className="three-pane">
-          {/* Left: role filters */}
-          <aside className="pane">
-            <div className="pane-head">Vai trò</div>
-            <div className="pane-scroll">
-              <div className="category-list">
-                {filterChips.map((fc) => (
-                  <button
-                    key={fc.key}
-                    className={`tw-bucket-btn ${filter === fc.key ? "active" : ""}`}
-                    onClick={() => setFilter(fc.key)}
-                  >
-                    {fc.label}
-                    <span className="hx-filter-count">{countFor(fc.key)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </aside>
+      <div className="drawer-body menu-editor-body">
+        <div className="section-tabs">
+          {filterChips.map((fc) => (
+            <button
+              key={fc.key}
+              className={`status-chip ${filter === fc.key ? "active" : ""}`}
+              onClick={() => setFilter(fc.key)}
+            >
+              {fc.label}
+              <span className="hx-filter-count">{countFor(fc.key)}</span>
+            </button>
+          ))}
+        </div>
 
-          {/* Center: employee list */}
+        <div className="two-region">
+          {/* List */}
           <section className="pane">
             <div className="pane-head">
               <span>Nhân viên</span>
@@ -2121,7 +2105,6 @@ function PaymentSettingsDrawer() {
   const [base, setBase] = useState<PaymentForm>(INITIAL_PAYMENT);
   const [form, setForm] = useState<PaymentForm>(INITIAL_PAYMENT);
   const [method, setMethod] = useState<PaymentMethodKey>("cash");
-  const [mobileTab, setMobileTab] = useState<"nav" | "form" | "preview">("form");
   const [accountError, setAccountError] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
 
@@ -2134,7 +2117,6 @@ function PaymentSettingsDrawer() {
     if (form.bankEnabled && !accountValid(form.accountNo)) {
       setAccountError("Số tài khoản phải gồm 6–20 chữ số.");
       setMethod("bank");
-      setMobileTab("form");
       return;
     }
     setAccountError("");
@@ -2151,12 +2133,6 @@ function PaymentSettingsDrawer() {
     { key: "qr", label: "QR", on: form.qrEnabled },
     { key: "bank", label: "Chuyển khoản", on: form.bankEnabled },
   ];
-
-  const tabBtn = (key: "nav" | "form" | "preview", label: string) => (
-    <button className={`menu-tab-btn${mobileTab === key ? " active" : ""}`} onClick={() => setMobileTab(key)}>
-      {label}
-    </button>
-  );
 
   if (!allowed) {
     return (
@@ -2190,144 +2166,123 @@ function PaymentSettingsDrawer() {
       </header>
 
       <div className="drawer-body menu-editor-body">
-        <div className="menu-tabs">
-          {tabBtn("nav", "Phương thức")}
-          {tabBtn("form", "Cấu hình")}
-          {tabBtn("preview", "Xem trước")}
+        <div className="section-tabs">
+          {methods.map((m) => (
+            <button
+              key={m.key}
+              className={`menu-tab-btn pay-method-tab${method === m.key ? " active" : ""}`}
+              onClick={() => setMethod(m.key)}
+            >
+              <span className={`pay-dot${m.on ? " on" : ""}`} />
+              {m.label}
+              <span className="pay-state">{m.on ? "Bật" : "Tắt"}</span>
+            </button>
+          ))}
         </div>
 
-        <div className="menu-three-pane rp-three-pane">
-          {/* Left: methods nav */}
-          <aside className={`pane menu-pane${mobileTab === "nav" ? " tab-active" : ""}`}>
-            <div className="pane-head">Phương thức</div>
-            <div className="pane-scroll">
-              <div className="menu-cat-list">
-                {methods.map((m) => (
-                  <button
-                    key={m.key}
-                    className={`tw-bucket-btn pay-method-row ${method === m.key ? "active" : ""}${m.disabled ? " disabled" : ""}`}
-                    onClick={() => { if (!m.disabled) { setMethod(m.key); setMobileTab("form"); } }}
-                  >
-                    <span className={`pay-dot${m.on ? " on" : ""}`} />
-                    {m.label}
-                    {m.disabled ? <span className="pay-soon">Chưa bật</span> : <span className="hx-filter-count">{m.on ? "Bật" : "Tắt"}</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </aside>
-
-          {/* Center: form config */}
-          <section className={`pane menu-pane${mobileTab === "form" ? " tab-active" : ""}`}>
-            <div className="pane-head">{methods.find((m) => m.key === method)?.label}</div>
-            <div className="pane-scroll menu-props">
-              {method === "cash" ? (
-                <>
-                  <div className="fe-status-row">
-                    <span className="emp-field-label">Tiền mặt</span>
-                    <span className="status-pill status-active">● Luôn bật</span>
-                  </div>
-                  <p className="muted">Tiền mặt là phương thức mặc định và luôn khả dụng.</p>
-                </>
-              ) : method === "qr" ? (
-                <>
-                  <div className="menu-field">
-                    <span className="emp-field-label">Kích hoạt QR</span>
-                    <div className="emp-segment">
-                      <button className={`emp-segment-btn${form.qrEnabled ? " active" : ""}`} onClick={() => patch({ qrEnabled: true })}>Bật</button>
-                      <button className={`emp-segment-btn${form.qrEnabled ? "" : " active danger"}`} onClick={() => patch({ qrEnabled: false })}>Tắt</button>
-                    </div>
-                  </div>
-                  <TextField
-                    label="Nội dung hiển thị cạnh mã QR"
-                    value={form.qrInfo}
-                    onChange={(e) => patch({ qrInfo: e.target.value })}
-                    placeholder="VD: Quét mã để chuyển khoản"
-                    helperText="Chỉ là thông tin hiển thị trên hoá đơn in."
-                    size="small"
-                    fullWidth
-                    multiline
-                    minRows={2}
-                    disabled={!form.qrEnabled}
-                    inputProps={{ "data-testid": "qr-info-input" }}
-                  />
-                  <button className={`menu-chip-toggle${form.showQrOnBill ? " on" : ""}`} disabled={!form.qrEnabled} onClick={() => patch({ showQrOnBill: !form.showQrOnBill })}>
-                    {form.showQrOnBill ? "✓ Hiện QR trên hoá đơn" : "Hiện QR trên hoá đơn"}
-                  </button>
-                  <p className="muted">Phương thức này chưa được kích hoạt cho thanh toán thực tế.</p>
-                </>
-              ) : method === "bank" ? (
-                <>
-                  <div className="menu-field">
-                    <span className="emp-field-label">Kích hoạt chuyển khoản</span>
-                    <div className="emp-segment">
-                      <button className={`emp-segment-btn${form.bankEnabled ? " active" : ""}`} onClick={() => patch({ bankEnabled: true })}>Bật</button>
-                      <button className={`emp-segment-btn${form.bankEnabled ? "" : " active danger"}`} onClick={() => patch({ bankEnabled: false })}>Tắt</button>
-                    </div>
-                  </div>
-                  <TextField label="Ngân hàng" value={form.bankName} onChange={(e) => patch({ bankName: e.target.value })} size="small" fullWidth disabled={!form.bankEnabled} />
-                  <TextField
-                    label="Số tài khoản"
-                    value={form.accountNo}
-                    onChange={(e) => { patch({ accountNo: e.target.value.replace(/[^\d]/g, "") }); setAccountError(""); }}
-                    error={!!accountError || (form.bankEnabled && form.accountNo !== "" && !accountValid(form.accountNo))}
-                    helperText={accountError || (form.bankEnabled && form.accountNo !== "" && !accountValid(form.accountNo) ? "Số tài khoản 6–20 chữ số." : "")}
-                    size="small"
-                    fullWidth
-                    disabled={!form.bankEnabled}
-                    inputProps={{ inputMode: "numeric", "data-testid": "account-no-input" }}
-                  />
-                  <TextField label="Chủ tài khoản" value={form.accountHolder} onChange={(e) => patch({ accountHolder: e.target.value })} size="small" fullWidth disabled={!form.bankEnabled} />
-                  <p className="muted">Thông tin tài khoản chỉ hiển thị trên hoá đơn; chưa kích hoạt thanh toán thực tế.</p>
-                </>
-              ) : (
-                <div className="tw-empty-state">
-                  <CreditCard size={30} color="#94a3b8" />
-                  <p>Phương thức này chưa được kích hoạt.</p>
+        <section className="pane">
+          <div className="pane-head">{methods.find((m) => m.key === method)?.label}</div>
+          <div className="pane-scroll menu-props">
+            {method === "cash" ? (
+              <>
+                <div className="fe-status-row">
+                  <span className="emp-field-label">Tiền mặt</span>
+                  <span className="status-pill status-active">● Luôn bật</span>
                 </div>
-              )}
-            </div>
-          </section>
-
-          {/* Right: preview */}
-          <aside className={`pane menu-pane${mobileTab === "preview" ? " tab-active" : ""}`}>
-            <div className="pane-head">Xem trước hoá đơn</div>
-            <div className="pane-scroll">
-              <div className="set-receipt">
-                <strong className="set-receipt-name">Tên quán</strong>
-                <span className="set-receipt-addr">Địa chỉ quán</span>
-                <div className="set-receipt-divider" />
-                <div className="set-receipt-line"><span>Cà phê sữa × 2</span><span>58.000</span></div>
-                <div className="set-receipt-line"><span>Trà đào × 1</span><span>42.000</span></div>
-                <div className="set-receipt-divider" />
-                <div className="set-receipt-line total"><strong>Tổng</strong><strong>100.000đ</strong></div>
-
-                <div className="pay-pre-methods">
-                  <span className="kq-station-tag drink">Tiền mặt</span>
-                  {form.qrEnabled && <span className="kq-station-tag drink">QR</span>}
-                  {form.bankEnabled && <span className="kq-station-tag food">Chuyển khoản</span>}
+                <p className="muted">Tiền mặt là phương thức mặc định và luôn khả dụng.</p>
+              </>
+            ) : method === "qr" ? (
+              <>
+                <div className="menu-field">
+                  <span className="emp-field-label">Kích hoạt QR</span>
+                  <div className="emp-segment">
+                    <button className={`emp-segment-btn${form.qrEnabled ? " active" : ""}`} onClick={() => patch({ qrEnabled: true })}>Bật</button>
+                    <button className={`emp-segment-btn${form.qrEnabled ? "" : " active danger"}`} onClick={() => patch({ qrEnabled: false })}>Tắt</button>
+                  </div>
                 </div>
-
-                {form.bankEnabled && (form.bankName || form.accountNo) && (
-                  <div className="pay-bank-box">
-                    <strong>{form.bankName || "Ngân hàng"}</strong>
-                    <span>{form.accountNo || "Số tài khoản"}</span>
-                    <span>{form.accountHolder || "Chủ tài khoản"}</span>
+                <TextField
+                  label="Nội dung hiển thị cạnh mã QR"
+                  value={form.qrInfo}
+                  onChange={(e) => patch({ qrInfo: e.target.value })}
+                  helperText="Chỉ là thông tin hiển thị trên hoá đơn in."
+                  size="small"
+                  fullWidth
+                  multiline
+                  minRows={2}
+                  disabled={!form.qrEnabled}
+                  inputProps={{ "data-testid": "qr-info-input" }}
+                />
+                <button className={`menu-chip-toggle${form.showQrOnBill ? " on" : ""}`} disabled={!form.qrEnabled} onClick={() => patch({ showQrOnBill: !form.showQrOnBill })}>
+                  {form.showQrOnBill ? "✓ Hiện QR trên hoá đơn" : "Hiện QR trên hoá đơn"}
+                </button>
+                <p className="muted">QR hiện chỉ in kèm hoá đơn, chưa nhận thanh toán tự động.</p>
+              </>
+            ) : method === "bank" ? (
+              <>
+                <div className="menu-field">
+                  <span className="emp-field-label">Kích hoạt chuyển khoản</span>
+                  <div className="emp-segment">
+                    <button className={`emp-segment-btn${form.bankEnabled ? " active" : ""}`} onClick={() => patch({ bankEnabled: true })}>Bật</button>
+                    <button className={`emp-segment-btn${form.bankEnabled ? "" : " active danger"}`} onClick={() => patch({ bankEnabled: false })}>Tắt</button>
                   </div>
-                )}
-
-                {form.qrEnabled && form.showQrOnBill && (
-                  <div className="pay-qr-placeholder" data-testid="pay-qr-preview">
-                    <QrCode size={64} />
-                    <span>{form.qrInfo.trim() || "Quét để thanh toán"}</span>
-                  </div>
-                )}
-
-                <div className="set-receipt-footer">Cảm ơn quý khách</div>
+                </div>
+                <TextField label="Ngân hàng" value={form.bankName} onChange={(e) => patch({ bankName: e.target.value })} size="small" fullWidth disabled={!form.bankEnabled} />
+                <TextField
+                  label="Số tài khoản"
+                  value={form.accountNo}
+                  onChange={(e) => { patch({ accountNo: e.target.value.replace(/[^\d]/g, "") }); setAccountError(""); }}
+                  error={!!accountError || (form.bankEnabled && form.accountNo !== "" && !accountValid(form.accountNo))}
+                  helperText={accountError || (form.bankEnabled && form.accountNo !== "" && !accountValid(form.accountNo) ? "Số tài khoản 6–20 chữ số." : "")}
+                  size="small"
+                  fullWidth
+                  disabled={!form.bankEnabled}
+                  inputProps={{ inputMode: "numeric", "data-testid": "account-no-input" }}
+                />
+                <TextField label="Chủ tài khoản" value={form.accountHolder} onChange={(e) => patch({ accountHolder: e.target.value })} size="small" fullWidth disabled={!form.bankEnabled} />
+                <p className="muted">Thông tin tài khoản chỉ hiển thị trên hoá đơn để khách chuyển khoản thủ công.</p>
+              </>
+            ) : (
+              <div className="tw-empty-state">
+                <CreditCard size={30} color="#94a3b8" />
+                <p>Phương thức này chưa kích hoạt.</p>
               </div>
-            </div>
-          </aside>
-        </div>
+            )}
+
+            {method !== "cash" && (
+              <div className="set-preview-block">
+                <span className="emp-field-label">Xem trước hoá đơn</span>
+                <div className="set-receipt">
+                  <strong className="set-receipt-name">Tên quán</strong>
+                  <span className="set-receipt-addr">Địa chỉ quán</span>
+                  <div className="set-receipt-divider" />
+                  <div className="set-receipt-line"><span>Cà phê sữa × 2</span><span>58.000</span></div>
+                  <div className="set-receipt-line"><span>Trà đào × 1</span><span>42.000</span></div>
+                  <div className="set-receipt-divider" />
+                  <div className="set-receipt-line total"><strong>Tổng</strong><strong>100.000đ</strong></div>
+                  <div className="pay-pre-methods">
+                    <span className="kq-station-tag drink">Tiền mặt</span>
+                    {form.qrEnabled && <span className="kq-station-tag drink">QR</span>}
+                    {form.bankEnabled && <span className="kq-station-tag food">Chuyển khoản</span>}
+                  </div>
+                  {form.bankEnabled && (form.bankName || form.accountNo) && (
+                    <div className="pay-bank-box">
+                      <strong>{form.bankName || "Ngân hàng"}</strong>
+                      <span>{form.accountNo || "Số tài khoản"}</span>
+                      <span>{form.accountHolder || "Chủ tài khoản"}</span>
+                    </div>
+                  )}
+                  {form.qrEnabled && form.showQrOnBill && (
+                    <div className="pay-qr-preview" data-testid="pay-qr-preview">
+                      <QrCode size={64} />
+                      <span>{form.qrInfo.trim() || "Quét để thanh toán"}</span>
+                    </div>
+                  )}
+                  <div className="set-receipt-footer">Cảm ơn quý khách</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
 
       {confirmCancel && (
@@ -2399,7 +2354,6 @@ function KitchenQueueDrawer() {
   const [station, setStation] = useState<KitchenStationFilter>("all");
   const [statusById, setStatusById] = useState<Record<string, KitchenStatus>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [mobileTab, setMobileTab] = useState<"station" | "queue" | "detail">("queue");
 
   const statusOf = (id: string) => statusById[id] ?? "waiting";
   const markDone = (id: string) => { setStatusById((p) => ({ ...p, [id]: "done" })); toast.success("Đã đánh dấu xong"); };
@@ -2439,12 +2393,6 @@ function KitchenQueueDrawer() {
     { key: "food", label: "Bánh", count: KITCHEN_TICKETS.filter((t) => t.items.some((i) => i.station === "food")).length },
   ];
 
-  const tabBtn = (key: "station" | "queue" | "detail", label: string) => (
-    <button className={`menu-tab-btn${mobileTab === key ? " active" : ""}`} onClick={() => setMobileTab(key)}>
-      {label}
-    </button>
-  );
-
   const renderItemLine = (i: KitchenItem) => (
     <div className="kq-item" key={i.id}>
       <span className="kq-item-qty">{i.qty}×</span>
@@ -2477,34 +2425,18 @@ function KitchenQueueDrawer() {
       </header>
 
       <div className="drawer-body menu-editor-body">
-        <div className="menu-tabs">
-          {tabBtn("station", "Trạm")}
-          {tabBtn("queue", "Hàng chờ")}
-          {tabBtn("detail", "Chi tiết")}
+        <div className="section-tabs">
+          {stationChips.map((c) => (
+            <button key={c.key} className={`status-chip ${station === c.key ? "active" : ""}`} onClick={() => setStation(c.key)}>
+              {c.label}
+              <span className="hx-filter-count">{c.count}</span>
+            </button>
+          ))}
         </div>
 
-        <div className="menu-three-pane rp-three-pane">
-          {/* Left: station filter */}
-          <aside className={`pane menu-pane${mobileTab === "station" ? " tab-active" : ""}`}>
-            <div className="pane-head">Trạm</div>
-            <div className="pane-scroll">
-              <div className="menu-cat-list">
-                {stationChips.map((c) => (
-                  <button key={c.key} className={`tw-bucket-btn ${station === c.key ? "active" : ""}`} onClick={() => setStation(c.key)}>
-                    {c.label}
-                    <span className="hx-filter-count">{c.count}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="kq-optional-note">
-                <ChefHat size={15} />
-                <span>Lọc theo trạm để chia vé cho pha chế hoặc bếp.</span>
-              </div>
-            </div>
-          </aside>
-
-          {/* Center: queue cards */}
-          <section className={`pane menu-pane${mobileTab === "queue" ? " tab-active" : ""}`}>
+        <div className="two-region">
+          {/* Queue */}
+          <section className="pane">
             <div className="pane-head">
               <span>Hàng chờ</span>
               <span className="muted">{tickets.length} vé</span>
@@ -2525,7 +2457,7 @@ function KitchenQueueDrawer() {
                         key={t.id}
                         className={`kq-card${selectedId === t.id ? " selected" : ""}${st === "done" ? " done" : ""}`}
                         data-testid={`kitchen-ticket-${t.id}`}
-                        onClick={() => { setSelectedId(t.id); setMobileTab("detail"); }}
+                        onClick={() => setSelectedId(t.id)}
                       >
                         <div className="kq-card-top">
                           <strong>#{t.orderNo}</strong>
@@ -2555,8 +2487,8 @@ function KitchenQueueDrawer() {
             </div>
           </section>
 
-          {/* Right: ticket detail */}
-          <aside className={`pane menu-pane${mobileTab === "detail" ? " tab-active" : ""}`}>
+          {/* Detail */}
+          <aside className="pane">
             <div className="pane-head">Chi tiết vé</div>
             <div className="pane-scroll rp-detail">
               {!selected ? (
@@ -2606,7 +2538,6 @@ function GeneralSettingsDrawer() {
   const [base, setBase] = useState<SettingsForm | null>(null);
   const [form, setForm] = useState<SettingsForm>({ displayName: "", address: "", billFooter: "" });
   const [section, setSection] = useState<SettingsSection>("info");
-  const [mobileTab, setMobileTab] = useState<"nav" | "form" | "preview">("form");
   const [nameError, setNameError] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
@@ -2632,7 +2563,6 @@ function GeneralSettingsDrawer() {
     if (!form.displayName.trim()) {
       setNameError("Tên hiển thị bắt buộc.");
       setSection("info");
-      setMobileTab("form");
       return;
     }
     setNameError("");
@@ -2667,14 +2597,8 @@ function GeneralSettingsDrawer() {
   const sections: Array<{ key: SettingsSection; label: string }> = [
     { key: "info", label: "Thông tin quán" },
     { key: "bill", label: "Hoá đơn" },
-    { key: "demo", label: "Dữ liệu mẫu" },
+    { key: "demo", label: "Bảo trì dữ liệu" },
   ];
-
-  const tabBtn = (key: "nav" | "form" | "preview", label: string) => (
-    <button className={`menu-tab-btn${mobileTab === key ? " active" : ""}`} onClick={() => setMobileTab(key)}>
-      {label}
-    </button>
-  );
 
   if (!allowed) {
     return (
@@ -2727,91 +2651,72 @@ function GeneralSettingsDrawer() {
           <p className="muted" style={{ padding: 16 }}>Đang tải cài đặt...</p>
         ) : (
           <>
-            <div className="menu-tabs">
-              {tabBtn("nav", "Mục")}
-              {tabBtn("form", "Biểu mẫu")}
-              {tabBtn("preview", "Xem trước")}
+            <div className="section-tabs">
+              {sections.map((s) => (
+                <button
+                  key={s.key}
+                  className={`menu-tab-btn${section === s.key ? " active" : ""}`}
+                  onClick={() => setSection(s.key)}
+                >
+                  {s.label}
+                </button>
+              ))}
             </div>
 
-            <div className="menu-three-pane rp-three-pane">
-              {/* Left: settings nav */}
-              <aside className={`pane menu-pane${mobileTab === "nav" ? " tab-active" : ""}`}>
-                <div className="pane-head">Mục cài đặt</div>
-                <div className="pane-scroll">
-                  <div className="menu-cat-list">
-                    {sections.map((s) => (
-                      <button
-                        key={s.key}
-                        className={`tw-bucket-btn ${section === s.key ? "active" : ""}`}
-                        onClick={() => { setSection(s.key); setMobileTab("form"); }}
-                      >
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </aside>
-
-              {/* Center: form sections */}
-              <section className={`pane menu-pane${mobileTab === "form" ? " tab-active" : ""}`}>
-                <div className="pane-head">{sections.find((s) => s.key === section)?.label}</div>
-                <div className="pane-scroll menu-props">
-                  {section === "info" ? (
-                    <>
-                      <TextField
-                        label="Tên hiển thị quán"
-                        value={form.displayName}
-                        onChange={(e) => { patch({ displayName: e.target.value }); setNameError(""); }}
-                        error={!!nameError}
-                        helperText={nameError}
-                        size="small"
-                        fullWidth
-                        inputProps={{ "data-testid": "settings-name-input" }}
-                      />
-                      <TextField label="Địa chỉ" value={form.address} onChange={(e) => patch({ address: e.target.value })} size="small" fullWidth multiline minRows={2} />
-                    </>
-                  ) : section === "bill" ? (
-                    <>
-                      <TextField label="Chân hoá đơn" value={form.billFooter} onChange={(e) => patch({ billFooter: e.target.value })} size="small" fullWidth multiline minRows={3} helperText="Hiển thị cuối hoá đơn in." />
-                    </>
-                  ) : (
-                    <div className="set-demo-box">
-                      <strong>Dữ liệu mẫu</strong>
-                      <p className="muted">Chỉ đặt lại dữ liệu mẫu có sẵn, không xoá dữ liệu người dùng tự tạo.</p>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        startIcon={<Trash2 size={15} />}
-                        data-testid="open-clear-demo"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setClearOpen(true);
-                        }}
-                      >
-                        Đặt lại dữ liệu mẫu
-                      </Button>
+            <section className="pane">
+              <div className="pane-head">{sections.find((s) => s.key === section)?.label}</div>
+              <div className="pane-scroll menu-props">
+                {section === "info" ? (
+                  <>
+                    <TextField
+                      label="Tên hiển thị quán"
+                      value={form.displayName}
+                      onChange={(e) => { patch({ displayName: e.target.value }); setNameError(""); }}
+                      error={!!nameError}
+                      helperText={nameError}
+                      size="small"
+                      fullWidth
+                      inputProps={{ "data-testid": "settings-name-input" }}
+                    />
+                    <TextField label="Địa chỉ" value={form.address} onChange={(e) => patch({ address: e.target.value })} size="small" fullWidth multiline minRows={2} />
+                  </>
+                ) : section === "bill" ? (
+                  <>
+                    <TextField label="Chân hoá đơn" value={form.billFooter} onChange={(e) => patch({ billFooter: e.target.value })} size="small" fullWidth multiline minRows={3} helperText="Hiển thị cuối hoá đơn in." />
+                    <div className="set-preview-block">
+                      <span className="emp-field-label">Xem trước hoá đơn</span>
+                      <div className="set-receipt">
+                        <strong className="set-receipt-name">{form.displayName || "Tên quán"}</strong>
+                        {form.address && <span className="set-receipt-addr">{form.address}</span>}
+                        <div className="set-receipt-divider" />
+                        <div className="set-receipt-line"><span>Cà phê sữa × 2</span><span>58.000</span></div>
+                        <div className="set-receipt-line"><span>Trà đào × 1</span><span>42.000</span></div>
+                        <div className="set-receipt-divider" />
+                        <div className="set-receipt-line total"><strong>Tổng</strong><strong>100.000đ</strong></div>
+                        <div className="set-receipt-footer">{form.billFooter || "Cảm ơn quý khách"}</div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </section>
-
-              {/* Right: preview */}
-              <aside className={`pane menu-pane${mobileTab === "preview" ? " tab-active" : ""}`}>
-                <div className="pane-head">Xem trước hoá đơn</div>
-                <div className="pane-scroll">
-                  <div className="set-receipt">
-                    <strong className="set-receipt-name">{form.displayName || "Tên quán"}</strong>
-                    {form.address && <span className="set-receipt-addr">{form.address}</span>}
-                    <div className="set-receipt-divider" />
-                    <div className="set-receipt-line"><span>Cà phê sữa × 2</span><span>58.000</span></div>
-                    <div className="set-receipt-line"><span>Trà đào × 1</span><span>42.000</span></div>
-                    <div className="set-receipt-divider" />
-                    <div className="set-receipt-line total"><strong>Tổng</strong><strong>100.000đ</strong></div>
-                    <div className="set-receipt-footer">{form.billFooter || "Cảm ơn quý khách"}</div>
+                  </>
+                ) : (
+                  <div className="set-demo-box">
+                    <strong>Dữ liệu mẫu</strong>
+                    <p className="muted">Chỉ đặt lại dữ liệu mẫu có sẵn, không xoá dữ liệu người dùng tự tạo.</p>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<Trash2 size={15} />}
+                      data-testid="open-clear-demo"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setClearOpen(true);
+                      }}
+                    >
+                      Đặt lại dữ liệu mẫu
+                    </Button>
                   </div>
-                </div>
-              </aside>
-            </div>
+                )}
+              </div>
+            </section>
           </>
         )}
       </div>
@@ -2878,10 +2783,7 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
           <AlertTriangle size={20} color="#b45309" />
           <h3>Đặt lại dữ liệu mẫu</h3>
         </div>
-        <p>Thao tác này chỉ đặt lại dữ liệu mẫu có sẵn, không xoá dữ liệu người dùng tự tạo.</p>
-        <div className="clear-demo-real">
-          Hệ thống chặn khi còn đơn đang mở và giữ lại tài khoản quản lý hiện tại.
-        </div>
+        <p>Thao tác này chỉ đặt lại dữ liệu mẫu có sẵn, không xoá dữ liệu người dùng tự tạo và giữ lại tài khoản quản lý hiện tại.</p>
 
         {checkingOpenOrders ? (
           <div className="clear-demo-blocked" data-testid="clear-demo-loading">
@@ -2901,7 +2803,7 @@ function ClearDemoDialog({ onClose }: { onClose: () => void }) {
         ) : blocked ? (
           <div className="clear-demo-blocked" data-testid="clear-demo-blocked">
             <strong>Còn {openCount} đơn đang mở</strong>
-            <span className="muted">Đóng hết đơn đang mở trước khi đặt lại dữ liệu mẫu.</span>
+            <span className="muted">Cần thanh toán hoặc huỷ các đơn đang mở trước khi đặt lại dữ liệu mẫu.</span>
             <div className="clear-demo-blocked-actions">
               <Button variant="contained" size="small" onClick={onClose}>Đóng đơn đang mở trước</Button>
             </div>
@@ -3838,8 +3740,6 @@ const toInt = (raw: string) => {
 };
 const nextSort = (current: number[]) => (current.length ? Math.max(...current) + 1 : 1);
 
-type MenuTab = "cat" | "item" | "props";
-
 const mapById = <T extends { id: string }>(items: T[]): Map<string, T> =>
   new Map(items.map((item) => [item.id, item]));
 
@@ -4001,7 +3901,6 @@ function MenuEditorDrawer() {
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
-  const [mobileTab, setMobileTab] = useState<MenuTab>("item");
   const [confirmCancel, setConfirmCancel] = useState(false);
   // Advanced item fields (sort order + option groups) stay collapsed by default
   // so the basic name/price/category/availability fields lead the props pane.
@@ -4061,7 +3960,6 @@ function MenuEditorDrawer() {
     setCats((list) => [...list, { id, name: "Danh mục mới", sortOrder: nextSort(list.map((c) => c.sortOrder)), isNew: true }]);
     setSelectedCategoryId(id);
     setSelectedItemId(null);
-    setMobileTab("props");
     touch();
   };
   const patchCategory = (id: string, patch: Partial<DraftCategory>) => {
@@ -4102,7 +4000,6 @@ function MenuEditorDrawer() {
       },
     ]);
     setSelectedItemId(id);
-    setMobileTab("props");
     touch();
   };
   const patchItem = (id: string, patch: Partial<DraftItem>) => {
@@ -4181,14 +4078,12 @@ function MenuEditorDrawer() {
     if (badItem) {
       setSelectedCategoryId(badItem.categoryId);
       setSelectedItemId(badItem.id);
-      setMobileTab("props");
       toast.error("Kiểm tra lại: tên món bắt buộc, giá ≥ 0.");
       return;
     }
     const badGroup = groups.find((g) => !g.deleted && g.maxSelect < g.minSelect);
     if (badGroup) {
       setSelectedItemId(badGroup.menuItemId);
-      setMobileTab("props");
       toast.error("Nhóm tuỳ chọn: số chọn tối đa phải ≥ tối thiểu.");
       return;
     }
@@ -4225,12 +4120,6 @@ function MenuEditorDrawer() {
     if (dirty) setConfirmCancel(true);
     else closeDrawer();
   };
-
-  const tabBtn = (key: MenuTab, label: string) => (
-    <button className={`menu-tab-btn${mobileTab === key ? " active" : ""}`} onClick={() => setMobileTab(key)}>
-      {label}
-    </button>
-  );
 
   return (
     <section className="drawer-overlay" data-testid="menu-editor">
@@ -4275,63 +4164,30 @@ function MenuEditorDrawer() {
           <p className="muted" style={{ padding: 16 }}>Đang tải menu...</p>
         ) : (
           <>
-            <div className="menu-tabs">
-              {tabBtn("cat", "Danh mục")}
-              {tabBtn("item", "Món")}
-              {tabBtn("props", "Thuộc tính")}
-            </div>
-
-            <div className="menu-three-pane">
-              {/* Left: categories */}
-              <aside className={`pane menu-pane${mobileTab === "cat" ? " tab-active" : ""}`}>
-                <div className="pane-head">
-                  <span>Danh mục</span>
-                  <button className="menu-mini-btn" title="Thêm danh mục" data-testid="add-category-button" onClick={addCategory}>
-                    <Plus size={14} />
-                  </button>
-                </div>
-                <div className="pane-scroll">
-                  {sortedCats.length === 0 ? (
-                    <div className="tw-empty-state">
-                      <Coffee size={30} color="#94a3b8" />
-                      <p>Chưa có danh mục.</p>
-                      <Button size="small" variant="contained" onClick={addCategory}>Thêm danh mục</Button>
-                    </div>
-                  ) : (
-                    <div className="menu-cat-list">
-                      {sortedCats.map((c, idx) => (
-                        <div
-                          key={c.id}
-                          className={`menu-cat-row${c.id === selectedCategoryId ? " active" : ""}${c.deleted ? " deleted" : ""}`}
-                          onClick={() => { setSelectedCategoryId(c.id); setSelectedItemId(null); }}
-                        >
-                          <div className="menu-cat-main">
-                            <strong>{c.name || "(chưa đặt tên)"}</strong>
-                            {c.deleted ? (
-                              <span className="menu-pending-del">Đang chờ xóa</span>
-                            ) : (
-                              <span className="muted">{items.filter((i) => i.categoryId === c.id && !i.deleted).length} món</span>
-                            )}
-                          </div>
-                          <div className="menu-cat-actions" onClick={(e) => e.stopPropagation()}>
-                            <button className="menu-mini-btn" disabled={idx === 0} onClick={() => moveCategory(c.id, -1)}>↑</button>
-                            <button className="menu-mini-btn" disabled={idx === sortedCats.length - 1} onClick={() => moveCategory(c.id, 1)}>↓</button>
-                            <button className="menu-mini-btn" title={c.deleted ? "Khôi phục" : "Xoá"} onClick={() => toggleDeleteCategory(c.id)}>
-                              {c.deleted ? <RotateCcw size={13} /> : <Trash2 size={13} />}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </aside>
-
-              {/* Center: items / preview */}
-              <section className={`pane menu-pane${mobileTab === "item" ? " tab-active" : ""}`}>
-                <div className="pane-head">
-                  <span>{preview ? "Xem trước POS" : "Món trong danh mục"}</span>
-                  <span className="muted">{catItems.filter((i) => !i.deleted).length} món</span>
+            <div className="two-region">
+              {/* Catalog: categories + items */}
+              <section className="pane">
+                <div className="pane-head menu-catalog-head">
+                  <div className="menu-cat-tabs">
+                    {sortedCats.map((c) => (
+                      <button
+                        key={c.id}
+                        className={`menu-cat-tab${c.id === selectedCategoryId ? " active" : ""}${c.deleted ? " deleted" : ""}`}
+                        onClick={() => { setSelectedCategoryId(c.id); setSelectedItemId(null); }}
+                      >
+                        {c.name || "(chưa đặt tên)"}
+                        {c.deleted ? (
+                          <span className="menu-pending-del">Đang chờ xóa</span>
+                        ) : (
+                          <span className="hx-filter-count">{items.filter((i) => i.categoryId === c.id && !i.deleted).length}</span>
+                        )}
+                      </button>
+                    ))}
+                    <button className="menu-cat-tab add" data-testid="add-category-button" onClick={addCategory}>
+                      <Plus size={13} /> Danh mục
+                    </button>
+                  </div>
+                  {preview && <span className="muted">{catItems.filter((i) => !i.deleted).length} món</span>}
                 </div>
                 <div className="pane-scroll">
                   {!selectedCategoryId ? (
@@ -4361,7 +4217,7 @@ function MenuEditorDrawer() {
                           key={it.id}
                           className={`menu-edit-card${it.id === selectedItemId ? " selected" : ""}${it.deleted ? " deleted" : ""}${it.isAvailable ? "" : " soldout"}`}
                           data-testid={`menu-edit-card-${it.id}`}
-                          onClick={() => { setSelectedItemId(it.id); setMobileTab("props"); }}
+                          onClick={() => setSelectedItemId(it.id)}
                         >
                           <div className="menu-item-thumb"><Coffee size={18} /></div>
                           <div className="menu-edit-card-body">
@@ -4391,9 +4247,9 @@ function MenuEditorDrawer() {
                 </div>
               </section>
 
-              {/* Right: properties */}
-              <aside className={`pane menu-pane${mobileTab === "props" ? " tab-active" : ""}`}>
-                <div className="pane-head">Thuộc tính</div>
+              {/* Detail editor */}
+              <aside className="pane">
+                <div className="pane-head">{selectedItem ? "Chi tiết món" : selectedCategory ? "Chi tiết danh mục" : "Thuộc tính"}</div>
                 <div className="pane-scroll menu-props">
                   {selectedItem ? (
                     <>
@@ -4524,7 +4380,19 @@ function MenuEditorDrawer() {
                   ) : selectedCategory ? (
                     <>
                       <TextField label="Tên danh mục" value={selectedCategory.name} onChange={(e) => patchCategory(selectedCategory.id, { name: e.target.value })} size="small" fullWidth />
-                      <TextField label="Thứ tự" value={String(selectedCategory.sortOrder)} onChange={(e) => patchCategory(selectedCategory.id, { sortOrder: toInt(e.target.value) })} size="small" fullWidth inputProps={{ inputMode: "numeric" }} />
+                      <div className="menu-field">
+                        <span className="emp-field-label">Sắp xếp danh mục</span>
+                        <div className="fe-tool-row">
+                          <button className="menu-mini-btn wide" onClick={() => moveCategory(selectedCategory.id, -1)}>↑ Lên</button>
+                          <button className="menu-mini-btn wide" onClick={() => moveCategory(selectedCategory.id, 1)}>↓ Xuống</button>
+                        </div>
+                      </div>
+                      {selectedCategory.deleted && (
+                        <div className="menu-tombstone">
+                          Đang chờ xóa.
+                          <button className="menu-mini-btn" onClick={() => toggleDeleteCategory(selectedCategory.id)}><RotateCcw size={13} /> Khôi phục</button>
+                        </div>
+                      )}
                       <Button variant="outlined" color={selectedCategory.deleted ? "primary" : "error"} onClick={() => toggleDeleteCategory(selectedCategory.id)}>
                         {selectedCategory.deleted ? "Khôi phục danh mục" : "Xoá danh mục"}
                       </Button>
@@ -4596,7 +4464,6 @@ interface DraftDecor {
   isNew?: boolean;
 }
 
-type FloorTab = "tools" | "canvas" | "props";
 type FloorTool = "select" | "pan";
 type FloorSelection = { type: "table" | "decor"; id: string } | null;
 
@@ -4761,7 +4628,6 @@ function FloorEditorDrawer() {
   const [zoom, setZoom] = useState(1);
   const [selected, setSelected] = useState<FloorSelection>(null);
   const [dirty, setDirty] = useState(false);
-  const [mobileTab, setMobileTab] = useState<FloorTab>("canvas");
   const [confirmCancel, setConfirmCancel] = useState(false);
   // Geometry/asset fields are secondary to name/seats/shape, so keep them folded
   // away under an "Nâng cao" section until the admin needs precise control.
@@ -4853,7 +4719,6 @@ function FloorEditorDrawer() {
     ]);
     setSelected({ type: "table", id });
     setTool("select");
-    setMobileTab("props");
     touch();
   };
   const patchTable = (id: string, patch: Partial<DraftTable>) => {
@@ -4878,7 +4743,7 @@ function FloorEditorDrawer() {
         areaId,
         kind,
         label: DECOR_LABEL[kind],
-        assetKey: `${kind}_mock`,
+        assetKey: `${kind}_default`,
         posX: logicalStage.width / 2,
         posY: logicalStage.height / 2,
         ...size,
@@ -4890,7 +4755,6 @@ function FloorEditorDrawer() {
     ]);
     setSelected({ type: "decor", id });
     setTool("select");
-    setMobileTab("props");
     touch();
   };
   const patchDecor = (id: string, patch: Partial<DraftDecor>) => {
@@ -4906,7 +4770,6 @@ function FloorEditorDrawer() {
   const onNodePointerDown = (e: ReactPointerEvent, kind: "table" | "decor", obj: { id: string; posX: number; posY: number; isLocked?: boolean }) => {
     e.stopPropagation();
     setSelected({ type: kind, id: obj.id });
-    setMobileTab("props");
     if (tool !== "select" || obj.isLocked) return;
     try { (e.target as HTMLElement).setPointerCapture?.(e.pointerId); } catch { /* noop */ }
     const p = toLogical(e.clientX, e.clientY);
@@ -4976,12 +4839,6 @@ function FloorEditorDrawer() {
     else closeDrawer();
   };
 
-  const tabBtn = (key: FloorTab, label: string) => (
-    <button className={`menu-tab-btn${mobileTab === key ? " active" : ""}`} onClick={() => setMobileTab(key)}>
-      {label}
-    </button>
-  );
-
   return (
     <section className="drawer-overlay" data-testid="floor-editor">
       <header className="drawer-header">
@@ -5034,73 +4891,54 @@ function FloorEditorDrawer() {
           <p className="muted" style={{ padding: 16 }}>Đang tải sơ đồ...</p>
         ) : (
           <>
-            <div className="menu-tabs">
-              {tabBtn("tools", "Công cụ")}
-              {tabBtn("canvas", "Sơ đồ")}
-              {tabBtn("props", "Thuộc tính")}
+            <div className="section-tabs fe-toolbar">
+              <div className="fe-tb-group">
+                <button className={`menu-mini-btn wide${tool === "select" ? " on" : ""}`} onClick={() => setTool("select")} title="Chọn">
+                  <MousePointer2 size={14} /> Chọn
+                </button>
+                <button className={`menu-mini-btn wide${tool === "pan" ? " on" : ""}`} onClick={() => setTool("pan")} title="Di chuyển khung nhìn">
+                  <Hand size={14} /> Di chuyển
+                </button>
+              </div>
+              <span className="fe-tb-sep" aria-hidden="true" />
+              <div className="fe-tb-group">
+                <span className="fe-tb-label">Thêm bàn</span>
+                {(["round", "square", "rectangle"] as TableShape[]).map((shape) => (
+                  <button
+                    key={shape}
+                    className="menu-mini-btn wide"
+                    data-testid={`add-table-${shape}`}
+                    onClick={() => addTable(shape)}
+                    disabled={currentArea?.deleted}
+                  >
+                    <Plus size={12} /> {SHAPE_LABEL[shape]}
+                  </button>
+                ))}
+              </div>
+              <span className="fe-tb-sep" aria-hidden="true" />
+              <div className="fe-tb-group">
+                <span className="fe-tb-label">Trang trí</span>
+                {DECOR_LIBRARY.map((kind) => (
+                  <button key={kind} className="menu-mini-btn wide" onClick={() => addDecor(kind)} disabled={currentArea?.deleted}>
+                    <Plus size={12} /> {DECOR_LABEL[kind]}
+                  </button>
+                ))}
+              </div>
+              <span className="fe-tb-sep" aria-hidden="true" />
+              <div className="fe-tb-group">
+                <button className="menu-mini-btn" title="Thu nhỏ" onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.2).toFixed(1)))}><ZoomOut size={14} /></button>
+                <span className="fe-zoom-label">{Math.round(zoom * 100)}%</span>
+                <button className="menu-mini-btn" title="Phóng to" onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.2).toFixed(1)))}><ZoomIn size={14} /></button>
+                <button className="menu-mini-btn" onClick={() => setZoom(1)}>100%</button>
+                <button className={`menu-mini-btn wide${snap ? " on" : ""}`} onClick={() => setSnap((s) => !s)}>
+                  <Magnet size={14} /> Bắt lưới {snap ? "Bật" : "Tắt"}
+                </button>
+              </div>
             </div>
 
-            <div className="menu-three-pane fe-three-pane">
-              {/* Left: tools/library */}
-              <aside className={`pane menu-pane${mobileTab === "tools" ? " tab-active" : ""}`}>
-                <div className="pane-head">Công cụ</div>
-                <div className="pane-scroll fe-tools">
-                  <div className="fe-tool-row">
-                    <button className={`menu-mini-btn wide${tool === "select" ? " on" : ""}`} onClick={() => setTool("select")} title="Chọn">
-                      <MousePointer2 size={14} /> Chọn
-                    </button>
-                    <button className={`menu-mini-btn wide${tool === "pan" ? " on" : ""}`} onClick={() => setTool("pan")} title="Di chuyển khung nhìn">
-                      <Hand size={14} /> Di chuyển
-                    </button>
-                  </div>
-
-                  <div className="fe-tool-group">
-                    <div className="emp-field-label">Thêm bàn</div>
-                    <div className="fe-lib-grid">
-                      {(["round", "square", "rectangle"] as TableShape[]).map((shape) => (
-                        <button
-                          key={shape}
-                          className="fe-lib-btn"
-                          data-testid={`add-table-${shape}`}
-                          onClick={() => addTable(shape)}
-                          disabled={currentArea?.deleted}
-                        >
-                          <span className={`fe-lib-icon shape-${shape}`} />
-                          {SHAPE_LABEL[shape]}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="fe-tool-group">
-                    <div className="emp-field-label">Trang trí</div>
-                    <div className="fe-lib-grid">
-                      {DECOR_LIBRARY.map((kind) => (
-                        <button key={kind} className="fe-lib-btn" onClick={() => addDecor(kind)} disabled={currentArea?.deleted}>
-                          <span className={`fe-lib-icon decor-${kind}`} />
-                          {DECOR_LABEL[kind]}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="fe-tool-group">
-                    <div className="emp-field-label">Khung nhìn</div>
-                    <div className="fe-tool-row">
-                      <button className="menu-mini-btn" title="Thu nhỏ" onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.2).toFixed(1)))}><ZoomOut size={14} /></button>
-                      <span className="fe-zoom-label">{Math.round(zoom * 100)}%</span>
-                      <button className="menu-mini-btn" title="Phóng to" onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.2).toFixed(1)))}><ZoomIn size={14} /></button>
-                      <button className="menu-mini-btn" onClick={() => setZoom(1)}>100%</button>
-                    </div>
-                    <button className={`menu-mini-btn wide${snap ? " on" : ""}`} onClick={() => setSnap((s) => !s)}>
-                      <Magnet size={14} /> Bắt lưới {snap ? "Bật" : "Tắt"}
-                    </button>
-                  </div>
-                </div>
-              </aside>
-
-              {/* Center: canvas */}
-              <section className={`pane menu-pane${mobileTab === "canvas" ? " tab-active" : ""}`}>
+            <div className="two-region canvas-region">
+              {/* Canvas */}
+              <section className="pane">
                 <div className="pane-head">
                   <span>Khu vực thiết kế</span>
                   <span className="muted">{tool === "pan" ? "Di chuyển khung nhìn" : "Chọn / kéo"}</span>
@@ -5154,9 +4992,9 @@ function FloorEditorDrawer() {
                 </div>
               </section>
 
-              {/* Right: properties */}
-              <aside className={`pane menu-pane${mobileTab === "props" ? " tab-active" : ""}`}>
-                <div className="pane-head">Thuộc tính</div>
+              {/* Inspector */}
+              <aside className="pane">
+                <div className="pane-head">{selectedTable ? "Chi tiết bàn" : selectedDecor ? "Chi tiết trang trí" : "Chi tiết khu"}</div>
                 <div className="pane-scroll menu-props">
                   {selectedTable ? (
                     <>
@@ -5399,7 +5237,6 @@ function ReportSettingsDrawer() {
   const [range, setRange] = useState<ReportRange>("today");
   const [section, setSection] = useState<ReportSection>("overview");
   const [selected, setSelected] = useState<{ type: "hour" | "item"; key: string } | null>(null);
-  const [mobileTab, setMobileTab] = useState<"nav" | "main" | "detail">("main");
   const timezone = settingsQuery.data?.timezone ?? DEFAULT_TIMEZONE;
   const today = businessDateInTimezone(new Date(), timezone);
   const [customFrom, setCustomFrom] = useState(today);
@@ -5453,18 +5290,10 @@ function ReportSettingsDrawer() {
 
   const pickHour = (label: string) => {
     setSelected((prev) => (prev?.type === "hour" && prev.key === label ? null : { type: "hour", key: label }));
-    setMobileTab("detail");
   };
   const pickItem = (name: string) => {
     setSelected((prev) => (prev?.type === "item" && prev.key === name ? null : { type: "item", key: name }));
-    setMobileTab("detail");
   };
-
-  const tabBtn = (key: "nav" | "main" | "detail", label: string) => (
-    <button className={`menu-tab-btn${mobileTab === key ? " active" : ""}`} onClick={() => setMobileTab(key)}>
-      {label}
-    </button>
-  );
 
   const renderChart = (height: number) => (
     <ResponsiveContainer width="100%" height={height}>
@@ -5555,42 +5384,53 @@ function ReportSettingsDrawer() {
       </header>
 
       <div className="drawer-body menu-editor-body">
-        <div className="menu-tabs">
-          {tabBtn("nav", "Mục")}
-          {tabBtn("main", "Biểu đồ")}
-          {tabBtn("detail", "Chi tiết")}
+        <div className="section-tabs">
+          {sections.map((s) => (
+            <button
+              key={s.key}
+              className={`menu-tab-btn${section === s.key ? " active" : ""}`}
+              onClick={() => { setSection(s.key); setSelected(null); }}
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
 
-        <div className="menu-three-pane rp-three-pane">
-          {/* Left: section nav */}
-          <aside className={`pane menu-pane${mobileTab === "nav" ? " tab-active" : ""}`}>
-            <div className="pane-head">Mục báo cáo</div>
-            <div className="pane-scroll">
-              <div className="menu-cat-list">
-                {sections.map((s) => (
-                  <button
-                    key={s.key}
-                    className={`tw-bucket-btn ${section === s.key ? "active" : ""}`}
-                    onClick={() => { setSection(s.key); setMobileTab("main"); }}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-              <div className="rp-note" style={{ marginTop: 12 }}>
-                <strong>{dateChips.find((d) => d.key === range)?.label}</strong>
-                <span>Chỉ tính đơn đã thanh toán, không tính đơn đã huỷ.</span>
-              </div>
-            </div>
-          </aside>
-
-          {/* Center: charts & tables */}
-          <section className={`pane menu-pane${mobileTab === "main" ? " tab-active" : ""}`}>
-            <div className="pane-head">
-              <span>{sections.find((s) => s.key === section)?.label}</span>
-              {hasData && <span className="muted">{dataset.paidOrders} đơn</span>}
-            </div>
-            <div className="pane-scroll rp-main">
+        <section className="pane">
+          <div className="pane-head">
+            <span>{sections.find((s) => s.key === section)?.label}</span>
+            {hasData && <span className="muted">{dataset.paidOrders} đơn</span>}
+          </div>
+          <div className="pane-scroll rp-main">
+            {selected?.type === "hour" ? (
+              (() => {
+                const h = dataset.hourly.find((x) => x.label === selected.key);
+                if (!h) return null;
+                return (
+                  <div className="rp-detail-card rp-selected-detail">
+                    <div className="rp-card-head">Mốc {h.label}</div>
+                    <div className="tw-detail-row"><span>Doanh thu</span><strong className="price-text">{formatVnd(h.revenue)}</strong></div>
+                    <div className="tw-detail-row"><span>Số đơn</span><strong>{h.orders || "—"}</strong></div>
+                    <div className="tw-detail-row"><span>% doanh thu</span><strong>{dataset.revenue ? Math.round((h.revenue / dataset.revenue) * 100) : 0}%</strong></div>
+                    <button className="menu-mini-btn wide" onClick={() => setSelected(null)}>Đóng chi tiết</button>
+                  </div>
+                );
+              })()
+            ) : selected?.type === "item" ? (
+              (() => {
+                const it = dataset.topItems.find((x) => x.name === selected.key);
+                if (!it) return null;
+                return (
+                  <div className="rp-detail-card rp-selected-detail">
+                    <div className="rp-card-head">{it.name}</div>
+                    <div className="tw-detail-row"><span>Xuất hiện</span><strong>{it.qty} ngày top</strong></div>
+                    <div className="tw-detail-row"><span>Doanh thu ngày top</span><strong className="price-text">{formatVnd(it.revenue)}</strong></div>
+                    <div className="tw-detail-row"><span>TB ngày top</span><strong>{formatVnd(Math.round(it.revenue / Math.max(1, it.qty)))}</strong></div>
+                    <button className="menu-mini-btn wide" onClick={() => setSelected(null)}>Đóng chi tiết</button>
+                  </div>
+                );
+              })()
+            ) : null}
               {loading ? (
                 <div className="rp-skel-wrap">
                   <div className="tw-skeleton-card" style={{ height: 88 }} />
@@ -5659,6 +5499,12 @@ function ReportSettingsDrawer() {
                       ))}
                     </div>
                   </div>
+                  <div className="rp-card">
+                    <div className="rp-card-head">Tổng quan nhanh</div>
+                    <div className="tw-detail-row"><span>Giờ cao điểm</span><strong>{hasData ? maxHour.label : "—"}</strong></div>
+                    <div className="tw-detail-row"><span>Thanh toán phổ biến</span><strong>{topMethod}</strong></div>
+                    <div className="tw-detail-row"><span>Đơn đã huỷ</span><strong>{dataset.voidCount}</strong></div>
+                  </div>
                 </>
               ) : section === "hourly" ? (
                 <>
@@ -5715,73 +5561,7 @@ function ReportSettingsDrawer() {
                 </div>
               )}
             </div>
-          </section>
-
-          {/* Right: insights / detail */}
-          <aside className={`pane menu-pane${mobileTab === "detail" ? " tab-active" : ""}`}>
-            <div className="pane-head">Chi tiết</div>
-            <div className="pane-scroll rp-detail">
-              <div className="rp-note">
-                <strong>Ghi chú</strong>
-                <span>Chỉ tính đơn đã thanh toán, không tính đơn đã huỷ ({dataset.voidCount} đơn huỷ).</span>
-              </div>
-
-              {selected?.type === "hour" ? (
-                (() => {
-                  const h = dataset.hourly.find((x) => x.label === selected.key);
-                  if (!h) return null;
-                  return (
-                    <div className="rp-detail-card">
-                      <div className="rp-card-head">Mốc {h.label}</div>
-                      <div className="tw-detail-row"><span>Doanh thu</span><strong className="price-text">{formatVnd(h.revenue)}</strong></div>
-                      <div className="tw-detail-row"><span>Số đơn</span><strong>{h.orders || "—"}</strong></div>
-                      <div className="tw-detail-row"><span>% doanh thu</span><strong>{Math.round((h.revenue / dataset.revenue) * 100)}%</strong></div>
-                    </div>
-                  );
-                })()
-              ) : selected?.type === "item" ? (
-                (() => {
-                  const it = dataset.topItems.find((x) => x.name === selected.key);
-                  if (!it) return null;
-                  return (
-                    <div className="rp-detail-card">
-                      <div className="rp-card-head">{it.name}</div>
-                      <div className="tw-detail-row"><span>Xuất hiện</span><strong>{it.qty} ngày top</strong></div>
-                      <div className="tw-detail-row"><span>Doanh thu ngày top</span><strong className="price-text">{formatVnd(it.revenue)}</strong></div>
-                      <div className="tw-detail-row"><span>TB ngày top</span><strong>{formatVnd(Math.round(it.revenue / Math.max(1, it.qty)))}</strong></div>
-                    </div>
-                  );
-                })()
-              ) : (
-                <>
-                  <p className="rp-detail-hint muted">Chọn mốc thời gian hoặc món để xem chi tiết.</p>
-                  <div className="rp-detail-card">
-                    <div className="rp-card-head">Tổng quan nhanh</div>
-                    <div className="tw-detail-row"><span>Giờ cao điểm</span><strong>{hasData ? maxHour.label : "—"}</strong></div>
-                    <div className="tw-detail-row"><span>Thanh toán phổ biến</span><strong>{topMethod}</strong></div>
-                    <div className="tw-detail-row"><span>Đơn huỷ</span><strong>{dataset.voidCount}</strong></div>
-                  </div>
-                  <div className="rp-detail-card">
-                    <div className="rp-card-head">Đơn gần đây</div>
-                    {dataset.orders.length === 0 ? (
-                      <p className="muted">Chưa có đơn.</p>
-                    ) : (
-                      dataset.orders.slice(0, 5).map((o) => (
-                        <div key={o.id} className="rp-recent-row">
-                          <div>
-                            <strong>#{o.orderNo}</strong>
-                            <span className="muted"> · {o.time} · {o.table}</span>
-                          </div>
-                          <strong className="price-text">{formatCompactVnd(o.total)}</strong>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          </aside>
-        </div>
+        </section>
       </div>
     </section>
   );
