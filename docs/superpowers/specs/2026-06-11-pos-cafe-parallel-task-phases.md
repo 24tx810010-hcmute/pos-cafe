@@ -317,6 +317,8 @@ Done khi:
 
 Status 2026-06-12: logic hooks foundation implemented một phần trong `src/features/admin/*` và `src/features/pos/*`: report query, settings mutation, clear-demo admin guard/invalidation, POS print call qua `IPrintPort` khi submit/pay. UI report/settings/print preview production chưa tách khỏi mock monolith.
 
+Status 2026-06-19: Virtual Printer + Receipt Layout phase được ghi lại ở `docs/superpowers/specs/2026-06-19-virtual-printer-receipt-layout.md`. `PrintPort` tiếp tục là browser HTML print-preview, không phải native printer. Boundary bắt buộc: `UI/features -> AppPorts/IPrintPort -> print adapter`; không để Supabase lọt vào UI/features/core/domain/ports. Receipt payload planned/implemented gồm item note, `lineTotal`, tên/địa chỉ/footer quán, employee/cashier, `printedAt`/`paidAt`, `paymentMethod`. Nếu cần schema/RPC mới thì thêm migration `005`, không sửa migration `003` đã apply/live. Docs branch `docs` phải giữ riêng và không merge vào `main`.
+
 Ownership:
 
 - report feature
