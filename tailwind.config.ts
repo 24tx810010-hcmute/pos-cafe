@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import { posCafeStyles } from "./tailwind.posCafeStyles";
 
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
@@ -30,5 +31,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [posCafeStyles],
 } satisfies Config;
