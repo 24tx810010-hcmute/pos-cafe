@@ -71,7 +71,8 @@ rg -n "mock|Supabase|DB|MVP|placeholder|seed|tombstone|config|raw Store Key|paid
 rg -n "three-pane|payment-three-pane|menu-three-pane|rp-three-pane|fe-three-pane" src/app/App.tsx src/styles.css
 rg -n "^[ \t]*(display|width|height|padding|margin|border|background|color|font|grid|flex|position|top|right|bottom|left|box-shadow|text-|line-height|overflow|opacity|cursor|transition|align|justify|gap|z-index|transform|outline|min-|max-|place-|white-space|vertical-align|border-radius|border-color|border-style|border-width|box-sizing|resize|pointer-events|object-fit|letter-spacing):" src/styles.css
 rg -n "@apply" src/styles.css
+Get-Content src/styles.css
 ```
 
 A touched Core POS screen must not remain on `.three-pane` or `.payment-three-pane`.
-A touched Core POS screen must not add plain custom CSS declarations. Use Tailwind utilities or Tailwind `@apply`.
+A touched Core POS screen must not add plain custom CSS declarations or expand `src/styles.css`. Use Tailwind utilities in JSX; if a legacy semantic selector cannot be safely inlined, keep it in the Tailwind plugin/config layer.

@@ -21,7 +21,9 @@ Use this file for both implementers. Read it before any screen-specific file.
 - Do not import Supabase client, Supabase row shapes, store keys, or adapter internals into UI code.
 - Main UI files are `src/app/App.tsx` and `src/styles.css`.
 - Read `tailwind-first-rules.md` before changing any UI file.
-- Styling must be Tailwind-first across all production UI code. Use JSX Tailwind utilities or Tailwind `@apply` for shared legacy selectors.
+- Styling must be Tailwind-first across all production UI code. Use JSX Tailwind utilities for new or changed UI.
+- `src/styles.css` is only the Tailwind entrypoint and should contain only the three `@tailwind` directives.
+- If a legacy semantic selector cannot be safely inlined into TSX in one pass, keep it in the Tailwind plugin/config layer, not in `src/styles.css`.
 - Do not add new plain custom CSS for normal layout, spacing, borders, colors, cards, drawers, lists, tables, or buttons.
 - Do not add static React inline `style={{ ... }}` or MUI `sx={{ ... }}` for normal layout or visual styling. Remaining inline style must be runtime/data-driven and explained in the final report.
 - You may split components only when it reduces real complexity and keeps behavior unchanged.
@@ -89,9 +91,10 @@ rg -n "mock|Supabase|DB|MVP|placeholder|seed|tombstone|config|raw Store Key|paid
 rg -n "three-pane|payment-three-pane|menu-three-pane|rp-three-pane|fe-three-pane" src/app/App.tsx src/styles.css
 rg -n "^[ \t]*(display|width|height|padding|margin|border|background|color|font|grid|flex|position|top|right|bottom|left|box-shadow|text-|line-height|overflow|opacity|cursor|transition|align|justify|gap|z-index|transform|outline|min-|max-|place-|white-space|vertical-align|border-radius|border-color|border-style|border-width|box-sizing|resize|pointer-events|object-fit|letter-spacing):" src/styles.css
 rg -n "@apply" src/styles.css
+Get-Content src/styles.css
 rg -n "style=\{\{|sx=\{\{" src/app src/features src/components
 ```
 
 The second command may find legacy CSS/classes only if they are unused by touched screens. Do not keep a touched screen on a 3-pane layout.
-The third command should only find approved CSS exception areas, usually `:root` or documented floor-stage/runtime styling. Normal screen styling must be Tailwind utilities or `@apply`.
+The third and fourth commands should return no matches. `src/styles.css` should only contain Tailwind directives.
 The inline style command should only find runtime/data-driven values such as floor coordinates, zoom, dynamic swatch color, or chart bar width.
