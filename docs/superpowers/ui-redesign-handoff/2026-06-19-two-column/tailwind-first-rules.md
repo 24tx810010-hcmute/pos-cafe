@@ -1,13 +1,16 @@
 # Tailwind-First Styling Rules
 
-Read this file before changing any POS Cafe UI.
+Read this file before changing any production POS Cafe UI code.
 
 ## Non-Negotiable Styling Policy
 
-- POS Cafe is a Tailwind CSS project. Do not rebuild screens with plain hand-written CSS.
+- POS Cafe is a Tailwind CSS project across the whole production UI, not only selected screens.
+- Do not rebuild screens, drawers, dialogs, providers, shared UI helpers, or print-preview UI with plain hand-written CSS.
 - New or changed layout should use Tailwind utility classes in JSX whenever practical.
 - For reusable semantic classes that already exist, use Tailwind `@apply` in `src/styles.css`.
 - Do not add raw CSS declarations such as `display:`, `grid-template-columns:`, `padding:`, `border:`, `background:`, `font-size:`, or `box-shadow:` for normal UI layout.
+- Do not use static React inline `style={{ ... }}` for normal layout, spacing, typography, borders, colors, shadows, or sizing.
+- Do not use MUI `sx={{ ... }}` for normal layout or visual styling. Prefer Tailwind `className`; use `!` utilities when overriding MUI defaults.
 - Do not introduce a new long custom stylesheet for a screen or drawer.
 - Do not add Tailwind-like custom class names that are backed by plain CSS declarations.
 
@@ -21,6 +24,7 @@ Raw CSS is allowed only when Tailwind cannot safely express the behavior:
 - `@keyframes` definitions.
 - Orientation and viewport guard wrappers.
 - MUI descendant overrides that cannot be placed on a JSX element.
+- Runtime style objects where the value is data-driven and not knowable to Tailwind at build time: floor/table coordinates, logical scale/zoom, dynamic z-index, category swatch colors, progress widths, chart bars, and print payload values.
 - Floor-plan stage/node behavior where coordinates, transforms, drag cursors, z-index, or logical scale are driven by runtime style objects.
 
 If you add one of these exceptions, keep it small and explain it in the final report.
@@ -75,9 +79,11 @@ Also run:
 
 ```powershell
 rg -n "@apply" src/styles.css
+rg -n "style=\{\{|sx=\{\{" src/app src/features src/components
 ```
 
 Expected result: shared CSS rules should be Tailwind `@apply`, not raw layout declarations.
+Expected inline result: no static layout/style usage. Any remaining match must be a documented runtime value that Tailwind cannot precompute.
 
 ## Review Standard
 
