@@ -41,35 +41,36 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await page.goto("/");
   await loginAsAdmin(page);
   const initialUrl = page.url();
+  const rail = page.getByRole("navigation", { name: "POS modules" });
 
-  await page.locator(".rail-action").filter({ hasText: "Menu" }).click();
+  await rail.getByRole("button", { name: "Menu", exact: true }).click();
   await expect(page.getByTestId("menu-editor")).toBeVisible();
   await expect(page.getByTestId("save-menu-button")).toBeVisible();
   await page.getByTestId("add-item-button").click();
   await expect(page.getByTestId("menu-dirty-badge")).toBeVisible();
   await expect(page.getByTestId("menu-item-name-input")).toBeVisible();
 
-  await page.locator(".rail-action").filter({ hasText: "Sơ đồ" }).click();
+  await rail.getByRole("button", { name: "Sơ đồ", exact: true }).click();
   await expect(page.getByTestId("floor-editor")).toBeVisible();
   await expect(page.getByTestId("save-floor-button")).toBeVisible();
   await page.getByTestId("add-table-round").click();
   await expect(page.getByTestId("floor-dirty-badge")).toBeVisible();
   await expect(page.getByTestId("fe-table-name-input")).toBeVisible();
 
-  await page.locator(".rail-action").filter({ hasText: "Báo cáo" }).click();
+  await rail.getByRole("button", { name: "Báo cáo", exact: true }).click();
   await expect(page.getByTestId("report-settings")).toBeVisible();
   await page.getByTestId("report-settings").getByRole("button", { name: "7 ngày" }).click();
   await expect(page.getByTestId("report-settings").getByText("Doanh thu", { exact: true })).toBeVisible();
 
-  await page.locator(".rail-action").filter({ hasText: "Nhân viên" }).click();
+  await rail.getByRole("button", { name: "Nhân viên", exact: true }).click();
   await expect(page.getByTestId("employees-drawer")).toBeVisible();
   await expect(page.getByTestId("add-employee-button")).toBeVisible();
 
-  await page.locator(".rail-action").filter({ hasText: "Bếp" }).click();
+  await rail.getByRole("button", { name: "Bếp", exact: true }).click();
   await expect(page.getByTestId("kitchen-drawer")).toBeVisible();
   await page.getByTestId("kitchen-done-kt-1").click();
 
-  await page.locator(".rail-action").filter({ hasText: "Thanh toán" }).click();
+  await rail.getByRole("button", { name: "Thanh toán", exact: true }).click();
   const payDrawer = page.getByTestId("payment-settings-drawer");
   await expect(payDrawer).toBeVisible();
   await expect(page.getByTestId("save-payment-button")).toBeVisible();
@@ -78,7 +79,7 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await payDrawer.getByRole("button", { name: "Hiện QR trên hoá đơn" }).click();
   await expect(page.getByTestId("pay-qr-preview")).toBeVisible();
 
-  await page.locator(".rail-action").filter({ hasText: "Cài đặt" }).click();
+  await rail.getByRole("button", { name: "Cài đặt", exact: true }).click();
   const settingsDrawer = page.getByTestId("settings-drawer");
   await expect(settingsDrawer).toBeVisible();
   await expect(page.getByTestId("save-settings-button")).toBeVisible();

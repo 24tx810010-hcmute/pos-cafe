@@ -46,10 +46,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
           {children}
           <Toaster
             position="bottom-right"
-            containerClassName="app-toaster"
+            containerClassName="!bottom-3 !right-3 max-w-[calc(100vw-24px)] max-sm:!bottom-2.5 max-sm:!right-2.5 max-sm:max-w-[calc(100vw-20px)]"
             toastOptions={{
               duration: 2400,
-              className: "max-w-[min(360px,calc(100vw-24px))] rounded-pos text-[13px]",
+              className: "max-w-[min(360px,calc(100vw-24px))] rounded-pos text-[13px] shadow-[0_14px_36px_rgb(15_23_42_/_18%)]",
             }}
           />
         </QueryClientProvider>

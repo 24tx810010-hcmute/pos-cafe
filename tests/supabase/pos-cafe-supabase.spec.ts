@@ -65,11 +65,11 @@ test("Supabase UI E2E creates a store, pays an order, and shows history/report",
   await createOpenOrderOnFirstTable(page);
   await payFirstOccupiedTable(page);
 
-  await page.locator(".rail-action").filter({ hasText: "Lịch sử" }).click();
+  await page.getByRole("button", { name: "Lịch sử" }).click();
   await expect(page.getByTestId("order-history-drawer")).toBeVisible();
   await expect(page.getByTestId("order-history-drawer").locator('[data-testid^="history-row-"]').first()).toBeVisible({ timeout: 30_000 });
 
-  await page.locator(".rail-action").filter({ hasText: "Báo cáo" }).click();
+  await page.getByRole("button", { name: "Báo cáo" }).click();
   await expect(page.getByTestId("report-settings")).toBeVisible();
   await expect(page.getByTestId("report-settings").getByText("Doanh thu", { exact: true })).toBeVisible();
   await expect(page.getByTestId("report-settings").getByText("Số đơn đã TT", { exact: true })).toBeVisible();
