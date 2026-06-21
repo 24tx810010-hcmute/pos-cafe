@@ -149,10 +149,10 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 
 ## 19. Payment Settings / QR Drawer
 
-- **Purpose:** cấu hình/preview thông tin thanh toán QR/bank trên hóa đơn.
+- **Purpose:** preview thông tin thanh toán QR/bank trên hóa đơn.
 - **User:** admin.
-- **Minimum data:** settings QR info, bank/QR fields, receipt preview.
-- **Primary actions:** xem/chỉnh cấu hình, preview receipt.
+- **Minimum data:** local bank/QR form fields, receipt preview; schema có `store_settings.qr_info` seam nhưng app chưa persist qua `settingsRepo`.
+- **Primary actions:** xem/chỉnh preview local, preview receipt.
 - **Important states:** disabled/unavailable non-cash payment processing.
 - **Scope note:** chưa phải payment processing QR/bank/e-wallet thật.
 

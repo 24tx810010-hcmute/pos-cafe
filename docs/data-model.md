@@ -7,6 +7,7 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 | Enum | Giá trị | Dùng cho |
 | --- | --- | --- |
 | `employee_role` | `admin`, `cashier`, `kitchen` | Quyền nhân viên |
+| `seed_status` | `pending`, `seeded`, `failed` | Trạng thái seed dữ liệu mẫu của store |
 | `option_select_type` | `single`, `multi` | Cách chọn option/topping |
 | `table_shape` | `round`, `square`, `rectangle` | Hình bàn trong floor editor |
 | `table_status` | `empty`, `occupied` | Trạng thái vận hành bàn |
@@ -28,6 +29,7 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 - Store Key gồm store number và secret để ghép máy vào store.
 - Tạo store mới sẽ seed dữ liệu mẫu hoặc blank admin tùy flow.
 - Employee role dùng cho app-layer permission trong phase này.
+- `store_settings.qr_info` là seam schema cho QR/bank sau này; drawer Payment Settings hiện là preview/local UI, chưa persist field này qua `settingsRepo`.
 
 ## Nhóm Menu
 

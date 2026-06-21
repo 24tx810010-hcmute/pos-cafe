@@ -95,7 +95,7 @@
 ## Optional/Future UI
 
 - Kitchen drawer hiện là UI-side ticket state, chưa phải kitchen workflow thật.
-- Payment settings/QR hiện là cấu hình/preview, chưa phải QR payment processing thật.
+- Payment settings/QR hiện là preview UI local, chưa persist qua `settingsRepo` và chưa phải QR payment processing thật.
 
 ## Shared UI Behavior
 

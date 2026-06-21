@@ -130,5 +130,5 @@ File này là technical decision record rút gọn. Mỗi quyết định nêu r
 - **Vì sao chọn:** cash là flow POS nền tảng, dễ demo end-to-end và đủ kiểm chứng transaction order/payment/table.
 - **Không chọn:** QR/bank/e-wallet processing thật ngay trong phase này.
 - **Đánh đổi:** chưa cover thanh toán điện tử thật.
-- **Giảm rủi ro:** schema có `payment_method`; payment settings/QR là hướng mở rộng/preview, không claim processing thật.
+- **Giảm rủi ro:** schema có `payment_method` và `store_settings.qr_info` seam; Payment Settings/QR hiện là preview/local UI, chưa persist qua `settingsRepo` và không claim processing thật.
 - **Liên quan tới tiểu luận:** tập trung vào nghiệp vụ lõi và consistency thay vì tích hợp cổng thanh toán ngoài.
