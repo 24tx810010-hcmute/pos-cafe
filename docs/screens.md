@@ -155,3 +155,9 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 - **Primary actions:** xem/chỉnh cấu hình, preview receipt.
 - **Important states:** disabled/unavailable non-cash payment processing.
 - **Scope note:** chưa phải payment processing QR/bank/e-wallet thật.
+
+## Drawer/Popup Contract
+
+- Drawer render qua shared portal layer trong workspace viewport, không che left rail.
+- Overlay click đóng drawer; confirm popup vẫn giữ rule click overlay riêng theo callback được truyền vào.
+- Drawer có slide-in khi mở; exit animation hiện là polish optional/backlog.

@@ -2,37 +2,41 @@
 
 ## Mục Tiêu Phase
 
-Rework thẩm mỹ và UX cho POS core trước: floor view, order drawer, payment drawer và takeaway. Phase này ưu tiên tạo visual direction/mockup ảnh trước, sau đó mới update code UI/logic nếu cần.
+Rework thẩm mỹ và UX cho POS core: floor view, order drawer, payment drawer, takeaway và các drawer/admin surface thường gặp. Phase này giữ nguyên behavior nghiệp vụ, domain model và backend contract.
 
 ## Branch/Commit Liên Quan
 
-- Current app truth gần nhất: `main` commit `ef3ecdb`.
-- Current screenshot set: `docs/screenshots/current/`.
-- UI redesign context mới: `docs/ui-redesign-context.md`.
+- Current app truth gần nhất: `origin/main` commit `5bc17db`.
+- UI redesign context: `docs/ui-redesign-context.md`.
 - Snapshot cũ đã archive: `docs/archive/superpowers/ui-redesign-handoff/2026-06-20-main-flow-snapshot.md`.
 
 ## Feature Đã Implement
 
-- Chưa implement UI redesign vào app trong phase này.
-- Đã có baseline screenshot 26 màn để đưa vào Stitch/Gemini/agent.
-- Đã refactor docs để tách scope, screens, tech tradeoff và UI redesign context.
+- Tailwind-first visual pass cho app shell, POS floor, order/payment/takeaway và nhiều drawer admin.
+- Two-column/three-zone drawer layout rõ hơn cho thao tác POS.
+- Shared portal primitives: `PortalPopup` cho popup/modal và `PortalDrawer` cho drawer.
+- Drawer hiện có overlay mặc định `rgba(0,0,0,0.2)`, click overlay để đóng và slide-in animation theo placement.
+- Giữ stable `data-testid`, UI text chính và behavior nghiệp vụ.
 
 ## Test/Build/Smoke Đã Chạy
 
-- Phase này hiện là documentation/UI planning phase; test code app không chạy trong bước tạo visual direction.
-- Khi bắt đầu code UI redesign, cần chạy ít nhất `npm run test`, `npm run build`, và `npm run smoke` sau khi sửa app.
+- `npm test` pass trên `origin/main@5bc17db`: 31 test files, 141 tests.
+- `npm run build` pass; còn Vite chunk-size warning đã biết.
+- `npm run smoke` pass: 13 passed, 7 skipped.
+- `npm run smoke:supabase` pass: 2 passed, gồm case realtime hai browser.
 
 ## Quyết Định Kỹ Thuật Phát Sinh
 
-- Làm POS core trước vì tác động UX lớn nhất.
-- Không đổi backend/data contract trước khi có visual direction.
-- Gemini/Stitch context cần ngắn, tập trung màn và dữ liệu tối thiểu, không nhồi toàn bộ docs.
+- Popup/drawer là app UI primitives, đặt ở `src/app/components`.
+- `createPortal` dùng nội bộ trong component, không export helper portal công khai.
+- Drawer dùng workspace viewport để không che left rail.
+- Exit animation được để backlog vì hiện tại drawer unmount theo app state.
 
 ## Gap Còn Lại
 
-- Chưa có mockup UI cuối cùng.
-- Chưa implement code UI mới.
-- Cần quyết định visual direction sau khi xem output từ Stitch/Gemini.
+- Exit animation khi đóng drawer/popup là polish optional.
+- Một số drawer lớn có thể tiếp tục tách component/hook khi có boundary rõ hơn.
+- Screenshot binary không còn lưu trên nhánh `docs`; nếu cần đưa vào báo cáo thì chụp/lưu ở artefact riêng.
 
 ## Link Liên Quan
 

@@ -42,4 +42,4 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 - **Mất mạng:** dùng hotspot; nói rõ online-only là tradeoff phase này.
 - **Supabase pause:** wake project trước demo.
 - **Clear demo bị blocked:** đây là behavior đúng vì còn order mở; đóng/thanh toán order trước.
-- **UI chưa đẹp:** demo chức năng trước; UI redesign là phase tiếp theo đang có context riêng.
+- **UI overlay/drawer:** drawer đã có portal overlay, click outside để đóng và slide-in khi mở; exit animation là polish optional/backlog.

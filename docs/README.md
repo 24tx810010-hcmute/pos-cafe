@@ -16,15 +16,15 @@ Folder này là knowledge base hiện tại của dự án POS Cafe. Mục tiêu
 | Chuẩn bị bảo vệ/demo | [demo-runbook.md](demo-runbook.md) |
 | Chuẩn bị redesign UI/UX | [ui-redesign-context.md](ui-redesign-context.md) |
 | Track tiến độ implement theo phase | [implementation-log/README.md](implementation-log/README.md) |
-| Xem ảnh UI hiện tại | [screenshots/README.md](screenshots/README.md) |
+| Ghi chú screenshot/UI baseline | [screenshots/README.md](screenshots/README.md) |
 | Truy vết tài liệu cũ | [archive/README.md](archive/README.md) |
 
 ## Folder Này Chứa Gì
 
 - Các file `.md` ở root là source-of-truth dễ đọc của dự án hiện tại.
 - `implementation-log/` ghi nhật ký implement theo phase, dùng để track nhanh nhánh/commit/tính năng/gap.
-- `screenshots/` chứa ảnh UI hiện tại để audit và redesign.
-- `archive/` chứa tài liệu cũ, audit, prototype, handoff và spec chi tiết theo lịch sử.
+- `screenshots/` chỉ giữ chỉ mục/ghi chú Markdown; nhánh `docs` không giữ binary screenshot.
+- `archive/` chứa tài liệu cũ, audit, handoff và spec chi tiết theo lịch sử; binary/prototype artifact cũ đã loại khỏi nhánh docs.
 
 ## Khi Nào Nên Đọc
 
@@ -36,6 +36,6 @@ Folder này là knowledge base hiện tại của dự án POS Cafe. Mục tiêu
 
 - Code vẫn là source-of-truth cuối cùng; docs mô tả trạng thái đã kiểm chứng.
 - Khi scope thay đổi, cập nhật `phase-scope.md` trước.
-- Khi thêm/mở rộng màn hình, cập nhật `features.md`, `screens.md` và ảnh trong `screenshots/current/`.
+- Khi thêm/mở rộng màn hình, cập nhật `features.md`, `screens.md` và ghi chú screenshot; binary screenshot nên lưu ngoài nhánh `docs` nếu cần làm artefact báo cáo.
 - Khi hoàn tất một phase/slice lớn, cập nhật `implementation-log/`.
 - Không đưa tài liệu làm việc tạm vào root docs; đưa vào `archive/` nếu cần giữ lại lịch sử.

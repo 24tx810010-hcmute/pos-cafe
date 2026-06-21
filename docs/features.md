@@ -96,3 +96,9 @@
 
 - Kitchen drawer hiện là UI-side ticket state, chưa phải kitchen workflow thật.
 - Payment settings/QR hiện là cấu hình/preview, chưa phải QR payment processing thật.
+
+## Shared UI Behavior
+
+- Popup/modal dùng `PortalPopup`; drawer dùng `PortalDrawer`.
+- Drawer có overlay mờ `rgba(0,0,0,0.2)`, click overlay để đóng và slide-in theo placement khi mở.
+- Drawer mặc định dùng workspace viewport để không che left rail.

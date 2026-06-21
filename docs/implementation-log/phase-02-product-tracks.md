@@ -6,7 +6,7 @@ Triển khai các track sản phẩm chính sau foundation: POS order/payment, m
 
 ## Branch/Commit Liên Quan
 
-- Current app truth gần nhất: `main` commit `ef3ecdb`.
+- Current app truth gần nhất: `origin/main` commit `5bc17db`.
 - Tài liệu gốc: `docs/archive/superpowers/specs/2026-06-11-pos-cafe-parallel-task-phases.md`.
 
 ## Feature Đã Implement
@@ -35,7 +35,7 @@ Triển khai các track sản phẩm chính sau foundation: POS order/payment, m
 
 ## Gap Còn Lại
 
-- UI nhìn còn utilitarian, chưa đạt visual polish mong muốn.
+- UI đã có Tailwind-first redesign pass cho POS core; polish nhỏ vẫn có thể tiếp tục theo feedback demo.
 - Takeaway paid examples còn có sample UI-side data.
 - Kitchen queue thật và QR payment thật nằm ngoài phase bắt buộc.
 - Report export chưa nằm trong scope hoàn chỉnh.

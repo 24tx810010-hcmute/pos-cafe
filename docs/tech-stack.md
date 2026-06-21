@@ -85,11 +85,11 @@ File này là technical decision record rút gọn. Mỗi quyết định nêu r
 ## 8. MUI + Tailwind + Design Tokens
 
 - **Quyết định:** dùng MUI components kết hợp Tailwind utilities và token POS.
-- **Dùng cho:** buttons/forms/dialogs/drawers/layout.
+- **Dùng cho:** buttons/forms/dialogs/drawers/layout và shared portal primitives.
 - **Vì sao chọn:** MUI giúp form/control nhanh; Tailwind giúp chỉnh layout responsive và visual polish trực tiếp trong TSX.
 - **Không chọn:** CSS file lớn hoặc design system tự viết từ đầu.
 - **Đánh đổi:** có nguy cơ style lẫn lộn nếu không có quy tắc.
-- **Giảm rủi ro:** ưu tiên Tailwind utilities, token tập trung, test chống legacy CSS class.
+- **Giảm rủi ro:** ưu tiên Tailwind utilities, token tập trung, test chống legacy CSS class, chuẩn hóa popup/drawer bằng `PortalPopup` và `PortalDrawer`.
 - **Liên quan tới tiểu luận:** cho thấy cân bằng giữa tốc độ build UI và khả năng redesign.
 
 ## 9. Vitest + Playwright
@@ -101,6 +101,7 @@ File này là technical decision record rút gọn. Mỗi quyết định nêu r
 - **Đánh đổi:** E2E tốn thời gian hơn unit test và cần data/test mode ổn định.
 - **Giảm rủi ro:** tách `npm run test`, `npm run smoke`, `npm run smoke:supabase`.
 - **Liên quan tới tiểu luận:** có bằng chứng kiểm thử từ logic tới flow demo.
+- **Validation gần nhất trên `origin/main@5bc17db`:** `npm test` pass 31 files/141 tests; `npm run build` pass với Vite chunk-size warning đã biết; `npm run smoke` pass 13/7; `npm run smoke:supabase` pass 2/2 gồm case realtime hai browser.
 
 ## 10. Browser Print Preview
 

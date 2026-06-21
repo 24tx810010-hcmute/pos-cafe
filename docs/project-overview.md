@@ -38,6 +38,8 @@ Phase tiểu luận ưu tiên demo end-to-end:
 
 ## Trạng Thái Gần Nhất
 
-- App truth được đối chiếu từ `main` commit `ef3ecdb`.
-- Docs branch đang ở commit `1334372` trước lần refactor knowledge base này.
-- Core flow đã có nền chức năng; UI hiện tại còn cần redesign để đẹp và thân thiện hơn cho POS core.
+- App truth mới nhất được đối chiếu từ `origin/main` commit `5bc17db` (`feat(app): add drawer overlay motion`).
+- Nhánh `docs` là nhánh tài liệu độc lập, chỉ giữ file `.md` để đọc nhanh; không merge vào `main` và không chứa source app/binary artifact.
+- Core flow đã chạy end-to-end với mock và Supabase: tạo/ghép store, PIN, floor/order/payment, history/report và admin modules.
+- Kiến trúc hiện có boundary guard bằng TypeScript import scanner, ports/adapters rõ layer, split Supabase/mock adapters, browser print adapter và portal popup/drawer primitives.
+- UI đã qua pass Tailwind-first/two-column drawer; drawer dùng overlay chung, click overlay để đóng và slide-in animation theo placement.

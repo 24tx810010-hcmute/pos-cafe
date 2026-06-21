@@ -2,14 +2,14 @@
 
 ## Folder Này Chứa Gì
 
-Bộ ảnh current UI chụp ngày 2026-06-20 để dùng cho audit/redesign. Ảnh bao phủ pre-login, POS core, admin drawers, settings, kitchen optional và payment settings.
+Bộ screenshot current UI gần nhất từng được chụp ngày 2026-06-20 để dùng cho audit/redesign. Ảnh binary đã được loại khỏi nhánh `docs` để nhánh này chỉ còn `.md`.
 
 ## Khi Nào Nên Đọc
 
 - Đọc cùng [../../ui-redesign-context.md](../../ui-redesign-context.md) khi tạo UI mới.
-- Dùng làm baseline trước khi rework thẩm mỹ POS core.
+- Dùng làm checklist các màn cần chụp lại trước khi làm artefact báo cáo hoặc audit UI mới.
 
-## Danh Sách Ảnh
+## Danh Sách Màn Cần Chụp Lại Khi Cần Artefact
 
 - `01-landing.png`
 - `02-store-pairing.png`

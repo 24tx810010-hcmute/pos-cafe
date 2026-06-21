@@ -6,7 +6,7 @@ Làm app đủ ổn để demo: xử lý loading/error/empty/blocked states, sta
 
 ## Branch/Commit Liên Quan
 
-- Current app truth gần nhất: `main` commit `ef3ecdb`.
+- Current app truth gần nhất: `origin/main` commit `5bc17db`.
 - Archive status chính: `docs/archive/superpowers/specs/2026-06-11-pos-cafe-parallel-task-phases.md`.
 - Demo runbook cũ: `docs/archive/superpowers/specs/2026-06-14-pos-cafe-demo-readiness-runbook.md`.
 
@@ -32,7 +32,7 @@ Làm app đủ ổn để demo: xử lý loading/error/empty/blocked states, sta
 
 ## Gap Còn Lại
 
-- UI tổng thể vẫn cần redesign thẩm mỹ.
+- UI tổng thể đã có redesign pass; còn lại là polish theo feedback demo.
 - Một số optional/admin screen vẫn cần polish hoặc hide/reframe trong demo nếu chưa giải thích scope.
 - Report cần dữ liệu live hoặc empty state tốt để không nhìn như chưa hoàn thiện.
 
