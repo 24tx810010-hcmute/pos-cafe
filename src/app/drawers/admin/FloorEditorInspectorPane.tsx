@@ -56,7 +56,16 @@ export function FloorEditorInspectorPane({
               <span className="text-xs font-extrabold text-pos-muted">Hình dạng</span>
               <div className="flex flex-wrap gap-1.5">
                 {(["round", "square", "rectangle"] as TableShape[]).map((shape) => (
-                  <button key={shape} className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", selectedTable.shape === shape && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")} onClick={() => patchTable(selectedTable.id, { shape, ...tableDefaultSize(shape) })}>
+                  <button
+                    key={shape}
+                    className={clsx(
+                      "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
+                      selectedTable.shape === shape
+                        ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                        : "border-pos-line bg-pos-surface text-pos-ink",
+                    )}
+                    onClick={() => patchTable(selectedTable.id, { shape, ...tableDefaultSize(shape) })}
+                  >
                     {SHAPE_LABEL[shape]}
                   </button>
                 ))}
@@ -66,7 +75,18 @@ export function FloorEditorInspectorPane({
               <span className="text-xs font-extrabold text-pos-muted">Khu vực</span>
               <div className="flex flex-wrap gap-1.5">
                 {sortedAreas.map((a) => (
-                  <button key={a.id} className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", selectedTable.areaId === a.id && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")} onClick={() => patchTable(selectedTable.id, { areaId: a.id })}>{a.name}</button>
+                  <button
+                    key={a.id}
+                    className={clsx(
+                      "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
+                      selectedTable.areaId === a.id
+                        ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                        : "border-pos-line bg-pos-surface text-pos-ink",
+                    )}
+                    onClick={() => patchTable(selectedTable.id, { areaId: a.id })}
+                  >
+                    {a.name}
+                  </button>
                 ))}
               </div>
             </div>
@@ -107,12 +127,31 @@ export function FloorEditorInspectorPane({
               <span className="text-xs font-extrabold text-pos-muted">Loại</span>
               <div className="flex flex-wrap gap-1.5">
                 {DECOR_LIBRARY.map((kind) => (
-                  <button key={kind} className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", selectedDecor.kind === kind && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")} onClick={() => patchDecor(selectedDecor.id, { kind })}>{DECOR_LABEL[kind]}</button>
+                  <button
+                    key={kind}
+                    className={clsx(
+                      "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
+                      selectedDecor.kind === kind
+                        ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                        : "border-pos-line bg-pos-surface text-pos-ink",
+                    )}
+                    onClick={() => patchDecor(selectedDecor.id, { kind })}
+                  >
+                    {DECOR_LABEL[kind]}
+                  </button>
                 ))}
               </div>
             </div>
             <TextField label="Nhãn" value={selectedDecor.label ?? ""} onChange={(e) => patchDecor(selectedDecor.id, { label: e.target.value })} size="small" fullWidth />
-            <button className={clsx("inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border border-pos-line bg-pos-surface2 px-2 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40 px-2.5", selectedDecor.isLocked && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")} onClick={() => patchDecor(selectedDecor.id, { isLocked: !selectedDecor.isLocked })}>
+            <button
+              className={clsx(
+                "inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border px-2 text-xs font-bold transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40 px-2.5",
+                selectedDecor.isLocked
+                  ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                  : "border-pos-line bg-pos-surface2 text-pos-ink",
+              )}
+              onClick={() => patchDecor(selectedDecor.id, { isLocked: !selectedDecor.isLocked })}
+            >
               {selectedDecor.isLocked ? <Lock size={14} /> : <Unlock size={14} />} {selectedDecor.isLocked ? "Đã khoá (không kéo)" : "Khoá vị trí"}
             </button>
             <Button variant="outlined" color={selectedDecor.deleted ? "primary" : "error"} startIcon={selectedDecor.deleted ? <RotateCcw size={15} /> : <Trash2 size={15} />} onClick={() => toggleDeleteDecor(selectedDecor.id)}>

@@ -63,7 +63,12 @@ export function TakeawayDrawer() {
             {filterChips.map((fc) => (
               <button
                 key={fc.key}
-                className={clsx("cursor-pointer whitespace-nowrap rounded-full border border-pos-line bg-pos-surface px-3 py-[3px] text-xs font-bold text-pos-muted", filter === fc.key && "border-pos-primary bg-pos-primary text-white")}
+                className={clsx(
+                  "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
+                  filter === fc.key
+                    ? "border-pos-primary bg-pos-primary text-white"
+                    : "border-pos-line bg-pos-surface text-pos-muted",
+                )}
                 onClick={() => { setFilter(fc.key); setSelectedId(null); }}
               >
                 {fc.label}
@@ -124,8 +129,10 @@ export function TakeawayDrawer() {
                       <div
                         key={ord.id}
                         className={clsx(
-                          "cursor-pointer rounded-pos border-[1.5px] border-pos-line bg-pos-surface px-3 py-2.5 text-left transition-[border-color,box-shadow] hover:border-pos-primary",
-                          isSelected && "border-pos-primary shadow-[0_0_0_2px_var(--primary-soft)]",
+                          "cursor-pointer rounded-pos border-[1.5px] px-3 py-2.5 text-left transition-[border-color,box-shadow] hover:border-pos-primary",
+                          isSelected
+                            ? "border-pos-primary bg-pos-primarySoft shadow-[0_0_0_2px_var(--primary-soft)]"
+                            : "border-pos-line bg-pos-surface",
                           isPaid && "opacity-75",
                           isPaid && isSelected && "opacity-100",
                         )}
@@ -153,7 +160,7 @@ export function TakeawayDrawer() {
                               Mở đơn
                             </button>
                             <button
-                              className="cursor-pointer rounded-[6px] border-[1.5px] border-pos-line bg-transparent px-2.5 py-1 text-xs font-semibold text-pos-ink transition-[background,border-color] border-pos-primary bg-pos-primary text-white hover:bg-[#0d6560]"
+                              className="cursor-pointer rounded-[6px] border-[1.5px] border-pos-primary bg-pos-primary px-2.5 py-1 text-xs font-semibold text-white transition-[background,border-color] hover:bg-[#0d6560]"
                               onClick={(e) => { e.stopPropagation(); closeDrawer(); openPayment(ord.id); }}
                             >
                               Thanh toán

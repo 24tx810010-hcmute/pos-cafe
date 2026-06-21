@@ -106,7 +106,7 @@ export function KitchenQueueDrawer() {
         {i.options.length > 0 && <span className="text-xs text-pos-muted">{i.options.join(" · ")}</span>}
         {i.note && <span className="text-xs text-pos-warning">Ghi chú: {i.note}</span>}
       </div>
-      <span className={clsx("shrink-0 self-start rounded-full border border-pos-line px-2 py-px text-[11px] font-bold", i.station === "drink" ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary" : "border-[#fde047] bg-[#fef9c3] text-[#854d0e]")}>{KITCHEN_STATION_LABEL[i.station]}</span>
+      <span className={clsx("shrink-0 self-start rounded-full border px-2 py-px text-[11px] font-bold", i.station === "drink" ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary" : "border-[#fde047] bg-[#fef9c3] text-[#854d0e]")}>{KITCHEN_STATION_LABEL[i.station]}</span>
     </div>
   );
 
@@ -120,7 +120,16 @@ export function KitchenQueueDrawer() {
         <div className="flex min-w-0 flex-[0_1_auto] flex-wrap items-center justify-end gap-2.5 [&>*]:shrink-0 [&_.MuiButton-root]:min-h-9 [&_.MuiButton-root]:whitespace-nowrap max-sm:w-full max-sm:justify-start max-sm:[&_.MuiButton-root]:flex-[1_1_128px] max-[980px]:gap-2 max-[980px]:[&_.MuiButton-root]:min-h-[34px]">
           <div className="flex min-w-0 flex-wrap gap-2">
             {statusChips.map((c) => (
-              <button key={c.key} className={clsx("cursor-pointer whitespace-nowrap rounded-full border border-pos-line bg-pos-surface px-3 py-[3px] text-xs font-bold text-pos-muted", statusFilter === c.key && "border-pos-primary bg-pos-primary text-white")} onClick={() => { setStatusFilter(c.key); setSelectedId(null); }}>
+              <button
+                key={c.key}
+                className={clsx(
+                  "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
+                  statusFilter === c.key
+                    ? "border-pos-primary bg-pos-primary text-white"
+                    : "border-pos-line bg-pos-surface text-pos-muted",
+                )}
+                onClick={() => { setStatusFilter(c.key); setSelectedId(null); }}
+              >
                 {c.label} ({c.count})
               </button>
             ))}
@@ -132,7 +141,16 @@ export function KitchenQueueDrawer() {
       <div className="min-h-0 overflow-auto bg-pos-bg p-3 max-[980px]:p-2 grid grid-rows-[auto_minmax(0,1fr)] gap-2 overflow-hidden">
         <div className="flex flex-wrap items-center gap-2 overflow-x-auto overflow-y-hidden px-0.5 pb-0.5 pt-px [scrollbar-width:thin]">
           {stationChips.map((c) => (
-            <button key={c.key} className={clsx("cursor-pointer whitespace-nowrap rounded-full border border-pos-line bg-pos-surface px-3 py-[3px] text-xs font-bold text-pos-muted", station === c.key && "border-pos-primary bg-pos-primary text-white")} onClick={() => setStation(c.key)}>
+            <button
+              key={c.key}
+              className={clsx(
+                "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
+                station === c.key
+                  ? "border-pos-primary bg-pos-primary text-white"
+                  : "border-pos-line bg-pos-surface text-pos-muted",
+              )}
+              onClick={() => setStation(c.key)}
+            >
               {c.label}
               <span className="rounded-[10px] bg-pos-surface2 px-1.5 py-px text-[11px] font-semibold text-pos-muted">{c.count}</span>
             </button>
@@ -161,19 +179,23 @@ export function KitchenQueueDrawer() {
                       <div
                         key={t.id}
                         className={clsx(
-                          "grid cursor-pointer gap-2 rounded-pos border-[1.5px] border-pos-line bg-white px-3 py-2.5 transition-[border-color,box-shadow] hover:border-pos-primary",
-                          selectedId === t.id && "border-pos-primary shadow-[0_0_0_2px_var(--primary-soft)]",
-                          st === "done" && "bg-pos-surface2 opacity-[0.62]",
+                          "grid cursor-pointer gap-2 rounded-pos border-[1.5px] px-3 py-2.5 transition-[border-color,box-shadow] hover:border-pos-primary",
+                          selectedId === t.id
+                            ? "border-pos-primary bg-white shadow-[0_0_0_2px_var(--primary-soft)]"
+                            : st === "done"
+                              ? "border-pos-line bg-pos-surface2"
+                              : "border-pos-line bg-white",
+                          st === "done" && "opacity-[0.62]",
                         )}
                         data-testid={`kitchen-ticket-${t.id}`}
                         onClick={() => setSelectedId(t.id)}
                       >
                         <div className="flex items-center gap-2 [&_strong]:text-[15px]">
                           <strong>#{t.orderNo}</strong>
-                          <span className={clsx("inline-block rounded-[20px] bg-pos-surface2 px-2 py-0.5 text-[11px] font-semibold text-pos-ink", t.type === "takeaway" ? "bg-[#ede9fe] text-[#5b21b6]" : "bg-[#e0f2fe] text-[#075985]")}>
+                          <span className={clsx("inline-block rounded-[20px] px-2 py-0.5 text-[11px] font-semibold", t.type === "takeaway" ? "bg-[#ede9fe] text-[#5b21b6]" : "bg-[#e0f2fe] text-[#075985]")}>
                             {t.type === "takeaway" ? "Mang đi" : t.target}
                           </span>
-                          <span className={clsx("ml-auto text-xs font-extrabold text-pos-muted", t.minutesAgo >= 10 && "text-pos-danger")}>{t.minutesAgo} phút</span>
+                          <span className={clsx("ml-auto text-xs font-extrabold", t.minutesAgo >= 10 ? "text-pos-danger" : "text-pos-muted")}>{t.minutesAgo} phút</span>
                         </div>
                         <div className="grid gap-1.5">
                           {items.map((item) => renderItemLine(item, st === "done"))}

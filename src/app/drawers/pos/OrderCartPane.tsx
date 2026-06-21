@@ -64,7 +64,12 @@ export function OrderCartPane({
                   </button>
                 </span>
                 <button
-                  className={clsx("cursor-pointer rounded-[6px] border border-pos-line bg-transparent px-2 py-0.5 text-[11px] font-semibold text-pos-muted", noteOpenId === line.id && "border-pos-primary text-pos-primary")}
+                  className={clsx(
+                    "cursor-pointer rounded-[6px] border bg-transparent px-2 py-0.5 text-[11px] font-semibold",
+                    noteOpenId === line.id
+                      ? "border-pos-primary text-pos-primary"
+                      : "border-pos-line text-pos-muted",
+                  )}
                   onClick={() => onToggleNote(line.id)}
                 >
                   Ghi chú

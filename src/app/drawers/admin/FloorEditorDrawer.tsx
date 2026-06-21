@@ -29,6 +29,24 @@ import { logicalStage, stageStyle } from "../../floorStage";
 import { FloorEditorInspectorPane } from "./FloorEditorInspectorPane";
 import { FloorEditorToolbar } from "./FloorEditorToolbar";
 
+const decorToneClass = (kind: DecorKind) => {
+  switch (kind) {
+    case "counter":
+      return "border-[#94a3b8] bg-[#e2e8f0] text-[#475569]";
+    case "decor":
+    case "image":
+      return "border-[#c4b5fd] bg-[#ede9fe] text-[#6d28d9]";
+    case "door":
+      return "border-[#fde047] bg-[#fef9c3] text-[#713f12]";
+    case "plant":
+      return "border-[#86efac] bg-[#dcfce7] text-[#166534]";
+    case "wall":
+      return "border-[#cbd5e1] bg-[#f1f5f9] text-[#64748b]";
+    default:
+      return "border-[#cbd5e1] bg-[#e2e8f0] text-[#475569]";
+  }
+};
+
 export function FloorEditorDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
@@ -274,7 +292,12 @@ export function FloorEditorDrawer() {
             {sortedAreas.map((a) => (
               <button
                 key={a.id}
-                className={clsx("cursor-pointer whitespace-nowrap rounded-full border border-pos-line bg-pos-surface px-3 py-[3px] text-xs font-bold text-pos-muted", a.id === areaId && "border-pos-primary bg-pos-primary text-white")}
+                className={clsx(
+                  "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
+                  a.id === areaId
+                    ? "border-pos-primary bg-pos-primary text-white"
+                    : "border-pos-line bg-pos-surface text-pos-muted",
+                )}
                 onClick={() => { setAreaId(a.id); setSelected(null); }}
               >
                 {a.name}
@@ -338,13 +361,8 @@ export function FloorEditorDrawer() {
                       <div
                         key={d.id}
                         className={clsx(
-                          "absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pos text-center font-black cursor-grab border border-dashed border-[#cbd5e1] bg-[#e2e8f0] text-xs text-[#475569]",
-                          d.kind === "counter" && "border-[#94a3b8] bg-[#e2e8f0] text-[#475569]",
-                          d.kind === "decor" && "border-[#c4b5fd] bg-[#ede9fe] text-[#6d28d9]",
-                          d.kind === "door" && "border-[#fde047] bg-[#fef9c3] text-[#713f12]",
-                          d.kind === "image" && "border-[#c4b5fd] bg-[#ede9fe] text-[#6d28d9]",
-                          d.kind === "plant" && "border-[#86efac] bg-[#dcfce7] text-[#166534]",
-                          d.kind === "wall" && "border-[#cbd5e1] bg-[#f1f5f9] text-[#64748b]",
+                          "absolute grid -translate-x-1/2 -translate-y-1/2 cursor-grab place-items-center rounded-pos border border-dashed text-center text-xs font-black",
+                          decorToneClass(d.kind),
                           selected?.type === "decor" && selected.id === d.id && "!z-50 outline outline-2 outline-offset-2 outline-pos-primary",
                           d.deleted && "opacity-40",
                           d.isLocked && "cursor-not-allowed",
@@ -363,7 +381,7 @@ export function FloorEditorDrawer() {
                       <button
                         key={t.id}
                         className={clsx(
-                          "absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pos text-center font-black cursor-grab border-2 border-[#cbd5e1] bg-white shadow-[0_8px_18px_rgb(15_23_42_/_10%)] active:cursor-grabbing [&_small]:mt-[3px] [&_small]:block [&_small]:text-[10px] [&_small]:font-bold [&_small]:text-pos-muted",
+                          "absolute grid -translate-x-1/2 -translate-y-1/2 cursor-grab place-items-center rounded-pos border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)] active:cursor-grabbing [&_small]:mt-[3px] [&_small]:block [&_small]:text-[10px] [&_small]:font-bold [&_small]:text-pos-muted",
                           t.status === "occupied" ? "border-[#f97316] bg-[#fff7ed]" : "border-[#86efac] bg-[#f0fdf4]",
                           t.shape === "round" && "rounded-full",
                           selected?.type === "table" && selected.id === t.id && "!z-50 outline outline-2 outline-offset-2 outline-pos-primary",

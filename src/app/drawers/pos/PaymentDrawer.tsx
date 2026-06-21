@@ -222,7 +222,12 @@ export function PaymentDrawer() {
                 ].map((opt) => (
                   <button
                     key={opt.label}
-                    className={clsx("cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-1 py-1.5 text-center text-xs font-bold text-pos-ink transition-[border-color] hover:border-pos-primary", receivedAmount === opt.value && "border-pos-primary bg-pos-primarySoft text-pos-primary")}
+                    className={clsx(
+                      "cursor-pointer rounded-[7px] border px-1 py-1.5 text-center text-xs font-bold transition-[border-color] hover:border-pos-primary",
+                      receivedAmount === opt.value
+                        ? "border-pos-primary bg-pos-primarySoft text-pos-primary"
+                        : "border-pos-line bg-pos-surface text-pos-ink",
+                    )}
                     onClick={() => setReceivedAmount(opt.value)}
                   >
                     {opt.label}

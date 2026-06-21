@@ -115,7 +115,7 @@ function OrderHistoryDrawer() {
       status === "paid" ? "bg-[#d1fae5] text-[#065f46]" : status === "void" ? "bg-[#fee2e2] text-[#991b1b]" : "bg-[#fef9c3] text-[#854d0e]",
     );
   const orderTypePillClass = (orderType: HistoryOrderTypeFilter) =>
-    clsx("inline-block rounded-[20px] bg-pos-surface2 px-2 py-0.5 text-[11px] font-semibold text-pos-ink", orderType === "takeaway" ? "bg-[#ede9fe] text-[#5b21b6]" : "bg-[#e0f2fe] text-[#075985]");
+    clsx("inline-block rounded-[20px] px-2 py-0.5 text-[11px] font-semibold", orderType === "takeaway" ? "bg-[#ede9fe] text-[#5b21b6]" : "bg-[#e0f2fe] text-[#075985]");
   const statusLabel = (s: string) => s === "paid" ? "Đã thanh toán" : s === "void" ? "Đã huỷ" : "Đang mở";
 
   return (
@@ -130,7 +130,12 @@ function OrderHistoryDrawer() {
             {dateRangeChips.map((dc) => (
               <button
                 key={dc.key}
-                className={clsx("cursor-pointer whitespace-nowrap rounded-full border border-pos-line bg-pos-surface px-3 py-[3px] text-xs font-bold text-pos-muted", dateRange === dc.key && "border-pos-primary bg-pos-primary text-white")}
+                className={clsx(
+                  "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
+                  dateRange === dc.key
+                    ? "border-pos-primary bg-pos-primary text-white"
+                    : "border-pos-line bg-pos-surface text-pos-muted",
+                )}
                 onClick={() => { setDateRange(dc.key); handleFilterChange(); }}
               >
                 {dc.label}
@@ -176,7 +181,12 @@ function OrderHistoryDrawer() {
           {statusChips.map((sc) => (
             <button
               key={sc.key}
-              className={clsx("cursor-pointer whitespace-nowrap rounded-full border border-pos-line bg-pos-surface px-3 py-[3px] text-xs font-bold text-pos-muted", statusFilter === sc.key && "border-pos-primary bg-pos-primary text-white")}
+              className={clsx(
+                "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
+                statusFilter === sc.key
+                  ? "border-pos-primary bg-pos-primary text-white"
+                  : "border-pos-line bg-pos-surface text-pos-muted",
+              )}
               onClick={() => { setStatusFilter(sc.key); handleFilterChange(); }}
             >
               {sc.label}
@@ -189,7 +199,12 @@ function OrderHistoryDrawer() {
           {orderTypeChips.map((oc) => (
             <button
               key={oc.key}
-              className={clsx("cursor-pointer whitespace-nowrap rounded-full border border-pos-line bg-pos-surface px-3 py-[3px] text-xs font-bold text-pos-muted", orderTypeFilter === oc.key && "border-pos-primary bg-pos-primary text-white")}
+              className={clsx(
+                "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
+                orderTypeFilter === oc.key
+                  ? "border-pos-primary bg-pos-primary text-white"
+                  : "border-pos-line bg-pos-surface text-pos-muted",
+              )}
               onClick={() => { setOrderTypeFilter(oc.key); handleFilterChange(); }}
             >
               {oc.label}
@@ -257,7 +272,10 @@ function OrderHistoryDrawer() {
                       {paginated.map((o) => (
                         <tr
                           key={o.id}
-                          className={clsx("cursor-pointer transition-colors hover:bg-pos-surface2", selectedId === o.id && "bg-pos-primarySoft")}
+                          className={clsx(
+                            "cursor-pointer transition-colors",
+                            selectedId === o.id ? "bg-pos-primarySoft" : "hover:bg-pos-surface2",
+                          )}
                           data-testid={`history-row-${o.id}`}
                           onClick={() => setSelectedId(o.id)}
                         >
@@ -281,7 +299,12 @@ function OrderHistoryDrawer() {
                     {paginated.map((o) => (
                       <div
                         key={o.id}
-                        className={clsx("cursor-pointer rounded-pos border-[1.5px] border-pos-line px-3 py-2.5 transition-colors hover:border-pos-primary", selectedId === o.id && "border-pos-primary bg-pos-primarySoft")}
+                        className={clsx(
+                          "cursor-pointer rounded-pos border-[1.5px] px-3 py-2.5 transition-colors hover:border-pos-primary",
+                          selectedId === o.id
+                            ? "border-pos-primary bg-pos-primarySoft"
+                            : "border-pos-line",
+                        )}
                         onClick={() => setSelectedId(o.id)}
                       >
                         <div className="mb-1 flex justify-between">

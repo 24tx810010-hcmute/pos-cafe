@@ -102,7 +102,13 @@ export function PaymentSettingsDrawer() {
           {methods.map((m) => (
             <button
               key={m.key}
-              className={clsx("inline-flex min-h-9 flex-[1_0_112px] cursor-pointer items-center justify-center rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-xs font-extrabold text-pos-muted max-sm:basis-[104px]", "gap-2", method === m.key && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")}
+              className={clsx(
+                "inline-flex min-h-9 flex-[1_0_112px] cursor-pointer items-center justify-center rounded-[7px] border px-2.5 py-2 text-xs font-extrabold max-sm:basis-[104px]",
+                "gap-2",
+                method === m.key
+                  ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                  : "border-pos-line bg-pos-surface text-pos-muted",
+              )}
               onClick={() => setMethod(m.key)}
             >
               <span className={clsx("h-2 w-2 shrink-0 rounded-full bg-[#cbd5e1]", m.on && "bg-[#22c55e]")} />
@@ -119,7 +125,7 @@ export function PaymentSettingsDrawer() {
               <>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-extrabold text-pos-muted">Tiền mặt</span>
-                  <span className="inline-flex min-h-[22px] w-fit items-center rounded-full border border-pos-line bg-pos-surface2 px-2 py-0.5 text-[11px] font-bold text-pos-muted border-[#bbf7d0] bg-[#f0fdf4] text-pos-success">● Luôn bật</span>
+                  <span className="inline-flex min-h-[22px] w-fit items-center rounded-full border border-[#bbf7d0] bg-[#f0fdf4] px-2 py-0.5 text-[11px] font-bold text-pos-success">● Luôn bật</span>
                 </div>
                 <p className="text-pos-muted">Tiền mặt là phương thức mặc định và luôn khả dụng.</p>
               </>
@@ -128,8 +134,8 @@ export function PaymentSettingsDrawer() {
                 <div className="grid gap-1.5">
                   <span className="text-xs font-extrabold text-pos-muted">Kích hoạt QR</span>
                   <div className="flex flex-wrap gap-1.5">
-                    <button className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", form.qrEnabled && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")} onClick={() => patch({ qrEnabled: true })}>Bật</button>
-                    <button className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", !form.qrEnabled && "border-[#fecaca] bg-[#fef2f2] text-pos-danger")} onClick={() => patch({ qrEnabled: false })}>Tắt</button>
+                    <button className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", form.qrEnabled ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary" : "border-pos-line bg-pos-surface text-pos-ink")} onClick={() => patch({ qrEnabled: true })}>Bật</button>
+                    <button className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", !form.qrEnabled ? "border-[#fecaca] bg-[#fef2f2] text-pos-danger" : "border-pos-line bg-pos-surface text-pos-ink")} onClick={() => patch({ qrEnabled: false })}>Tắt</button>
                   </div>
                 </div>
                 <TextField
@@ -144,7 +150,7 @@ export function PaymentSettingsDrawer() {
                   disabled={!form.qrEnabled}
                   inputProps={{ "data-testid": "qr-info-input" }}
                 />
-                <button className={clsx("cursor-pointer whitespace-nowrap rounded-[7px] border border-pos-line bg-pos-surface px-3 py-[7px] text-xs font-bold text-pos-muted disabled:cursor-not-allowed disabled:opacity-50", form.showQrOnBill && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")} disabled={!form.qrEnabled} onClick={() => patch({ showQrOnBill: !form.showQrOnBill })}>
+                <button className={clsx("cursor-pointer whitespace-nowrap rounded-[7px] border px-3 py-[7px] text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50", form.showQrOnBill ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary" : "border-pos-line bg-pos-surface text-pos-muted")} disabled={!form.qrEnabled} onClick={() => patch({ showQrOnBill: !form.showQrOnBill })}>
                   {form.showQrOnBill ? "✓ Hiện QR trên hoá đơn" : "Hiện QR trên hoá đơn"}
                 </button>
                 <p className="text-pos-muted">QR hiện chỉ in kèm hoá đơn, chưa nhận thanh toán tự động.</p>
@@ -154,8 +160,8 @@ export function PaymentSettingsDrawer() {
                 <div className="grid gap-1.5">
                   <span className="text-xs font-extrabold text-pos-muted">Kích hoạt chuyển khoản</span>
                   <div className="flex flex-wrap gap-1.5">
-                    <button className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", form.bankEnabled && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")} onClick={() => patch({ bankEnabled: true })}>Bật</button>
-                    <button className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", !form.bankEnabled && "border-[#fecaca] bg-[#fef2f2] text-pos-danger")} onClick={() => patch({ bankEnabled: false })}>Tắt</button>
+                    <button className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", form.bankEnabled ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary" : "border-pos-line bg-pos-surface text-pos-ink")} onClick={() => patch({ bankEnabled: true })}>Bật</button>
+                    <button className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", !form.bankEnabled ? "border-[#fecaca] bg-[#fef2f2] text-pos-danger" : "border-pos-line bg-pos-surface text-pos-ink")} onClick={() => patch({ bankEnabled: false })}>Tắt</button>
                   </div>
                 </div>
                 <TextField label="Ngân hàng" value={form.bankName} onChange={(e) => patch({ bankName: e.target.value })} size="small" fullWidth disabled={!form.bankEnabled} />
@@ -192,8 +198,8 @@ export function PaymentSettingsDrawer() {
                   <div className="my-1 w-full border-t border-dashed border-pos-line" />
                   <div className="flex w-full justify-between gap-2 font-extrabold"><strong>Tổng</strong><strong>100.000đ</strong></div>
                   <div className="mt-2 flex flex-wrap justify-center gap-2">
-                    <span className="shrink-0 self-start rounded-full border border-pos-line px-2 py-px text-[11px] font-bold border-pos-primaryLine bg-pos-primarySoft text-pos-primary">Tiền mặt</span>
-                    {form.qrEnabled && <span className="shrink-0 self-start rounded-full border border-pos-line px-2 py-px text-[11px] font-bold border-pos-primaryLine bg-pos-primarySoft text-pos-primary">QR</span>}
+                    <span className="shrink-0 self-start rounded-full border border-pos-primaryLine bg-pos-primarySoft px-2 py-px text-[11px] font-bold text-pos-primary">Tiền mặt</span>
+                    {form.qrEnabled && <span className="shrink-0 self-start rounded-full border border-pos-primaryLine bg-pos-primarySoft px-2 py-px text-[11px] font-bold text-pos-primary">QR</span>}
                     {form.bankEnabled && <span className="shrink-0 self-start rounded-full border border-pos-line px-2 py-px text-[11px] font-bold border-[#fde047] bg-[#fef9c3] text-[#854d0e]">Chuyển khoản</span>}
                   </div>
                   {form.bankEnabled && (form.bankName || form.accountNo) && (

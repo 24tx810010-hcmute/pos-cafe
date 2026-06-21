@@ -76,7 +76,12 @@ export function EmployeeDetailPane({
                 {roleOptions.map(({ role, label }) => (
                   <button
                     key={role}
-                    className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", form.role === role && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")}
+                    className={clsx(
+                      "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
+                      form.role === role
+                        ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                        : "border-pos-line bg-pos-surface text-pos-ink",
+                    )}
                     onClick={() => setForm((f) => ({ ...f, role }))}
                   >
                     {label}
@@ -94,14 +99,24 @@ export function EmployeeDetailPane({
                   <span className="text-xs font-extrabold text-pos-muted">Trạng thái</span>
                   <div className="flex flex-wrap gap-1.5">
                     <button
-                      className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", form.isActive && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")}
+                      className={clsx(
+                        "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
+                        form.isActive
+                          ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                          : "border-pos-line bg-pos-surface text-pos-ink",
+                      )}
                       data-testid="employee-active-button"
                       onClick={() => setForm((f) => ({ ...f, isActive: true }))}
                     >
                       Đang hoạt động
                     </button>
                     <button
-                      className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", !form.isActive && "border-[#fecaca] bg-[#fef2f2] text-pos-danger")}
+                      className={clsx(
+                        "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
+                        !form.isActive
+                          ? "border-[#fecaca] bg-[#fef2f2] text-pos-danger"
+                          : "border-pos-line bg-pos-surface text-pos-ink",
+                      )}
                       data-testid="employee-inactive-button"
                       disabled={lockDisabled}
                       title={lockDisabled ? "Không thể tạm khoá tài khoản này" : undefined}

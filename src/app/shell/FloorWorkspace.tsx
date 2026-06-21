@@ -12,6 +12,24 @@ import clsx from "clsx";
 
 type TableFilter = "all" | "empty" | "occupied";
 
+const decorToneClass = (kind: string) => {
+  switch (kind) {
+    case "counter":
+      return "border-[#94a3b8] bg-[#e2e8f0] text-[#475569]";
+    case "decor":
+    case "image":
+      return "border-[#c4b5fd] bg-[#ede9fe] text-[#6d28d9]";
+    case "door":
+      return "border-[#fde047] bg-[#fef9c3] text-[#713f12]";
+    case "plant":
+      return "border-[#86efac] bg-[#dcfce7] text-[#166534]";
+    case "wall":
+      return "border-[#cbd5e1] bg-[#f1f5f9] text-[#64748b]";
+    default:
+      return "border-[#cbd5e1] bg-[#e2e8f0] text-[#475569]";
+  }
+};
+
 export function FloorWorkspace() {
   const currentEmployee = useAppStore((state) => state.currentEmployee);
   const activeAreaId = useAppStore((state) => state.activeAreaId);
@@ -113,7 +131,12 @@ export function FloorWorkspace() {
             <div className="flex min-h-12 flex-1 items-center gap-2 overflow-x-auto px-3 py-1.5">
               {floorPlan?.areas.map((area) => (
                 <button
-                  className={clsx("min-h-[34px] whitespace-nowrap rounded-[7px] border border-pos-line bg-pos-surface px-3 font-extrabold text-pos-muted", area.id === areaId && "border-[rgb(15_118_110_/_45%)] bg-pos-primarySoft text-pos-primary")}
+                  className={clsx(
+                    "min-h-[34px] whitespace-nowrap rounded-[7px] border px-3 font-extrabold",
+                    area.id === areaId
+                      ? "border-[rgb(15_118_110_/_45%)] bg-pos-primarySoft text-pos-primary"
+                      : "border-pos-line bg-pos-surface text-pos-muted",
+                  )}
                   key={area.id}
                   onClick={() => setActiveAreaId(area.id)}
                 >
@@ -125,7 +148,12 @@ export function FloorWorkspace() {
               {(["all", "empty", "occupied"] as TableFilter[]).map((f) => (
                 <button
                   key={f}
-                  className={clsx("cursor-pointer whitespace-nowrap rounded-full border border-pos-line bg-pos-surface px-3 py-[3px] text-xs font-bold text-pos-muted", tableFilter === f && "border-pos-primary bg-pos-primary text-white")}
+                  className={clsx(
+                    "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
+                    tableFilter === f
+                      ? "border-pos-primary bg-pos-primary text-white"
+                      : "border-pos-line bg-pos-surface text-pos-muted",
+                  )}
                   onClick={() => setTableFilter(f)}
                 >
                   {f === "all" ? "Tất cả" : f === "empty" ? "Trống" : "Đang phục vụ"}
@@ -154,7 +182,10 @@ export function FloorWorkspace() {
               <div className="relative aspect-video w-full min-w-[760px] overflow-hidden rounded-pos border border-pos-line bg-[#eef3f7] bg-[linear-gradient(90deg,rgb(215_222_232_/_42%)_1px,transparent_1px),linear-gradient(rgb(215_222_232_/_42%)_1px,transparent_1px),#eef3f7] bg-[length:42px_42px]">
                 {decorItems.map((decor) => (
                   <div
-                    className={clsx("absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pos text-center font-black border border-dashed border-[#cbd5e1] bg-[#e2e8f0] text-xs text-[#475569]", decor.kind === "counter" && "border-[#94a3b8] bg-[#e2e8f0] text-[#475569]", decor.kind === "decor" && "border-[#c4b5fd] bg-[#ede9fe] text-[#6d28d9]", decor.kind === "door" && "border-[#fde047] bg-[#fef9c3] text-[#713f12]", decor.kind === "image" && "border-[#c4b5fd] bg-[#ede9fe] text-[#6d28d9]", decor.kind === "plant" && "border-[#86efac] bg-[#dcfce7] text-[#166534]", decor.kind === "wall" && "border-[#cbd5e1] bg-[#f1f5f9] text-[#64748b]")}
+                    className={clsx(
+                      "absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pos border border-dashed text-center text-xs font-black",
+                      decorToneClass(decor.kind),
+                    )}
                     key={decor.id}
                     style={stageStyle(decor.posX, decor.posY, decor.width, decor.height)}
                   >
@@ -168,7 +199,7 @@ export function FloorWorkspace() {
                   return (
                     <button
                       className={clsx(
-                        "absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pos text-center font-black border-2 border-[#cbd5e1] bg-white shadow-[0_8px_18px_rgb(15_23_42_/_10%)]",
+                        "absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pos border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)]",
                         occupied ? "border-[#f97316] bg-[#fff7ed]" : "border-[#86efac] bg-[#f0fdf4]",
                         isRound && "rounded-full",
                       )}

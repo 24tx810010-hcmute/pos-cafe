@@ -152,7 +152,12 @@ export function GeneralSettingsDrawer() {
               {sections.map((s) => (
                 <button
                   key={s.key}
-                  className={clsx("inline-flex min-h-9 flex-[1_0_112px] cursor-pointer items-center justify-center rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-xs font-extrabold text-pos-muted max-sm:basis-[104px]", section === s.key && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")}
+                  className={clsx(
+                    "inline-flex min-h-9 flex-[1_0_112px] cursor-pointer items-center justify-center rounded-[7px] border px-2.5 py-2 text-xs font-extrabold max-sm:basis-[104px]",
+                    section === s.key
+                      ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                      : "border-pos-line bg-pos-surface text-pos-muted",
+                  )}
                   onClick={() => setSection(s.key)}
                 >
                   {s.label}

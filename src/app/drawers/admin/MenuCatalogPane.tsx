@@ -42,8 +42,10 @@ export function MenuCatalogPane({
             <button
               key={category.id}
               className={clsx(
-                "inline-flex min-h-8 flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border border-pos-line bg-pos-surface px-3 py-1 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary",
-                category.id === selectedCategoryId && "border-pos-primary bg-pos-primarySoft text-pos-primary",
+                "inline-flex min-h-8 flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary",
+                category.id === selectedCategoryId
+                  ? "border-pos-primary bg-pos-primarySoft text-pos-primary"
+                  : "border-pos-line bg-pos-surface",
                 category.deleted && "opacity-70 line-through",
               )}
               onClick={() => { setSelectedCategoryId(category.id); setSelectedItemId(null); }}
@@ -89,10 +91,13 @@ export function MenuCatalogPane({
               <div
                 key={item.id}
                 className={clsx(
-                  "grid cursor-pointer grid-rows-[auto_1fr_auto] gap-2 rounded-pos border-[1.5px] border-pos-line bg-white p-2.5 transition-[border-color,box-shadow] hover:border-pos-primary",
-                  item.id === selectedItemId && "border-pos-primary shadow-[0_0_0_2px_var(--primary-soft)]",
+                  "grid cursor-pointer grid-rows-[auto_1fr_auto] gap-2 rounded-pos border-[1.5px] p-2.5 transition-[border-color,box-shadow] hover:border-pos-primary",
+                  item.id === selectedItemId
+                    ? "border-pos-primary bg-pos-primarySoft shadow-[0_0_0_2px_var(--primary-soft)]"
+                    : !item.isAvailable
+                      ? "border-pos-line bg-[#fafafa]"
+                      : "border-pos-line bg-white",
                   item.deleted && "opacity-55 [&_strong]:line-through",
-                  !item.isAvailable && "bg-[#fafafa]",
                 )}
                 data-testid={`menu-edit-card-${item.id}`}
                 onClick={() => setSelectedItemId(item.id)}

@@ -278,7 +278,12 @@ function EmployeesDrawer() {
           {filterChips.map((fc) => (
             <button
               key={fc.key}
-              className={clsx("cursor-pointer whitespace-nowrap rounded-full border border-pos-line bg-pos-surface px-3 py-[3px] text-xs font-bold text-pos-muted", filter === fc.key && "border-pos-primary bg-pos-primary text-white")}
+              className={clsx(
+                "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
+                filter === fc.key
+                  ? "border-pos-primary bg-pos-primary text-white"
+                  : "border-pos-line bg-pos-surface text-pos-muted",
+              )}
               onClick={() => setFilter(fc.key)}
             >
               {fc.label}

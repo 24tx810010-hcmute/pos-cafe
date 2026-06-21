@@ -67,8 +67,10 @@ export function EmployeeListPane({
               <div
                 key={employee.id}
                 className={clsx(
-                  "grid cursor-pointer grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-pos border-[1.5px] border-pos-line bg-white px-3 py-2.5 transition-[border-color,background] hover:border-pos-primary",
-                  selectedId === employee.id && "border-pos-primary bg-pos-primarySoft",
+                  "grid cursor-pointer grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-pos border-[1.5px] px-3 py-2.5 transition-[border-color,background] hover:border-pos-primary",
+                  selectedId === employee.id
+                    ? "border-pos-primary bg-pos-primarySoft"
+                    : "border-pos-line bg-white",
                   !employee.isActive && "opacity-[0.72]",
                 )}
                 data-testid={`employee-row-${employee.id}`}

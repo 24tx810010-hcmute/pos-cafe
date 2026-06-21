@@ -39,7 +39,12 @@ export function OrderMenuPane({
           {categories?.map((cat) => (
             <button
               key={cat.id}
-              className={clsx("flex min-h-[34px] items-center whitespace-nowrap rounded-[7px] border border-pos-line bg-pos-surface px-3 font-extrabold text-pos-muted", cat.id === categoryId && !search && "border-[rgb(15_118_110_/_45%)] bg-pos-primarySoft text-pos-primary")}
+              className={clsx(
+                "flex min-h-[34px] items-center whitespace-nowrap rounded-[7px] border px-3 font-extrabold",
+                cat.id === categoryId && !search
+                  ? "border-[rgb(15_118_110_/_45%)] bg-pos-primarySoft text-pos-primary"
+                  : "border-pos-line bg-pos-surface text-pos-muted",
+              )}
               onClick={() => onSelectCategory(cat.id)}
             >
               <span className={clsx("mr-1 inline-block h-2 w-2 shrink-0 rounded-full align-middle", cat.id === "cat-coffee" && "bg-[#7c3aed]", cat.id === "cat-tea" && "bg-[#0891b2]", cat.id === "cat-blended" && "bg-[#0d9488]", cat.id === "cat-snack" && "bg-[#d97706]", cat.id !== "cat-coffee" && cat.id !== "cat-tea" && cat.id !== "cat-blended" && cat.id !== "cat-snack" && "bg-[#64748b]")} />

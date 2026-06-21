@@ -20,6 +20,102 @@ const withoutTestIds = (source: string) =>
     .replace(/data-testid=\{`[^`]*`\}/g, "")
     .replace(/data-testid="[^"]*"/g, "");
 
+const classTokens = (literal: string) => literal.split(/\s+/).filter(Boolean);
+
+const hasAnyToken = (tokens: string[], candidates: string[]) =>
+  candidates.some((candidate) => tokens.includes(candidate));
+
+const conflictingClassGroups = [
+  {
+    inactive: ["border-pos-line"],
+    active: ["border-pos-primary", "border-pos-primaryLine", "border-[rgb(15_118_110_/_45%)]", "border-[#fecaca]"],
+  },
+  {
+    inactive: ["border-[#cbd5e1]"],
+    active: ["border-[#86efac]", "border-[#f97316]", "border-[#94a3b8]", "border-[#c4b5fd]", "border-[#fde047]"],
+  },
+  {
+    inactive: ["bg-pos-surface", "bg-pos-surface2", "bg-transparent", "bg-white"],
+    active: ["bg-pos-primary", "bg-pos-primarySoft", "bg-[#fef2f2]", "bg-[#ede9fe]", "bg-[#e0f2fe]"],
+  },
+  {
+    inactive: ["bg-[#e2e8f0]", "bg-white"],
+    active: ["bg-[#f0fdf4]", "bg-[#fff7ed]", "bg-[#ede9fe]", "bg-[#fef9c3]", "bg-[#dcfce7]", "bg-[#f1f5f9]"],
+  },
+  {
+    inactive: ["text-pos-muted", "text-pos-ink"],
+    active: ["text-white", "text-pos-primary", "text-pos-danger", "text-[#5b21b6]", "text-[#075985]"],
+  },
+  {
+    inactive: ["text-[#475569]"],
+    active: ["text-[#6d28d9]", "text-[#713f12]", "text-[#166534]", "text-[#64748b]"],
+  },
+];
+
+const literalConflict = (literal: string) => {
+  const tokens = classTokens(literal);
+  return conflictingClassGroups.some(
+    ({ inactive, active }) => hasAnyToken(tokens, inactive) && hasAnyToken(tokens, active),
+  );
+};
+
+const clsxCalls = (source: string) => {
+  const calls: string[] = [];
+  const startPattern = /\bclsx\s*\(/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = startPattern.exec(source)) !== null) {
+    let depth = 1;
+    let index = startPattern.lastIndex;
+    let quote: string | null = null;
+
+    for (; index < source.length; index++) {
+      const char = source[index];
+      const prev = source[index - 1];
+
+      if (quote) {
+        if (char === quote && prev !== "\\") {
+          quote = null;
+        }
+        continue;
+      }
+
+      if (char === '"' || char === "'" || char === "`") {
+        quote = char;
+        continue;
+      }
+
+      if (char === "(") {
+        depth++;
+      } else if (char === ")") {
+        depth--;
+        if (depth === 0) {
+          calls.push(source.slice(match.index, index + 1));
+          startPattern.lastIndex = index + 1;
+          break;
+        }
+      }
+    }
+  }
+
+  return calls;
+};
+
+const stringLiterals = (source: string) =>
+  Array.from(source.matchAll(/"([^"`]*?)"|'([^'`]*?)'|`([^`]*?)`/g), (match) => match[1] ?? match[2] ?? match[3] ?? "");
+
+const appendedStringLiterals = (source: string) =>
+  Array.from(
+    source.matchAll(/&&\s*(?:"([^"`]*?)"|'([^'`]*?)'|`([^`]*?)`)/g),
+    (match) => match[1] ?? match[2] ?? match[3] ?? "",
+  );
+
+const leadingStringLiteral = (source: string) => {
+  const match = source.match(/^\s*clsx\s*\(\s*(?:"([^"`]*?)"|'([^'`]*?)'|`([^`]*?)`)/);
+
+  return match ? match[1] ?? match[2] ?? match[3] ?? "" : "";
+};
+
 describe("Tailwind UI migration", () => {
   test("PortalDrawer slide animations have matching keyframes", () => {
     const source = sourceFile("src/tailwind.css");
@@ -64,6 +160,50 @@ describe("Tailwind UI migration", () => {
     });
 
     expect(classConstantFiles).toEqual([]);
+    expect(offenders).toEqual([]);
+  });
+
+  test("active state utilities are not appended on top of inactive utilities", () => {
+    const productionFiles = appFiles().filter(
+      (path) =>
+        /\.[jt]sx?$/.test(path) &&
+        !path.endsWith(".test.ts") &&
+        !path.endsWith(".test.tsx"),
+    );
+
+    const offenders = productionFiles.flatMap((path) => {
+      const source = withoutTestIds(sourceFile(path));
+      const staticConflicts = Array.from(source.matchAll(/className="([^"]+)"/g), (match) => match[1])
+        .filter(literalConflict)
+        .map((literal) => `${path}: static class conflict: ${literal}`);
+      const appendedConflicts = clsxCalls(source)
+        .filter((call) => {
+          const literals = stringLiterals(call);
+          const conditionalLiterals = appendedStringLiterals(call);
+          const leadingLiteral = leadingStringLiteral(call);
+          const appendedActiveConflict = call.includes("&&") && conflictingClassGroups.some(({ inactive, active }) => {
+            const baseLiterals = literals.filter((literal) => !conditionalLiterals.includes(literal));
+            const baseHasInactive = baseLiterals.some((literal) => hasAnyToken(classTokens(literal), inactive));
+            const conditionalHasActive = conditionalLiterals.some((literal) => hasAnyToken(classTokens(literal), active));
+
+            return baseHasInactive && conditionalHasActive;
+          });
+          const leadingBaseConflict = !!leadingLiteral && conflictingClassGroups.some(({ inactive, active }) => {
+            const baseHasInactive = hasAnyToken(classTokens(leadingLiteral), inactive);
+            const laterHasActive = literals
+              .filter((literal) => literal !== leadingLiteral)
+              .some((literal) => hasAnyToken(classTokens(literal), active));
+
+            return baseHasInactive && laterHasActive;
+          });
+
+          return appendedActiveConflict || leadingBaseConflict;
+        })
+        .map((call) => `${path}: clsx active append conflict: ${call.replace(/\s+/g, " ")}`);
+
+      return [...staticConflicts, ...appendedConflicts];
+    });
+
     expect(offenders).toEqual([]);
   });
 

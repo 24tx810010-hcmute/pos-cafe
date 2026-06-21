@@ -118,7 +118,12 @@ export function PasscodeScreen() {
             {employeesQuery.data.map((employee) => (
               <button
                 key={employee.id}
-                className={clsx("grid min-h-[52px] content-start gap-2 rounded-pos border border-pos-line bg-pos-surface px-3 py-2.5 text-left font-extrabold text-pos-ink", employee.id === selectedEmployeeId && "border-[rgb(15_118_110_/_45%)] bg-pos-primarySoft text-pos-primary")}
+                className={clsx(
+                  "grid min-h-[52px] content-start gap-2 rounded-pos border px-3 py-2.5 text-left font-extrabold",
+                  employee.id === selectedEmployeeId
+                    ? "border-[rgb(15_118_110_/_45%)] bg-pos-primarySoft text-pos-primary"
+                    : "border-pos-line bg-pos-surface text-pos-ink",
+                )}
                 data-testid={`employee-${employee.id}`}
                 onClick={() => { setSelectedEmployeeId(employee.id); setPinError(""); setPin(""); }}
               >

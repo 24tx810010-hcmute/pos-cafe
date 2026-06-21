@@ -77,7 +77,12 @@ export function MenuEditorDetailPane({
                 {sortedCats.filter((c) => !c.deleted).map((c) => (
                   <button
                     key={c.id}
-                    className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", selectedItem.categoryId === c.id && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")}
+                    className={clsx(
+                      "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
+                      selectedItem.categoryId === c.id
+                        ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                        : "border-pos-line bg-pos-surface text-pos-ink",
+                    )}
                     onClick={() => patchItem(selectedItem.id, { categoryId: c.id })}
                   >
                     {c.name || "(chưa đặt tên)"}
@@ -88,8 +93,28 @@ export function MenuEditorDetailPane({
             <div className="grid gap-1.5">
               <span className="text-xs font-extrabold text-pos-muted">Trạng thái</span>
               <div className="flex flex-wrap gap-1.5">
-                <button className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", selectedItem.isAvailable && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")} onClick={() => patchItem(selectedItem.id, { isAvailable: true })}>Đang bán</button>
-                <button className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", !selectedItem.isAvailable && "border-[#fecaca] bg-[#fef2f2] text-pos-danger")} onClick={() => patchItem(selectedItem.id, { isAvailable: false })}>Tạm hết</button>
+                <button
+                  className={clsx(
+                    "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
+                    selectedItem.isAvailable
+                      ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                      : "border-pos-line bg-pos-surface text-pos-ink",
+                  )}
+                  onClick={() => patchItem(selectedItem.id, { isAvailable: true })}
+                >
+                  Đang bán
+                </button>
+                <button
+                  className={clsx(
+                    "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
+                    !selectedItem.isAvailable
+                      ? "border-[#fecaca] bg-[#fef2f2] text-pos-danger"
+                      : "border-pos-line bg-pos-surface text-pos-ink",
+                  )}
+                  onClick={() => patchItem(selectedItem.id, { isAvailable: false })}
+                >
+                  Tạm hết
+                </button>
               </div>
             </div>
             {selectedItem.deleted && (
@@ -139,10 +164,38 @@ export function MenuEditorDetailPane({
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           <div className="flex flex-wrap gap-1.5">
-                            <button className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", g.selectType === "single" && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")} onClick={() => patchGroup(g.id, { selectType: "single" })}>Chọn 1</button>
-                            <button className={clsx("min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-[13px] font-bold text-pos-ink transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line", g.selectType === "multi" && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")} onClick={() => patchGroup(g.id, { selectType: "multi" })}>Chọn nhiều</button>
+                            <button
+                              className={clsx(
+                                "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
+                                g.selectType === "single"
+                                  ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                                  : "border-pos-line bg-pos-surface text-pos-ink",
+                              )}
+                              onClick={() => patchGroup(g.id, { selectType: "single" })}
+                            >
+                              Chọn 1
+                            </button>
+                            <button
+                              className={clsx(
+                                "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
+                                g.selectType === "multi"
+                                  ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                                  : "border-pos-line bg-pos-surface text-pos-ink",
+                              )}
+                              onClick={() => patchGroup(g.id, { selectType: "multi" })}
+                            >
+                              Chọn nhiều
+                            </button>
                           </div>
-                          <button className={clsx("cursor-pointer whitespace-nowrap rounded-[7px] border border-pos-line bg-pos-surface px-3 py-[7px] text-xs font-bold text-pos-muted disabled:cursor-not-allowed disabled:opacity-50", g.isRequired && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")} onClick={() => patchGroup(g.id, { isRequired: !g.isRequired })}>
+                          <button
+                            className={clsx(
+                              "cursor-pointer whitespace-nowrap rounded-[7px] border px-3 py-[7px] text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50",
+                              g.isRequired
+                                ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                                : "border-pos-line bg-pos-surface text-pos-muted",
+                            )}
+                            onClick={() => patchGroup(g.id, { isRequired: !g.isRequired })}
+                          >
                             {g.isRequired ? "Bắt buộc" : "Tuỳ chọn"}
                           </button>
                         </div>

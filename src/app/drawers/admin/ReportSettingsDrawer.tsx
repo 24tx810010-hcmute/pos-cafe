@@ -150,7 +150,16 @@ export function ReportSettingsDrawer() {
         <div className="flex min-w-0 flex-[0_1_auto] flex-wrap items-center justify-end gap-2.5 [&>*]:shrink-0 [&_.MuiButton-root]:min-h-9 [&_.MuiButton-root]:whitespace-nowrap max-sm:w-full max-sm:justify-start max-sm:[&_.MuiButton-root]:flex-[1_1_128px] max-[980px]:gap-2 max-[980px]:[&_.MuiButton-root]:min-h-[34px]">
           <div className="flex min-w-0 flex-wrap gap-2">
             {dateChips.map((dc) => (
-              <button key={dc.key} className={clsx("cursor-pointer whitespace-nowrap rounded-full border border-pos-line bg-pos-surface px-3 py-[3px] text-xs font-bold text-pos-muted", range === dc.key && "border-pos-primary bg-pos-primary text-white")} onClick={() => setRange(dc.key)}>
+              <button
+                key={dc.key}
+                className={clsx(
+                  "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
+                  range === dc.key
+                    ? "border-pos-primary bg-pos-primary text-white"
+                    : "border-pos-line bg-pos-surface text-pos-muted",
+                )}
+                onClick={() => setRange(dc.key)}
+              >
                 {dc.label}
               </button>
             ))}
@@ -193,7 +202,12 @@ export function ReportSettingsDrawer() {
           {sections.map((s) => (
             <button
               key={s.key}
-              className={clsx("inline-flex min-h-9 flex-[1_0_112px] cursor-pointer items-center justify-center rounded-[7px] border border-pos-line bg-pos-surface px-2.5 py-2 text-xs font-extrabold text-pos-muted max-sm:basis-[104px]", section === s.key && "border-pos-primaryLine bg-pos-primarySoft text-pos-primary")}
+              className={clsx(
+                "inline-flex min-h-9 flex-[1_0_112px] cursor-pointer items-center justify-center rounded-[7px] border px-2.5 py-2 text-xs font-extrabold max-sm:basis-[104px]",
+                section === s.key
+                  ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                  : "border-pos-line bg-pos-surface text-pos-muted",
+              )}
               onClick={() => { setSection(s.key); setSelected(null); }}
             >
               {s.label}
@@ -212,7 +226,7 @@ export function ReportSettingsDrawer() {
                 const h = dataset.hourly.find((x) => x.label === selected.key);
                 if (!h) return null;
                 return (
-                  <div className="rounded-pos border border-pos-line bg-pos-surface2 px-3 py-2.5 border-pos-primaryLine bg-pos-primarySoft">
+                  <div className="rounded-pos border border-pos-primaryLine bg-pos-primarySoft px-3 py-2.5">
                     <div className="text-[13px] font-extrabold">Mốc {h.label}</div>
                     <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Doanh thu</span><strong className="font-black text-pos-primary">{formatVnd(h.revenue)}</strong></div>
                     <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Số đơn</span><strong>{h.orders || "—"}</strong></div>
@@ -226,7 +240,7 @@ export function ReportSettingsDrawer() {
                 const it = dataset.topItems.find((x) => x.name === selected.key);
                 if (!it) return null;
                 return (
-                  <div className="rounded-pos border border-pos-line bg-pos-surface2 px-3 py-2.5 border-pos-primaryLine bg-pos-primarySoft">
+                  <div className="rounded-pos border border-pos-primaryLine bg-pos-primarySoft px-3 py-2.5">
                     <div className="text-[13px] font-extrabold">{it.name}</div>
                     <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Xuất hiện</span><strong>{it.qty} ngày top</strong></div>
                     <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Doanh thu ngày top</span><strong className="font-black text-pos-primary">{formatVnd(it.revenue)}</strong></div>
@@ -295,8 +309,10 @@ export function ReportSettingsDrawer() {
                         <button
                           key={it.name}
                           className={clsx(
-                            "grid cursor-pointer grid-cols-[minmax(80px,1.1fr)_minmax(60px,2fr)_auto] items-center gap-2.5 rounded-[7px] border border-transparent bg-pos-surface2 px-2 py-[7px] text-left transition-[border-color,background] hover:border-pos-primaryLine",
-                            selected?.type === "item" && selected.key === it.name && "border-pos-primary bg-pos-primarySoft",
+                            "grid cursor-pointer grid-cols-[minmax(80px,1.1fr)_minmax(60px,2fr)_auto] items-center gap-2.5 rounded-[7px] border px-2 py-[7px] text-left transition-[border-color,background] hover:border-pos-primaryLine",
+                            selected?.type === "item" && selected.key === it.name
+                              ? "border-pos-primary bg-pos-primarySoft"
+                              : "border-transparent bg-pos-surface2",
                           )}
                           onClick={() => pickItem(it.name)}
                         >
@@ -345,8 +361,10 @@ export function ReportSettingsDrawer() {
                     <button
                       key={it.name}
                       className={clsx(
-                        "grid cursor-pointer grid-cols-[minmax(80px,1.1fr)_minmax(60px,2fr)_auto] items-center gap-2.5 rounded-[7px] border border-transparent bg-pos-surface2 px-2 py-[7px] text-left transition-[border-color,background] hover:border-pos-primaryLine",
-                        selected?.type === "item" && selected.key === it.name && "border-pos-primary bg-pos-primarySoft",
+                        "grid cursor-pointer grid-cols-[minmax(80px,1.1fr)_minmax(60px,2fr)_auto] items-center gap-2.5 rounded-[7px] border px-2 py-[7px] text-left transition-[border-color,background] hover:border-pos-primaryLine",
+                        selected?.type === "item" && selected.key === it.name
+                          ? "border-pos-primary bg-pos-primarySoft"
+                          : "border-transparent bg-pos-surface2",
                       )}
                       onClick={() => pickItem(it.name)}
                     >
