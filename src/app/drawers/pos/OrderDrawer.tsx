@@ -18,6 +18,8 @@ import {
   useSubmitOrderMutation,
 } from "@/features/pos";
 import { notifyUiError, toToastError } from "../../appErrors";
+import { PortalDrawer } from "../../components/PortalDrawer";
+import { PortalPopup } from "../../components/PortalPopup";
 import { useAppStore } from "../../useAppStore";
 import { OrderCartPane } from "./OrderCartPane";
 import { OrderMenuPane } from "./OrderMenuPane";
@@ -156,9 +158,9 @@ export function OrderDrawer() {
   const titleLabel = orderDetail ? `${orderTypeLabel} · Đơn #${orderDetail.orderNo}` : `${orderTypeLabel} · Đơn mới`;
 
   return (
-    <section className="absolute inset-y-3 right-3 z-10 grid w-[min(88vw,1440px)] max-w-[calc(100vw-96px)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface shadow-[0_22px_60px_rgb(15_23_42_/_18%)] max-[980px]:inset-y-0 max-[980px]:right-0 max-[980px]:w-full max-[980px]:max-w-none max-[980px]:rounded-none max-[980px]:border-y-0" data-testid="order-drawer">
+    <PortalDrawer testId="order-drawer">
       {confirmClose && (
-        <div className="absolute inset-0 z-20 grid place-items-center bg-slate-900/50">
+        <PortalPopup placement="Centered" viewport="workspace" overlayClassName="bg-slate-900/50">
           <div className="grid w-[min(360px,90vw)] gap-3 rounded-pos bg-pos-surface p-6 shadow-[0_20px_60px_rgb(0_0_0_/_25%)] [&_h3]:m-0 [&_p]:m-0 [&_p]:text-sm [&_p]:text-pos-muted">
             <h3>Bỏ đơn chưa gửi?</h3>
             <p>Các món vừa chọn sẽ không được lưu.</p>
@@ -178,7 +180,7 @@ export function OrderDrawer() {
               </Button>
             </div>
           </div>
-        </div>
+        </PortalPopup>
       )}
 
       <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-pos-line bg-white/95 px-[18px] py-3 max-[980px]:min-h-[50px] max-[980px]:gap-x-2.5 max-[980px]:gap-y-2 max-[980px]:px-2.5 max-[980px]:py-2">
@@ -269,6 +271,6 @@ export function OrderDrawer() {
           />
         </div>
       </div>
-    </section>
+    </PortalDrawer>
   );
 }

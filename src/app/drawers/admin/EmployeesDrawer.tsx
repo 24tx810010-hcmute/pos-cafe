@@ -21,6 +21,8 @@ import {
 } from "@/features/admin/employeeDrawerFlow";
 import { useAppStore } from "../../useAppStore";
 import { toToastError } from "../../appErrors";
+import { PortalDrawer } from "../../components/PortalDrawer";
+import { PortalPopup } from "../../components/PortalPopup";
 import { EmployeeDetailPane } from "./EmployeeDetailPane";
 import { EmployeeListPane } from "./EmployeeListPane";
 
@@ -233,7 +235,7 @@ function EmployeesDrawer() {
 
   if (!allowed) {
     return (
-      <section className="absolute inset-y-3 right-3 z-10 grid w-[min(88vw,1440px)] max-w-[calc(100vw-96px)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface shadow-[0_22px_60px_rgb(15_23_42_/_18%)] max-[980px]:inset-y-0 max-[980px]:right-0 max-[980px]:w-full max-[980px]:max-w-none max-[980px]:rounded-none max-[980px]:border-y-0" data-testid="employees-drawer">
+      <PortalDrawer testId="employees-drawer">
         <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-pos-line bg-white/95 px-[18px] py-3 max-[980px]:min-h-[50px] max-[980px]:gap-x-2.5 max-[980px]:gap-y-2 max-[980px]:px-2.5 max-[980px]:py-2">
           <div className="min-w-0 flex-[1_1_240px] grid gap-1 [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-normal [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-normal [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-normal [&_p]:mb-0 [&_p]:mt-1 [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-xs [&_p]:text-pos-muted max-sm:[&_h1]:text-[17px] max-sm:[&_h2]:text-[15px] max-sm:[&_h3]:text-[15px] [&_h2]:overflow-hidden [&_h2]:text-ellipsis [&_h2]:whitespace-nowrap [&_h3]:overflow-hidden [&_h3]:text-ellipsis [&_h3]:whitespace-nowrap">
             <h2>Quản lý nhân viên</h2>
@@ -246,12 +248,12 @@ function EmployeesDrawer() {
           <h3>Không có quyền</h3>
           <p className="text-pos-muted">Tài khoản hiện tại không thể quản lý nhân viên.</p>
         </div>
-      </section>
+      </PortalDrawer>
     );
   }
 
   return (
-    <section className="absolute inset-y-3 right-3 z-10 grid w-[min(88vw,1440px)] max-w-[calc(100vw-96px)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface shadow-[0_22px_60px_rgb(15_23_42_/_18%)] max-[980px]:inset-y-0 max-[980px]:right-0 max-[980px]:w-full max-[980px]:max-w-none max-[980px]:rounded-none max-[980px]:border-y-0" data-testid="employees-drawer">
+    <PortalDrawer testId="employees-drawer">
       <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-pos-line bg-white/95 px-[18px] py-3 max-[980px]:min-h-[50px] max-[980px]:gap-x-2.5 max-[980px]:gap-y-2 max-[980px]:px-2.5 max-[980px]:py-2">
         <div className="min-w-0 flex-[1_1_240px] grid gap-1 [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-normal [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-normal [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-normal [&_p]:mb-0 [&_p]:mt-1 [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-xs [&_p]:text-pos-muted max-sm:[&_h1]:text-[17px] max-sm:[&_h2]:text-[15px] max-sm:[&_h3]:text-[15px] [&_h2]:overflow-hidden [&_h2]:text-ellipsis [&_h2]:whitespace-nowrap [&_h3]:overflow-hidden [&_h3]:text-ellipsis [&_h3]:whitespace-nowrap">
           <h2>Quản lý nhân viên</h2>
@@ -317,7 +319,7 @@ function EmployeesDrawer() {
       </div>
 
       {discardTarget && (
-        <div className="absolute inset-0 z-20 grid place-items-center bg-slate-900/50" onClick={() => setDiscardTarget(null)}>
+        <PortalPopup placement="Centered" viewport="workspace" overlayClassName="bg-slate-900/50" onOutsideClick={() => setDiscardTarget(null)}>
           <div className="grid w-[min(360px,90vw)] gap-3 rounded-pos bg-pos-surface p-6 shadow-[0_20px_60px_rgb(0_0_0_/_25%)] [&_h3]:m-0 [&_p]:m-0 [&_p]:text-sm [&_p]:text-pos-muted" onClick={(e) => e.stopPropagation()}>
             <h3>Bỏ thay đổi chưa lưu?</h3>
             <p>Thông tin đang chỉnh sửa sẽ không được lưu.</p>
@@ -336,11 +338,11 @@ function EmployeesDrawer() {
               </Button>
             </div>
           </div>
-        </div>
+        </PortalPopup>
       )}
 
       {pinResetTarget && (
-        <div className="absolute inset-0 z-20 grid place-items-center bg-slate-900/50" onClick={() => setPinResetTarget(null)}>
+        <PortalPopup placement="Centered" viewport="workspace" overlayClassName="bg-slate-900/50" onOutsideClick={() => setPinResetTarget(null)}>
           <div className="grid w-[min(360px,90vw)] gap-3 rounded-pos bg-pos-surface p-6 shadow-[0_20px_60px_rgb(0_0_0_/_25%)] [&_h3]:m-0 [&_p]:m-0 [&_p]:text-sm [&_p]:text-pos-muted" onClick={(e) => e.stopPropagation()}>
             <h3>Đặt lại PIN</h3>
             <p>
@@ -361,9 +363,9 @@ function EmployeesDrawer() {
               </Button>
             </div>
           </div>
-        </div>
+        </PortalPopup>
       )}
-    </section>
+    </PortalDrawer>
   );
 }
 
