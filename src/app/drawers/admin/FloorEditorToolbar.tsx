@@ -7,7 +7,7 @@ import {
   DECOR_LIBRARY,
   SHAPE_LABEL,
   type FloorTool,
-} from "../../helpers/floorEditor.helpers";
+} from "@/features/admin/floorEditorDraft";
 
 interface FloorEditorToolbarProps {
   areaDeleted?: boolean;

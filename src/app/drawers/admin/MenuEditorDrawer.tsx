@@ -17,8 +17,8 @@ import {
   type DraftItem,
   type DraftGroup,
   type DraftValue,
-} from "../../helpers/menuDraft.helpers";
-import { buildMenuChangesFromDrafts } from "../../helpers/menuEditor.helpers";
+} from "@/features/admin/menuDraft";
+import { buildMenuChangesFromDrafts } from "@/features/admin/menuEditorDraft";
 import { MenuCatalogPane } from "./MenuCatalogPane";
 import { MenuEditorDetailPane } from "./MenuEditorDetailPane";
 

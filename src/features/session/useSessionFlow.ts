@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateStoreInput, Employee } from "@/domain";
+import type { CreateStoreInput } from "@/domain";
 import { AppError } from "@/core/appError";
 import { usePorts } from "@/ports/portsContext";
-import { useAppStore } from "@/app/useAppStore";
 import {
   createStoreForSession,
   loadStoreSession,
@@ -83,26 +82,20 @@ export const useRetrySeedMutation = () => {
 
 export const useVerifyEmployeeMutation = () => {
   const ports = usePorts();
-  const setCurrentEmployee = useAppStore((state) => state.setCurrentEmployee);
 
   return useMutation({
     mutationFn: ({ employeeId, pin }: { employeeId: string; pin: string }) =>
       verifyEmployeeForSession(ports, employeeId, pin),
-    onSuccess: (employee: Employee) => {
-      setCurrentEmployee(employee);
-    },
   });
 };
 
 export const useUnpairStoreMutation = () => {
   const ports = usePorts();
   const queryClient = useQueryClient();
-  const setCurrentEmployee = useAppStore((state) => state.setCurrentEmployee);
 
   return useMutation({
     mutationFn: () => unpairStoreSession(ports),
     onSuccess: () => {
-      setCurrentEmployee(null);
       queryClient.clear();
     },
   });

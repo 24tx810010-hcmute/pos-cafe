@@ -23,12 +23,12 @@ import {
   businessRangeFor,
   enumerateBusinessDates,
   tableNameMap,
-} from "../../helpers/history.helpers";
+} from "@/features/pos/historyHelpers";
 import {
   buildReportDatasetFromReports,
   type ReportRange,
   type ReportSection,
-} from "../../helpers/report.helpers";
+} from "@/features/pos/reportHelpers";
 import { Metric } from "../../components/Metric";
 
 export function ReportSettingsDrawer() {

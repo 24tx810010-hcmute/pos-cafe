@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { Button, TextField } from "@mui/material";
 import { ChevronRight, Lock, RotateCcw, Trash2, Unlock } from "lucide-react";
 import type { TableShape } from "@/domain";
-import { toInt } from "../../helpers/menuDraft.helpers";
+import { toInt } from "@/features/admin/menuDraft";
 import {
   DECOR_LABEL,
   DECOR_LIBRARY,
@@ -11,7 +11,7 @@ import {
   type DraftArea,
   type DraftDecor,
   type DraftTable,
-} from "../../helpers/floorEditor.helpers";
+} from "@/features/admin/floorEditorDraft";
 
 type PatchDraft<T> = (id: string, patch: Partial<T>) => void;
 
