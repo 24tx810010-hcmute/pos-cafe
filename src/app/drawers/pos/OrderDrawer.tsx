@@ -158,7 +158,7 @@ export function OrderDrawer() {
   const titleLabel = orderDetail ? `${orderTypeLabel} · Đơn #${orderDetail.orderNo}` : `${orderTypeLabel} · Đơn mới`;
 
   return (
-    <PortalDrawer testId="order-drawer">
+    <PortalDrawer testId="order-drawer" onOutsideClick={closeDrawer}>
       {confirmClose && (
         <PortalPopup placement="Centered" viewport="workspace" overlayClassName="bg-slate-900/50">
           <div className="grid w-[min(360px,90vw)] gap-3 rounded-pos bg-pos-surface p-6 shadow-[0_20px_60px_rgb(0_0_0_/_25%)] [&_h3]:m-0 [&_p]:m-0 [&_p]:text-sm [&_p]:text-pos-muted">

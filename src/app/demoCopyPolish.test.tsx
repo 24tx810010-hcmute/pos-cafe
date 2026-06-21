@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { createMockPorts, createMockState } from "@/adapters/mock";
@@ -141,5 +141,22 @@ describe("demo copy polish", () => {
     expect(await screen.findByTestId("clear-demo-dialog")).toBeInTheDocument();
 
     expectNoImplementationCopy(container);
+  });
+});
+
+describe("drawer overlays", () => {
+  it("closes the active drawer when the overlay is clicked", async () => {
+    renderApp({ drawer: "kitchen" });
+
+    const drawer = await screen.findByTestId("kitchen-drawer");
+    const overlay = drawer.parentElement;
+    expect(overlay).not.toBeNull();
+
+    fireEvent.click(overlay!);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("kitchen-drawer")).not.toBeInTheDocument();
+    });
+    expect(useAppStore.getState().drawer).toBeNull();
   });
 });

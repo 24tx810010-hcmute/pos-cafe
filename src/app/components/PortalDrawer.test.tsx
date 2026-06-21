@@ -26,6 +26,41 @@ describe("PortalDrawer", () => {
     expect(overlay?.className).toContain("max-[980px]:left-[52px]");
   });
 
+  it("uses a visible dim overlay by default", () => {
+    render(
+      <PortalDrawer testId="kitchen-drawer">
+        <div>Drawer body</div>
+      </PortalDrawer>,
+    );
+
+    const overlay = screen.getByTestId("kitchen-drawer").parentElement;
+    expect(overlay).toHaveStyle({ backgroundColor: "rgba(0, 0, 0, 0.2)" });
+  });
+
+  it("animates the default right drawer into view", () => {
+    render(
+      <PortalDrawer testId="kitchen-drawer">
+        <div>Drawer body</div>
+      </PortalDrawer>,
+    );
+
+    expect(screen.getByTestId("kitchen-drawer").className).toContain(
+      "animate-[portal-drawer-slide-in-right_180ms_ease-out]",
+    );
+  });
+
+  it("uses a placement-specific slide animation", () => {
+    render(
+      <PortalDrawer testId="kitchen-drawer" placement="Left">
+        <div>Drawer body</div>
+      </PortalDrawer>,
+    );
+
+    expect(screen.getByTestId("kitchen-drawer").className).toContain(
+      "animate-[portal-drawer-slide-in-left_180ms_ease-out]",
+    );
+  });
+
   it("only calls outside click when the overlay is clicked", () => {
     const onOutsideClick = vi.fn();
     render(

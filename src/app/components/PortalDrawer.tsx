@@ -40,10 +40,17 @@ const placementClass: Record<DrawerPlacement, string> = {
   Bottom: "inset-x-3 bottom-3 h-[min(88vh,720px)] w-auto max-w-none max-[980px]:inset-x-0 max-[980px]:bottom-0",
 };
 
+const slideAnimationClass: Record<DrawerPlacement, string> = {
+  Right: "animate-[portal-drawer-slide-in-right_180ms_ease-out]",
+  Left: "animate-[portal-drawer-slide-in-left_180ms_ease-out]",
+  Top: "animate-[portal-drawer-slide-in-top_180ms_ease-out]",
+  Bottom: "animate-[portal-drawer-slide-in-bottom_180ms_ease-out]",
+};
+
 export function PortalDrawer({
   children,
   placement = "Right",
-  overlayColor = "transparent",
+  overlayColor = "rgba(0, 0, 0, 0.2)",
   onOutsideClick,
   zIndex = 10,
   containerId = "portals",
@@ -68,7 +75,13 @@ export function PortalDrawer({
       onClick={handleOverlayClick}
     >
       <section
-        className={clsx(defaultPanelClass, placementClass[placement], panelClassName)}
+        className={clsx(
+          defaultPanelClass,
+          placementClass[placement],
+          slideAnimationClass[placement],
+          "motion-reduce:animate-none",
+          panelClassName,
+        )}
         data-testid={testId}
         onClick={(event) => event.stopPropagation()}
       >

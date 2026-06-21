@@ -21,6 +21,20 @@ const withoutTestIds = (source: string) =>
     .replace(/data-testid="[^"]*"/g, "");
 
 describe("Tailwind UI migration", () => {
+  test("PortalDrawer slide animations have matching keyframes", () => {
+    const source = sourceFile("src/tailwind.css");
+    const keyframes = [
+      "portal-drawer-slide-in-right",
+      "portal-drawer-slide-in-left",
+      "portal-drawer-slide-in-top",
+      "portal-drawer-slide-in-bottom",
+    ];
+
+    for (const keyframe of keyframes) {
+      expect(source).toContain(`@keyframes ${keyframe}`);
+    }
+  });
+
   test("production UI writes Tailwind classes inline instead of class constant modules", () => {
     const files = appFiles();
     const classIdentifierSuffix = "_" + "CLASS";
