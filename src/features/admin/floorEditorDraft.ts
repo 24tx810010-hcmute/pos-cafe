@@ -1,5 +1,5 @@
 import type { DecorKind, FloorArea, FloorDecorItem, FloorPlan, FloorPlanChanges, FloorTable, TableShape, TableStatus } from "@/domain";
-import { mapById, tombstoneFor, trimMenuName } from "./menuDraft.helpers";
+import { mapById, tombstoneFor, trimMenuName } from "./menuDraft";
 
 export interface DraftArea {
   id: string;

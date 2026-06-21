@@ -11,6 +11,14 @@ import {
   useResetPinMutation,
   useUpdateEmployeeMutation,
 } from "@/features/admin";
+import {
+  EMPTY_EMPLOYEE_FORM,
+  getEmployeeFormErrors,
+  isEmployeeFormDirty,
+  isLastActiveAdmin,
+  type EmployeeDrawerForm,
+  type EmployeeFormErrors,
+} from "@/features/admin/employeeDrawerFlow";
 import { useAppStore } from "../../useAppStore";
 import { toToastError } from "../../appErrors";
 import { EmployeeDetailPane } from "./EmployeeDetailPane";
@@ -22,17 +30,8 @@ type EmployeeRecord = Employee & {
   lastUnlock: string | null;
 };
 
-interface EmpForm {
-  name: string;
-  role: EmployeeRole;
-  isActive: boolean;
-  newPin: string;
-  confirmPin: string;
-}
-
 const EMP_ROLE_LABEL: Record<EmployeeRole, string> = { admin: "Quản lý", cashier: "Thu ngân", kitchen: "Bếp" };
 const EMP_ROLE_ORDER: EmployeeRole[] = ["admin", "cashier", "kitchen"];
-const EMPTY_EMP_FORM: EmpForm = { name: "", role: "cashier", isActive: true, newPin: "", confirmPin: "" };
 
 let clientIdSeq = 0;
 const createClientId = (): string => {
@@ -59,8 +58,8 @@ function EmployeesDrawer() {
   const resetPinMutation = useResetPinMutation(currentEmployee);
   const [filter, setFilter] = useState<EmpFilter>("all");
   const [selectedId, setSelectedId] = useState<string | "new" | null>(null);
-  const [form, setForm] = useState<EmpForm>(EMPTY_EMP_FORM);
-  const [errors, setErrors] = useState<{ name?: string; pin?: string }>({});
+  const [form, setForm] = useState<EmployeeDrawerForm>(EMPTY_EMPLOYEE_FORM);
+  const [errors, setErrors] = useState<EmployeeFormErrors>({});
   const [discardTarget, setDiscardTarget] = useState<{ target: string | "new" | null } | null>(null);
   const [pinResetTarget, setPinResetTarget] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -78,33 +77,19 @@ function EmployeesDrawer() {
       ? employees.find((e) => e.id === selectedId) ?? null
       : null;
 
-  const isDirty = (() => {
-    if (selectedId === "new") {
-      return form.name.trim() !== "" || form.newPin !== "" || form.confirmPin !== "";
-    }
-    if (selectedRecord) {
-      return (
-        form.name !== selectedRecord.name ||
-        form.role !== selectedRecord.role ||
-        form.isActive !== selectedRecord.isActive ||
-        form.newPin !== "" ||
-        form.confirmPin !== ""
-      );
-    }
-    return false;
-  })();
+  const isDirty = isEmployeeFormDirty(form, selectedId, selectedRecord);
 
   const applySelect = (target: string | "new" | null) => {
     setErrors({});
     setSelectedId(target);
     if (target === "new") {
-      setForm(EMPTY_EMP_FORM);
+      setForm(EMPTY_EMPLOYEE_FORM);
       setTimeout(() => nameInputRef.current?.focus(), 0);
     } else if (target) {
       const rec = employees.find((e) => e.id === target);
       if (rec) setForm({ name: rec.name, role: rec.role, isActive: rec.isActive, newPin: "", confirmPin: "" });
     } else {
-      setForm(EMPTY_EMP_FORM);
+      setForm(EMPTY_EMPLOYEE_FORM);
     }
   };
 
@@ -144,9 +129,8 @@ function EmployeesDrawer() {
     : `${employees.length} nhân viên · online`;
   const pinResetEmployee = pinResetTarget ? employees.find((e) => e.id === pinResetTarget) : null;
   const activeAdminCount = employees.filter((e) => e.role === "admin" && e.isActive).length;
-  // The store must always keep one active manager who can reach this screen.
-  const isLastActiveAdmin = (emp: Pick<EmployeeRecord, "role" | "isActive">) =>
-    emp.role === "admin" && emp.isActive && activeAdminCount <= 1;
+  const isFinalActiveAdmin = (employee: Pick<EmployeeRecord, "role" | "isActive">) =>
+    isLastActiveAdmin(employee, activeAdminCount);
 
   const toggleActive = (id: string) => {
     const target = employees.find((e) => e.id === id);
@@ -161,7 +145,7 @@ function EmployeesDrawer() {
       toast.error("Không thể tạm khoá tài khoản đang đăng nhập.");
       return;
     }
-    if (!nextActive && isLastActiveAdmin(target)) {
+    if (!nextActive && isFinalActiveAdmin(target)) {
       toast.error("Cần giữ ít nhất một quản lý đang hoạt động.");
       return;
     }
@@ -179,13 +163,7 @@ function EmployeesDrawer() {
   };
 
   const validate = (): boolean => {
-    const next: { name?: string; pin?: string } = {};
-    if (!form.name.trim()) next.name = "Tên nhân viên không được để trống.";
-    const pinTouched = selectedId === "new" || form.newPin !== "" || form.confirmPin !== "";
-    if (pinTouched) {
-      if (!/^\d{4,6}$/.test(form.newPin)) next.pin = "PIN phải gồm 4–6 chữ số.";
-      else if (form.newPin !== form.confirmPin) next.pin = "Xác nhận PIN không khớp.";
-    }
+    const next = getEmployeeFormErrors(form, selectedId === "new");
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -197,7 +175,7 @@ function EmployeesDrawer() {
       toast.error("Không thể tạm khoá tài khoản đang đăng nhập.");
       return;
     }
-    if (selectedRecord && !form.isActive && isLastActiveAdmin(selectedRecord)) {
+    if (selectedRecord && !form.isActive && isFinalActiveAdmin(selectedRecord)) {
       toast.error("Cần giữ ít nhất một quản lý đang hoạt động.");
       return;
     }
@@ -332,7 +310,7 @@ function EmployeesDrawer() {
             roleOptions={EMP_ROLE_ORDER.map((role) => ({ role, label: EMP_ROLE_LABEL[role] }))}
             nameInputRef={nameInputRef}
             isSaving={isSaving}
-            isLastActiveAdmin={isLastActiveAdmin}
+            isLastActiveAdmin={isFinalActiveAdmin}
             onSave={() => void handleSave()}
           />
         </div>

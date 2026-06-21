@@ -24,7 +24,7 @@ import {
   type HistoryDateRange,
   type HistoryOrderTypeFilter,
   type HistoryStatusFilter,
-} from "../../helpers/history.helpers";
+} from "@/features/pos/historyHelpers";
 
 function OrderHistoryDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);

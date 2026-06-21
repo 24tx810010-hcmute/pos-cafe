@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Coffee, Plus, RotateCcw, Trash2 } from "lucide-react";
-import type { DraftCategory, DraftGroup, DraftItem } from "../../helpers/menuDraft.helpers";
+import type { DraftCategory, DraftGroup, DraftItem } from "@/features/admin/menuDraft";
 import { formatVnd } from "@/core/money";
 
 interface MenuCatalogPaneProps {

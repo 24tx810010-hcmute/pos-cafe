@@ -11,7 +11,7 @@ import {
 } from "@/features/admin";
 import { useAppStore } from "../../useAppStore";
 import { toToastError } from "../../appErrors";
-import { nextDraftId, nextSort } from "../../helpers/menuDraft.helpers";
+import { nextDraftId, nextSort } from "@/features/admin/menuDraft";
 import {
   DECOR_LABEL,
   buildFloorPlanChangesFromDrafts,
@@ -22,7 +22,7 @@ import {
   type DraftDecor,
   type FloorTool,
   type FloorSelection,
-} from "../../helpers/floorEditor.helpers";
+} from "@/features/admin/floorEditorDraft";
 import { logicalStage, stageStyle } from "../../floorStage";
 import { FloorEditorInspectorPane } from "./FloorEditorInspectorPane";
 import { FloorEditorToolbar } from "./FloorEditorToolbar";

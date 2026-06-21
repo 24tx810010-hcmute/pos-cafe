@@ -1,5 +1,5 @@
 import type { Category, MenuCatalog, MenuChanges, MenuItem, OptionGroup, OptionValue } from "@/domain";
-import { mapById, tombstoneFor, trimMenuName, type DraftCategory, type DraftGroup, type DraftItem, type DraftValue } from "./menuDraft.helpers";
+import { mapById, tombstoneFor, trimMenuName, type DraftCategory, type DraftGroup, type DraftItem, type DraftValue } from "./menuDraft";
 
 export function buildMenuChangesFromDrafts(input: {
   base: MenuCatalog;

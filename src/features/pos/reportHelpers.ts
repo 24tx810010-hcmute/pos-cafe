@@ -1,5 +1,5 @@
 import type { CoreReport, OrderSummary } from "@/domain";
-import { formatBusinessDate, shortBusinessDate, tableLabelForOrder } from "./history.helpers";
+import { formatBusinessDate, shortBusinessDate, tableLabelForOrder } from "./historyHelpers";
 
 export type ReportRange = "today" | "7days" | "month" | "custom";
 export type ReportSection = "overview" | "hourly" | "top" | "orders";

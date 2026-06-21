@@ -7,6 +7,7 @@ import { toToastError } from "../appErrors";
 import clsx from "clsx";
 export function PasscodeScreen() {
   const setScreen = useAppStore((state) => state.setScreen);
+  const setCurrentEmployee = useAppStore((state) => state.setCurrentEmployee);
   const storeSessionQuery = useStoreSessionQuery();
   const employeesQuery = useActiveEmployeesQuery();
   const verifyMutation = useVerifyEmployeeMutation();
@@ -33,6 +34,7 @@ export function PasscodeScreen() {
       { employeeId: selectedEmployeeId, pin },
       {
         onSuccess: (employee) => {
+          setCurrentEmployee(employee);
           toast.success(`Xin chào ${employee.name}`);
         },
         onError: (error) => {
@@ -49,6 +51,7 @@ export function PasscodeScreen() {
   const unpair = () => {
     unpairMutation.mutate(undefined, {
       onSuccess: () => {
+        setCurrentEmployee(null);
         setPin("");
         setSelectedEmployeeId("");
         setScreen("landing");

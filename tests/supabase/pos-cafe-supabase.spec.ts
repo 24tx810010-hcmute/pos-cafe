@@ -49,8 +49,12 @@ async function createOpenOrderOnFirstTable(page: Page) {
   await expect(page.getByTestId("order-drawer")).toBeHidden({ timeout: 30_000 });
 }
 
+function openOrderTables(page: Page) {
+  return page.getByTestId("floor-view").locator('[data-testid^="table-"]').filter({ hasText: /#\d+/ });
+}
+
 async function payFirstOccupiedTable(page: Page) {
-  await page.getByTestId("floor-view").locator(".table-node.occupied").first().click();
+  await openOrderTables(page).first().click();
   await expect(page.getByTestId("order-drawer")).toBeVisible();
   await page.getByTestId("submit-order-button-footer").click();
   await expect(page.getByTestId("payment-drawer")).toBeVisible();
@@ -71,8 +75,8 @@ test("Supabase UI E2E creates a store, pays an order, and shows history/report",
 
   await page.getByRole("button", { name: "Báo cáo" }).click();
   await expect(page.getByTestId("report-settings")).toBeVisible();
-  await expect(page.getByTestId("report-settings").getByText("Doanh thu", { exact: true })).toBeVisible();
-  await expect(page.getByTestId("report-settings").getByText("Số đơn đã TT", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("report-settings").getByText("Doanh thu", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("report-settings").getByText("Số đơn đã thanh toán", { exact: true })).toBeVisible();
 
   test.info().annotations.push({ type: "store-key", description: storeKey });
 });
@@ -92,10 +96,10 @@ test("Supabase realtime invalidates table status across two browsers", async ({ 
     await pageB.waitForTimeout(2_500);
 
     await createOpenOrderOnFirstTable(pageA);
-    await expect(pageB.getByTestId("floor-view").locator(".table-node.occupied").first()).toBeVisible({ timeout: 30_000 });
+    await expect(openOrderTables(pageB).first()).toBeVisible({ timeout: 30_000 });
 
     await payFirstOccupiedTable(pageB);
-    await expect(pageA.getByTestId("floor-view").locator(".table-node.occupied")).toHaveCount(0, { timeout: 30_000 });
+    await expect(openOrderTables(pageA)).toHaveCount(0, { timeout: 30_000 });
 
     test.info().annotations.push({ type: "store-key", description: storeKey });
   } finally {
