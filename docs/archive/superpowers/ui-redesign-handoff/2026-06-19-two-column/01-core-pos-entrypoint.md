@@ -4,6 +4,8 @@ Give this file to the Core POS implementer/Claude. It is the only entrypoint the
 
 ## Required Reading Order
 
+0. `../2026-06-20-main-flow-snapshot.md`
+
 1. `shared-rules.md`
 2. `tailwind-first-rules.md`
 3. `two-column-layout-rules.md`
