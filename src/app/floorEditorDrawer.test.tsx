@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMockPorts, createMockState } from "@/adapters/mock";
 import type { Employee } from "@/domain";
-import { PortsContext } from "@/ports/portsContext";
+import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 

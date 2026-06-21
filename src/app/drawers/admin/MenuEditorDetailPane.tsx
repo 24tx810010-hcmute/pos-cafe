@@ -1,7 +1,8 @@
 import clsx from "clsx";
 import { Button, TextField } from "@mui/material";
 import { ChevronRight, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { toInt, type DraftCategory, type DraftGroup, type DraftItem, type DraftValue } from "@/features/admin/menuDraft";
+import { toInt } from "@/features/admin/draftUtils";
+import type { DraftCategory, DraftGroup, DraftItem, DraftValue } from "@/features/admin/menuDraft";
 
 type PatchDraft<T> = (id: string, patch: Partial<T>) => void;
 

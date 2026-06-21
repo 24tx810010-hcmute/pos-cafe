@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { Button, TextField } from "@mui/material";
 import { ChevronRight, Lock, RotateCcw, Trash2, Unlock } from "lucide-react";
 import type { TableShape } from "@/domain";
-import { toInt } from "@/features/admin/menuDraft";
+import { toInt } from "@/features/admin/draftUtils";
 import {
   DECOR_LABEL,
   DECOR_LIBRARY,

@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { createMockPorts } from "@/adapters/mock";
-import { PortsContext } from "@/ports/portsContext";
+import { PortsContext } from "@/features/shared/portsContext";
 import type { AppPorts } from "@/ports";
 import { useRealtimeInvalidation } from "./useRealtimeInvalidation";
 

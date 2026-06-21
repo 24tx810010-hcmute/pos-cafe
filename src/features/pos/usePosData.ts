@@ -1,7 +1,7 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import type { OrderHistoryFilter, ReportFilter } from "@/domain";
 import { posQueryKeys } from "@/features/shared/queryKeys";
-import { usePorts } from "@/ports/portsContext";
+import { usePorts } from "@/features/shared/portsContext";
 
 const liveSyncQueryOptions = {
   refetchInterval: 5_000,

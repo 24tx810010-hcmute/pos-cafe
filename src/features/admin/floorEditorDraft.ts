@@ -1,5 +1,5 @@
 import type { DecorKind, FloorArea, FloorDecorItem, FloorPlan, FloorPlanChanges, FloorTable, TableShape, TableStatus } from "@/domain";
-import { mapById, tombstoneFor, trimMenuName } from "./menuDraft";
+import { mapById, tombstoneFor, trimDraftName } from "./draftUtils";
 
 export interface DraftArea {
   id: string;
@@ -84,7 +84,7 @@ export function buildFloorPlanChangesFromDrafts(input: {
   const baseDecor = mapById<FloorDecorItem>(input.base.decorItems);
 
   for (const area of input.areas) {
-    const name = trimMenuName(area.name);
+    const name = trimDraftName(area.name);
     const original = baseAreas.get(area.id);
     if (!original || area.isNew) {
       if (!area.deleted) {
@@ -104,7 +104,7 @@ export function buildFloorPlanChangesFromDrafts(input: {
   }
 
   for (const table of input.tables) {
-    const name = trimMenuName(table.name);
+    const name = trimDraftName(table.name);
     const original = baseTables.get(table.id);
     if (!original || table.isNew) {
       if (!table.deleted) {
@@ -144,7 +144,7 @@ export function buildFloorPlanChangesFromDrafts(input: {
   }
 
   for (const item of input.decor) {
-    const label = item.label === null ? null : trimMenuName(item.label);
+    const label = item.label === null ? null : trimDraftName(item.label);
     const original = baseDecor.get(item.id);
     if (!original || item.isNew) {
       if (!item.deleted) {
