@@ -11,7 +11,7 @@ import {
 } from "@/features/admin";
 import { useAppStore } from "../../useAppStore";
 import { toToastError } from "../../appErrors";
-import { nextDraftId, nextSort } from "@/features/admin/menuDraft";
+import { nextDraftId, nextSort } from "@/features/admin/draftUtils";
 import {
   DECOR_LABEL,
   buildFloorPlanChangesFromDrafts,

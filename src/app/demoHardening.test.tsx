@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMockPorts, createMockState } from "@/adapters/mock";
 import { AppError } from "@/core/appError";
 import type { Employee, OrderSummary } from "@/domain";
-import { PortsContext } from "@/ports/portsContext";
+import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 

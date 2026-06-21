@@ -1,5 +1,6 @@
 import type { Category, MenuCatalog, MenuChanges, MenuItem, OptionGroup, OptionValue } from "@/domain";
-import { mapById, tombstoneFor, trimMenuName, type DraftCategory, type DraftGroup, type DraftItem, type DraftValue } from "./menuDraft";
+import { mapById, tombstoneFor, trimDraftName } from "./draftUtils";
+import type { DraftCategory, DraftGroup, DraftItem, DraftValue } from "./menuDraft";
 
 export function buildMenuChangesFromDrafts(input: {
   base: MenuCatalog;
@@ -21,7 +22,7 @@ export function buildMenuChangesFromDrafts(input: {
   const baseValues = mapById<OptionValue>(input.base.optionValues);
 
   for (const category of input.categories) {
-    const name = trimMenuName(category.name);
+    const name = trimDraftName(category.name);
     const original = baseCategories.get(category.id);
     if (!original || category.isNew) {
       if (!category.deleted) {
@@ -41,7 +42,7 @@ export function buildMenuChangesFromDrafts(input: {
   }
 
   for (const item of input.items) {
-    const name = trimMenuName(item.name);
+    const name = trimDraftName(item.name);
     const original = baseItems.get(item.id);
     if (!original || item.isNew) {
       if (!item.deleted) {
@@ -72,7 +73,7 @@ export function buildMenuChangesFromDrafts(input: {
   }
 
   for (const group of input.groups) {
-    const name = trimMenuName(group.name);
+    const name = trimDraftName(group.name);
     const original = baseGroups.get(group.id);
     if (!original || group.isNew) {
       if (!group.deleted) {
@@ -106,7 +107,7 @@ export function buildMenuChangesFromDrafts(input: {
   }
 
   for (const value of input.values) {
-    const name = trimMenuName(value.name);
+    const name = trimDraftName(value.name);
     const original = baseValues.get(value.id);
     if (!original || value.isNew) {
       if (!value.deleted) {
