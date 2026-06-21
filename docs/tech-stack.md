@@ -2,6 +2,16 @@
 
 File này là technical decision record rút gọn. Mỗi quyết định nêu rõ dùng gì, vì sao chọn, không chọn gì, đánh đổi và cách giảm rủi ro.
 
+## Architectural Pattern: Hexagonal Architecture / Ports & Adapters
+
+- **Quyết định:** dùng Ports & Adapters, lấy cảm hứng từ Hexagonal Architecture.
+- **Dùng cho:** tách UI/feature flow khỏi Supabase, realtime, print và mock data.
+- **Vì sao chọn:** dự án có nhiều nghiệp vụ cần test và demo ổn định; port boundary giúp UI không phụ thuộc trực tiếp SDK backend.
+- **Không chọn:** để React components gọi Supabase client, print API hoặc realtime SDK trực tiếp.
+- **Đánh đổi:** thêm interface, mapper và adapter boilerplate.
+- **Giảm rủi ro:** giữ `AppPorts` nhỏ, adapter Supabase/mock cùng implement contract, print/realtime cũng đi qua port riêng.
+- **Liên quan tới tiểu luận:** có thể trình bày đây là cách cô lập nghiệp vụ khỏi hạ tầng, giúp test bằng mock adapter và mở đường đổi backend/offline/native printer sau này.
+
 ## 1. React + Vite + TypeScript
 
 - **Quyết định:** dùng React 18, Vite, TypeScript.

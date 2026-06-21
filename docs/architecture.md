@@ -1,5 +1,19 @@
 # Architecture
 
+## Hexagonal Architecture / Ports & Adapters
+
+Dự án áp dụng kiến trúc Ports & Adapters, lấy cảm hứng từ Hexagonal Architecture. Điểm chính là UI và feature flow không phụ thuộc trực tiếp vào Supabase, browser print hay realtime SDK; các phần hạ tầng này được bọc sau `AppPorts`.
+
+Trong dự án này:
+
+- **Inside:** domain types, core guards, money/order helpers và feature flows.
+- **Ports:** interface như `IOrderRepo`, `IPaymentRepo`, `IPrintPort`, `IRealtimePort`.
+- **Adapters:** Supabase adapter, mock adapter, browser print adapter và realtime adapter.
+- **Driving side:** React screens/drawers gọi feature hooks/flows.
+- **Driven side:** database/RPC, realtime, print preview và data seed.
+
+Không nên trình bày đây là Hexagonal Architecture textbook 100%, vì dự án là frontend-heavy và một phần business consistency nằm trong PostgreSQL RPC. Cách nói chính xác hơn là: **dự án dùng Ports & Adapters theo hướng Hexagonal Architecture để tách nghiệp vụ khỏi hạ tầng**.
+
 Kiến trúc hiện tại tách UI, feature flow, domain/ports và adapters để giữ app dễ test, dễ demo và có đường đổi backend/offline sau này.
 
 ## Lớp Chính
