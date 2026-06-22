@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMockPorts, createMockState } from "@/adapters/mock";
@@ -155,5 +155,27 @@ describe("Demo hardening", () => {
     expect(await screen.findByTestId("payment-closed-state")).toBeInTheDocument();
     expect(screen.getByTestId("pay-button")).toBeDisabled();
     expect(screen.getByTestId("pay-button-footer")).toBeDisabled();
+  });
+
+  it("renders the cashier payment console with balanced payment summary", async () => {
+    renderAppWithPorts({ drawer: "payment", paymentOrderId: "ord-b02" });
+
+    const drawer = await screen.findByTestId("payment-drawer");
+    expect(await within(drawer).findByTestId("payment-cashier-console")).toBeInTheDocument();
+    expect(within(drawer).getByTestId("payment-method-list")).toBeInTheDocument();
+    expect(within(drawer).getByTestId("payment-keypad")).toBeInTheDocument();
+    expect(within(drawer).getByTestId("payment-order-items")).toHaveClass("overflow-y-auto");
+
+    const printCheckbox = within(drawer).getByTestId("print-receipt-checkbox");
+    expect(printCheckbox).toBeChecked();
+
+    const receivedValue = within(drawer).getByTestId("payment-received-summary-value");
+    const changeValue = within(drawer).getByTestId("payment-change-summary-value");
+    expect(receivedValue.className).toBe(changeValue.className);
+
+    const summary = within(drawer).getByTestId("payment-order-summary");
+    const completeButton = within(summary).getByTestId("pay-button-footer");
+    expect(summary.contains(printCheckbox)).toBe(true);
+    expect(summary.contains(completeButton)).toBe(true);
   });
 });

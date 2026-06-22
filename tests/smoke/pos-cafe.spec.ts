@@ -216,5 +216,5 @@ test("payment drawer exposes complete action for occupied table", async ({ page 
   await page.getByTestId("table-tbl-b02").click();
   await page.getByTestId("submit-order-button-footer").click();
   await expect(page.getByTestId("payment-drawer")).toBeVisible();
-  await expect(page.getByTestId("pay-button")).toBeVisible();
+  await expect(page.getByTestId("pay-button-footer")).toBeVisible();
 });

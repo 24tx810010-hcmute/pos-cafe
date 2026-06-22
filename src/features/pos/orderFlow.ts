@@ -39,6 +39,7 @@ export type PayOrderFlowInput = {
   employeeId: string;
   receivedAmount: number;
   paymentId?: string;
+  printReceipt?: boolean;
 };
 
 const createClientId = (): string => crypto.randomUUID();
@@ -190,7 +191,9 @@ export const payOrderAndPrint = async (
     receivedAmount: input.receivedAmount,
   });
 
-  await ports.print.renderReceipt(result.receipt);
+  if (input.printReceipt ?? true) {
+    await ports.print.renderReceipt(result.receipt);
+  }
 
   return result;
 };

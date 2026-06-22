@@ -145,4 +145,21 @@ describe("orderFlow", () => {
     expect(result.changeAmount).toBe(5000);
     expect(printSpy).toHaveBeenCalledWith(result.receipt);
   });
+
+  it("can complete payment without printing the receipt", async () => {
+    const ports = createMockPorts();
+    const order = await ports.order.getOrder("ord-b02");
+    const printSpy = vi.spyOn(ports.print, "renderReceipt");
+
+    const result = await payOrderAndPrint(ports, {
+      order,
+      employeeId: "emp-admin",
+      receivedAmount: order.total,
+      paymentId: "pay-no-print",
+      printReceipt: false,
+    });
+
+    expect(result.status).toBe("paid");
+    expect(printSpy).not.toHaveBeenCalled();
+  });
 });

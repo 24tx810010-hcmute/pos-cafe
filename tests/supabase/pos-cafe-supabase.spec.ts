@@ -58,8 +58,8 @@ async function payFirstOccupiedTable(page: Page) {
   await expect(page.getByTestId("order-drawer")).toBeVisible();
   await page.getByTestId("submit-order-button-footer").click();
   await expect(page.getByTestId("payment-drawer")).toBeVisible();
-  await expect(page.getByTestId("pay-button")).toBeEnabled();
-  await page.getByTestId("pay-button").click();
+  await expect(page.getByTestId("pay-button-footer")).toBeEnabled();
+  await page.getByTestId("pay-button-footer").click();
   await expect(page.getByTestId("payment-drawer")).toBeHidden({ timeout: 30_000 });
 }
 
