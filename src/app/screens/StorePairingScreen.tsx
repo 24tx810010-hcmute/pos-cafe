@@ -65,7 +65,7 @@ export function StorePairingScreen() {
               <TextField
                 label="Store Key"
                 placeholder="0001-X8F3QA"
-                value={key}
+                value={key || '0036-SV75VNXD'}
                 onChange={(e) => { setKey(e.target.value); setError(""); }}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 error={!!error}
