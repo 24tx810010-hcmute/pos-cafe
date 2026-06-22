@@ -13,10 +13,29 @@ import { useAppStore } from "../../useAppStore";
 
 const keypadKeys = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "00", "0"] as const;
 
+const paymentText = {
+  amountHeader: "text-[12px] min-[1024px]:text-[15px] min-[1280px]:text-[16px]",
+  body: "text-[13px] min-[1024px]:text-[15px] min-[1280px]:text-[16px]",
+  emphasis: "text-[16px] min-[1024px]:text-[17px]",
+  micro: "text-[12px] min-[1024px]:text-[13px] min-[1280px]:text-[14px]",
+  secondary: "text-[12px] min-[1024px]:text-[14px] min-[1280px]:text-[15px]",
+  strong: "text-[15px] min-[1024px]:text-[16px] min-[1280px]:text-[17px]",
+} as const;
+
+const paymentButtonText = {
+  body: "!text-[13px] min-[1024px]:!text-[15px] min-[1280px]:!text-[16px]",
+  emphasis: "!text-[16px] min-[1024px]:!text-[17px]",
+} as const;
+
 const paymentSummaryValueClass =
-  "min-w-[118px] text-right text-[17px] font-black leading-tight text-pos-ink max-[900px]:text-[14px] max-[900px]:min-w-[96px]";
+  clsx("min-w-[118px] text-right font-black leading-tight text-pos-ink max-[900px]:min-w-[96px]", paymentText.strong);
 
 const getOrderTypeLabel = (order?: OrderDetail | null) => (order?.orderType === "takeaway" ? "Mang đi" : "Tại bàn");
+
+const formatAmountInputValue = (rawDigits: string) => {
+  const normalized = rawDigits.replace(/\D/g, "").replace(/^0+(?=\d)/, "") || "0";
+  return normalized.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
 
 export function PaymentDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
@@ -161,7 +180,10 @@ export function PaymentDrawer() {
             disabled={paymentDisabled}
             onClick={payOrder}
             color={insufficient ? "error" : "primary"}
-            className="!min-h-9 !whitespace-nowrap max-[900px]:!hidden max-[900px]:!min-h-[30px] max-[900px]:!px-2.5 max-[900px]:!text-[11px]"
+            className={clsx(
+              "!min-h-9 !whitespace-nowrap max-[900px]:!hidden max-[900px]:!min-h-[30px] max-[900px]:!px-2.5",
+              paymentButtonText.emphasis,
+            )}
           >
             {paymentButtonLabel}
           </Button>
@@ -191,7 +213,7 @@ export function PaymentDrawer() {
                 title="Thu tiền"
                 subtitle={`${currentEmployee?.name ?? "Thu ngân"} kiểm tra và nhập số tiền khách đưa`}
               />
-              <div className="grid min-h-0 grid-cols-[minmax(148px,0.36fr)_minmax(260px,1fr)] gap-3 overflow-hidden p-3 max-[900px]:grid-cols-[140px_minmax(260px,1fr)] max-[900px]:gap-1.5 max-[900px]:p-1.5">
+              <div className="grid min-h-0 grid-cols-[minmax(176px,0.36fr)_minmax(240px,1fr)] gap-3 overflow-hidden p-3 min-[1024px]:grid-cols-[minmax(220px,0.36fr)_minmax(260px,1fr)] max-[900px]:grid-cols-[156px_minmax(248px,1fr)] max-[900px]:gap-1.5 max-[900px]:p-1.5">
                 <div data-testid="payment-method-list" className="min-h-0 overflow-y-auto pr-1">
                   <div className="grid gap-2 max-[900px]:gap-1.5">
                     {paymentMethods.map((method) => {
@@ -217,10 +239,10 @@ export function PaymentDrawer() {
                             <Icon size={18} />
                           </span>
                           <span className="min-w-0">
-                            <span className="block truncate text-[13px] font-black leading-tight max-[900px]:text-[12px]">
+                            <span className={clsx("block truncate font-black leading-tight", paymentText.strong)}>
                               {method.label}
                             </span>
-                            <span className="mt-0.5 block truncate text-[11px] font-bold leading-tight text-current opacity-80 max-[900px]:text-[10px]">
+                            <span className={clsx("mt-0.5 block truncate font-bold leading-tight text-current opacity-80", paymentText.micro)}>
                               {method.description}
                             </span>
                           </span>
@@ -234,12 +256,12 @@ export function PaymentDrawer() {
                   <section className="grid gap-1.5 rounded-pos border border-pos-line bg-white p-3 max-[900px]:gap-1 max-[900px]:p-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <label
-                        className="text-[11px] font-black uppercase tracking-[0.06em] text-pos-muted max-[900px]:text-[10px]"
+                        className={clsx("font-black uppercase tracking-[0.06em] text-pos-muted", paymentText.amountHeader)}
                         htmlFor="payment-received-amount"
                       >
                         Tiền khách đưa
                       </label>
-                      <span className="truncate text-[12px] font-bold text-pos-muted max-[900px]:text-[10px]">
+                      <span className={clsx("truncate font-bold text-pos-muted", paymentText.amountHeader)}>
                         {formatVnd(receivedAmount)}
                       </span>
                     </div>
@@ -251,12 +273,15 @@ export function PaymentDrawer() {
                     >
                       <input
                         id="payment-received-amount"
-                        value={receivedAmountInput}
+                        value={formatAmountInputValue(receivedAmountInput)}
                         onChange={(event) => handleAmountChange(event.target.value)}
                         inputMode="numeric"
-                        className="h-[48px] min-w-0 bg-transparent px-3 text-right text-[24px] font-black leading-none text-pos-ink outline-none max-[900px]:h-[34px] max-[900px]:px-2 max-[900px]:text-[17px]"
+                        className={clsx(
+                          "h-[48px] min-w-0 bg-transparent px-3 text-right font-black leading-none text-pos-ink outline-none max-[900px]:h-[34px] max-[900px]:px-2",
+                          paymentText.emphasis,
+                        )}
                       />
-                      <span className="grid place-items-center border-l border-pos-line text-[12px] font-black text-pos-muted max-[900px]:text-[10px]">
+                      <span className={clsx("grid place-items-center border-l border-pos-line font-black text-pos-muted", paymentText.micro)}>
                         VND
                       </span>
                     </div>
@@ -264,7 +289,10 @@ export function PaymentDrawer() {
 
                   {insufficient ? (
                     <div
-                      className="flex items-center gap-2 rounded-pos border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-[13px] font-bold text-pos-danger max-[900px]:px-2 max-[900px]:py-1.5 max-[900px]:text-[11px]"
+                      className={clsx(
+                        "flex items-center gap-2 rounded-pos border border-[#fecaca] bg-[#fef2f2] px-3 py-2 font-bold text-pos-danger max-[900px]:px-2 max-[900px]:py-1.5",
+                        paymentText.body,
+                      )}
                       data-testid="payment-insufficient-warning"
                     >
                       <AlertTriangle size={15} />
@@ -279,7 +307,10 @@ export function PaymentDrawer() {
                       <button
                         key={key}
                         type="button"
-                        className="min-h-[46px] rounded-pos border border-pos-line bg-white text-[20px] font-black text-pos-ink shadow-sm transition hover:border-pos-primary hover:bg-pos-primarySoft max-[900px]:min-h-[30px] max-[900px]:text-[15px]"
+                        className={clsx(
+                          "min-h-[46px] rounded-pos border border-pos-line bg-white font-black text-pos-ink shadow-sm transition hover:border-pos-primary hover:bg-pos-primarySoft max-[900px]:min-h-[30px]",
+                          paymentText.emphasis,
+                        )}
                         onClick={() => appendKey(key)}
                       >
                         {key}
@@ -302,14 +333,14 @@ export function PaymentDrawer() {
               <section className="border-b border-pos-line bg-[#eef4ff] px-4 py-3 max-[900px]:px-3 max-[900px]:py-2">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="m-0 text-[11px] font-black uppercase tracking-[0.06em] text-pos-muted max-[900px]:text-[10px]">
+                    <p className={clsx("m-0 font-black uppercase tracking-[0.06em] text-pos-muted", paymentText.secondary)}>
                       Khách hàng
                     </p>
-                    <strong className="mt-0.5 block truncate text-[20px] leading-tight text-pos-primary max-[900px]:text-[16px]">
+                    <strong className={clsx("mt-0.5 block truncate leading-tight text-pos-primary", paymentText.strong)}>
                       Khách lẻ
                     </strong>
                   </div>
-                  <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-pos-primary shadow-sm max-[900px]:px-2 max-[900px]:py-0.5 max-[900px]:text-[10px]">
+                  <span className={clsx("rounded-full bg-white px-2.5 py-1 font-black text-pos-primary shadow-sm max-[900px]:px-2 max-[900px]:py-0.5", paymentText.micro)}>
                     {getOrderTypeLabel(order)}
                   </span>
                 </div>
@@ -317,8 +348,8 @@ export function PaymentDrawer() {
 
               <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
                 <div className="flex items-center justify-between gap-2 border-b border-pos-line px-4 py-2.5 max-[900px]:px-3 max-[900px]:py-2">
-                  <h3 className="m-0 text-[14px] font-black leading-tight text-pos-ink max-[900px]:text-[12px]">Món trong đơn</h3>
-                  <span className="text-[12px] font-bold text-pos-muted max-[900px]:text-[10px]">{orderItemCount} món</span>
+                  <h3 className={clsx("m-0 font-black leading-tight text-pos-ink", paymentText.strong)}>Món trong đơn</h3>
+                  <span className={clsx("font-bold text-pos-muted", paymentText.micro)}>{orderItemCount} món</span>
                 </div>
                 <div data-testid="payment-order-items" className="min-h-0 overflow-y-auto px-3 py-2 max-[900px]:px-2 max-[900px]:py-1.5">
                   <OrderItems order={order} />
@@ -334,10 +365,10 @@ export function PaymentDrawer() {
                     <div className="flex items-start gap-2">
                       <AlertTriangle size={17} />
                       <div className="min-w-0">
-                        <strong className="block text-[13px] leading-tight max-[900px]:text-[11px]">
+                        <strong className={clsx("block leading-tight", paymentText.body)}>
                           Đơn đã được cập nhật
                         </strong>
-                        <p className="m-0 mt-0.5 text-[12px] leading-snug max-[900px]:text-[10px]">
+                        <p className={clsx("m-0 mt-0.5 leading-snug", paymentText.secondary)}>
                           Tải lại để xem trạng thái mới nhất.
                         </p>
                       </div>
@@ -345,7 +376,7 @@ export function PaymentDrawer() {
                     <Button
                       size="small"
                       variant="outlined"
-                      className="!mt-2 !min-h-7 max-[900px]:!text-[11px]"
+                      className={clsx("!mt-2 !min-h-7", paymentButtonText.body)}
                       onClick={() => {
                         void orderQuery.refetch();
                         void floorPlanQuery.refetch();
@@ -365,14 +396,14 @@ export function PaymentDrawer() {
                   />
                   <div className="my-1 border-t border-pos-line" />
                   <div className="flex items-end justify-between gap-3">
-                    <span className="text-[14px] font-black text-pos-muted max-[900px]:text-[12px]">Tổng đơn</span>
-                    <strong className="text-right text-[26px] font-black leading-none text-pos-primary max-[900px]:text-[20px]">
+                    <span className={clsx("font-black text-pos-muted", paymentText.secondary)}>Tổng đơn</span>
+                    <strong className={clsx("text-right font-black leading-none text-pos-primary", paymentText.emphasis)}>
                       {formatVnd(orderTotal)}
                     </strong>
                   </div>
                 </div>
 
-                <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-pos border border-pos-line bg-pos-bg px-3 py-2 text-[13px] font-bold text-pos-ink max-[900px]:mt-2 max-[900px]:px-2 max-[900px]:py-1.5 max-[900px]:text-[11px]">
+                <label className={clsx("mt-3 flex cursor-pointer items-center gap-2 rounded-pos border border-pos-line bg-pos-bg px-3 py-2 font-bold text-pos-ink max-[900px]:mt-2 max-[900px]:px-2 max-[900px]:py-1.5", paymentText.secondary)}>
                   <input
                     type="checkbox"
                     data-testid="print-receipt-checkbox"
@@ -391,7 +422,10 @@ export function PaymentDrawer() {
                   data-testid="pay-button-footer"
                   disabled={paymentDisabled}
                   onClick={payOrder}
-                  className="!mt-3 !min-h-[46px] !rounded-pos !text-base !font-extrabold max-[900px]:!mt-2 max-[900px]:!min-h-[38px] max-[900px]:!text-[13px]"
+                  className={clsx(
+                    "!mt-3 !min-h-[46px] !rounded-pos !font-extrabold max-[900px]:!mt-2 max-[900px]:!min-h-[38px]",
+                    paymentButtonText.emphasis,
+                  )}
                 >
                   {paymentButtonLabel}
                 </Button>
@@ -418,16 +452,16 @@ function PaymentHeader({
   return (
     <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-pos-line bg-white/95 px-[18px] py-3 max-[900px]:min-h-[44px] max-[900px]:gap-1.5 max-[900px]:px-2 max-[900px]:py-1.5">
       <div className="grid min-w-0 flex-[1_1_260px] gap-1">
-        <h2 className="m-0 truncate text-[22px] font-black leading-tight tracking-normal text-pos-ink max-[900px]:text-[16px]">
+        <h2 className={clsx("m-0 truncate font-black leading-tight tracking-normal text-pos-ink", paymentText.emphasis)}>
           {title}
         </h2>
-        {meta && <p className="m-0 truncate text-[13px] font-bold text-pos-muted max-[900px]:text-[10px]">{meta}</p>}
+        {meta && <p className={clsx("m-0 truncate font-bold text-pos-muted", paymentText.micro)}>{meta}</p>}
       </div>
       <div className="flex min-w-0 flex-[0_1_auto] flex-wrap items-center justify-end gap-2">
         <Button
           variant="outlined"
           onClick={onClose}
-          className="!min-h-9 !whitespace-nowrap max-[900px]:!min-h-[30px] max-[900px]:!px-2.5 max-[900px]:!text-[11px]"
+          className={clsx("!min-h-9 !whitespace-nowrap max-[900px]:!min-h-[30px] max-[900px]:!px-2.5", paymentButtonText.body)}
         >
           Quay lại
         </Button>
@@ -441,8 +475,8 @@ function PanelTitle({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="flex min-h-12 items-center justify-between gap-3 border-b border-pos-line bg-[#fbfcfd] px-4 py-2.5 max-[900px]:min-h-[34px] max-[900px]:px-2.5 max-[900px]:py-1.5">
       <div className="min-w-0">
-        <h3 className="m-0 truncate text-[16px] font-black leading-tight text-pos-ink max-[900px]:text-[13px]">{title}</h3>
-        <p className="m-0 mt-0.5 truncate text-[12px] font-bold text-pos-muted max-[900px]:hidden">{subtitle}</p>
+        <h3 className={clsx("m-0 truncate font-black leading-tight text-pos-ink", paymentText.strong)}>{title}</h3>
+        <p className={clsx("m-0 mt-0.5 truncate font-bold text-pos-muted max-[900px]:hidden", paymentText.body)}>{subtitle}</p>
       </div>
     </div>
   );
@@ -484,7 +518,8 @@ function QuickAmountButtons({
           key={option.label}
           type="button"
           className={clsx(
-            "min-h-[34px] rounded-[7px] border px-1 text-center text-[12px] font-black transition hover:border-pos-primary max-[900px]:min-h-[24px] max-[900px]:text-[10px]",
+            "min-h-[34px] rounded-[7px] border px-1 text-center font-black leading-[1.15] transition hover:border-pos-primary max-[900px]:min-h-[30px]",
+            paymentText.body,
             receivedAmount === option.value
               ? "border-pos-primary bg-pos-primarySoft text-pos-primary"
               : "border-pos-line bg-white text-pos-ink",
@@ -500,7 +535,7 @@ function QuickAmountButtons({
 
 function OrderItems({ order }: { order?: OrderDetail | null }) {
   if (!order?.items.length) {
-    return <p className="m-0 p-3 text-center text-[13px] text-pos-muted">Chưa có món trong đơn.</p>;
+    return <p className={clsx("m-0 p-3 text-center text-pos-muted", paymentText.secondary)}>Chưa có món trong đơn.</p>;
   }
 
   return (
@@ -513,18 +548,18 @@ function OrderItems({ order }: { order?: OrderDetail | null }) {
           <article key={item.id} className="rounded-pos border border-pos-line bg-white px-3 py-2 max-[900px]:px-2 max-[900px]:py-1.5">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
               <div className="min-w-0">
-                <h4 className="m-0 truncate text-[14px] font-black leading-tight text-pos-ink max-[900px]:text-[12px]">
+                <h4 className={clsx("m-0 truncate font-black leading-tight text-pos-ink", paymentText.strong)}>
                   {item.itemName}
                 </h4>
                 {optionText && (
-                  <p className="m-0 mt-0.5 truncate text-[12px] font-bold text-pos-muted max-[900px]:text-[10px]">
+                  <p className={clsx("m-0 mt-0.5 truncate font-bold text-pos-muted", paymentText.micro)}>
                     {optionText}
                   </p>
                 )}
               </div>
-              <strong className="text-[15px] font-black text-pos-ink max-[900px]:text-[13px]">x{item.quantity}</strong>
+              <strong className={clsx("font-black text-pos-ink", paymentText.strong)}>x{item.quantity}</strong>
             </div>
-            <div className="mt-1 flex items-center justify-between gap-2 text-[12px] font-bold max-[900px]:text-[10px]">
+            <div className={clsx("mt-1 flex items-center justify-between gap-2 font-bold", paymentText.micro)}>
               <span className="text-pos-muted">{formatVnd(item.unitPrice)}</span>
               <span className="text-pos-primary">{formatVnd(lineTotal)}</span>
             </div>
@@ -538,7 +573,7 @@ function OrderItems({ order }: { order?: OrderDetail | null }) {
 function SummaryRow({ label, value, valueTestId }: { label: string; value: string; valueTestId: string }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-[14px] font-black text-pos-muted max-[900px]:text-[12px]">{label}</span>
+      <span className={clsx("font-black text-pos-muted", paymentText.secondary)}>{label}</span>
       <strong className={paymentSummaryValueClass} data-testid={valueTestId}>
         {value}
       </strong>
