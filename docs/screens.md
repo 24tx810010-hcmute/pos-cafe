@@ -44,18 +44,18 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 
 ## 6. App Shell / Left Rail
 
-- **Purpose:** giữ context nhân viên, role, module navigation và lock.
+- **Purpose:** giữ context nhân viên/role, module navigation theo nhóm và lock session.
 - **User:** logged-in user.
 - **Minimum data:** current employee, role, permission map, active drawer.
 - **Primary actions:** mở module, khóa phiên nhân viên.
-- **Important states:** permission disabled, active module, responsive compact rail.
+- **Important states:** permission disabled, active module, desktop rail có nhãn/session card, compact rail chỉ còn icon/avatar.
 
 ## 7. POS Floor View
 
-- **Purpose:** xem trạng thái bàn, mở order tại bàn, tạo takeaway nhanh.
+- **Purpose:** xem trạng thái bàn, mở order tại bàn và theo dõi order đang mở.
 - **User:** cashier/admin.
-- **Minimum data:** current employee, floor areas, tables, decor, open orders.
-- **Primary actions:** đổi khu, lọc bàn, refresh, mở order bàn, tạo takeaway, mở takeaway drawer.
+- **Minimum data:** floor areas, tables, decor, open orders.
+- **Primary actions:** đổi khu, lọc bàn, refresh inline trong toolbar sơ đồ, mở order bàn.
 - **Important states:** floor loading/error/empty, no open orders, occupied/empty tables.
 
 ## 8. Order Drawer
@@ -158,6 +158,6 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 
 ## Drawer/Popup Contract
 
-- Drawer render qua shared portal layer trong workspace viewport, không che left rail.
+- Drawer render qua shared portal layer trong workspace viewport sau `LeftNav`, không che left rail.
 - Overlay click đóng drawer; confirm popup vẫn giữ rule click overlay riêng theo callback được truyền vào.
 - Drawer có slide-in khi mở; exit animation hiện là polish optional/backlog.

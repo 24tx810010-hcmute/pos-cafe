@@ -38,8 +38,8 @@ Phase tiểu luận ưu tiên demo end-to-end:
 
 ## Trạng Thái Gần Nhất
 
-- App truth mới nhất được đối chiếu từ `origin/main` commit `5bc17db` (`feat(app): add drawer overlay motion`).
+- App truth mới nhất được đối chiếu từ `origin/main` commit `4bf9764` (`refactor(ui): simplify app shell`).
 - Nhánh `docs` là nhánh tài liệu độc lập, chỉ giữ file `.md` để đọc nhanh; không merge vào `main` và không chứa source app/binary artifact.
 - Core flow đã chạy end-to-end với mock và Supabase: tạo/ghép store, PIN, floor/order/payment, history/report và admin modules.
 - Kiến trúc hiện có boundary guard bằng TypeScript import scanner, ports/adapters rõ layer, split Supabase/mock adapters, browser print adapter và portal popup/drawer primitives.
-- UI đã qua pass Tailwind-first/two-column drawer; drawer dùng overlay chung, click overlay để đóng và slide-in animation theo placement.
+- UI đã qua pass Tailwind-first/two-column drawer; `LeftNav` là left rail chính của app shell, drawer dùng overlay chung trong workspace sau rail, click overlay để đóng và slide-in animation theo placement.

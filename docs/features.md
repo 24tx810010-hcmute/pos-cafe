@@ -21,8 +21,7 @@
 - Lọc bàn theo trạng thái.
 - Xem bàn trống/đang phục vụ, order number và tổng tiền khi có order mở.
 - Mở order tại bàn.
-- Tạo order takeaway nhanh.
-- Refresh floor/open orders khi cần.
+- Refresh floor/open orders từ toolbar sơ đồ khi cần.
 
 ## Order
 
@@ -46,7 +45,7 @@
 
 - Xem danh sách order takeaway đang mở.
 - Mở chi tiết takeaway, tiếp tục chỉnh order hoặc chuyển sang thanh toán.
-- Tạo takeaway mới từ drawer hoặc floor toolbar.
+- Tạo takeaway mới từ drawer.
 - Phần paid takeaway hiện có dữ liệu UI-side sample; không phải lịch sử paid takeaway thật đầy đủ.
 
 ## Order History
@@ -101,4 +100,4 @@
 
 - Popup/modal dùng `PortalPopup`; drawer dùng `PortalDrawer`.
 - Drawer có overlay mờ `rgba(0,0,0,0.2)`, click overlay để đóng và slide-in theo placement khi mở.
-- Drawer mặc định dùng workspace viewport để không che left rail.
+- Drawer mặc định dùng workspace viewport sau `LeftNav` để không che left rail.

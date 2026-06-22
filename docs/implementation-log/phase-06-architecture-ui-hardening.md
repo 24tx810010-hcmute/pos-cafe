@@ -6,7 +6,7 @@ Khóa boundary kiến trúc, tách adapter/repo theo concern, chuẩn hóa porta
 
 ## Branch/Commit Liên Quan
 
-- Current app truth gần nhất: `origin/main` commit `5bc17db` (`feat(app): add drawer overlay motion`).
+- Current app truth gần nhất: `origin/main` commit `4bf9764` (`refactor(ui): simplify app shell`).
 - Các nhánh đã tích hợp vào `main`: `refactor-folder-architecture`, `refactor-portal-overlays`, `fix-drawer-overlay-close`.
 - Nhánh `docs` độc lập, chỉ lưu Markdown knowledge base.
 
@@ -23,7 +23,7 @@ Khóa boundary kiến trúc, tách adapter/repo theo concern, chuẩn hóa porta
 
 ## Test/Build/Smoke Đã Chạy
 
-- `npm test`: pass 31 files/141 tests.
+- `npm test`: pass 34 files/148 tests.
 - `npm run build`: pass; chỉ còn Vite chunk-size warning đã biết.
 - `npm run smoke`: pass 13 tests, 7 skipped theo smoke config.
 - `npm run smoke:supabase`: pass 2 tests, gồm flow Supabase realtime hai browser cùng một store.

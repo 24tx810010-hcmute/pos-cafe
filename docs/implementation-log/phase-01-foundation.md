@@ -6,7 +6,7 @@ Xây nền kỹ thuật cho POS Cafe: schema/RLS/RPC cơ bản, domain types, po
 
 ## Branch/Commit Liên Quan
 
-- Current app truth gần nhất: `origin/main` commit `5bc17db`.
+- Current app truth gần nhất: `origin/main` commit `4bf9764`.
 - Docs branch là nhánh tài liệu độc lập, không merge vào `main`.
 - Tài liệu gốc: `docs/archive/superpowers/specs/2026-06-09-pos-cafe-design.md`, `2026-06-10-pos-cafe-schema-rls-decisions.md`, `2026-06-11-pos-cafe-coding-decisions.md`.
 

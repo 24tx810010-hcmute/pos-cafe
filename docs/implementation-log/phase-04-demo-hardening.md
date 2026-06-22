@@ -6,7 +6,7 @@ Làm app đủ ổn để demo: xử lý loading/error/empty/blocked states, sta
 
 ## Branch/Commit Liên Quan
 
-- Current app truth gần nhất: `origin/main` commit `5bc17db`.
+- Current app truth gần nhất: `origin/main` commit `4bf9764`.
 - Archive status chính: `docs/archive/superpowers/specs/2026-06-11-pos-cafe-parallel-task-phases.md`.
 - Demo runbook cũ: `docs/archive/superpowers/specs/2026-06-14-pos-cafe-demo-readiness-runbook.md`.
 

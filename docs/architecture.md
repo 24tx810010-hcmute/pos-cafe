@@ -50,7 +50,7 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 
 - App dùng một URL.
 - Pre-login screen state: `landing`, `storePairing`, `createStore`, `passcode`.
-- Logged-in shell dùng left rail và drawer state: `order`, `payment`, `takeaway`, `menuEditor`, `floorEditor`, `reportSettings`, `orderHistory`, `employees`, `settings`, `kitchen`, `paymentSettings`.
+- Logged-in shell dùng `LeftNav` left rail và drawer state: `order`, `payment`, `takeaway`, `menuEditor`, `floorEditor`, `reportSettings`, `orderHistory`, `employees`, `settings`, `kitchen`, `paymentSettings`.
 - Zustand giữ UI state như current employee, active area/category, drawer context, payment order id và draft items.
 
 ## Server State
@@ -90,7 +90,7 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 ## UI Overlay Primitives
 
 - Popup/modal dùng `PortalPopup`; drawer dùng `PortalDrawer`; cả hai tự dùng `createPortal` nội bộ.
-- Drawer mặc định có workspace viewport để không che left rail, overlay `rgba(0,0,0,0.2)`, click overlay gọi close handler và slide-in animation theo placement.
+- Drawer mặc định có workspace viewport sau `LeftNav` để không che left rail: desktop offset 176px, compact offset 68px, overlay `rgba(0,0,0,0.2)`, click overlay gọi close handler và slide-in animation theo placement.
 - Exit animation chưa làm trong pass hiện tại; drawer unmount theo app state.
 
 ## Testing

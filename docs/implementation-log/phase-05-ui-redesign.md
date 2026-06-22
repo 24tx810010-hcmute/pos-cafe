@@ -6,7 +6,7 @@ Rework thẩm mỹ và UX cho POS core: floor view, order drawer, payment drawer
 
 ## Branch/Commit Liên Quan
 
-- Current app truth gần nhất: `origin/main` commit `5bc17db`.
+- Current app truth gần nhất: `origin/main` commit `4bf9764`.
 - UI redesign context: `docs/ui-redesign-context.md`.
 - Snapshot cũ đã archive: `docs/archive/superpowers/ui-redesign-handoff/2026-06-20-main-flow-snapshot.md`.
 
@@ -20,7 +20,7 @@ Rework thẩm mỹ và UX cho POS core: floor view, order drawer, payment drawer
 
 ## Test/Build/Smoke Đã Chạy
 
-- `npm test` pass trên `origin/main@5bc17db`: 31 test files, 141 tests.
+- `npm test` pass trên `origin/main@4bf9764`: 34 test files, 148 tests.
 - `npm run build` pass; còn Vite chunk-size warning đã biết.
 - `npm run smoke` pass: 13 passed, 7 skipped.
 - `npm run smoke:supabase` pass: 2 passed, gồm case realtime hai browser.
@@ -29,7 +29,7 @@ Rework thẩm mỹ và UX cho POS core: floor view, order drawer, payment drawer
 
 - Popup/drawer là app UI primitives, đặt ở `src/app/components`.
 - `createPortal` dùng nội bộ trong component, không export helper portal công khai.
-- Drawer dùng workspace viewport để không che left rail.
+- Drawer dùng workspace viewport sau `LeftNav` để không che left rail.
 - Exit animation được để backlog vì hiện tại drawer unmount theo app state.
 
 ## Gap Còn Lại
