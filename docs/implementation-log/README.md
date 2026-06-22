@@ -26,6 +26,7 @@ Folder này ghi nhật ký implement theo phase. Mục tiêu là track nhanh nh�
 - [phase-05-ui-redesign.md](phase-05-ui-redesign.md): Tailwind-first UI rework và shared portal primitives.
 - [phase-06-architecture-ui-hardening.md](phase-06-architecture-ui-hardening.md): architecture boundary guard, adapter split và drawer overlay/motion.
 - [phase-07-shell-floor-cleanup.md](phase-07-shell-floor-cleanup.md): `LeftNav` extraction/redesign, workspace overlay offsets và floor toolbar cleanup.
+- [phase-08-payment-cashier-redesign.md](phase-08-payment-cashier-redesign.md): Payment Drawer redesign cho thu ngân, responsive landscape và tùy chọn in hóa đơn.
 
 ## Template Duy Trì
 

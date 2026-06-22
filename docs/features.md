@@ -36,10 +36,14 @@
 ## Payment
 
 - Thanh toán tiền mặt cho order mở.
-- Nhập tiền khách đưa, dùng quick cash buttons, tính tiền thối/thiếu.
+- Màn thanh toán là console dành cho thu ngân, không phải màn đưa cho khách.
+- Header hiển thị thu ngân đang đăng nhập, vị trí/order type và số lượng món; khách hàng hiện fallback là `Khách lẻ` vì `OrderDetail` chưa có customer field.
+- Khu phương thức thanh toán dùng danh sách có thể mở rộng; hiện chỉ bật `Tiền mặt`, các phương thức thẻ/chuyển khoản/QR hiển thị disabled để tránh hiểu nhầm là đã xử lý thật.
+- Khu nhập tiền đặt input `Tiền khách đưa` phía trên keypad custom, có quick cash buttons và hỗ trợ nhập số thủ công.
+- Summary bên phải hiển thị danh sách món cuộn dọc, `Khách đưa`, `Tiền thối`/`Còn thiếu`, `Tổng đơn`, checkbox `In hóa đơn sau khi thanh toán` mặc định bật và nút hoàn tất ở cuối summary.
 - Chặn hoàn tất khi tiền nhận chưa đủ.
 - Complete payment gọi RPC transaction: tạo payment, set order paid, set bàn empty nếu dine-in.
-- Render receipt bằng browser print preview.
+- Render receipt bằng browser print preview khi checkbox in hóa đơn bật; nếu bỏ chọn thì vẫn thanh toán nhưng không gọi print receipt.
 
 ## Takeaway
 
