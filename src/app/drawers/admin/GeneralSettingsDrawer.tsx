@@ -158,6 +158,7 @@ export function GeneralSettingsDrawer() {
                       ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
                       : "border-pos-line bg-pos-surface text-pos-muted",
                   )}
+                  data-testid={`settings-section-${s.key}`}
                   onClick={() => setSection(s.key)}
                 >
                   {s.label}

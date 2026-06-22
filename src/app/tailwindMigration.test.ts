@@ -18,7 +18,8 @@ const appFiles = (dir = appSourceRoot): string[] =>
 const withoutTestIds = (source: string) =>
   source
     .replace(/data-testid=\{`[^`]*`\}/g, "")
-    .replace(/data-testid="[^"]*"/g, "");
+    .replace(/data-testid="[^"]*"/g, "")
+    .replace(/\btestId="[^"]*"/g, "");
 
 const classTokens = (literal: string) => literal.split(/\s+/).filter(Boolean);
 

@@ -51,12 +51,13 @@ export function LeftNav() {
       <nav className="grid min-h-0 content-start gap-3 overflow-auto py-1 [scrollbar-width:none]" aria-label="POS modules">
         <div className="grid gap-1.5">
           <span className="px-3 text-[10px] font-black uppercase tracking-[0.05em] text-[#64748b] max-[980px]:sr-only">Vận hành</span>
-          <RailButton active={!drawer} icon={<LayoutDashboard size={18} />} label="Bàn" onClick={closeDrawer} />
+          <RailButton active={!drawer} icon={<LayoutDashboard size={18} />} label="Bàn" onClick={closeDrawer} testId="nav-floor" />
           <RailButton
             active={drawer === "takeaway"}
             icon={<ClipboardList size={18} />}
             label="Mang đi"
             onClick={() => openDrawer("takeaway")}
+            testId="nav-takeaway"
           />
           <RailButton
             active={drawer === "orderHistory"}
@@ -64,6 +65,7 @@ export function LeftNav() {
             label="Lịch sử"
             onClick={() => guardedOpen("orderHistory", "orderHistory")}
             disabled={!canAccess("orderHistory")}
+            testId="nav-order-history"
           />
         </div>
 
@@ -75,6 +77,7 @@ export function LeftNav() {
             label="Nhân viên"
             onClick={() => guardedOpen("employees", "employees")}
             disabled={!canAccess("employees")}
+            testId="nav-employees"
           />
           <RailButton
             active={drawer === "menuEditor"}
@@ -82,6 +85,7 @@ export function LeftNav() {
             label="Menu"
             onClick={() => guardedOpen("menuEditor", "menuEditor")}
             disabled={!canAccess("menuEditor")}
+            testId="nav-menu-editor"
           />
           <RailButton
             active={drawer === "floorEditor"}
@@ -89,6 +93,7 @@ export function LeftNav() {
             label="Sơ đồ"
             onClick={() => guardedOpen("floorEditor", "floorEditor")}
             disabled={!canAccess("floorEditor")}
+            testId="nav-floor-editor"
           />
           <RailButton
             active={drawer === "reportSettings"}
@@ -96,6 +101,7 @@ export function LeftNav() {
             label="Báo cáo"
             onClick={() => guardedOpen("reportSettings", "report")}
             disabled={!canAccess("report")}
+            testId="nav-report-settings"
           />
           <RailButton
             active={drawer === "kitchen"}
@@ -103,6 +109,7 @@ export function LeftNav() {
             label="Bếp"
             onClick={() => guardedOpen("kitchen", "kitchen")}
             disabled={!canAccess("kitchen")}
+            testId="nav-kitchen"
           />
           <RailButton
             active={drawer === "paymentSettings"}
@@ -110,6 +117,7 @@ export function LeftNav() {
             label="Thanh toán"
             onClick={() => guardedOpen("paymentSettings", "settings")}
             disabled={!canAccess("settings")}
+            testId="nav-payment-settings"
           />
           <RailButton
             active={drawer === "settings"}
@@ -117,6 +125,7 @@ export function LeftNav() {
             label="Cài đặt"
             onClick={() => guardedOpen("settings", "settings")}
             disabled={!canAccess("settings")}
+            testId="nav-settings"
           />
         </div>
       </nav>
@@ -126,6 +135,7 @@ export function LeftNav() {
           active={false}
           icon={<Lock size={18} />}
           label="Khoá"
+          testId="nav-lock"
           onClick={() => {
             closeDrawer();
             setCurrentEmployee(null);

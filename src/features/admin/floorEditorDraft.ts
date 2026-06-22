@@ -41,7 +41,6 @@ export interface DraftDecor {
   isNew?: boolean;
 }
 
-export type FloorTool = "select" | "pan";
 export type FloorSelection = { type: "table" | "decor"; id: string } | null;
 
 export const DECOR_LABEL: Record<DecorKind, string> = {

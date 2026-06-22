@@ -109,6 +109,7 @@ export function PaymentSettingsDrawer() {
                   ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
                   : "border-pos-line bg-pos-surface text-pos-muted",
               )}
+              data-testid={`payment-method-${m.key}`}
               onClick={() => setMethod(m.key)}
             >
               <span className={clsx("h-2 w-2 shrink-0 rounded-full bg-[#cbd5e1]", m.on && "bg-[#22c55e]")} />

@@ -7,7 +7,8 @@ import { formatCompactVnd } from "@/core/money";
 import { useFloorPlanQuery, useOpenOrdersQuery } from "@/features/pos";
 import { useAppStore } from "../useAppStore";
 import { toToastError } from "../appErrors";
-import { stageStyle } from "../floorStage";
+import { getLabelBoost, getObjectBoost, stageStyle } from "../floorStage";
+import { ScaledFloorStage } from "../components/ScaledFloorStage";
 import clsx from "clsx";
 
 type TableFilter = "all" | "empty" | "occupied";
@@ -29,6 +30,11 @@ const decorToneClass = (kind: string) => {
       return "border-[#cbd5e1] bg-[#e2e8f0] text-[#475569]";
   }
 };
+
+const nodeTransform = (rotation = 0, boost = 1) => ({
+  transform: `translate(-50%, -50%) rotate(${rotation}deg) scale(${boost})`,
+  transformOrigin: "center",
+});
 
 export function FloorWorkspace() {
   const activeAreaId = useAppStore((state) => state.activeAreaId);
@@ -150,18 +156,31 @@ export function FloorWorkspace() {
               <p>Chưa có bàn. Vào Sơ đồ để tạo bàn.</p>
             </div>
           ) : (
-            <div className="min-h-0 overflow-auto p-3.5">
-              <div className="relative aspect-video w-full min-w-[760px] overflow-hidden rounded-pos border border-pos-line bg-[#eef3f7] bg-[linear-gradient(90deg,rgb(215_222_232_/_42%)_1px,transparent_1px),linear-gradient(rgb(215_222_232_/_42%)_1px,transparent_1px),#eef3f7] bg-[length:42px_42px]">
+            <div className="min-h-0 p-3.5 max-[980px]:p-2">
+              <ScaledFloorStage testId="floor-stage">
+                {({ scale }) => {
+                  const tableBoost = getObjectBoost(scale);
+                  const tableLabelBoost = getLabelBoost(scale * tableBoost);
+                  const decorLabelBoost = getLabelBoost(scale);
+
+                  return (
+                    <>
                 {decorItems.map((decor) => (
                   <div
                     className={clsx(
-                      "absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pos border border-dashed text-center text-xs font-black",
+                      "absolute grid place-items-center rounded-pos border border-dashed text-center text-xs font-black",
                       decorToneClass(decor.kind),
                     )}
+                    data-testid={`decor-${decor.id}`}
                     key={decor.id}
-                    style={stageStyle(decor.posX, decor.posY, decor.width, decor.height)}
+                    style={{ ...stageStyle(decor.posX, decor.posY, decor.width, decor.height), ...nodeTransform(decor.rotation) }}
                   >
-                    {decor.label ?? decor.assetKey}
+                    <span
+                      data-floor-label="name"
+                      style={{ transform: `scale(${decorLabelBoost})`, transformOrigin: "center" }}
+                    >
+                      {decor.label ?? decor.assetKey}
+                    </span>
                   </div>
                 ))}
                 {filteredTables.map((table) => {
@@ -171,28 +190,35 @@ export function FloorWorkspace() {
                   return (
                     <button
                       className={clsx(
-                        "absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pos border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)]",
+                        "absolute grid place-items-center rounded-pos border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)]",
                         occupied ? "border-[#f97316] bg-[#fff7ed]" : "border-[#86efac] bg-[#f0fdf4]",
                         isRound && "rounded-full",
                       )}
                       data-testid={`table-${table.id}`}
                       key={table.id}
-                      style={stageStyle(table.posX, table.posY, table.width, table.height)}
+                      style={{ ...stageStyle(table.posX, table.posY, table.width, table.height), ...nodeTransform(table.rotation, tableBoost) }}
                       onClick={() => void openTableOrder(table, openOrderSummary)}
                     >
-                      <strong className="block text-[13px] font-extrabold max-[980px]:text-xs">{table.name}</strong>
-                      <span className="block text-[11px] font-semibold text-pos-muted max-[980px]:text-[10px]">{table.seats} chỗ</span>
-                      {openOrderSummary ? (
-                        <small className="mt-0.5 block text-xs font-bold text-[#ea580c]">
-                          #{openOrderSummary.orderNo} · {formatCompactVnd(openOrderSummary.total)}
-                        </small>
-                      ) : (
-                        <small className="block text-[11px] font-semibold text-[#16a34a]">Trống</small>
-                      )}
+                      <span
+                        className="grid place-items-center gap-0.5 leading-none"
+                        style={{ transform: `scale(${tableLabelBoost})`, transformOrigin: "center" }}
+                      >
+                        <strong data-floor-label="name" className="block text-[13px] font-extrabold leading-none">
+                          {table.name}
+                        </strong>
+                        {openOrderSummary && (
+                          <small data-floor-label="price" className="block text-[11px] font-bold leading-none text-[#ea580c]">
+                            {formatCompactVnd(openOrderSummary.total)}
+                          </small>
+                        )}
+                      </span>
                     </button>
                   );
                 })}
-              </div>
+                    </>
+                  );
+                }}
+              </ScaledFloorStage>
             </div>
           )}
         </section>

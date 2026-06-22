@@ -8,12 +8,14 @@ export function RailButton({
   label,
   onClick,
   disabled,
+  testId,
 }: {
   active: boolean;
   icon: ReactNode;
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  testId?: string;
 }) {
   const compactRail = useMediaQuery("(max-width: 980px)");
   const btn = (
@@ -27,6 +29,7 @@ export function RailButton({
           : "border-transparent text-[#334155] hover:border-[#dbe4ef] hover:bg-white hover:text-pos-ink",
         disabled && "cursor-not-allowed opacity-35",
       )}
+      data-testid={testId}
       onClick={disabled ? undefined : onClick}
     >
       <span
