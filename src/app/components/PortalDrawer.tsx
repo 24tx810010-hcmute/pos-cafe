@@ -27,7 +27,7 @@ const getPortalRoot = (containerId: string): HTMLElement => {
   return root;
 };
 
-const workspaceOverlayClass = "fixed inset-y-0 right-0 left-[100px] max-[980px]:left-[52px]";
+const workspaceOverlayClass = "fixed inset-y-0 right-0 left-[176px] max-[980px]:left-[68px]";
 const screenOverlayClass = "fixed inset-0";
 
 const defaultPanelClass =

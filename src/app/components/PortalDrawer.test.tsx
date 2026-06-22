@@ -22,8 +22,8 @@ describe("PortalDrawer", () => {
     expect(root).toBeInTheDocument();
     expect(root).toContainElement(panel);
     expect(panel).toHaveTextContent("Drawer body");
-    expect(overlay?.className).toContain("left-[100px]");
-    expect(overlay?.className).toContain("max-[980px]:left-[52px]");
+    expect(overlay?.className).toContain("left-[176px]");
+    expect(overlay?.className).toContain("max-[980px]:left-[68px]");
   });
 
   it("uses a visible dim overlay by default", () => {

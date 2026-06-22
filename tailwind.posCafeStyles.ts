@@ -14,7 +14,7 @@ const posBaseStyles = {
     "--success": "#15803d",
     "--warning": "#b45309",
     "--danger": "#b91c1c",
-    "--rail": "#111827",
+    "--rail": "#f8fbfb",
     "color": "var(--ink)",
     "background": "var(--bg)",
     "font-family": "Inter, \"Segoe UI\", Arial, sans-serif"

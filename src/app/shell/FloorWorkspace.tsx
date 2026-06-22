@@ -1,4 +1,4 @@
-import { AlertTriangle, ClipboardList, LayoutGrid, Plus } from "lucide-react";
+import { AlertTriangle, LayoutGrid, RefreshCw } from "lucide-react";
 import { Button } from "@mui/material";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -31,11 +31,9 @@ const decorToneClass = (kind: string) => {
 };
 
 export function FloorWorkspace() {
-  const currentEmployee = useAppStore((state) => state.currentEmployee);
   const activeAreaId = useAppStore((state) => state.activeAreaId);
   const setActiveAreaId = useAppStore((state) => state.setActiveAreaId);
   const openOrder = useAppStore((state) => state.openOrder);
-  const openDrawer = useAppStore((state) => state.openDrawer);
 
   const floorPlanQuery = useFloorPlanQuery();
   const openOrdersQuery = useOpenOrdersQuery();
@@ -82,49 +80,11 @@ export function FloorWorkspace() {
     return true;
   });
 
-  const emptyCount = allTables.filter((t) => !isOccupied(t.id)).length;
-  const occupiedCount = allTables.filter((t) => isOccupied(t.id)).length;
   const takeawayOrders = orders.filter((o) => o.orderType === "takeaway");
   const dineInOrders = orders.filter((o) => o.orderType === "dine_in");
 
   return (
-    <>
-      <header className="flex min-h-16 items-center justify-between gap-3 border-b border-pos-line bg-white/95 px-[18px] py-3 max-[980px]:min-h-[50px] max-[980px]:px-2.5 max-[980px]:py-2">
-        <div className="min-w-0 flex-[1_1_240px] grid gap-1 [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-normal [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-normal [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-normal [&_p]:mb-0 [&_p]:mt-1 [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-xs [&_p]:text-pos-muted max-sm:[&_h1]:text-[17px] max-sm:[&_h2]:text-[15px] max-sm:[&_h3]:text-[15px]">
-          <h1>Sơ đồ bàn</h1>
-          <p>
-            <span className="mr-1 inline-block h-[7px] w-[7px] align-middle rounded-full bg-[#22c55e]" /> {currentEmployee?.name} · Trống {emptyCount} · Đang phục vụ {occupiedCount} · Mang đi {takeawayOrders.length}
-          </p>
-        </div>
-        <div className="flex min-w-0 flex-[0_1_auto] flex-wrap items-center justify-end gap-2.5 [&>*]:shrink-0 [&_.MuiButton-root]:min-h-9 [&_.MuiButton-root]:whitespace-nowrap max-sm:w-full max-sm:justify-start max-sm:[&_.MuiButton-root]:flex-[1_1_128px] max-[980px]:gap-2 max-[980px]:[&_.MuiButton-root]:min-h-[34px]">
-          <Button
-            variant="outlined"
-            startIcon={<ClipboardList size={15} />}
-            onClick={() => openDrawer("takeaway")}
-          >
-            Mang đi
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() => {
-              void floorPlanQuery.refetch();
-              void openOrdersQuery.refetch();
-              toast.success("Đã làm mới dữ liệu");
-            }}
-          >
-            Làm mới
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<Plus size={15} />}
-            onClick={() => openOrder({ orderId: null, tableId: null, orderType: "takeaway" })}
-          >
-            Tạo đơn nhanh
-          </Button>
-        </div>
-      </header>
-
-      <div className="h-[calc(100%-64px)] min-h-0 overflow-hidden p-3.5 max-[980px]:h-[calc(100%-50px)] max-[980px]:p-2 grid grid-cols-[minmax(0,1fr)_200px] gap-2.5 max-[1024px]:grid-cols-[minmax(0,1fr)_160px] max-[740px]:grid-cols-1">
+    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)_200px] gap-2.5 overflow-hidden p-3.5 max-[1024px]:grid-cols-[minmax(0,1fr)_160px] max-[980px]:p-2 max-[740px]:grid-cols-1">
         {/* Main region: floor canvas */}
         <section className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface" data-testid="floor-view">
           <div className="flex min-h-12 items-center overflow-x-auto border-b border-pos-line">
@@ -144,6 +104,18 @@ export function FloorWorkspace() {
                 </button>
               ))}
             </div>
+            <button
+              className="inline-flex min-h-[34px] shrink-0 items-center gap-1.5 rounded-[7px] border border-pos-line bg-pos-surface px-3 text-xs font-extrabold text-pos-primary transition-colors hover:border-pos-primary hover:bg-pos-primarySoft"
+              data-testid="floor-refresh-button"
+              onClick={() => {
+                void floorPlanQuery.refetch();
+                void openOrdersQuery.refetch();
+                toast.success("Đã làm mới dữ liệu");
+              }}
+            >
+              <RefreshCw size={14} />
+              Làm mới
+            </button>
             <div className="flex shrink-0 gap-1.5 border-l border-pos-line px-3 py-1.5">
               {(["all", "empty", "occupied"] as TableFilter[]).map((f) => (
                 <button
@@ -285,7 +257,6 @@ export function FloorWorkspace() {
             </>
           )}
         </aside>
-      </div>
-    </>
+    </div>
   );
 }

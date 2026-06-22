@@ -44,7 +44,7 @@ describe("PortalPopup", () => {
     );
 
     const overlay = screen.getByTestId("confirm-popup");
-    expect(overlay.className).toContain("left-[100px]");
-    expect(overlay.className).toContain("max-[980px]:left-[52px]");
+    expect(overlay.className).toContain("left-[176px]");
+    expect(overlay.className).toContain("max-[980px]:left-[68px]");
   });
 });
