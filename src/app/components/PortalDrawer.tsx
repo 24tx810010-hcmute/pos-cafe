@@ -31,13 +31,13 @@ const workspaceOverlayClass = "fixed inset-y-0 right-0 left-[176px] max-[980px]:
 const screenOverlayClass = "fixed inset-0";
 
 const defaultPanelClass =
-  "absolute grid w-[min(88vw,1440px)] max-w-[calc(100vw-96px)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface shadow-[0_22px_60px_rgb(15_23_42_/_18%)] max-[980px]:w-full max-[980px]:max-w-none max-[980px]:rounded-none max-[980px]:border-y-0";
+  "absolute grid w-full max-w-none grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-none border border-pos-line border-y-0 bg-pos-surface shadow-[0_22px_60px_rgb(15_23_42_/_18%)]";
 
 const placementClass: Record<DrawerPlacement, string> = {
-  Right: "inset-y-3 right-3 max-[980px]:inset-y-0 max-[980px]:right-0",
-  Left: "inset-y-3 left-3 max-[980px]:inset-y-0 max-[980px]:left-0",
-  Top: "inset-x-3 top-3 h-[min(88vh,720px)] w-auto max-w-none max-[980px]:inset-x-0 max-[980px]:top-0",
-  Bottom: "inset-x-3 bottom-3 h-[min(88vh,720px)] w-auto max-w-none max-[980px]:inset-x-0 max-[980px]:bottom-0",
+  Right: "inset-0",
+  Left: "inset-0",
+  Top: "inset-0",
+  Bottom: "inset-0",
 };
 
 const slideAnimationClass: Record<DrawerPlacement, string> = {
@@ -55,7 +55,7 @@ export function PortalDrawer({
   zIndex = 10,
   containerId = "portals",
   testId,
-  viewport = "workspace",
+  viewport = "screen",
   panelClassName,
 }: PortalDrawerProps) {
   const root = getPortalRoot(containerId);

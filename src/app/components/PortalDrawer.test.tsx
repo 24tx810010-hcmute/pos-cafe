@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 describe("PortalDrawer", () => {
-  it("renders a workspace drawer panel into the portals root", () => {
+  it("renders a full-screen drawer panel into the portals root by default", () => {
     render(
       <PortalDrawer testId="kitchen-drawer">
         <div>Drawer body</div>
@@ -22,8 +22,38 @@ describe("PortalDrawer", () => {
     expect(root).toBeInTheDocument();
     expect(root).toContainElement(panel);
     expect(panel).toHaveTextContent("Drawer body");
+    expect(overlay?.className).toContain("inset-0");
+    expect(overlay?.className).not.toContain("left-[176px]");
+    expect(overlay?.className).not.toContain("max-[980px]:left-[68px]");
+  });
+
+  it("can still target only the workspace viewport", () => {
+    render(
+      <PortalDrawer testId="kitchen-drawer" viewport="workspace">
+        <div>Drawer body</div>
+      </PortalDrawer>,
+    );
+
+    const overlay = screen.getByTestId("kitchen-drawer").parentElement;
+
     expect(overlay?.className).toContain("left-[176px]");
     expect(overlay?.className).toContain("max-[980px]:left-[68px]");
+  });
+
+  it("fills the available drawer viewport on every breakpoint", () => {
+    render(
+      <PortalDrawer testId="kitchen-drawer">
+        <div>Drawer body</div>
+      </PortalDrawer>,
+    );
+
+    const panelClassName = screen.getByTestId("kitchen-drawer").className;
+
+    expect(panelClassName).toContain("w-full");
+    expect(panelClassName).toContain("max-w-none");
+    expect(panelClassName).toContain("inset-0");
+    expect(panelClassName).not.toContain("w-[min(88vw,1440px)]");
+    expect(panelClassName).not.toContain("max-w-[calc(100vw-96px)]");
   });
 
   it("uses a visible dim overlay by default", () => {

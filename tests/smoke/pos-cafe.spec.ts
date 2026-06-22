@@ -89,6 +89,25 @@ async function openB02PaymentDrawer(page: Page) {
   await expect(page.getByTestId("payment-drawer")).toBeVisible();
 }
 
+async function closeCleanDrawer(page: Page, drawerTestId: string) {
+  const drawer = page.getByTestId(drawerTestId);
+  await drawer.locator("header").getByRole("button", { name: "Đóng" }).click();
+  await expect(drawer).toBeHidden();
+}
+
+async function cancelDirtyDrawer(page: Page, drawerTestId: string) {
+  const drawer = page.getByTestId(drawerTestId);
+  await drawer.locator("header").getByRole("button", { name: "Huỷ" }).click();
+
+  const discardButton = page.getByRole("button", { name: "Bỏ thay đổi" });
+  await discardButton
+    .waitFor({ state: "visible", timeout: 1000 })
+    .then(() => discardButton.click())
+    .catch(() => undefined);
+
+  await expect(drawer).toBeHidden();
+}
+
 test("portrait viewport shows rotate guidance", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "portrait", "portrait-only assertion");
   await page.goto("/");
@@ -175,6 +194,7 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await page.getByTestId("add-item-button").click();
   await expect(page.getByTestId("menu-dirty-badge")).toBeVisible();
   await expect(page.getByTestId("menu-item-name-input")).toBeVisible();
+  await cancelDirtyDrawer(page, "menu-editor");
 
   await page.getByTestId("nav-floor-editor").click();
   await expect(page.getByTestId("floor-editor")).toBeVisible();
@@ -182,19 +202,23 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await page.getByTestId("add-table-round").click();
   await expect(page.getByTestId("floor-dirty-badge")).toBeVisible();
   await expect(page.getByTestId("fe-table-name-input")).toBeVisible();
+  await cancelDirtyDrawer(page, "floor-editor");
 
   await page.getByTestId("nav-report-settings").click();
   await expect(page.getByTestId("report-settings")).toBeVisible();
   await page.getByTestId("report-settings").getByRole("button", { name: /7/ }).click();
   await expect(page.getByTestId("report-settings").getByText("Doanh thu", { exact: true })).toBeVisible();
+  await closeCleanDrawer(page, "report-settings");
 
   await page.getByTestId("nav-employees").click();
   await expect(page.getByTestId("employees-drawer")).toBeVisible();
   await expect(page.getByTestId("add-employee-button")).toBeVisible();
+  await closeCleanDrawer(page, "employees-drawer");
 
   await page.getByTestId("nav-kitchen").click();
   await expect(page.getByTestId("kitchen-drawer")).toBeVisible();
   await page.getByTestId("kitchen-done-kt-1").click();
+  await closeCleanDrawer(page, "kitchen-drawer");
 
   await page.getByTestId("nav-payment-settings").click();
   const payDrawer = page.getByTestId("payment-settings-drawer");
@@ -204,6 +228,7 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await payDrawer.locator("section").getByRole("button", { name: /B.*t/ }).first().click();
   await payDrawer.locator("section").getByRole("button", { name: /QR/ }).click();
   await expect(page.getByTestId("pay-qr-preview")).toBeVisible();
+  await cancelDirtyDrawer(page, "payment-settings-drawer");
 
   await page.getByTestId("nav-settings").click();
   const settingsDrawer = page.getByTestId("settings-drawer");
