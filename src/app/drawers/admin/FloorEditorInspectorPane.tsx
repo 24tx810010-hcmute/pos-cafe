@@ -45,7 +45,7 @@ export function FloorEditorInspectorPane({
   toggleDeleteDecor,
 }: FloorEditorInspectorPaneProps) {
   return (
-    <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface">
+    <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface max-[980px]:min-h-[220px]" data-testid="floor-editor-inspector">
       <div className="flex min-h-11 items-center justify-between gap-2.5 border-b border-pos-line bg-[#fbfcfd] px-3 py-2.5 font-black max-[980px]:min-h-9 max-[980px]:px-2 max-[980px]:py-[7px] max-[980px]:text-xs">{selectedTable ? "Chi tiết bàn" : selectedDecor ? "Chi tiết trang trí" : "Chi tiết khu"}</div>
       <div className="min-h-0 overflow-auto p-2.5 max-[980px]:p-2 grid content-start gap-3">
         {selectedTable ? (

@@ -120,15 +120,25 @@ describe("FloorEditorDrawer", () => {
     expect(changes.decorItems.deleted).toEqual([{ id: "decor-counter", deletedByEmployeeId: admin.id }]);
   });
 
-  it("renders table geometry as percentages of the logical 1600x900 stage", async () => {
+  it("renders table geometry as logical pixels inside the scaled stage", async () => {
     renderFloorEditor();
 
     const table = await screen.findByTestId("fe-table-tbl-b01");
     const style = table.getAttribute("style") ?? "";
 
-    expect(style).toContain("left: 16.25%");
-    expect(style).toContain("top: 21.11111111111111%");
-    expect(style).toContain("width: 7.5%");
-    expect(style).toContain("height: 8.444444444444445%");
+    expect(style).toContain("left: 260px");
+    expect(style).toContain("top: 190px");
+    expect(style).toContain("width: 120px");
+    expect(style).toContain("height: 76px");
+  });
+
+  it("omits manual zoom controls because the stage auto-fits its container", async () => {
+    renderFloorEditor();
+
+    await screen.findByTestId("floor-editor-stage");
+
+    expect(screen.queryByTitle("Phóng to")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Thu nhỏ")).not.toBeInTheDocument();
+    expect(screen.queryByText("100%")).not.toBeInTheDocument();
   });
 });

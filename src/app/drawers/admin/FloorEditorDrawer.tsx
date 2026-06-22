@@ -20,12 +20,12 @@ import {
   type DraftArea,
   type DraftTable,
   type DraftDecor,
-  type FloorTool,
   type FloorSelection,
 } from "@/features/admin/floorEditorDraft";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { PortalPopup } from "../../components/PortalPopup";
-import { logicalStage, stageStyle } from "../../floorStage";
+import { getLabelBoost, getObjectBoost, logicalStage, pointerClientToLogical, stageStyle } from "../../floorStage";
+import { ScaledFloorStage } from "../../components/ScaledFloorStage";
 import { FloorEditorInspectorPane } from "./FloorEditorInspectorPane";
 import { FloorEditorToolbar } from "./FloorEditorToolbar";
 
@@ -59,9 +59,7 @@ export function FloorEditorDrawer() {
   const [tables, setTables] = useState<DraftTable[]>([]);
   const [decor, setDecor] = useState<DraftDecor[]>([]);
   const [areaId, setAreaId] = useState("");
-  const [tool, setTool] = useState<FloorTool>("select");
   const [snap, setSnap] = useState(true);
-  const [zoom, setZoom] = useState(1);
   const [selected, setSelected] = useState<FloorSelection>(null);
   const [dirty, setDirty] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -95,18 +93,13 @@ export function FloorEditorDrawer() {
   const toLogical = (clientX: number, clientY: number) => {
     const rect = stageRef.current?.getBoundingClientRect();
     if (!rect) return { x: logicalStage.width / 2, y: logicalStage.height / 2 };
-    return {
-      x: ((clientX - rect.left) / rect.width) * logicalStage.width,
-      y: ((clientY - rect.top) / rect.height) * logicalStage.height,
-    };
+    return pointerClientToLogical(clientX, clientY, rect);
   };
   const snapVal = (v: number) => (snap ? Math.round(v / 20) * 20 : Math.round(v));
-  const nodeStyle = (o: { posX: number; posY: number; width: number; height: number; rotation: number }) => ({
-    left: `${(o.posX / logicalStage.width) * 100}%`,
-    top: `${(o.posY / logicalStage.height) * 100}%`,
-    width: `${(o.width / logicalStage.width) * 100}%`,
-    height: `${(o.height / logicalStage.height) * 100}%`,
-    transform: `translate(-50%, -50%) rotate(${o.rotation}deg)`,
+  const nodeStyle = (o: { posX: number; posY: number; width: number; height: number; rotation: number }, boost = 1) => ({
+    ...stageStyle(o.posX, o.posY, o.width, o.height),
+    transform: `translate(-50%, -50%) rotate(${o.rotation}deg) scale(${boost})`,
+    transformOrigin: "center",
   });
 
   // --- Area ops ---
@@ -154,7 +147,6 @@ export function FloorEditorDrawer() {
       },
     ]);
     setSelected({ type: "table", id });
-    setTool("select");
     touch();
   };
   const patchTable = (id: string, patch: Partial<DraftTable>) => {
@@ -190,7 +182,6 @@ export function FloorEditorDrawer() {
       },
     ]);
     setSelected({ type: "decor", id });
-    setTool("select");
     touch();
   };
   const patchDecor = (id: string, patch: Partial<DraftDecor>) => {
@@ -206,7 +197,7 @@ export function FloorEditorDrawer() {
   const onNodePointerDown = (e: ReactPointerEvent, kind: "table" | "decor", obj: { id: string; posX: number; posY: number; isLocked?: boolean }) => {
     e.stopPropagation();
     setSelected({ type: kind, id: obj.id });
-    if (tool !== "select" || obj.isLocked) return;
+    if (obj.isLocked) return;
     try { (e.target as HTMLElement).setPointerCapture?.(e.pointerId); } catch { /* noop */ }
     const p = toLogical(e.clientX, e.clientY);
     dragRef.current = { kind, id: obj.id, offX: p.x - obj.posX, offY: p.y - obj.posY };
@@ -334,34 +325,36 @@ export function FloorEditorDrawer() {
           <>
             <FloorEditorToolbar
               areaDeleted={currentArea?.deleted}
-              tool={tool}
-              zoom={zoom}
               snap={snap}
-              setTool={setTool}
-              setZoom={setZoom}
               setSnap={setSnap}
               addTable={addTable}
               addDecor={addDecor}
             />
 
-            <div className="grid h-full min-h-0 min-w-0 grid-cols-[minmax(340px,1fr)_minmax(290px,350px)] gap-2.5">
+            <div className="grid h-full min-h-0 min-w-0 grid-cols-[minmax(340px,1fr)_minmax(290px,350px)] gap-2.5 max-[980px]:grid-cols-1 max-[980px]:grid-rows-[minmax(220px,1fr)_auto] max-[980px]:overflow-auto">
               <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface">
                 <div className="flex min-h-11 items-center justify-between gap-2.5 border-b border-pos-line bg-[#fbfcfd] px-3 py-2.5 font-black max-[980px]:min-h-9 max-[980px]:px-2 max-[980px]:py-[7px] max-[980px]:text-xs">
                   <span>Khu vực thiết kế</span>
-                  <span className="text-pos-muted">{tool === "pan" ? "Di chuyển khung nhìn" : "Chọn / kéo"}</span>
+                  <span className="text-pos-muted">Chọn / kéo</span>
                 </div>
-                <div className="min-h-0 overflow-auto p-2.5 max-[980px]:p-2 grid place-items-center !p-3">
-                  <div
+                <div className="min-h-0 p-2.5 max-[980px]:p-2 grid place-items-center !p-3">
+                  <ScaledFloorStage
                     ref={stageRef}
-                    className="relative aspect-video max-w-full touch-none overflow-hidden rounded-pos border border-pos-line bg-[#eef3f7] bg-[linear-gradient(90deg,rgb(215_222_232_/_42%)_1px,transparent_1px),linear-gradient(rgb(215_222_232_/_42%)_1px,transparent_1px),#eef3f7] bg-[length:3.75%_6.66%]"
-                    style={{ width: `${zoom * 100}%` }}
+                    testId="floor-editor-stage"
                     onPointerDown={() => setSelected(null)}
                   >
+                    {({ scale }) => {
+                      const tableBoost = getObjectBoost(scale);
+                      const tableLabelBoost = getLabelBoost(scale * tableBoost);
+                      const decorLabelBoost = getLabelBoost(scale);
+
+                      return (
+                        <>
                     {[...areaDecor].sort((a, b) => a.zIndex - b.zIndex).map((d) => (
                       <div
                         key={d.id}
                         className={clsx(
-                          "absolute grid -translate-x-1/2 -translate-y-1/2 cursor-grab place-items-center rounded-pos border border-dashed text-center text-xs font-black",
+                          "absolute grid cursor-grab place-items-center rounded-pos border border-dashed text-center text-xs font-black",
                           decorToneClass(d.kind),
                           selected?.type === "decor" && selected.id === d.id && "!z-50 outline outline-2 outline-offset-2 outline-pos-primary",
                           d.deleted && "opacity-40",
@@ -373,7 +366,12 @@ export function FloorEditorDrawer() {
                         onPointerMove={onNodePointerMove}
                         onPointerUp={onNodePointerUp}
                       >
-                        {d.label ?? DECOR_LABEL[d.kind]}
+                        <span
+                          data-floor-label="name"
+                          style={{ transform: `scale(${decorLabelBoost})`, transformOrigin: "center" }}
+                        >
+                          {d.label ?? DECOR_LABEL[d.kind]}
+                        </span>
                         {d.isLocked && <Lock size={11} className="absolute right-0.5 top-0.5" />}
                       </div>
                     ))}
@@ -381,20 +379,25 @@ export function FloorEditorDrawer() {
                       <button
                         key={t.id}
                         className={clsx(
-                          "absolute grid -translate-x-1/2 -translate-y-1/2 cursor-grab place-items-center rounded-pos border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)] active:cursor-grabbing [&_small]:mt-[3px] [&_small]:block [&_small]:text-[10px] [&_small]:font-bold [&_small]:text-pos-muted",
+                          "absolute grid cursor-grab place-items-center rounded-pos border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)] active:cursor-grabbing [&_small]:mt-[3px] [&_small]:block [&_small]:text-[10px] [&_small]:font-bold [&_small]:text-pos-muted",
                           t.status === "occupied" ? "border-[#f97316] bg-[#fff7ed]" : "border-[#86efac] bg-[#f0fdf4]",
                           t.shape === "round" && "rounded-full",
                           selected?.type === "table" && selected.id === t.id && "!z-50 outline outline-2 outline-offset-2 outline-pos-primary",
                           t.deleted && "opacity-40",
                         )}
-                        style={nodeStyle(t)}
+                        style={nodeStyle(t, tableBoost)}
                         data-testid={`fe-table-${t.id}`}
                         onPointerDown={(e) => onNodePointerDown(e, "table", t)}
                         onPointerMove={onNodePointerMove}
                         onPointerUp={onNodePointerUp}
                       >
-                        {t.name}
-                        <small>{t.seats} chỗ</small>
+                        <span
+                          className="grid place-items-center leading-none"
+                          style={{ transform: `scale(${tableLabelBoost})`, transformOrigin: "center" }}
+                        >
+                          <span data-floor-label="name">{t.name}</span>
+                          <small>{t.seats} chỗ</small>
+                        </span>
                       </button>
                     ))}
 
@@ -407,7 +410,10 @@ export function FloorEditorDrawer() {
                         </Button>
                       </div>
                     )}
-                  </div>
+                        </>
+                      );
+                    }}
+                  </ScaledFloorStage>
                 </div>
               </section>
 
