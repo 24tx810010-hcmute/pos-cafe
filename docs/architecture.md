@@ -90,6 +90,7 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 ## UI Overlay Primitives
 
 - Popup/modal dùng `PortalPopup`; drawer dùng `PortalDrawer`; cả hai tự dùng `createPortal` nội bộ.
+- `PortalPopup` overlay là full-screen để confirm/modal chặn tương tác toàn bộ app khi đang mở.
 - Drawer mặc định có workspace viewport sau `LeftNav` để không che left rail: desktop offset 176px, compact offset 68px, overlay `rgba(0,0,0,0.2)`, click overlay gọi close handler và slide-in animation theo placement.
 - Exit animation chưa làm trong pass hiện tại; drawer unmount theo app state.
 

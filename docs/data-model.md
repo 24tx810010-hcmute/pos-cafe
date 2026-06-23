@@ -79,6 +79,8 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 - Phase này payment UI dùng cash-only.
 - `pay_order` tạo payment, set order paid và set table empty trong cùng transaction.
 - Report chỉ tính order paid, loại void, lọc theo `business_date`.
+- Order history đọc các order đã kết thúc (`paid`, `void`) theo `business_date`; order `open` chỉ dùng cho floor/takeaway vận hành hiện tại.
+- Order history detail đọc payment snapshot mới nhất theo `order_id` để hiển thị lại `method`, `employee_id`, `amount`, `received_amount`, `change_amount` và `paid_at`.
 
 ## RPC Chính
 
@@ -90,7 +92,7 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 
 - `MenuCatalog`: categories, menuItems, optionGroups, optionValues.
 - `FloorPlan`: areas, tables, decorItems.
-- `OrderSummary`/`OrderDetail`: order state, total, table/order type, snapshot items.
+- `OrderSummary`/`OrderDetail`: order state, total, table/order type, snapshot items; `OrderDetail.payment` giữ payment snapshot nullable cho đơn đã thanh toán.
 - `PayOrderInput`/`PayOrderResult`: payment cash flow và receipt payload.
 - `MenuChanges`/`FloorPlanChanges`: changeset create/update/delete cho editor.
 

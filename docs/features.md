@@ -54,9 +54,14 @@
 
 ## Order History
 
-- Xem danh sách đơn theo khoảng ngày.
-- Lọc theo trạng thái/order type/search ở UI.
-- Xem detail đơn, item snapshot, option, total, paid time.
+- Xem danh sách đơn theo khoảng ngày; mặc định `Hôm nay`.
+- Chỉ hiển thị đơn đã kết thúc (`Đã thanh toán`, `Đã hủy`); đơn đang mở thuộc màn Bàn/Mang đi.
+- Bộ lọc ngày là một nút `Filter date`, mở popup chọn `Hôm nay`, `7 ngày`, `Tháng này` hoặc khoảng ngày tùy chọn.
+- Danh sách đơn dùng phân trang để giữ payload ổn định; date/status/type/search được áp dụng ở repository trước khi cắt trang.
+- Layout chính là 2 cột: cột trái hiển thị thông tin nhanh của đơn, cột phải hiển thị chi tiết dạng receipt.
+- Cột phải hiển thị item snapshot/options/note/quantity, khách hàng fallback `Khách lẻ`, người thanh toán fallback `Khách lẻ`, thu ngân từ payment employee, phương thức thanh toán, paid time.
+- Summary thanh toán cố định cuối cột phải theo thứ tự `Khách đưa`, `Tiền thừa`, `Tổng tiền`; `Tổng tiền` nổi bật hơn.
+- `OrderDetail` đọc payment snapshot để lịch sử hiển thị đúng `receivedAmount` và `changeAmount`, không tính tạm ở UI.
 - Dùng cho cashier và admin.
 
 ## Employees
@@ -110,5 +115,6 @@
 ## Shared UI Behavior
 
 - Popup/modal dùng `PortalPopup`; drawer dùng `PortalDrawer`.
+- Popup/modal dùng overlay full-screen để modal xác nhận che toàn bộ app shell khi cần.
 - Drawer có overlay mờ `rgba(0,0,0,0.2)`, click overlay để đóng và slide-in theo placement khi mở.
 - Drawer mặc định dùng workspace viewport sau `LeftNav` để không che left rail.
