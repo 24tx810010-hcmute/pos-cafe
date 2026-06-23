@@ -93,3 +93,12 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 - `OrderSummary`/`OrderDetail`: order state, total, table/order type, snapshot items.
 - `PayOrderInput`/`PayOrderResult`: payment cash flow và receipt payload.
 - `MenuChanges`/`FloorPlanChanges`: changeset create/update/delete cho editor.
+
+## Menu Image Storage
+
+- Bucket Supabase Storage: `menu-item-images`.
+- `menu_items.image_asset_key` lưu asset key theo dạng `menu-item-images/{store_id}/menu-items/{menu_item_id}/{uuid}.{ext}`.
+- Bucket public để POS render ảnh nhanh; upload/update/delete bị giới hạn bằng Storage RLS theo thư mục `auth.uid()`.
+- File hỗ trợ JPG, PNG, WebP, tối đa 5MB; UI chặn file lớn hơn giới hạn này trước khi upload.
+- Detail preview trong Menu Editor giữ ảnh không crop để nhân viên kiểm tra file đã chọn; card món trong Menu Editor và Order Drawer dùng `object-cover` để lấp đầy khung card.
+- Database hiện hữu cần migration bổ sung `menu_items.image_asset_key`; schema mới đã có cột này trong bảng `menu_items`.

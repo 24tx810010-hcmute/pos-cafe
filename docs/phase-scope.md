@@ -11,10 +11,20 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 | POS core | Floor view, mở bàn, tạo/sửa order dine-in, tạo/sửa takeaway, trạng thái bàn trống/đang phục vụ |
 | Order | Chọn món, option/topping, ghi chú, cập nhật order mở, hủy order mở bằng cách xóa hết item |
 | Payment | Thanh toán tiền mặt, nhập tiền khách đưa, tính tiền thối, hoàn tất order, set bàn trống, bill/receipt preview |
-| Admin | Quản lý nhân viên, menu editor có option/topping, floor editor có khu/tầng/decor cơ bản |
+| Admin | Quản lý nhân viên, menu editor có option/topping và upload ảnh món, floor editor có khu/tầng/decor cơ bản |
 | Report | Doanh thu theo ngày, số đơn đã thanh toán, trung bình đơn, top món, biểu đồ giờ |
 | Settings | Tên quán, địa chỉ, footer hóa đơn, timezone, clear dữ liệu mẫu có block khi còn order mở |
 | Demo hardening | Loading/error/empty/blocked states cho flow quan trọng, smoke test cho demo |
+
+## Scope Update 2026-06-22
+
+- Upload ảnh món được đưa vào scope hiện tại cho Menu Editor và màn chọn món POS.
+- Upload ảnh decor vẫn là mở rộng sau phase này.
+
+## Scope Update 2026-06-23
+
+- Menu Editor được polish thêm: ảnh card món dùng cover, món hết hàng có overlay `Đã bán hết`, selector danh mục chuyển sang select và sắp xếp món dùng switch swap vị trí.
+- Giới hạn upload ảnh món theo bucket Supabase: JPG/PNG/WebP, tối đa 5MB.
 
 ## Làm Nếu Kịp
 
@@ -29,7 +39,7 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 - Kitchen queue thật nối backend và trạng thái order item.
 - QR/bank/e-wallet payment thật.
 - Discount/voucher UI.
-- Upload ảnh món/decor.
+- Upload ảnh decor.
 - Offline-first/local database.
 - Native printer, driver, USB, ESC/POS hoặc service in thật.
 - Quản lý kho nguyên liệu, loyalty, ca/chấm công.

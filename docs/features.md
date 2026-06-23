@@ -69,6 +69,13 @@
 
 ## Menu Editor
 
+- Upload/lưu ảnh món JPG/PNG/WebP và hiển thị ảnh trong màn quản lý menu.
+- Upload ảnh món có cảnh báo và chặn file quá 5MB trước khi lưu.
+- Màn chọn món khi bán hàng hiển thị ảnh món nếu có, fallback bằng icon khi chưa có ảnh; card hết hàng có overlay `Đã bán hết`.
+- Card món trong Menu Editor dùng ảnh cover, bỏ pill trạng thái bán khỏi card; trạng thái vẫn chỉnh ở panel chi tiết.
+- Panel chi tiết món dùng select `Danh mục`, upload/preview ảnh, trạng thái bán và nhóm tùy chọn.
+- Đổi thứ tự món bằng switch `Đổi vị trí`: chọn món gốc, bật switch, bấm món khác trong cùng danh mục để swap rồi tự tắt switch.
+
 - Quản lý category.
 - Quản lý món: tên, giá, danh mục, trạng thái bán.
 - Quản lý option group và option value cho size/topping.
