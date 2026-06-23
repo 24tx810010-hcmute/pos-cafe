@@ -5,6 +5,7 @@ import { SupabaseAuthRepo } from "./authRepo";
 import { SupabaseEmployeeRepo } from "./employeeRepo";
 import { SupabaseFloorPlanRepo } from "./floorPlanRepo";
 import { SupabaseMenuRepo } from "./menuRepo";
+import { SupabaseMenuImagePort } from "./menuImagePort";
 import { SupabaseOrderRepo } from "./orderRepo";
 import { SupabasePaymentRepo } from "./paymentRepo";
 import { SupabaseRealtimePort } from "./realtimePort";
@@ -20,6 +21,7 @@ export const createSupabasePorts = (client: SupabaseAnyClient): AppPorts => {
     auth: new SupabaseAuthRepo(client, seed),
     employee: new SupabaseEmployeeRepo(client),
     menu: new SupabaseMenuRepo(client),
+    menuImages: new SupabaseMenuImagePort(client),
     floorPlan: new SupabaseFloorPlanRepo(client),
     order: new SupabaseOrderRepo(client),
     payment: new SupabasePaymentRepo(client),

@@ -51,7 +51,7 @@ export function buildMenuChangesFromDrafts(input: {
           categoryId: item.categoryId,
           name,
           price: item.price,
-          imageAssetKey: null,
+          imageAssetKey: item.imageAssetKey ?? null,
           sortOrder: item.sortOrder,
           isAvailable: item.isAvailable,
         });
@@ -67,6 +67,7 @@ export function buildMenuChangesFromDrafts(input: {
     if (item.categoryId !== original.categoryId) update.categoryId = item.categoryId;
     if (name !== original.name) update.name = name;
     if (item.price !== original.price) update.price = item.price;
+    if (item.imageAssetKey !== original.imageAssetKey) update.imageAssetKey = item.imageAssetKey;
     if (item.sortOrder !== original.sortOrder) update.sortOrder = item.sortOrder;
     if (item.isAvailable !== original.isAvailable) update.isAvailable = item.isAvailable;
     if (Object.keys(update).length > 1) changes.menuItems.updated.push(update);

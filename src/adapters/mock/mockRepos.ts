@@ -3,6 +3,7 @@ import { MockAuthRepo } from "./authRepo";
 import { MockEmployeeRepo } from "./employeeRepo";
 import { MockFloorPlanRepo } from "./floorPlanRepo";
 import { MockMenuRepo } from "./menuRepo";
+import { MockMenuImagePort } from "./menuImagePort";
 import { MockOrderRepo } from "./orderRepo";
 import { MockPaymentRepo } from "./paymentRepo";
 import { MockPrintPort } from "./printPort";
@@ -19,6 +20,7 @@ export const createMockPorts = (state: MockState = createMockState()): AppPorts 
   auth: new MockAuthRepo(state),
   employee: new MockEmployeeRepo(state),
   menu: new MockMenuRepo(state),
+  menuImages: new MockMenuImagePort(),
   floorPlan: new MockFloorPlanRepo(state),
   order: new MockOrderRepo(state),
   payment: new MockPaymentRepo(state),

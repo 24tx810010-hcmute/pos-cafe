@@ -10,8 +10,11 @@ export interface DraftItem {
   categoryId: string;
   name: string;
   price: number;
+  imageAssetKey: string | null;
   sortOrder: number;
   isAvailable: boolean;
+  pendingImageFile?: File | null;
+  pendingImagePreviewUrl?: string | null;
   deleted?: boolean;
   isNew?: boolean;
 }

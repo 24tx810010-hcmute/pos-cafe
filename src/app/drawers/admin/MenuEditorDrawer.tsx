@@ -1,4 +1,4 @@
-import { AlertTriangle, Eye, Save } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Eye, Save } from "lucide-react";
 import { Button } from "@mui/material";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -8,6 +8,7 @@ import {
   useSaveMenuMutation,
   hasMenuChanges,
 } from "@/features/admin";
+import { usePorts } from "@/features/shared/portsContext";
 import { useAppStore } from "../../useAppStore";
 import { toToastError } from "../../appErrors";
 import { nextDraftId, nextSort } from "@/features/admin/draftUtils";
@@ -18,14 +19,25 @@ import {
   type DraftValue,
 } from "@/features/admin/menuDraft";
 import { buildMenuChangesFromDrafts } from "@/features/admin/menuEditorDraft";
+import { swapMenuItemSortOrderInCategory } from "@/features/admin/menuItemOrderDraft";
+import { getMenuImageError, revokePendingItemPreviews } from "@/features/admin/menuImageDraft";
+import { deleteMenuImagesBestEffort, uploadPendingMenuItemImages } from "@/features/admin/menuImageSaveDraft";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { PortalPopup } from "../../components/PortalPopup";
 import { MenuCatalogPane } from "./MenuCatalogPane";
 import { MenuEditorDetailPane } from "./MenuEditorDetailPane";
 
+const nextNewItemName = (items: DraftItem[], categoryId: string) => {
+  const names = new Set(items.filter((item) => item.categoryId === categoryId).map((item) => item.name.trim()));
+  let index = 1;
+  while (names.has(`Món mới ${index}`)) index += 1;
+  return `Món mới ${index}`;
+};
+
 export function MenuEditorDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
+  const ports = usePorts();
   const menuQuery = useAdminMenuQuery();
   const saveMenuMutation = useSaveMenuMutation(currentEmployee);
 
@@ -40,11 +52,10 @@ export function MenuEditorDrawer() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
-  // Advanced item fields (sort order + option groups) stay collapsed by default
-  // so the basic name/price/category/availability fields lead the props pane.
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [itemSwapMode, setItemSwapMode] = useState(false);
 
   const seedDraftFromMenu = (catalog: MenuCatalog) => {
+    revokePendingItemPreviews(items);
     setBaseMenu(catalog);
     setCats(catalog.categories.map((c) => ({ id: c.id, name: c.name, sortOrder: c.sortOrder })));
     setItems(
@@ -53,6 +64,7 @@ export function MenuEditorDrawer() {
         categoryId: m.categoryId,
         name: m.name,
         price: m.price,
+        imageAssetKey: m.imageAssetKey,
         sortOrder: m.sortOrder,
         isAvailable: m.isAvailable,
       })),
@@ -80,6 +92,7 @@ export function MenuEditorDrawer() {
     );
     setSelectedCategoryId(catalog.categories[0]?.id ?? "");
     setSelectedItemId(null);
+    setItemSwapMode(false);
     setDirty(false);
     setSeeded(true);
   };
@@ -98,6 +111,7 @@ export function MenuEditorDrawer() {
     setCats((list) => [...list, { id, name: "Danh mục mới", sortOrder: nextSort(list.map((c) => c.sortOrder)), isNew: true }]);
     setSelectedCategoryId(id);
     setSelectedItemId(null);
+    setItemSwapMode(false);
     touch();
   };
   const patchCategory = (id: string, patch: Partial<DraftCategory>) => {
@@ -130,22 +144,75 @@ export function MenuEditorDrawer() {
       {
         id,
         categoryId: selectedCategoryId,
-        name: "",
+        name: nextNewItemName(list, selectedCategoryId),
         price: 0,
+        imageAssetKey: null,
         sortOrder: nextSort(list.filter((i) => i.categoryId === selectedCategoryId).map((i) => i.sortOrder)),
         isAvailable: true,
         isNew: true,
       },
     ]);
     setSelectedItemId(id);
+    setItemSwapMode(false);
     touch();
   };
   const patchItem = (id: string, patch: Partial<DraftItem>) => {
     setItems((list) => list.map((i) => (i.id === id ? { ...i, ...patch } : i)));
     touch();
   };
+  const changeItemCategory = (id: string, categoryId: string) => {
+    const item = items.find((candidate) => candidate.id === id);
+    if (!item || item.categoryId === categoryId) return;
+
+    const sortOrder = nextSort(items.filter((candidate) => candidate.id !== id && candidate.categoryId === categoryId).map((candidate) => candidate.sortOrder));
+    setItems((list) => list.map((candidate) => (candidate.id === id ? { ...candidate, categoryId, sortOrder } : candidate)));
+    setSelectedCategoryId(categoryId); setSelectedItemId(id); setItemSwapMode(false); touch();
+  };
+  const swapItemOrder = (targetItemId: string) => {
+    if (!selectedItemId || selectedItemId === targetItemId) return;
+    const updated = swapMenuItemSortOrderInCategory(items, selectedCategoryId, selectedItemId, targetItemId);
+    if (updated === items) return;
+    setItems(updated);
+    setItemSwapMode(false);
+    touch();
+  };
   const toggleDeleteItem = (id: string) => {
     setItems((list) => list.map((i) => (i.id === id ? { ...i, deleted: !i.deleted } : i)));
+    touch();
+  };
+  const setItemImageFile = (id: string, file: File) => {
+    const errorMessage = getMenuImageError(file);
+    if (errorMessage) {
+      toast.error(errorMessage);
+      return;
+    }
+
+    setItems((list) =>
+      list.map((item) => {
+        if (item.id !== id) return item;
+        if (item.pendingImagePreviewUrl) URL.revokeObjectURL(item.pendingImagePreviewUrl);
+        return {
+          ...item,
+          pendingImageFile: file,
+          pendingImagePreviewUrl: URL.createObjectURL(file),
+        };
+      }),
+    );
+    touch();
+  };
+  const removeItemImage = (id: string) => {
+    setItems((list) =>
+      list.map((item) => {
+        if (item.id !== id) return item;
+        if (item.pendingImagePreviewUrl) URL.revokeObjectURL(item.pendingImagePreviewUrl);
+        return {
+          ...item,
+          imageAssetKey: null,
+          pendingImageFile: null,
+          pendingImagePreviewUrl: null,
+        };
+      }),
+    );
     touch();
   };
 
@@ -204,6 +271,9 @@ export function MenuEditorDrawer() {
   const groupValues = (gid: string) => values.filter((v) => v.optionGroupId === gid).sort((a, b) => a.sortOrder - b.sortOrder);
   const activeCatCount = cats.filter((c) => !c.deleted).length;
   const activeItemCount = items.filter((i) => !i.deleted).length;
+  const selectedItemImageUrl = selectedItem
+    ? selectedItem.pendingImagePreviewUrl ?? ports.menuImages.getImageUrl(selectedItem.imageAssetKey)
+    : null;
 
   const handleSave = async () => {
     if (saveMenuMutation.isPending) return;
@@ -226,30 +296,37 @@ export function MenuEditorDrawer() {
       return;
     }
 
-    const changes = buildMenuChangesFromDrafts({
+    let uploadedAssetKeys: string[] = [];
+    try {
+      const uploadResult = await uploadPendingMenuItemImages(items, sourceMenu, ports.menuImages);
+      uploadedAssetKeys = uploadResult.uploadedAssetKeys;
+      const changes = buildMenuChangesFromDrafts({
       base: sourceMenu,
       categories: cats,
-      items,
+      items: uploadResult.itemsForSave,
       groups,
       values,
       actorId: currentEmployee?.id,
     });
     if (!hasMenuChanges(changes)) {
+      setItems(uploadResult.itemsForSave);
       setDirty(false);
       toast.success("Không có thay đổi cần lưu.");
       return;
     }
 
-    try {
       await saveMenuMutation.mutateAsync({ changes });
+      void deleteMenuImagesBestEffort(ports.menuImages, uploadResult.replacedAssetKeys);
       const refreshed = await menuQuery.refetch();
       if (refreshed.data) {
         seedDraftFromMenu(refreshed.data);
       } else {
+        setItems(uploadResult.itemsForSave);
         setDirty(false);
       }
       toast.success("Đã lưu menu.");
     } catch (error) {
+      void deleteMenuImagesBestEffort(ports.menuImages, uploadedAssetKeys);
       toast.error(toToastError(error));
     }
   };
@@ -272,8 +349,8 @@ export function MenuEditorDrawer() {
           </p>
         </div>
         <div className="flex min-w-0 flex-[0_1_auto] flex-wrap items-center justify-end gap-2.5 [&>*]:shrink-0 [&_.MuiButton-root]:min-h-9 [&_.MuiButton-root]:whitespace-nowrap max-sm:w-full max-sm:justify-start max-sm:[&_.MuiButton-root]:flex-[1_1_128px] max-[980px]:gap-2 max-[980px]:[&_.MuiButton-root]:min-h-[34px]">
-          <Button variant="text" onClick={handleCancel}>Huỷ</Button>
-          <Button variant="outlined" startIcon={<Eye size={15} />} onClick={() => setPreview((p) => !p)}>
+          <Button variant="text" startIcon={<ArrowLeft size={15} />} onClick={handleCancel}>Thoát</Button>
+          <Button variant="outlined" startIcon={<Eye size={15} />} onClick={() => setPreview((p) => !p)} disabled={itemSwapMode}>
             {preview ? "Thoát xem trước" : "Xem trước"}
           </Button>
           <Button
@@ -288,7 +365,7 @@ export function MenuEditorDrawer() {
         </div>
       </header>
 
-      <div className="min-h-0 overflow-auto bg-pos-bg p-3 max-[980px]:p-2 grid grid-rows-[auto_minmax(0,1fr)] gap-2 overflow-hidden">
+      <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)] gap-2 overflow-hidden bg-pos-bg p-3 max-[980px]:p-2">
         {menuQuery.isError ? (
           <div className="flex flex-col items-center justify-center gap-3 px-5 py-10 text-center text-pos-muted" data-testid="menu-editor-error-state">
             <AlertTriangle size={32} color="#b45309" />
@@ -302,7 +379,7 @@ export function MenuEditorDrawer() {
           <p className="text-pos-muted p-4">Đang tải menu...</p>
         ) : (
           <>
-            <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(300px,360px)] gap-2.5 max-[980px]:min-w-[650px]">
+            <div className="grid h-full min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(300px,360px)] grid-rows-[minmax(0,1fr)] gap-2.5 max-[980px]:min-w-[650px]">
               <MenuCatalogPane
                 sortedCats={sortedCats}
                 selectedCategoryId={selectedCategoryId}
@@ -311,24 +388,33 @@ export function MenuEditorDrawer() {
                 catItems={catItems}
                 items={items}
                 groups={groups}
+                getMenuImageUrl={(assetKey) => ports.menuImages.getImageUrl(assetKey)}
                 setSelectedCategoryId={setSelectedCategoryId}
                 setSelectedItemId={setSelectedItemId}
                 addCategory={addCategory}
-                addItem={addItem}
                 patchItem={patchItem}
                 toggleDeleteItem={toggleDeleteItem}
+                controlsLocked={itemSwapMode}
+                itemSwapMode={itemSwapMode}
+                onSwapItem={swapItemOrder}
               />
 
               <MenuEditorDetailPane
                 selectedItem={selectedItem}
                 selectedCategory={selectedCategory}
+                selectedItemImageUrl={selectedItemImageUrl}
                 sortedCats={sortedCats}
                 itemGroups={itemGroups}
                 groupValues={groupValues}
-                advancedOpen={advancedOpen}
-                onToggleAdvanced={() => setAdvancedOpen((v) => !v)}
+                controlsLocked={itemSwapMode}
+                itemSwapMode={itemSwapMode}
+                onItemSwapModeChange={setItemSwapMode}
                 patchItem={patchItem}
+                onItemCategoryChange={changeItemCategory}
                 toggleDeleteItem={toggleDeleteItem}
+                onImageSelected={setItemImageFile}
+                onImageRemoved={removeItemImage}
+                addItem={addItem}
                 addGroup={addGroup}
                 patchGroup={patchGroup}
                 toggleDeleteGroup={toggleDeleteGroup}
