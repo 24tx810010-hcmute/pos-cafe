@@ -27,7 +27,8 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 Ý nghĩa:
 
 - Store Key gồm store number và secret để ghép máy vào store.
-- Tạo store mới sẽ seed dữ liệu mẫu hoặc blank admin tùy flow.
+- Tạo store mới mặc định blank (store/settings + 1 admin), `seed_status=seeded`; chỉ seed dữ liệu mẫu khi `CreateStoreInput.seedDemo=true` (checkbox lúc tạo) hoặc khi admin bấm khởi tạo demo trong Cài đặt. Địa chỉ từ form được lưu vào `store_settings.address`.
+- Seed demo upsert theo `id`/`seed_key` và clear `deleted_at`/`deleted_by_employee_id` trên các bảng editor (cashier dùng `is_active`) nên idempotent với `clear_demo_data`.
 - Employee role dùng cho app-layer permission trong phase này.
 - `store_settings.qr_info` là seam schema cho QR/bank sau này; drawer Payment Settings hiện là preview/local UI, chưa persist field này qua `settingsRepo`.
 

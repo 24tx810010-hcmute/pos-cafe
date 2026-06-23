@@ -2,8 +2,10 @@
 
 ## Store & Session
 
-- Tạo store mới với tên hiển thị, Store Key và Admin PIN.
-- Ghép store bằng Store Key.
+- Tạo store mới với tên hiển thị, địa chỉ (tùy chọn), Store Key và Admin PIN.
+- Mặc định store tạo ra là **trống** (chỉ store/settings + 1 admin). Màn tạo store có checkbox "Khởi tạo sẵn dữ liệu mẫu" (mặc định tắt); chỉ khi tick mới seed bộ demo gọn (vài category/món, 1 khu + vài bàn, 1 cashier demo).
+- Nếu seed demo lỗi, store vẫn vào được app; màn kết quả hiện cảnh báo + nút thử lại (cũng seed lại được trong Cài đặt).
+- Ghép store bằng Store Key (màn pairing không prefill key mẫu, chỉ dùng làm placeholder).
 - Lưu session store ở client adapter.
 - Nhập PIN nhân viên để mở app shell.
 - Khóa phiên nhân viên để quay lại passcode.
@@ -50,7 +52,7 @@
 - Xem danh sách order takeaway đang mở.
 - Mở chi tiết takeaway, tiếp tục chỉnh order hoặc chuyển sang thanh toán.
 - Tạo takeaway mới từ drawer.
-- Phần paid takeaway hiện có dữ liệu UI-side sample; không phải lịch sử paid takeaway thật đầy đủ.
+- Chỉ liệt kê đơn takeaway đang mở thật (đã bỏ dữ liệu paid takeaway hardcode); xem đơn đã thanh toán ở màn Lịch sử đơn.
 
 ## Order History
 
@@ -104,12 +106,14 @@
 
 - Sửa tên hiển thị, địa chỉ, footer hóa đơn, timezone.
 - Preview thông tin hóa đơn.
-- Clear dữ liệu mẫu theo seed bundle, chỉ admin dùng.
+- Khởi tạo dữ liệu mẫu (seed demo) ngay trong Cài đặt → Bảo trì dữ liệu, chỉ admin dùng; tiện cho demo nhanh hoặc dev/test trên store trống.
+- Clear/đặt lại dữ liệu mẫu theo seed bundle, chỉ admin dùng.
 - Clear demo bị block khi còn order mở để tránh mất dữ liệu đang bán.
+- Seed demo idempotent: chạy lại sau khi clear sẽ hồi sinh đúng các row mẫu đã xóa mềm (clear `deleted_at`), không tạo trùng.
 
 ## Optional/Future UI
 
-- Kitchen drawer hiện là UI-side ticket state, chưa phải kitchen workflow thật.
+- Kitchen drawer là seam UI-only, hiện hàng chờ rỗng (đã bỏ vé bếp hardcode); sẽ nối với đơn thật ở giai đoạn sau.
 - Payment settings/QR hiện là preview UI local, chưa persist qua `settingsRepo` và chưa phải QR payment processing thật.
 
 ## Shared UI Behavior

@@ -29,6 +29,7 @@ Folder này ghi nhật ký implement theo phase. Mục tiêu là track nhanh nh�
 - [phase-08-payment-cashier-redesign.md](phase-08-payment-cashier-redesign.md): Payment Drawer redesign cho thu ngân, responsive landscape và tùy chọn in hóa đơn.
 - [phase-09-menu-image-upload.md](phase-09-menu-image-upload.md): Menu Editor redesign và upload ảnh món qua Supabase Storage.
 - [phase-10-order-history-responsive.md](phase-10-order-history-responsive.md): Order History redesign 2 cột responsive và payment snapshot cho tiền khách đưa/tiền thừa.
+- [phase-11-blank-store-optional-seed.md](phase-11-blank-store-optional-seed.md): store trống mặc định, seed dữ liệu mẫu tùy chọn (checkbox lúc tạo + Settings) và dọn dữ liệu giả hardcode.
 
 ## Template Duy Trì
 
