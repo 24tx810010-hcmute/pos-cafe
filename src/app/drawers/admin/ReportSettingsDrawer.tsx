@@ -108,7 +108,17 @@ export function ReportSettingsDrawer() {
         <RechartsTooltip formatter={(v: number) => formatVnd(v)} cursor={{ fill: "rgba(15,118,110,0.06)" }} labelStyle={{ fontWeight: 700 }} />
         <Bar dataKey="revenue" radius={[4, 4, 0, 0]} onClick={(d: { label?: string }) => d?.label && pickHour(d.label)}>
           {dataset.hourly.map((h) => (
-            <Cell key={h.label} cursor="pointer" fill={selected?.type === "hour" && selected.key === h.label ? "#0b5d57" : "#0F766E"} />
+            <Cell
+              key={h.label}
+              cursor="pointer"
+              fill={
+                selected?.type === "hour" && selected.key === h.label
+                  ? "#0b5d57"
+                  : hasData && h.label === maxHour.label
+                    ? "#f59e0b"
+                    : "#0F766E"
+              }
+            />
           ))}
         </Bar>
       </BarChart>
@@ -121,6 +131,113 @@ export function ReportSettingsDrawer() {
       <Metric label="Số đơn đã thanh toán" value={`${dataset.paidOrders}`} />
       <Metric label="Trung bình đơn" value={formatVnd(dataset.avgTicket)} />
       <Metric label="Top món" value={dataset.topItemName} />
+    </div>
+  );
+
+  const rangeLabel =
+    range === "today" ? "hôm nay" : range === "7days" ? "7 ngày qua" : range === "month" ? "tháng này" : "khoảng đã chọn";
+  const sparkMax = Math.max(1, ...dataset.hourly.map((h) => h.revenue));
+  const topItem = dataset.topItems[0];
+  const sectionBadge = (key: ReportSection): string => {
+    switch (key) {
+      case "overview":
+        return `${dataset.paidOrders} đơn`;
+      case "hourly":
+        return `${dataset.hourly.length} mốc`;
+      case "top":
+        return `${dataset.topItems.length}`;
+      case "orders":
+        return `${dataset.orders.length}`;
+    }
+  };
+
+  // Cột trái (master): tóm tắt doanh thu + sparkline.
+  const revenueSummary = (
+    <div
+      className="relative overflow-hidden rounded-pos p-4 text-white"
+      style={{ background: "linear-gradient(135deg,#0f766e,#0b5d57 60%,#0a4f4a)" }}
+    >
+      <div
+        className="pointer-events-none absolute -right-8 -top-12 h-44 w-44 rounded-full"
+        style={{ background: "radial-gradient(circle,rgba(255,255,255,0.14),transparent 70%)" }}
+      />
+      <div className="relative z-10">
+        <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#bff0e7]">Doanh thu {rangeLabel}</div>
+        <div className="mt-1 text-[28px] font-extrabold leading-none tracking-[-0.02em] tabular-nums">{formatVnd(dataset.revenue)}</div>
+        <div className="mt-1.5 text-xs text-[#d7f5ef]">{dataset.paidOrders} đơn · TB {formatVnd(dataset.avgTicket)}</div>
+        {dataset.hourly.length >= 2 && (
+          <div className="mt-3 flex h-9 items-end gap-1">
+            {dataset.hourly.map((h, i) => (
+              <span
+                key={`${h.label}-${i}`}
+                className={clsx("flex-1 rounded-t", hasData && h.label === maxHour.label ? "bg-white" : "bg-white/45")}
+                style={{ height: `${Math.max(8, (h.revenue / sparkMax) * 100)}%` }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Cột trái (master): điều hướng mục báo cáo + tóm tắt nhanh.
+  const reportNav = (
+    <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] rounded-pos border border-pos-line bg-pos-surface p-2">
+      <div className="px-2 pb-1 pt-2 text-[10.5px] font-bold uppercase tracking-[0.08em] text-pos-muted">Mục báo cáo</div>
+      <div className="grid content-start gap-1">
+        {sections.map((s) => (
+          <button
+            key={s.key}
+            className={clsx(
+              "flex cursor-pointer items-center justify-between gap-2 rounded-[9px] px-3 py-2.5 text-left text-[13.5px] font-semibold",
+              section === s.key ? "bg-pos-primarySoft font-bold text-pos-primary" : "text-pos-muted hover:bg-pos-surface2",
+            )}
+            onClick={() => {
+              setSection(s.key);
+              setSelected(null);
+            }}
+          >
+            <span>{s.label}</span>
+            <span
+              className={clsx(
+                "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold",
+                section === s.key ? "bg-white text-pos-primary" : "bg-pos-bg text-pos-muted",
+              )}
+            >
+              {sectionBadge(s.key)}
+            </span>
+          </button>
+        ))}
+      </div>
+      <div className="mt-2 grid gap-2 border-t border-pos-line px-2 pt-2.5">
+        <div className="flex justify-between text-xs"><span className="text-pos-muted">Giờ cao điểm</span><strong className="font-bold text-pos-warning">{hasData ? maxHour.label : "—"}</strong></div>
+        <div className="flex justify-between text-xs"><span className="text-pos-muted">Thanh toán phổ biến</span><strong className="font-bold">{topMethod}</strong></div>
+        <div className="flex justify-between text-xs"><span className="text-pos-muted">Đơn đã huỷ</span><strong className="font-bold">{dataset.voidCount}</strong></div>
+      </div>
+    </div>
+  );
+
+  // Cột phải (detail) — tab Tổng quan: 3 chỉ số chính.
+  const kpiTiles = (
+    <div className="grid grid-cols-3 gap-2.5 max-[760px]:grid-cols-1">
+      <div className="rounded-pos border border-pos-line bg-pos-surface p-4">
+        <div className="text-[12.5px] font-bold text-pos-muted">Số đơn đã thanh toán</div>
+        <div className="mt-1.5 text-2xl font-extrabold tabular-nums">{dataset.paidOrders}</div>
+        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-pos-muted">
+          <span className="rounded-full bg-pos-primarySoft px-2 py-0.5 text-[11px] font-extrabold text-pos-primary">{dataset.voidCount} huỷ</span>
+          đã loại khỏi doanh thu
+        </div>
+      </div>
+      <div className="rounded-pos border border-pos-line bg-pos-surface p-4">
+        <div className="text-[12.5px] font-bold text-pos-muted">Trung bình mỗi đơn</div>
+        <div className="mt-1.5 text-2xl font-extrabold tabular-nums">{formatVnd(dataset.avgTicket)}</div>
+        <div className="mt-1.5 text-xs text-pos-muted">trên {dataset.paidOrders} đơn</div>
+      </div>
+      <div className="rounded-pos border border-pos-line bg-pos-surface p-4">
+        <div className="text-[12.5px] font-bold text-pos-muted">Món bán chạy</div>
+        <div className="mt-1.5 overflow-hidden text-ellipsis whitespace-nowrap text-xl font-extrabold">{dataset.topItemName}</div>
+        <div className="mt-1.5 text-xs text-pos-muted">{topItem ? `${topItem.qty} ngày top · ${formatVnd(topItem.revenue)}` : "—"}</div>
+      </div>
     </div>
   );
 
@@ -197,23 +314,11 @@ export function ReportSettingsDrawer() {
         </div>
       </header>
 
-      <div className="min-h-0 overflow-auto bg-pos-bg p-3 max-[980px]:p-2 grid grid-rows-[auto_minmax(0,1fr)] gap-2 overflow-hidden">
-        <div className="flex flex-wrap items-center gap-2 overflow-x-auto overflow-y-hidden px-0.5 pb-0.5 pt-px [scrollbar-width:thin]">
-          {sections.map((s) => (
-            <button
-              key={s.key}
-              className={clsx(
-                "inline-flex min-h-9 flex-[1_0_112px] cursor-pointer items-center justify-center rounded-[7px] border px-2.5 py-2 text-xs font-extrabold max-sm:basis-[104px]",
-                section === s.key
-                  ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
-                  : "border-pos-line bg-pos-surface text-pos-muted",
-              )}
-              onClick={() => { setSection(s.key); setSelected(null); }}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+      <div className="min-h-0 overflow-hidden bg-pos-bg p-3 max-[980px]:p-2 grid grid-cols-[260px_minmax(0,1fr)] gap-3 max-[980px]:grid-cols-1 max-[980px]:overflow-auto">
+        <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3 max-[980px]:grid-rows-none">
+          {revenueSummary}
+          {reportNav}
+        </aside>
 
         <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface">
           <div className="flex min-h-11 items-center justify-between gap-2.5 border-b border-pos-line bg-[#fbfcfd] px-3 py-2.5 font-black max-[980px]:min-h-9 max-[980px]:px-2 max-[980px]:py-[7px] max-[980px]:text-xs">
@@ -297,7 +402,7 @@ export function ReportSettingsDrawer() {
                 </>
               ) : section === "overview" ? (
                 <>
-                  {metricsRow}
+                  {kpiTiles}
                   <div className="grid gap-2 rounded-pos border border-pos-line bg-white p-3">
                     <div className="text-[13px] font-extrabold">Doanh thu theo {range === "today" ? "giờ" : range === "month" ? "tuần" : "ngày"}</div>
                     {renderChart(210)}
@@ -322,12 +427,6 @@ export function ReportSettingsDrawer() {
                         </button>
                       ))}
                     </div>
-                  </div>
-                  <div className="grid gap-2 rounded-pos border border-pos-line bg-white p-3">
-                    <div className="text-[13px] font-extrabold">Tổng quan nhanh</div>
-                    <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Giờ cao điểm</span><strong>{hasData ? maxHour.label : "—"}</strong></div>
-                    <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Thanh toán phổ biến</span><strong>{topMethod}</strong></div>
-                    <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Đơn đã huỷ</span><strong>{dataset.voidCount}</strong></div>
                   </div>
                 </>
               ) : section === "hourly" ? (
