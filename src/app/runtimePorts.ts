@@ -1,4 +1,4 @@
-import { createMockPorts } from "@/adapters/mock";
+import { createMockPorts, createSeededMockState } from "@/adapters/mock";
 import { createSupabaseBrowserClient, createSupabasePorts } from "@/adapters/supabase";
 import type { AppPorts } from "@/ports";
 
@@ -32,7 +32,7 @@ export const createAppPorts = (env: RuntimePortEnv = {}): AppPorts => {
     );
   }
 
-  return createMockPorts();
+  return createMockPorts(createSeededMockState());
 };
 
 let viteEnvPorts: AppPorts | null = null;

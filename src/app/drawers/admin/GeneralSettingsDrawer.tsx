@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { AlertTriangle, CheckCircle2, Save, ShieldAlert, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, PackagePlus, Save, ShieldAlert, Trash2 } from "lucide-react";
 import { Button, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -9,6 +9,7 @@ import {
 } from "@/features/pos";
 import {
   useClearDemoDataMutation,
+  useSeedDemoDataMutation,
   useStoreSettingsQuery,
   useUpdateSettingsMutation,
 } from "@/features/admin";
@@ -30,6 +31,14 @@ export function GeneralSettingsDrawer() {
   const allowed = canAccessModule(currentEmployee, "settings");
   const settingsQuery = useStoreSettingsQuery();
   const updateSettingsMutation = useUpdateSettingsMutation(currentEmployee);
+  const seedDemoMutation = useSeedDemoDataMutation(currentEmployee);
+
+  const handleSeedDemo = () => {
+    seedDemoMutation.mutate(undefined, {
+      onSuccess: () => toast.success("Đã khởi tạo dữ liệu mẫu"),
+      onError: (error) => toast.error(toToastError(error)),
+    });
+  };
 
   const [seeded, setSeeded] = useState(false);
   const [base, setBase] = useState<SettingsForm | null>(null);
@@ -203,19 +212,33 @@ export function GeneralSettingsDrawer() {
                 ) : (
                   <div className="grid justify-items-start gap-2.5 rounded-pos border border-[#fde68a] bg-[#fffbeb] p-3.5 [&_p]:m-0 [&_strong]:text-sm">
                     <strong>Dữ liệu mẫu</strong>
-                    <p className="text-pos-muted">Chỉ đặt lại dữ liệu mẫu có sẵn, không xoá dữ liệu người dùng tự tạo.</p>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      startIcon={<Trash2 size={15} />}
-                      data-testid="open-clear-demo"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setClearOpen(true);
-                      }}
-                    >
-                      Đặt lại dữ liệu mẫu
-                    </Button>
+                    <p className="text-pos-muted">Khởi tạo bộ dữ liệu mẫu (menu, sơ đồ bàn, thu ngân demo) để thử nhanh, hoặc đặt lại/xoá phần dữ liệu mẫu. Không ảnh hưởng dữ liệu bạn tự tạo.</p>
+                    <div className="flex flex-wrap gap-2.5">
+                      <Button
+                        variant="outlined"
+                        startIcon={<PackagePlus size={15} />}
+                        data-testid="seed-demo-button"
+                        disabled={seedDemoMutation.isPending}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleSeedDemo();
+                        }}
+                      >
+                        {seedDemoMutation.isPending ? "Đang khởi tạo..." : "Khởi tạo dữ liệu mẫu"}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<Trash2 size={15} />}
+                        data-testid="open-clear-demo"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setClearOpen(true);
+                        }}
+                      >
+                        Đặt lại dữ liệu mẫu
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>

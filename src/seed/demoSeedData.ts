@@ -1,81 +1,55 @@
 import type { FloorPlan, MenuCatalog } from "@/domain";
 
+// Bộ dữ liệu mẫu (tuỳ chọn) khi tạo store có tick "Khởi tạo dữ liệu mẫu",
+// hoặc khi bấm "Khởi tạo dữ liệu mẫu" trong Cài đặt. Cố tình giữ gọn:
+// vài category/món, 1 khu vực + vài bàn, 1 nhóm tuỳ chọn đơn giản.
 export const demoMenuCatalog: MenuCatalog = {
   categories: [
     { id: "cat-coffee", name: "Cà phê", sortOrder: 1 },
     { id: "cat-tea", name: "Trà & trà sữa", sortOrder: 2 },
-    { id: "cat-blended", name: "Đá xay", sortOrder: 3 },
-    { id: "cat-snack", name: "Bánh/snack", sortOrder: 4 },
   ],
   menuItems: [
     { id: "mi-ca-phe-sua", categoryId: "cat-coffee", name: "Cà phê sữa", price: 29000, imageAssetKey: null, sortOrder: 1, isAvailable: true },
     { id: "mi-bac-xiu", categoryId: "cat-coffee", name: "Bạc xỉu", price: 32000, imageAssetKey: null, sortOrder: 2, isAvailable: true },
-    { id: "mi-americano", categoryId: "cat-coffee", name: "Americano", price: 35000, imageAssetKey: null, sortOrder: 3, isAvailable: true },
-    { id: "mi-latte", categoryId: "cat-coffee", name: "Latte", price: 45000, imageAssetKey: null, sortOrder: 4, isAvailable: true },
-    { id: "mi-cold-brew", categoryId: "cat-coffee", name: "Cold brew", price: 49000, imageAssetKey: null, sortOrder: 5, isAvailable: true },
-    { id: "mi-ca-phe-muoi", categoryId: "cat-coffee", name: "Cà phê muối", price: 39000, imageAssetKey: null, sortOrder: 6, isAvailable: true },
-    { id: "mi-tra-dao", categoryId: "cat-tea", name: "Trà đào", price: 42000, imageAssetKey: null, sortOrder: 7, isAvailable: true },
-    { id: "mi-tra-vai", categoryId: "cat-tea", name: "Trà vải", price: 42000, imageAssetKey: null, sortOrder: 8, isAvailable: true },
-    { id: "mi-tra-sua-truyen-thong", categoryId: "cat-tea", name: "Trà sữa truyền thống", price: 39000, imageAssetKey: null, sortOrder: 9, isAvailable: true },
-    { id: "mi-tra-chanh", categoryId: "cat-tea", name: "Trà chanh", price: 29000, imageAssetKey: null, sortOrder: 10, isAvailable: true },
-    { id: "mi-matcha-latte", categoryId: "cat-tea", name: "Matcha latte", price: 49000, imageAssetKey: null, sortOrder: 11, isAvailable: true },
-    { id: "mi-sua-tuoi-tran-chau", categoryId: "cat-tea", name: "Sữa tươi trân châu", price: 45000, imageAssetKey: null, sortOrder: 12, isAvailable: true },
-    { id: "mi-cookie-da-xay", categoryId: "cat-blended", name: "Cookie đá xay", price: 55000, imageAssetKey: null, sortOrder: 13, isAvailable: true },
-    { id: "mi-matcha-da-xay", categoryId: "cat-blended", name: "Matcha đá xay", price: 59000, imageAssetKey: null, sortOrder: 14, isAvailable: true },
-    { id: "mi-cacao-da-xay", categoryId: "cat-blended", name: "Ca cao đá xay", price: 52000, imageAssetKey: null, sortOrder: 15, isAvailable: true },
-    { id: "mi-sinh-to-bo", categoryId: "cat-blended", name: "Sinh tố bơ", price: 49000, imageAssetKey: null, sortOrder: 16, isAvailable: true },
-    { id: "mi-nuoc-ep-cam", categoryId: "cat-blended", name: "Nước ép cam", price: 45000, imageAssetKey: null, sortOrder: 17, isAvailable: true },
-    { id: "mi-nuoc-ep-dua-hau", categoryId: "cat-blended", name: "Nước ép dưa hấu", price: 39000, imageAssetKey: null, sortOrder: 18, isAvailable: true },
-    { id: "mi-croissant", categoryId: "cat-snack", name: "Croissant", price: 35000, imageAssetKey: null, sortOrder: 19, isAvailable: true },
-    { id: "mi-banh-mi-que", categoryId: "cat-snack", name: "Bánh mì que", price: 25000, imageAssetKey: null, sortOrder: 20, isAvailable: true },
-    { id: "mi-tiramisu", categoryId: "cat-snack", name: "Tiramisu", price: 45000, imageAssetKey: null, sortOrder: 21, isAvailable: true },
-    { id: "mi-khoai-tay-chien", categoryId: "cat-snack", name: "Khoai tây chiên", price: 39000, imageAssetKey: null, sortOrder: 22, isAvailable: true },
+    { id: "mi-latte", categoryId: "cat-coffee", name: "Latte", price: 45000, imageAssetKey: null, sortOrder: 3, isAvailable: true },
+    { id: "mi-tra-dao", categoryId: "cat-tea", name: "Trà đào", price: 42000, imageAssetKey: null, sortOrder: 4, isAvailable: true },
+    { id: "mi-tra-sua-truyen-thong", categoryId: "cat-tea", name: "Trà sữa truyền thống", price: 39000, imageAssetKey: null, sortOrder: 5, isAvailable: true },
+    { id: "mi-tra-chanh", categoryId: "cat-tea", name: "Trà chanh", price: 29000, imageAssetKey: null, sortOrder: 6, isAvailable: true },
   ],
   optionGroups: [
     { id: "og-coffee-size", menuItemId: "mi-ca-phe-sua", name: "Size", selectType: "single", isRequired: false, minSelect: 0, maxSelect: 1, sortOrder: 1 },
-    { id: "og-coffee-ice", menuItemId: "mi-ca-phe-sua", name: "Đá", selectType: "single", isRequired: false, minSelect: 0, maxSelect: 1, sortOrder: 2 },
-    { id: "og-bac-xiu-sugar", menuItemId: "mi-bac-xiu", name: "Đường", selectType: "single", isRequired: false, minSelect: 0, maxSelect: 1, sortOrder: 1 },
-    { id: "og-tea-topping", menuItemId: "mi-tra-sua-truyen-thong", name: "Topping", selectType: "multi", isRequired: false, minSelect: 0, maxSelect: 3, sortOrder: 1 },
-    { id: "og-latte-shot", menuItemId: "mi-latte", name: "Thêm shot", selectType: "multi", isRequired: false, minSelect: 0, maxSelect: 1, sortOrder: 1 },
   ],
   optionValues: [
     { id: "ov-size-m", optionGroupId: "og-coffee-size", name: "Size M", priceDelta: 0, sortOrder: 1 },
     { id: "ov-size-l", optionGroupId: "og-coffee-size", name: "Size L", priceDelta: 7000, sortOrder: 2 },
-    { id: "ov-it-da", optionGroupId: "og-coffee-ice", name: "Ít đá", priceDelta: 0, sortOrder: 1 },
-    { id: "ov-khong-da", optionGroupId: "og-coffee-ice", name: "Không đá", priceDelta: 0, sortOrder: 2 },
-    { id: "ov-duong-50", optionGroupId: "og-bac-xiu-sugar", name: "50% đường", priceDelta: 0, sortOrder: 1 },
-    { id: "ov-duong-100", optionGroupId: "og-bac-xiu-sugar", name: "100% đường", priceDelta: 0, sortOrder: 2 },
-    { id: "ov-tran-chau", optionGroupId: "og-tea-topping", name: "Trân châu", priceDelta: 7000, sortOrder: 1 },
-    { id: "ov-kem-pho-mai", optionGroupId: "og-tea-topping", name: "Kem phô mai", priceDelta: 10000, sortOrder: 2 },
-    { id: "ov-them-shot", optionGroupId: "og-latte-shot", name: "Thêm shot", priceDelta: 10000, sortOrder: 1 },
   ],
 };
 
 export const demoFloorPlan: FloorPlan = {
   areas: [
     { id: "area-ground", name: "Tầng trệt", sortOrder: 1 },
-    { id: "area-first", name: "Lầu 1", sortOrder: 2 },
   ],
   tables: [
     { id: "tbl-b01", areaId: "area-ground", name: "B01", posX: 260, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 1, status: "empty" },
-    { id: "tbl-b02", areaId: "area-ground", name: "B02", posX: 500, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 2, status: "occupied" },
-    { id: "tbl-b03", areaId: "area-ground", name: "B03", posX: 750, posY: 190, width: 126, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 3, status: "occupied" },
+    { id: "tbl-b02", areaId: "area-ground", name: "B02", posX: 500, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 2, status: "empty" },
+    { id: "tbl-b03", areaId: "area-ground", name: "B03", posX: 750, posY: 190, width: 126, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 3, status: "empty" },
     { id: "tbl-b04", areaId: "area-ground", name: "B04", posX: 1040, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 4, status: "empty" },
-    { id: "tbl-b05", areaId: "area-ground", name: "B05", posX: 300, posY: 520, width: 126, height: 84, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 5, status: "occupied" },
-    { id: "tbl-b06", areaId: "area-ground", name: "B06", posX: 600, posY: 520, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 6, status: "empty" },
-    { id: "tbl-b07", areaId: "area-ground", name: "B07", posX: 880, posY: 520, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 7, status: "empty" },
-    { id: "tbl-b08", areaId: "area-ground", name: "B08", posX: 1180, posY: 520, width: 126, height: 84, shape: "rectangle", rotation: 0, seats: 6, sortOrder: 8, status: "occupied" },
-    { id: "tbl-l01", areaId: "area-first", name: "L01", posX: 260, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 1, status: "empty" },
-    { id: "tbl-l02", areaId: "area-first", name: "L02", posX: 500, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 2, status: "empty" },
-    { id: "tbl-l03", areaId: "area-first", name: "L03", posX: 750, posY: 190, width: 126, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 3, status: "empty" },
-    { id: "tbl-l04", areaId: "area-first", name: "L04", posX: 1040, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 4, status: "empty" },
-    { id: "tbl-l05", areaId: "area-first", name: "L05", posX: 460, posY: 500, width: 126, height: 84, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 5, status: "empty" },
-    { id: "tbl-l06", areaId: "area-first", name: "L06", posX: 760, posY: 500, width: 126, height: 84, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 6, status: "empty" },
   ],
-  decorItems: [
-    { id: "decor-counter", areaId: "area-ground", kind: "counter", label: "Quầy", assetKey: "counter_01", posX: 48, posY: 48, width: 210, height: 72, rotation: 0, zIndex: 1, isLocked: true },
-    { id: "decor-door", areaId: "area-ground", kind: "door", label: "Cửa", assetKey: "door_01", posX: 1480, posY: 88, width: 52, height: 190, rotation: 0, zIndex: 1, isLocked: true },
-    { id: "decor-plant", areaId: "area-ground", kind: "plant", label: "Cây", assetKey: "plant_01", posX: 300, posY: 760, width: 120, height: 52, rotation: 0, zIndex: 1, isLocked: false },
-    { id: "decor-wall", areaId: "area-first", kind: "wall", label: "Tường", assetKey: "wall_01", posX: 90, posY: 80, width: 310, height: 34, rotation: 0, zIndex: 1, isLocked: true },
-  ],
+  decorItems: [],
+};
+
+// Nhân viên thu ngân mẫu (PIN demo) đi kèm bộ dữ liệu mẫu.
+export const demoCashier = { id: "demo-emp-cashier", name: "Thu ngân demo", role: "cashier" as const, isActive: true };
+export const demoCashierPin = "111111";
+
+// Tập id của dữ liệu mẫu — dùng để xoá đúng phần demo, giữ lại data người dùng tự tạo.
+export const demoSeedIds = {
+  categories: demoMenuCatalog.categories.map((c) => c.id),
+  menuItems: demoMenuCatalog.menuItems.map((i) => i.id),
+  optionGroups: demoMenuCatalog.optionGroups.map((g) => g.id),
+  optionValues: demoMenuCatalog.optionValues.map((v) => v.id),
+  areas: demoFloorPlan.areas.map((a) => a.id),
+  tables: demoFloorPlan.tables.map((t) => t.id),
+  decorItems: demoFloorPlan.decorItems.map((d) => d.id),
+  employees: [demoCashier.id],
 };

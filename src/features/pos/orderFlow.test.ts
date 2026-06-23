@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createMockPorts } from "@/adapters/mock";
+import { createMockPorts, createSeededMockState } from "@/adapters/mock";
 import { mockMenuCatalog } from "@/adapters/mock/mockData";
 import type { OrderDetail, SubmitOrderDraftItem } from "@/domain";
 import {
@@ -15,7 +15,7 @@ import {
 } from "./orderFlow";
 
 const getMockOrder = async (): Promise<OrderDetail> => {
-  const ports = createMockPorts();
+  const ports = createMockPorts(createSeededMockState());
   return ports.order.getOrder("ord-b02");
 };
 
@@ -98,7 +98,7 @@ describe("orderFlow", () => {
   });
 
   it("submits order changes through the order port and prints the returned ticket", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const printSpy = vi.spyOn(ports.print, "renderOrderTicket");
 
     const result = await submitOrderAndPrint(ports, {
@@ -114,7 +114,7 @@ describe("orderFlow", () => {
   });
 
   it("blocks insufficient cash before calling payment port", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const order = await ports.order.getOrder("ord-b02");
     const paymentSpy = vi.spyOn(ports.payment, "payOrder");
 
@@ -130,7 +130,7 @@ describe("orderFlow", () => {
   });
 
   it("pays through the payment port and prints the returned receipt", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const order = await ports.order.getOrder("ord-b02");
     const printSpy = vi.spyOn(ports.print, "renderReceipt");
 
@@ -147,7 +147,7 @@ describe("orderFlow", () => {
   });
 
   it("can complete payment without printing the receipt", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const order = await ports.order.getOrder("ord-b02");
     const printSpy = vi.spyOn(ports.print, "renderReceipt");
 

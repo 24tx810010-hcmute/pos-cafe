@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createMockPorts } from "@/adapters/mock";
+import { createMockPorts, createSeededMockState } from "@/adapters/mock";
 import type { Employee } from "@/domain";
 import {
   clearDemoDataForAdmin,
@@ -105,7 +105,7 @@ describe("adminFlow", () => {
   });
 
   it("keeps clear-demo blocked errors from settings port visible to UI", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
 
     await expect(clearDemoDataForAdmin(ports, { actor: admin })).rejects.toMatchObject({
       code: "OPEN_ORDERS_BLOCK_CLEAR_DEMO",

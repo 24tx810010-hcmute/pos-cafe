@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMockPorts, createMockState } from "@/adapters/mock";
+import { createMockPorts, createSeededMockState } from "@/adapters/mock";
 import type { MockState } from "@/adapters/mock";
 import type { Employee } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
@@ -25,7 +25,7 @@ const resetAppStoreForMenuEditor = () => {
 };
 
 const renderMenuEditor = (configureState?: (state: MockState) => void) => {
-  const state = createMockState();
+  const state = createSeededMockState();
   state.session = { storeId: "store-demo-001", storeNo: 1 };
   configureState?.(state);
   const ports = createMockPorts(state);

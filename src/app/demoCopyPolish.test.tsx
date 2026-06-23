@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
-import { createMockPorts, createMockState } from "@/adapters/mock";
+import { createMockPorts, createSeededMockState } from "@/adapters/mock";
 import type { Employee } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
@@ -58,7 +58,7 @@ const renderApp = (
   override: Partial<ReturnType<typeof useAppStore.getState>> = {},
   options: { paired?: boolean } = {},
 ) => {
-  const state = createMockState();
+  const state = createSeededMockState();
   if (options.paired ?? true) {
     state.session = { storeId: "store-demo-001", storeNo: 1 };
   }

@@ -15,12 +15,25 @@ const hashPin = async (client: SupabaseAnyClient, pin: string): Promise<string> 
   return requireData<string>(data as string | null, error);
 };
 
-const upsertRows = async (client: SupabaseAnyClient, table: string, rows: Row[]): Promise<void> => {
+// `revive` chỉ dùng cho các bảng có cột tombstone (deleted_at/deleted_by_employee_id):
+// categories, menu_items, option_groups, option_values, floor_areas, tables,
+// floor_decor_items. Bảng employees KHÔNG có 2 cột này (dùng is_active) nên không revive.
+const upsertRows = async (
+  client: SupabaseAnyClient,
+  table: string,
+  rows: Row[],
+  options?: { revive?: boolean },
+): Promise<void> => {
   if (rows.length === 0) {
     return;
   }
 
-  const { error } = await client.from(table).upsert(rows, { onConflict: "id" });
+  // Hồi sinh các row đã bị clear_demo_data tombstone: clear deleted_at để re-seed
+  // sau khi clear hiển thị lại dữ liệu mẫu (idempotent).
+  const payload = options?.revive
+    ? rows.map((row) => ({ deleted_at: null, deleted_by_employee_id: null, ...row }))
+    : rows;
+  const { error } = await client.from(table).upsert(payload, { onConflict: "id" });
   throwIfError(error);
 };
 
@@ -164,11 +177,12 @@ export const seedDemoData = async (client: SupabaseAnyClient, storeId: string): 
         sort_order: category.sortOrder,
         seed_key: seedKey("category", category.id),
       })),
+      { revive: true },
     );
 
-    await upsertRows(client, "menu_items", menuItemRows(storeId, demoMenuCatalog.menuItems, itemIds, categoryIds));
-    await upsertRows(client, "option_groups", optionGroupRows(storeId, demoMenuCatalog.optionGroups, groupIds, itemIds));
-    await upsertRows(client, "option_values", optionValueRows(storeId, demoMenuCatalog.optionValues, valueIds, groupIds));
+    await upsertRows(client, "menu_items", menuItemRows(storeId, demoMenuCatalog.menuItems, itemIds, categoryIds), { revive: true });
+    await upsertRows(client, "option_groups", optionGroupRows(storeId, demoMenuCatalog.optionGroups, groupIds, itemIds), { revive: true });
+    await upsertRows(client, "option_values", optionValueRows(storeId, demoMenuCatalog.optionValues, valueIds, groupIds), { revive: true });
     await upsertRows(
       client,
       "floor_areas",
@@ -179,9 +193,10 @@ export const seedDemoData = async (client: SupabaseAnyClient, storeId: string): 
         sort_order: area.sortOrder,
         seed_key: seedKey("area", area.id),
       })),
+      { revive: true },
     );
-    await upsertRows(client, "tables", tableRows(storeId, demoFloorPlan.tables, tableIds, areaIds));
-    await upsertRows(client, "floor_decor_items", decorRows(storeId, demoFloorPlan.decorItems, decorIds, areaIds));
+    await upsertRows(client, "tables", tableRows(storeId, demoFloorPlan.tables, tableIds, areaIds), { revive: true });
+    await upsertRows(client, "floor_decor_items", decorRows(storeId, demoFloorPlan.decorItems, decorIds, areaIds), { revive: true });
 
     const { error } = await client.from("stores").update({ seed_status: "seeded" }).eq("id", storeId);
     throwIfError(error);

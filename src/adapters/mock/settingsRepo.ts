@@ -1,6 +1,7 @@
 import type { ISettingsRepo } from "@/ports";
 import type { StoreSettings, StoreSettingsUpdate } from "@/domain";
 import { AppError } from "@/core/appError";
+import { removeDemoSeed } from "./demoSeedHelpers";
 import { clone, type MockState } from "./mockState";
 
 export class MockSettingsRepo implements ISettingsRepo {
@@ -19,5 +20,6 @@ export class MockSettingsRepo implements ISettingsRepo {
     if (this.state.orders.some((order) => order.status === "open")) {
       throw new AppError("OPEN_ORDERS_BLOCK_CLEAR_DEMO", "Còn đơn đang mở, không thể xoá demo data.");
     }
+    removeDemoSeed(this.state);
   }
 }

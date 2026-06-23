@@ -1,5 +1,17 @@
 import type { Employee, FloorPlan, MenuCatalog, OrderDetail, PrintReceipt, PrintTicket, StoreSession, StoreSettings } from "@/domain";
-import { mockEmployees, mockFloorPlan, mockMenuCatalog, mockOrders, mockPins, mockSettings } from "./mockData";
+import {
+  blankSettings,
+  emptyFloorPlan,
+  emptyMenuCatalog,
+  mockAdminEmployee,
+  mockAdminPin,
+  mockEmployees,
+  mockFloorPlan,
+  mockMenuCatalog,
+  mockOrders,
+  mockPins,
+  mockSettings,
+} from "./mockData";
 
 export const clone = <T>(value: T): T => structuredClone(value);
 
@@ -36,7 +48,23 @@ export type MockState = {
   lastReceipt: PrintReceipt | null;
 };
 
+// Store trống mặc định: chỉ store/settings + 1 admin, không menu/floor/order.
+// Khớp hành vi sản phẩm: tạo store không tick "khởi tạo dữ liệu mẫu".
 export const createMockState = (): MockState => ({
+  session: null,
+  employees: [clone(mockAdminEmployee)],
+  pins: { [mockAdminEmployee.id]: mockAdminPin },
+  menu: clone(emptyMenuCatalog),
+  floorPlan: clone(emptyFloorPlan),
+  orders: [],
+  settings: clone(blankSettings),
+  nextOrderNo: 1,
+  lastTicket: null,
+  lastReceipt: null,
+});
+
+// State đầy đủ (menu/floor/orders) cho test/smoke và demo runtime.
+export const createSeededMockState = (): MockState => ({
   session: null,
   employees: clone(mockEmployees),
   pins: clone(mockPins),

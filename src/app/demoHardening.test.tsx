@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMockPorts, createMockState } from "@/adapters/mock";
+import { createMockPorts, createSeededMockState } from "@/adapters/mock";
 import { AppError } from "@/core/appError";
 import type { Employee, OrderSummary } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
@@ -27,9 +27,9 @@ const resetAppStore = (override: Partial<ReturnType<typeof useAppStore.getState>
 
 const renderAppWithPorts = (
   override: Partial<ReturnType<typeof useAppStore.getState>> = {},
-  configure?: (ports: ReturnType<typeof createMockPorts>, state: ReturnType<typeof createMockState>) => void,
+  configure?: (ports: ReturnType<typeof createMockPorts>, state: ReturnType<typeof createSeededMockState>) => void,
 ) => {
-  const state = createMockState();
+  const state = createSeededMockState();
   state.session = { storeId: "store-demo-001", storeNo: 1 };
   const ports = createMockPorts(state);
   configure?.(ports, state);

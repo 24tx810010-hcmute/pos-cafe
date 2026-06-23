@@ -48,6 +48,10 @@ export type ClearDemoDataForAdminInput = {
   actor: AdminActor;
 };
 
+export type SeedDemoDataForAdminInput = {
+  actor: AdminActor;
+};
+
 export const requireAdminActor = (actor: AdminActor): Pick<Employee, "id" | "role"> => {
   if (!actor || actor.role !== "admin") {
     throw new AppError("FORBIDDEN", "Chỉ quản lý mới được thực hiện thao tác này.");
@@ -148,4 +152,18 @@ export const clearDemoDataForAdmin = async (
 ): Promise<void> => {
   const actor = requireAdminActor(input.actor);
   await ports.settings.clearDemoData(actor.id);
+};
+
+export const seedDemoDataForAdmin = async (
+  ports: AppPorts,
+  input: SeedDemoDataForAdminInput,
+): Promise<void> => {
+  requireAdminActor(input.actor);
+  const session = await ports.auth.getStoreSession();
+
+  if (!session) {
+    throw new AppError("AUTH_REQUIRED", "Phiên cửa hàng không hợp lệ.");
+  }
+
+  await ports.seed.seedDemo(session.storeId);
 };

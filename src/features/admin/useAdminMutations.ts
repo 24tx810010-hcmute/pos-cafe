@@ -6,6 +6,7 @@ import {
   resetPinForAdmin,
   saveFloorPlanForAdmin,
   saveMenuForAdmin,
+  seedDemoDataForAdmin,
   updateEmployeeForAdmin,
   updateSettingsForAdmin,
   type AdminActor,
@@ -108,6 +109,18 @@ export const useClearDemoDataMutation = (actor: AdminActor) => {
 
   return useMutation({
     mutationFn: () => clearDemoDataForAdmin(ports, { actor }),
+    onSuccess: async () => {
+      await invalidateAfterClearDemoData(queryClient);
+    },
+  });
+};
+
+export const useSeedDemoDataMutation = (actor: AdminActor) => {
+  const ports = usePorts();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => seedDemoDataForAdmin(ports, { actor }),
     onSuccess: async () => {
       await invalidateAfterClearDemoData(queryClient);
     },

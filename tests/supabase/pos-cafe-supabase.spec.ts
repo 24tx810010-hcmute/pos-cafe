@@ -9,6 +9,8 @@ async function createStoreThroughUi(page: Page) {
   await page.getByTestId("go-create-store").click();
   await page.getByTestId("create-store-screen").waitFor();
   await page.getByTestId("store-name-input").fill(`POS Cafe E2E ${Date.now()}`);
+  // E2E cần menu + sơ đồ bàn mẫu để tạo đơn → bật khởi tạo dữ liệu mẫu.
+  await page.getByTestId("seed-demo-checkbox").check();
   await page.getByTestId("create-store-button").click();
 
   await expect(page.getByTestId("create-store-result")).toBeVisible({ timeout: 60_000 });

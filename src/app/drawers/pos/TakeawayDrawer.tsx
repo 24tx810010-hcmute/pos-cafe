@@ -11,12 +11,6 @@ import { useAppStore } from "../../useAppStore";
 
 type TakeawayFilter = "open" | "paid" | "today";
 
-const MOCK_PAID_TAKEAWAY = [
-  { id: "tw-paid-1", orderNo: 88, createdAt: "08:30", itemCount: 2, total: 75000, status: "paid" as const, note: null as string | null, employeeName: "Ngân" },
-  { id: "tw-paid-2", orderNo: 91, createdAt: "09:15", itemCount: 3, total: 120000, status: "paid" as const, note: "Ít đường" as string | null, employeeName: "Minh" },
-  { id: "tw-paid-3", orderNo: 94, createdAt: "10:02", itemCount: 1, total: 45000, status: "paid" as const, note: null as string | null, employeeName: "Admin" },
-];
-
 export function TakeawayDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const openOrder = useAppStore((state) => state.openOrder);
@@ -34,14 +28,9 @@ export function TakeawayDrawer() {
     { key: "today", label: "Hôm nay" },
   ];
 
+  // Lịch sử đơn đã thanh toán xem ở Lịch sử đơn; ở đây chỉ liệt kê đơn đang mở.
   const displayOrders: Array<{ id: string; orderNo: number; total: number; status?: string; createdAt?: string; itemCount?: number; note?: string | null; employeeName?: string }> =
-    filter === "open"
-      ? takeawayOpen.map((o) => ({ id: o.id, orderNo: o.orderNo, total: o.total }))
-      : filter === "paid"
-      ? MOCK_PAID_TAKEAWAY
-      : [...takeawayOpen.map((o) => ({ id: o.id, orderNo: o.orderNo, total: o.total })), ...MOCK_PAID_TAKEAWAY];
-
-  const selectedPaidOrder = filter !== "open" ? MOCK_PAID_TAKEAWAY.find((o) => o.id === selectedId) : null;
+    filter === "paid" ? [] : takeawayOpen.map((o) => ({ id: o.id, orderNo: o.orderNo, total: o.total }));
 
   useEffect(() => {
     if (!selectedId && displayOrders.length > 0) {
@@ -55,7 +44,7 @@ export function TakeawayDrawer() {
         <div className="min-w-0 flex-[1_1_240px] grid gap-1 [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-normal [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-normal [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-normal [&_p]:mb-0 [&_p]:mt-1 [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-xs [&_p]:text-pos-muted max-sm:[&_h1]:text-[17px] max-sm:[&_h2]:text-[15px] max-sm:[&_h3]:text-[15px] [&_h2]:overflow-hidden [&_h2]:text-ellipsis [&_h2]:whitespace-nowrap [&_h3]:overflow-hidden [&_h3]:text-ellipsis [&_h3]:whitespace-nowrap">
           <h2>Đơn mang đi</h2>
           <p>
-            <span className="mr-1 inline-block h-[7px] w-[7px] align-middle rounded-full bg-[#22c55e]" /> {takeawayOpen.length} đơn đang mở · {MOCK_PAID_TAKEAWAY.length} đã thanh toán
+            <span className="mr-1 inline-block h-[7px] w-[7px] align-middle rounded-full bg-[#22c55e]" /> {takeawayOpen.length} đơn đang mở
           </p>
         </div>
         <div className="flex min-w-0 flex-[0_1_auto] flex-wrap items-center justify-end gap-2.5 [&>*]:shrink-0 [&_.MuiButton-root]:min-h-9 [&_.MuiButton-root]:whitespace-nowrap max-sm:w-full max-sm:justify-start max-sm:[&_.MuiButton-root]:flex-[1_1_128px] max-[980px]:gap-2 max-[980px]:[&_.MuiButton-root]:min-h-[34px]">
@@ -198,19 +187,6 @@ export function TakeawayDrawer() {
                   >
                     Tạo đơn mang đi
                   </Button>
-                </div>
-              ) : selectedPaidOrder ? (
-                <div className="flex flex-col gap-2 px-3.5 py-3">
-                  <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Đơn số</span><strong>#{selectedPaidOrder.orderNo}</strong></div>
-                  <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Giờ tạo</span><strong>{selectedPaidOrder.createdAt}</strong></div>
-                  <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Nhân viên</span><strong>{selectedPaidOrder.employeeName}</strong></div>
-                  <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Số món</span><strong>{selectedPaidOrder.itemCount} món</strong></div>
-                  {selectedPaidOrder.note && <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Ghi chú</span><strong>{selectedPaidOrder.note}</strong></div>}
-                  <div className="my-1 border-t border-pos-line" />
-                  <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted mt-1 text-[15px]"><span>Tổng</span><strong className="font-black text-pos-primary">{formatVnd(selectedPaidOrder.total)}</strong></div>
-                  <div className="mt-2 flex flex-col gap-2">
-                    <Button variant="outlined" size="small" fullWidth onClick={(e) => e.preventDefault()}>In lại</Button>
-                  </div>
                 </div>
               ) : detailQuery.isLoading ? (
                 <p className="text-pos-muted p-4">Đang tải...</p>

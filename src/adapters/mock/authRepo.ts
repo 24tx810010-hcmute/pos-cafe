@@ -1,6 +1,7 @@
 import type { IAuthRepo } from "@/ports";
-import type { StoreSession } from "@/domain";
+import type { CreateStoreInput, CreateStoreResult, StoreSession } from "@/domain";
 import { mockStoreId } from "./mockData";
+import { applyDemoSeed } from "./demoSeedHelpers";
 import { clone, type MockState } from "./mockState";
 
 const parseStoreNo = (storeKey: string): number => {
@@ -16,8 +17,18 @@ export class MockAuthRepo implements IAuthRepo {
     this.state.session = { storeId: mockStoreId, storeNo: parseStoreNo(storeKey) };
   }
 
-  async createStore(): Promise<import("@/domain").CreateStoreResult> {
+  async createStore(input: CreateStoreInput): Promise<CreateStoreResult> {
     this.state.session = { storeId: mockStoreId, storeNo: 1 };
+    this.state.settings = {
+      ...this.state.settings,
+      displayName: input.displayName?.trim() || this.state.settings.displayName,
+      address: input.address?.trim() ?? this.state.settings.address,
+    };
+
+    if (input.seedDemo) {
+      applyDemoSeed(this.state);
+    }
+
     return {
       storeId: mockStoreId,
       storeNo: 1,

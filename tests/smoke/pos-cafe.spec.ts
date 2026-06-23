@@ -217,7 +217,6 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
 
   await page.getByTestId("nav-kitchen").click();
   await expect(page.getByTestId("kitchen-drawer")).toBeVisible();
-  await page.getByTestId("kitchen-done-kt-1").click();
   await closeCleanDrawer(page, "kitchen-drawer");
 
   await page.getByTestId("nav-payment-settings").click();

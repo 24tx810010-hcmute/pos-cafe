@@ -51,6 +51,7 @@ export class SupabaseAuthRepo implements IAuthRepo {
     }
 
     const displayName = input.displayName?.trim() || "POS Demo";
+    const address = input.address?.trim() ?? "";
     const adminPin = "123456";
     const adminId = await deterministicUuid(storeId, "admin.primary");
     const adminHash = await hashPin(this.client, adminPin);
@@ -68,7 +69,7 @@ export class SupabaseAuthRepo implements IAuthRepo {
       {
         store_id: storeId,
         display_name: displayName,
-        address: "",
+        address,
         currency: "VND",
         timezone: "Asia/Saigon",
         bill_footer: "",
@@ -89,11 +90,16 @@ export class SupabaseAuthRepo implements IAuthRepo {
     let seedStatus: CreateStoreResult["seedStatus"] = "seeded";
     let canRetrySeed = false;
 
-    try {
-      await this.seed.seedDemo(storeId);
-    } catch {
-      seedStatus = "failed";
-      canRetrySeed = true;
+    if (input.seedDemo) {
+      try {
+        await this.seed.seedDemo(storeId);
+      } catch {
+        seedStatus = "failed";
+        canRetrySeed = true;
+      }
+    } else {
+      // Store trống: chỉ đánh dấu đã seed, không tạo menu/floor/cashier demo.
+      await this.seed.seedBlank(storeId);
     }
 
     return {

@@ -28,28 +28,9 @@ interface KitchenTicket {
   items: KitchenItem[];
 }
 
-const KITCHEN_TICKETS: KitchenTicket[] = [
-  { id: "kt-1", orderNo: 128, target: "B02", type: "dine_in", minutesAgo: 3, items: [
-    { id: "ki-1", name: "Cà phê sữa", qty: 2, station: "drink", options: ["Size L", "Ít đá"], note: "Ít đường" },
-    { id: "ki-2", name: "Bạc xỉu", qty: 1, station: "drink", options: ["50% đường"], note: null },
-    { id: "ki-3", name: "Croissant", qty: 1, station: "food", options: [], note: "Hâm nóng" },
-  ] },
-  { id: "kt-2", orderNo: 129, target: "Mang đi", type: "takeaway", minutesAgo: 6, items: [
-    { id: "ki-4", name: "Trà đào", qty: 2, station: "drink", options: ["Thêm đào"], note: null },
-    { id: "ki-5", name: "Bánh mì que", qty: 3, station: "food", options: [], note: null },
-  ] },
-  { id: "kt-3", orderNo: 130, target: "B05", type: "dine_in", minutesAgo: 11, items: [
-    { id: "ki-6", name: "Matcha latte", qty: 1, station: "drink", options: ["Nóng"], note: null },
-    { id: "ki-7", name: "Tiramisu", qty: 2, station: "food", options: [], note: "Cắt đôi" },
-  ] },
-  { id: "kt-4", orderNo: 131, target: "B07", type: "dine_in", minutesAgo: 1, items: [
-    { id: "ki-8", name: "Cold brew", qty: 2, station: "drink", options: [], note: null },
-  ] },
-  { id: "kt-5", orderNo: 126, target: "B01", type: "dine_in", minutesAgo: 15, items: [
-    { id: "ki-9", name: "Cà phê muối", qty: 1, station: "drink", options: [], note: null },
-    { id: "ki-10", name: "Khoai tây chiên", qty: 1, station: "food", options: [], note: "Nhiều sốt" },
-  ] },
-];
+// Seam UI-only: hàng chờ bếp sẽ nối với đơn thật ở giai đoạn sau. Hiện để rỗng
+// (không dựng vé giả) — store mới sẽ thấy hàng chờ trống.
+const KITCHEN_TICKETS: KitchenTicket[] = [];
 
 const KITCHEN_STATION_LABEL: Record<KitchenStation, string> = { drink: "Pha chế", food: "Bánh" };
 

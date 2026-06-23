@@ -7,6 +7,9 @@ import type {
 
 export type CreateStoreInput = {
   displayName?: string;
+  address?: string;
+  /** Tạo sẵn dữ liệu mẫu (menu/floor/cashier demo) khi tạo store. Mặc định false. */
+  seedDemo?: boolean;
 };
 
 export type CreateStoreResult = {

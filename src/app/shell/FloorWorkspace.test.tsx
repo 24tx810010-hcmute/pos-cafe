@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { createMockPorts, createMockState } from "@/adapters/mock";
+import { createMockPorts, createSeededMockState } from "@/adapters/mock";
 import type { Employee } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
 import { useAppStore } from "../useAppStore";
@@ -10,7 +10,7 @@ import { FloorWorkspace } from "./FloorWorkspace";
 const admin: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true };
 
 const renderWorkspace = () => {
-  const ports = createMockPorts(createMockState());
+  const ports = createMockPorts(createSeededMockState());
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },

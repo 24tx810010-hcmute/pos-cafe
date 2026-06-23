@@ -13,7 +13,7 @@ import { MockSeedRepo } from "./seedRepo";
 import { MockSettingsRepo } from "./settingsRepo";
 import { createMockState, type MockState } from "./mockState";
 
-export { createMockState } from "./mockState";
+export { createMockState, createSeededMockState } from "./mockState";
 export type { MockState } from "./mockState";
 
 export const createMockPorts = (state: MockState = createMockState()): AppPorts => ({
@@ -26,7 +26,7 @@ export const createMockPorts = (state: MockState = createMockState()): AppPorts 
   payment: new MockPaymentRepo(state),
   report: new MockReportRepo(state),
   settings: new MockSettingsRepo(state),
-  seed: new MockSeedRepo(),
+  seed: new MockSeedRepo(state),
   print: new MockPrintPort(state),
   realtime: new MockRealtimePort(),
 });

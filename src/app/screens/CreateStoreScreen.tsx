@@ -1,8 +1,8 @@
-import { ArrowLeft, CheckCircle2, Copy, Info, Store } from "lucide-react";
-import { Button, TextField } from "@mui/material";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, Info, Store } from "lucide-react";
+import { Button, Checkbox, FormControlLabel, TextField } from "@mui/material";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useCreateStoreMutation } from "@/features/session";
+import { useCreateStoreMutation, useRetrySeedMutation } from "@/features/session";
 import { useAppStore } from "../useAppStore";
 import { toToastError } from "../appErrors";
 
@@ -10,8 +10,10 @@ export function CreateStoreScreen() {
   const setScreen = useAppStore((state) => state.setScreen);
   const [storeName, setStoreName] = useState("");
   const [address, setAddress] = useState("");
+  const [seedDemo, setSeedDemo] = useState(false);
   const [nameError, setNameError] = useState("");
   const createStoreMutation = useCreateStoreMutation();
+  const retrySeedMutation = useRetrySeedMutation();
   const [result, setResult] = useState<{ storeKey: string; adminPin: string; seedStatus: string; canRetrySeed: boolean } | null>(null);
 
   const handleCreate = () => {
@@ -21,7 +23,7 @@ export function CreateStoreScreen() {
     }
     setNameError("");
     createStoreMutation.mutate(
-      { displayName: storeName.trim() },
+      { displayName: storeName.trim(), address: address.trim() || undefined, seedDemo },
       {
         onSuccess: ({ store }) => {
           setResult({
@@ -41,6 +43,16 @@ export function CreateStoreScreen() {
   };
 
   const loading = createStoreMutation.isPending;
+
+  const handleRetrySeed = () => {
+    retrySeedMutation.mutate(undefined, {
+      onSuccess: () => {
+        setResult((prev) => (prev ? { ...prev, seedStatus: "seeded", canRetrySeed: false } : prev));
+        toast.success("Đã khởi tạo dữ liệu mẫu");
+      },
+      onError: (error) => toast.error(toToastError(error)),
+    });
+  };
 
   const copyText = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(
@@ -93,6 +105,24 @@ export function CreateStoreScreen() {
               Lưu lại Store Key và Admin PIN. Bạn sẽ cần chúng để đăng nhập trên thiết bị khác.
             </p>
 
+            {result.canRetrySeed && (
+              <div className="box-border m-0 grid w-full gap-2 rounded-md border border-[#fde68a] bg-[#fffbeb] px-3 py-2.5 text-[13px] leading-[1.5] text-pos-ink" data-testid="seed-failed-warning">
+                <span className="flex items-start gap-2">
+                  <AlertTriangle size={15} className="shrink-0 text-[#b45309] mt-0.5" />
+                  Khởi tạo dữ liệu mẫu chưa thành công. Bạn vẫn vào được quán; có thể thử lại bên dưới hoặc trong Cài đặt.
+                </span>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  className="justify-self-start"
+                  disabled={retrySeedMutation.isPending}
+                  onClick={handleRetrySeed}
+                >
+                  {retrySeedMutation.isPending ? "Đang thử lại..." : "Thử khởi tạo lại"}
+                </Button>
+              </div>
+            )}
+
             <Button variant="contained" data-testid="go-passcode" onClick={() => setScreen("passcode")}>
               Vào màn hình PIN
             </Button>
@@ -131,10 +161,23 @@ export function CreateStoreScreen() {
                 />
               </div>
 
-              <p className="m-0 flex items-start gap-2 text-[13px] leading-[1.5] text-pos-muted">
-                <Info size={15} className="shrink-0 text-pos-primary mt-0.5" />
-                Hệ thống sẽ tạo sẵn menu và sơ đồ mẫu để bạn bắt đầu nhanh.
-              </p>
+              <FormControlLabel
+                className="m-0 items-start"
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={seedDemo}
+                    onChange={(e) => setSeedDemo(e.target.checked)}
+                    inputProps={{ "data-testid": "seed-demo-checkbox" } as Record<string, string>}
+                  />
+                }
+                label={
+                  <span className="text-[13px] leading-[1.5] text-pos-ink">
+                    Khởi tạo sẵn dữ liệu mẫu để demo nhanh
+                    <span className="block text-xs text-pos-muted">Tạo thêm vài món, sơ đồ bàn mẫu và một thu ngân demo. Bỏ trống nếu muốn quán trống.</span>
+                  </span>
+                }
+              />
 
               <Button
                 variant="contained"

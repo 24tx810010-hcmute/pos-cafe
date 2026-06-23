@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMockPorts, createMockState } from "@/adapters/mock";
+import { createMockPorts, createSeededMockState } from "@/adapters/mock";
 import type { Employee } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
@@ -24,7 +24,7 @@ const resetAppStoreForFloorEditor = () => {
 };
 
 const renderFloorEditor = () => {
-  const state = createMockState();
+  const state = createSeededMockState();
   state.session = { storeId: "store-demo-001", storeNo: 1 };
   const ports = createMockPorts(state);
   const saveSpy = vi.spyOn(ports.floorPlan, "saveFloorPlan");

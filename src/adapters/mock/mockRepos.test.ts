@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { FloorPlanChanges, MenuChanges } from "@/domain";
-import { createMockPorts, createMockState } from "./mockRepos";
+import { createMockPorts, createSeededMockState } from "./mockRepos";
 
 const businessDateInTimezone = (date: Date, timeZone: string): string => {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -17,7 +17,7 @@ const businessDateInTimezone = (date: Date, timeZone: string): string => {
 
 describe("mock repositories", () => {
   it("keeps inactive employees visible to admin list but hidden from passcode list", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
 
     await ports.employee.updateEmployee({ id: "emp-cashier-1", isActive: false });
 
@@ -36,7 +36,7 @@ describe("mock repositories", () => {
   });
 
   it("submits open order changes with expected lock version and rejects stale version", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const order = await ports.order.getOrder("ord-b02");
     const draft = order.items.map((item) => ({
       id: item.id,
@@ -70,7 +70,7 @@ describe("mock repositories", () => {
   });
 
   it("blocks payment when received amount is lower than order total", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const order = await ports.order.getOrder("ord-b02");
 
     await expect(
@@ -86,7 +86,7 @@ describe("mock repositories", () => {
   });
 
   it("stores payment snapshot on paid mock orders", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const order = await ports.order.getOrder("ord-b02");
 
     const result = await ports.payment.payOrder({
@@ -111,7 +111,7 @@ describe("mock repositories", () => {
   });
 
   it("keeps newly paid mock orders visible in today's order history", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const order = await ports.order.getOrder("ord-b02");
     const today = businessDateInTimezone(new Date(), "Asia/Saigon");
 
@@ -135,7 +135,7 @@ describe("mock repositories", () => {
   });
 
   it("excludes open orders from mock order history", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const today = businessDateInTimezone(new Date(), "Asia/Saigon");
 
     const history = await ports.order.listOrderHistory({
@@ -152,7 +152,7 @@ describe("mock repositories", () => {
   });
 
   it("voids an open order when all lines are removed through submitOrderChanges", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const order = await ports.order.getOrder("ord-b02");
 
     const result = await ports.order.submitOrderChanges({
@@ -169,7 +169,7 @@ describe("mock repositories", () => {
   });
 
   it("exposes takeaway open orders and paid order history/report states", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
 
     const takeawayOrders = await ports.order.listTakeawayOpenOrders();
     const history = await ports.order.listOrderHistory({
@@ -194,7 +194,7 @@ describe("mock repositories", () => {
   });
 
   it("throws menu and option unavailable errors from mock submit flow", async () => {
-    const state = createMockState();
+    const state = createSeededMockState();
     const latte = state.menu.menuItems.find((item) => item.id === "mi-latte");
     if (latte) {
       latte.isAvailable = false;
@@ -212,7 +212,7 @@ describe("mock repositories", () => {
       }),
     ).rejects.toMatchObject({ code: "MENU_ITEM_UNAVAILABLE" });
 
-    const freshPorts = createMockPorts();
+    const freshPorts = createMockPorts(createSeededMockState());
     await expect(
       freshPorts.order.submitOrderChanges({
         orderId: null,
@@ -234,7 +234,7 @@ describe("mock repositories", () => {
   });
 
   it("applies mock menu changesets so UI can refetch edited catalog state", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const changes: MenuChanges = {
       categories: {
         created: [{ id: "cat-new", name: "Món mới", sortOrder: 99 }],
@@ -275,7 +275,7 @@ describe("mock repositories", () => {
       configurable: true,
       value: vi.fn(() => "blob:mock-menu-image"),
     });
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const file = new File(["image"], "latte.webp", { type: "image/webp" });
 
     const uploaded = await ports.menuImages.uploadMenuItemImage({ itemId: "mi-latte", file });
@@ -285,7 +285,7 @@ describe("mock repositories", () => {
   });
 
   it("applies mock floor-plan changesets without overwriting table status", async () => {
-    const ports = createMockPorts();
+    const ports = createMockPorts(createSeededMockState());
     const before = await ports.floorPlan.getFloorPlan();
     const originalStatus = before.tables.find((table) => table.id === "tbl-b02")?.status;
     const changes: FloorPlanChanges = {
