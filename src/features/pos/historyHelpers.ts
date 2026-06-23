@@ -1,7 +1,7 @@
 import type { FloorPlan, OrderSummary } from "@/domain";
 
 export type HistoryDateRange = "today" | "7days" | "month" | "custom";
-export type HistoryStatusFilter = "all" | "paid" | "void" | "open";
+export type HistoryStatusFilter = "all" | "paid" | "void";
 export type HistoryOrderTypeFilter = "all" | "dine_in" | "takeaway";
 
 export const PAY_METHOD_LABEL: Record<string, string> = { cash: "Tiền mặt", qr: "QR / VietQR", bank_transfer: "Chuyển khoản" };

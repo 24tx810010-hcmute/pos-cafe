@@ -44,6 +44,7 @@ export const mockOpenOrders: OrderDetail[] = [
     lockVersion: 3,
     orderType: "dine_in",
     paidAt: null,
+    payment: null,
     items: [
       {
         id: "oi-b02-1",
@@ -84,6 +85,7 @@ export const mockOpenOrders: OrderDetail[] = [
     lockVersion: 1,
     orderType: "dine_in",
     paidAt: null,
+    payment: null,
     items: [
       { id: "oi-b05-1", menuItemId: "mi-tra-dao", itemName: "Trà đào", quantity: 1, unitPrice: 42000, note: null, options: [] },
       { id: "oi-b05-2", menuItemId: "mi-ca-phe-muoi", itemName: "Cà phê muối", quantity: 1, unitPrice: 39000, note: null, options: [] },
@@ -100,6 +102,7 @@ export const mockOpenOrders: OrderDetail[] = [
     lockVersion: 2,
     orderType: "takeaway",
     paidAt: null,
+    payment: null,
     items: [
       { id: "oi-takeaway-1", menuItemId: "mi-tra-dao", itemName: "Trà đào", quantity: 1, unitPrice: 42000, note: null, options: [] },
       { id: "oi-takeaway-2", menuItemId: "mi-tra-vai", itemName: "Trà vải", quantity: 1, unitPrice: 42000, note: "Ít đá", options: [] },
@@ -118,6 +121,15 @@ export const mockPaidOrders: OrderDetail[] = [
     lockVersion: 2,
     orderType: "dine_in",
     paidAt: "2026-06-11T09:15:00.000Z",
+    payment: {
+      id: "pay-paid-1",
+      employeeId: "emp-cashier-1",
+      method: "cash",
+      amount: 77000,
+      receivedAmount: 100000,
+      changeAmount: 23000,
+      paidAt: "2026-06-11T09:15:00.000Z",
+    },
     items: [
       {
         id: "oi-paid-1",

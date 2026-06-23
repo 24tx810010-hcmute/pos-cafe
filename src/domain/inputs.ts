@@ -53,6 +53,10 @@ export type OrderHistoryFilter = {
   toDate: string;
   page: number;
   pageSize: number;
+  status?: "paid" | "void";
+  orderType?: OrderType;
+  search?: string;
+  tableIds?: string[];
 };
 
 export type OrderSummaryPage = {

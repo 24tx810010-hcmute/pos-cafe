@@ -36,7 +36,7 @@ describe("PortalPopup", () => {
     expect(onOutsideClick).toHaveBeenCalledTimes(1);
   });
 
-  it("can render within the workspace viewport", () => {
+  it("uses a full-screen overlay even for workspace popups", () => {
     render(
       <PortalPopup testId="confirm-popup" viewport="workspace">
         <div>Confirm body</div>
@@ -44,7 +44,9 @@ describe("PortalPopup", () => {
     );
 
     const overlay = screen.getByTestId("confirm-popup");
-    expect(overlay.className).toContain("left-[176px]");
-    expect(overlay.className).toContain("max-[980px]:left-[68px]");
+    expect(overlay.className).toContain("fixed");
+    expect(overlay.className).toContain("inset-0");
+    expect(overlay.className).not.toContain("left-[176px]");
+    expect(overlay.className).not.toContain("max-[980px]:left-[68px]");
   });
 });

@@ -6,7 +6,15 @@ export const posQueryKeys = {
   takeawayOpenOrders: ["orders", "takeaway", "open"] as const,
   order: (orderId: string | null) => ["orders", "detail", orderId] as const,
   reportsRoot: ["report"] as const,
-  orderHistory: (fromDate: string, toDate: string, page: number, pageSize: number) =>
-    ["orders", "history", fromDate, toDate, page, pageSize] as const,
+  orderHistory: (
+    fromDate: string,
+    toDate: string,
+    page: number,
+    pageSize: number,
+    status?: string,
+    orderType?: string,
+    search?: string,
+    tableIds?: string[],
+  ) => ["orders", "history", fromDate, toDate, page, pageSize, status, orderType, search, tableIds ?? []] as const,
   report: (businessDate: string) => ["report", "core", businessDate] as const,
 };

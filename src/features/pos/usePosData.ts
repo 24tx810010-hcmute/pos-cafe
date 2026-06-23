@@ -53,7 +53,16 @@ export const useOrderDetailQuery = (orderId: string | null) => {
 export const useOrderHistoryQuery = (filter: OrderHistoryFilter) => {
   const ports = usePorts();
   return useQuery({
-    queryKey: posQueryKeys.orderHistory(filter.fromDate, filter.toDate, filter.page, filter.pageSize),
+    queryKey: posQueryKeys.orderHistory(
+      filter.fromDate,
+      filter.toDate,
+      filter.page,
+      filter.pageSize,
+      filter.status,
+      filter.orderType,
+      filter.search,
+      filter.tableIds,
+    ),
     queryFn: () => ports.order.listOrderHistory(filter),
   });
 };

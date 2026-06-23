@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { MenuChanges, FloorPlanChanges } from "@/domain";
 import { createSupabasePorts } from "./repos";
+import { mapOrderDetail } from "./mappers";
 
 const submitResult = {
   orderId: "ord-1",
@@ -90,6 +91,24 @@ const createEmployeeQueryClient = () => {
   };
 
   return { client, select, eq, order };
+};
+
+const createOrderHistoryQueryClient = () => {
+  const chain = {
+    select: vi.fn(() => chain),
+    gte: vi.fn(() => chain),
+    lte: vi.fn(() => chain),
+    in: vi.fn(() => chain),
+    eq: vi.fn(() => chain),
+    or: vi.fn(() => chain),
+    order: vi.fn(() => chain),
+    range: vi.fn(async () => ({ data: [], error: null, count: 0 })),
+  };
+  const client = {
+    from: vi.fn(() => chain),
+  };
+
+  return { client, chain };
 };
 
 describe("Supabase adapter ports", () => {
@@ -205,6 +224,80 @@ describe("Supabase adapter ports", () => {
     });
     expect(client.rpc).toHaveBeenCalledWith("clear_demo_data", { p_employee_id: "emp-admin" });
     expect(result.receipt.changeAmount).toBe(5000);
+  });
+
+  it("maps order detail payment snapshots from payment rows", () => {
+    const detail = mapOrderDetail(
+      {
+        id: "ord-1",
+        order_no: 31,
+        status: "paid",
+        total: 45000,
+        lock_version: 2,
+        table_id: "tbl-b01",
+        order_type: "dine_in",
+        business_date: "2026-06-12",
+        paid_at: "2026-06-12T08:30:00.000Z",
+      },
+      [{ id: "oi-1", menu_item_id: "mi-latte", item_name: "Latte", quantity: 1, unit_price: 45000, note: null }],
+      [],
+      {
+        id: "pay-1",
+        employee_id: "emp-admin",
+        method: "cash",
+        amount: 45000,
+        received_amount: 50000,
+        change_amount: 5000,
+        paid_at: "2026-06-12T08:30:00.000Z",
+      },
+    );
+
+    expect(detail.payment).toEqual({
+      id: "pay-1",
+      employeeId: "emp-admin",
+      method: "cash",
+      amount: 45000,
+      receivedAmount: 50000,
+      changeAmount: 5000,
+      paidAt: "2026-06-12T08:30:00.000Z",
+    });
+  });
+
+  it("limits Supabase order history to completed orders", async () => {
+    const { client, chain } = createOrderHistoryQueryClient();
+    const ports = createSupabasePorts(client as never);
+
+    await ports.order.listOrderHistory({
+      fromDate: "2026-06-12",
+      toDate: "2026-06-12",
+      page: 2,
+      pageSize: 8,
+    });
+
+    expect(client.from).toHaveBeenCalledWith("orders");
+    expect(chain.in).toHaveBeenCalledWith("status", ["paid", "void"]);
+    expect(chain.range).toHaveBeenCalledWith(8, 15);
+  });
+
+  it("applies Supabase order history filters before pagination", async () => {
+    const { chain, client } = createOrderHistoryQueryClient();
+    const ports = createSupabasePorts(client as never);
+
+    await ports.order.listOrderHistory({
+      fromDate: "2026-06-12",
+      toDate: "2026-06-12",
+      page: 1,
+      pageSize: 8,
+      status: "paid",
+      orderType: "dine_in",
+      search: "#31",
+      tableIds: ["tbl-b01"],
+    });
+
+    expect(chain.in).toHaveBeenCalledWith("status", ["paid"]);
+    expect(chain.eq).toHaveBeenCalledWith("order_type", "dine_in");
+    expect(chain.or).toHaveBeenCalledWith("order_no.eq.31,id.ilike.%#31%,table_id.ilike.%#31%,table_id.in.(tbl-b01)");
+    expect(chain.range).toHaveBeenCalledWith(0, 7);
   });
 
   it("maps menu changesets to table row mutations without Supabase types leaking to callers", async () => {

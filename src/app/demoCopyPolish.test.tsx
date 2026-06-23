@@ -112,6 +112,19 @@ describe("demo copy polish", () => {
     expectNoImplementationCopy(container);
   });
 
+  it("keeps the sample Store Key as placeholder copy instead of a submitted value", async () => {
+    const user = userEvent.setup();
+    renderApp({ screen: "landing", currentEmployee: null }, { paired: false });
+
+    await user.click(await screen.findByTestId("go-store-pairing"));
+    const input = screen.getByTestId("store-key-input");
+
+    expect(input).toHaveValue("");
+    await user.click(screen.getByTestId("go-passcode"));
+
+    expect(await screen.findByText(/Sai định dạng/)).toBeInTheDocument();
+  });
+
   it("keeps order UI free of database and draft wording", async () => {
     const { container } = renderApp({
       drawer: "order",

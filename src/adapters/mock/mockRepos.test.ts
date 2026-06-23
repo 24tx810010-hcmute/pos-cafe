@@ -2,6 +2,19 @@ import { describe, expect, it, vi } from "vitest";
 import type { FloorPlanChanges, MenuChanges } from "@/domain";
 import { createMockPorts, createMockState } from "./mockRepos";
 
+const businessDateInTimezone = (date: Date, timeZone: string): string => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  return `${year}-${month}-${day}`;
+};
+
 describe("mock repositories", () => {
   it("keeps inactive employees visible to admin list but hidden from passcode list", async () => {
     const ports = createMockPorts();
@@ -70,6 +83,72 @@ describe("mock repositories", () => {
         receivedAmount: order.total - 1,
       }),
     ).rejects.toMatchObject({ code: "PAYMENT_AMOUNT_TOO_LOW" });
+  });
+
+  it("stores payment snapshot on paid mock orders", async () => {
+    const ports = createMockPorts();
+    const order = await ports.order.getOrder("ord-b02");
+
+    const result = await ports.payment.payOrder({
+      paymentId: "payment-ok",
+      orderId: order.id,
+      employeeId: "emp-admin",
+      method: "cash",
+      expectedVersion: order.lockVersion,
+      receivedAmount: order.total + 5000,
+    });
+    const paidOrder = await ports.order.getOrder(order.id);
+
+    expect(result.changeAmount).toBe(5000);
+    expect(paidOrder.payment).toMatchObject({
+      id: "payment-ok",
+      employeeId: "emp-admin",
+      method: "cash",
+      amount: order.total,
+      receivedAmount: order.total + 5000,
+      changeAmount: 5000,
+    });
+  });
+
+  it("keeps newly paid mock orders visible in today's order history", async () => {
+    const ports = createMockPorts();
+    const order = await ports.order.getOrder("ord-b02");
+    const today = businessDateInTimezone(new Date(), "Asia/Saigon");
+
+    await ports.payment.payOrder({
+      paymentId: "payment-today",
+      orderId: order.id,
+      employeeId: "emp-admin",
+      method: "cash",
+      expectedVersion: order.lockVersion,
+      receivedAmount: order.total,
+    });
+
+    const history = await ports.order.listOrderHistory({
+      fromDate: today,
+      toDate: today,
+      page: 1,
+      pageSize: 20,
+    });
+
+    expect(history.items.map((item) => item.id)).toContain(order.id);
+  });
+
+  it("excludes open orders from mock order history", async () => {
+    const ports = createMockPorts();
+    const today = businessDateInTimezone(new Date(), "Asia/Saigon");
+
+    const history = await ports.order.listOrderHistory({
+      fromDate: today,
+      toDate: today,
+      page: 1,
+      pageSize: 20,
+    });
+
+    expect(history.items.map((item) => item.id)).not.toEqual(
+      expect.arrayContaining(["ord-b02", "ord-b05", "ord-takeaway-1"]),
+    );
+    expect(history.items.every((item) => item.status !== "open")).toBe(true);
   });
 
   it("voids an open order when all lines are removed through submitOrderChanges", async () => {

@@ -16,6 +16,9 @@ const orderFields =
   "id,table_id,order_type,order_no,business_date,status,total,lock_version,paid_at";
 const orderItemFields = "id,menu_item_id,item_name,quantity,unit_price,note,status,sort_order";
 const orderItemOptionFields = "id,order_item_id,option_value_id,option_name,price_delta";
+const paymentFields = "id,employee_id,method,amount,received_amount,change_amount,paid_at";
+
+const sanitizeOrValue = (value: string): string => value.replace(/[%,()]/g, "").trim();
 
 export class SupabaseOrderRepo implements IOrderRepo {
   constructor(private readonly client: SupabaseAnyClient) {}
@@ -59,7 +62,20 @@ export class SupabaseOrderRepo implements IOrderRepo {
       optionRows = (options ?? []) as Row[];
     }
 
-    return mapOrderDetail(order, items, optionRows);
+    let paymentRow: Row | null = null;
+    if (order.status === "paid") {
+      const { data: payment, error: paymentError } = await this.client
+        .from("payments")
+        .select(paymentFields)
+        .eq("order_id", orderId)
+        .order("paid_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      throwIfError(paymentError);
+      paymentRow = (payment ?? null) as Row | null;
+    }
+
+    return mapOrderDetail(order, items, optionRows, paymentRow);
   }
 
   async submitOrderChanges(input: SubmitOrderChangesInput): Promise<SubmitOrderChangesResult> {
@@ -90,11 +106,36 @@ export class SupabaseOrderRepo implements IOrderRepo {
   async listOrderHistory(filter: OrderHistoryFilter): Promise<OrderSummaryPage> {
     const from = Math.max(0, (filter.page - 1) * filter.pageSize);
     const to = from + filter.pageSize - 1;
-    const { data, error, count } = await this.client
+    let query = this.client
       .from("orders")
       .select(orderFields, { count: "exact" })
+      .in("status", filter.status ? [filter.status] : ["paid", "void"])
       .gte("business_date", filter.fromDate)
-      .lte("business_date", filter.toDate)
+      .lte("business_date", filter.toDate);
+
+    if (filter.orderType) {
+      query = query.eq("order_type", filter.orderType);
+    }
+
+    const search = sanitizeOrValue(filter.search ?? "");
+    const orFilters: string[] = [];
+    if (search) {
+      const orderNo = search.replace(/^#/, "");
+      if (/^\d+$/.test(orderNo)) {
+        orFilters.push(`order_no.eq.${Number(orderNo)}`);
+      }
+      orFilters.push(`id.ilike.%${search}%`);
+      orFilters.push(`table_id.ilike.%${search}%`);
+    }
+    const tableIds = (filter.tableIds ?? []).map(sanitizeOrValue).filter(Boolean);
+    if (tableIds.length > 0) {
+      orFilters.push(`table_id.in.(${tableIds.join(",")})`);
+    }
+    if (orFilters.length > 0) {
+      query = query.or(orFilters.join(","));
+    }
+
+    const { data, error, count } = await query
       .order("business_date", { ascending: false })
       .order("order_no", { ascending: false })
       .range(from, to);

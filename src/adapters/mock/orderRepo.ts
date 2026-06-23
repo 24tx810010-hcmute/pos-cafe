@@ -2,7 +2,7 @@ import type { IOrderRepo } from "@/ports";
 import type { OrderDetail, OrderHistoryFilter, OrderSummary, SubmitOrderChangesInput, SubmitOrderChangesResult } from "@/domain";
 import { AppError } from "@/core/appError";
 import { calculateSnapshotTotal, snapshotDraftItems } from "@/core/orderDraft";
-import { clone, todayBusinessDate, type MockState } from "./mockState";
+import { clone, getTodayBusinessDate, type MockState } from "./mockState";
 import { makeTicket, toSummary } from "./mockRepoShared";
 
 export class MockOrderRepo implements IOrderRepo {
@@ -78,7 +78,7 @@ export class MockOrderRepo implements IOrderRepo {
         tableId: input.tableId,
         tableStatus: null,
         orderNo: 0,
-        businessDate: todayBusinessDate,
+        businessDate: getTodayBusinessDate(),
         lockVersion: 0,
         ticket: null,
       };
@@ -89,10 +89,11 @@ export class MockOrderRepo implements IOrderRepo {
       tableId: input.tableId,
       orderType: input.orderType,
       orderNo: this.state.nextOrderNo++,
-      businessDate: todayBusinessDate,
+      businessDate: getTodayBusinessDate(),
       status: "open",
       lockVersion: 0,
       paidAt: null,
+      payment: null,
       total: 0,
       items: snapshotDraftItems(this.state.menu, activeItems),
     };
@@ -124,10 +125,26 @@ export class MockOrderRepo implements IOrderRepo {
   }
 
   async listOrderHistory(filter: OrderHistoryFilter): Promise<import("@/domain").OrderSummaryPage> {
+    const from = Math.max(0, (filter.page - 1) * filter.pageSize);
+    const search = filter.search?.trim().toLowerCase() ?? "";
+    const tableIds = new Set(filter.tableIds ?? []);
     const items = this.state.orders
+      .filter((order) => order.status !== "open")
       .filter((order) => order.businessDate >= filter.fromDate && order.businessDate <= filter.toDate)
+      .filter((order) => !filter.status || order.status === filter.status)
+      .filter((order) => !filter.orderType || order.orderType === filter.orderType)
+      .filter((order) => {
+        if (!search) return true;
+        const haystack = [order.orderNo, order.id, order.tableId ?? "", order.orderType, order.status]
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(search) || (!!order.tableId && tableIds.has(order.tableId));
+      })
+      .sort((left, right) => (
+        right.businessDate.localeCompare(left.businessDate) || right.orderNo - left.orderNo
+      ))
       .map(toSummary);
-    return { items, total: items.length };
+    return { items: items.slice(from, from + filter.pageSize), total: items.length };
   }
 
   private setTableStatus(tableId: string, status: "empty" | "occupied"): void {

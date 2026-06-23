@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMockPorts, createMockState, type MockState } from "@/adapters/mock";
@@ -42,6 +42,7 @@ const seedOrdersForToday = (state: MockState, businessDate: string) => {
     ...order,
     businessDate,
     paidAt: order.paidAt ? `${businessDate}T09:15:00.000Z` : null,
+    payment: order.payment ? { ...order.payment, paidAt: `${businessDate}T09:15:00.000Z` } : null,
   }));
 };
 
@@ -120,12 +121,38 @@ describe("Report and history drawers", () => {
     expect(await screen.findByText(/Latte/)).toBeInTheDocument();
   });
 
+  it("shows paid order payment snapshot in the receipt summary", async () => {
+    const user = userEvent.setup();
+    renderDrawer("orderHistory");
+
+    await user.click(await screen.findByTestId("history-row-ord-paid-1"));
+
+    const paymentSummary = await screen.findByTestId("history-payment-summary");
+    const labels = within(paymentSummary).getAllByTestId("history-payment-label").map((label) => label.textContent);
+
+    expect(labels).toEqual(["Khách đưa", "Tiền thừa", "Tổng tiền"]);
+    expect(within(paymentSummary).getByText("100.000đ")).toBeInTheDocument();
+    expect(within(paymentSummary).getByText("23.000đ")).toBeInTheDocument();
+    expect(within(paymentSummary).getByText("77.000đ")).toBeInTheDocument();
+  });
+
+  it("keeps open orders out of the order history view", async () => {
+    renderDrawer("orderHistory");
+
+    expect(await screen.findByTestId("history-row-ord-paid-1")).toBeInTheDocument();
+    expect(screen.queryByTestId("history-row-ord-b02")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("history-row-ord-b05")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("history-row-ord-takeaway-1")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Đang mở" })).not.toBeInTheDocument();
+  });
+
   it("applies custom order history date ranges to the query payload", async () => {
     const user = userEvent.setup();
     const { businessDate, historySpy } = renderDrawer("orderHistory");
     const fromDate = shiftBusinessDate(businessDate, -2);
 
-    await user.click(await screen.findByRole("button", { name: "Tuỳ chọn" }));
+    await user.click(await screen.findByTestId("history-date-filter-button"));
+    await user.click(await screen.findByTestId("history-date-range-custom"));
     await user.clear(screen.getByTestId("history-from-date"));
     await user.type(screen.getByTestId("history-from-date"), fromDate);
     await user.clear(screen.getByTestId("history-to-date"));

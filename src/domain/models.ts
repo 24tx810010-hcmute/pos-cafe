@@ -155,9 +155,20 @@ export type OrderSummary = {
   businessDate: string;
 };
 
+export type OrderPaymentSnapshot = {
+  id: string;
+  employeeId: string;
+  method: PaymentMethod;
+  amount: number;
+  receivedAmount: number;
+  changeAmount: number;
+  paidAt: string;
+};
+
 export type OrderDetail = OrderSummary & {
   items: OrderItemSnapshot[];
   paidAt: string | null;
+  payment: OrderPaymentSnapshot | null;
 };
 
 export type PrintLine = {

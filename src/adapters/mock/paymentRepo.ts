@@ -21,6 +21,15 @@ export class MockPaymentRepo implements IPaymentRepo {
     order.status = "paid";
     order.lockVersion += 1;
     order.paidAt = new Date().toISOString();
+    order.payment = {
+      id: input.paymentId,
+      employeeId: input.employeeId,
+      method: input.method,
+      amount: order.total,
+      receivedAmount: input.receivedAmount,
+      changeAmount: input.receivedAmount - order.total,
+      paidAt: order.paidAt,
+    };
     if (order.tableId) {
       const table = this.state.floorPlan.tables.find((candidate) => candidate.id === order.tableId);
       if (table) {

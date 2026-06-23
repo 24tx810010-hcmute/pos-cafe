@@ -15,9 +15,11 @@ import type {
   OrderDetail,
   OrderItemOptionSnapshot,
   OrderItemSnapshot,
+  OrderPaymentSnapshot,
   OrderStatus,
   OrderSummary,
   PayOrderResult,
+  PaymentMethod,
   PrintLine,
   PrintReceipt,
   PrintTicket,
@@ -167,10 +169,25 @@ export const mapOrderItem = (row: Row, options: OrderItemOptionSnapshot[]): Orde
   options,
 });
 
+export const mapOrderPayment = (row: Row | null | undefined): OrderPaymentSnapshot | null => {
+  if (!row) return null;
+
+  return {
+    id: asString(row.id),
+    employeeId: asString(row.employee_id),
+    method: asString(row.method) as PaymentMethod,
+    amount: asNumber(row.amount),
+    receivedAmount: asNumber(row.received_amount),
+    changeAmount: asNumber(row.change_amount),
+    paidAt: asString(row.paid_at),
+  };
+};
+
 export const mapOrderDetail = (
   orderRow: Row,
   itemRows: Row[],
   optionRows: Row[],
+  paymentRow?: Row | null,
 ): OrderDetail => {
   const optionsByItem = new Map<string, OrderItemOptionSnapshot[]>();
 
@@ -184,6 +201,7 @@ export const mapOrderDetail = (
   return {
     ...mapOrderSummary(orderRow),
     paidAt: asNullableString(orderRow.paid_at),
+    payment: mapOrderPayment(paymentRow),
     items: itemRows.map((itemRow) => mapOrderItem(itemRow, optionsByItem.get(asString(itemRow.id)) ?? [])),
   };
 };

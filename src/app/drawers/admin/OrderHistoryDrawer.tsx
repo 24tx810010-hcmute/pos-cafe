@@ -1,17 +1,25 @@
 import clsx from "clsx";
-import { AlertTriangle, ReceiptText, RefreshCw } from "lucide-react";
-import { Button, TextField } from "@mui/material";
+import {
+  AlertTriangle,
+  CalendarDays,
+  CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Printer,
+  ReceiptText,
+  RefreshCw,
+  Search,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import toast from "react-hot-toast";
-import { formatCompactVnd, formatVnd } from "@/core/money";
-import {
-  useFloorPlanQuery,
-  useOrderDetailQuery,
-  useOrderHistoryQuery,
-} from "@/features/pos";
-import {
-  useStoreSettingsQuery,
-} from "@/features/admin";
+import type { OrderItemSnapshot, OrderStatus } from "@/domain";
+import { formatVnd } from "@/core/money";
+import { useFloorPlanQuery, useOrderDetailQuery, useOrderHistoryQuery } from "@/features/pos";
+import { useAdminEmployeesQuery, useStoreSettingsQuery } from "@/features/admin";
 import { useAppStore } from "../../useAppStore";
 import { toToastError } from "../../appErrors";
 import {
@@ -19,6 +27,7 @@ import {
   PAY_METHOD_LABEL,
   businessDateInTimezone,
   businessRangeFor,
+  formatBusinessDate,
   historyRowFromOrder,
   tableNameMap,
   type HistoryDateRange,
@@ -27,17 +36,88 @@ import {
 } from "@/features/pos/historyHelpers";
 import { PortalDrawer } from "../../components/PortalDrawer";
 
+const PAGE_SIZE = 8;
+
+const dateRangeOptions: Array<{ key: HistoryDateRange; label: string }> = [
+  { key: "today", label: "Hôm nay" },
+  { key: "7days", label: "7 ngày" },
+  { key: "month", label: "Tháng này" },
+  { key: "custom", label: "Tùy chọn" },
+];
+
+const statusOptions: Array<{ key: HistoryStatusFilter; label: string }> = [
+  { key: "all", label: "Tất cả" },
+  { key: "paid", label: "Đã thanh toán" },
+  { key: "void", label: "Đã hủy" },
+];
+
+const orderTypeOptions: Array<{ key: HistoryOrderTypeFilter; label: string }> = [
+  { key: "all", label: "Tất cả loại" },
+  { key: "dine_in", label: "Tại bàn" },
+  { key: "takeaway", label: "Mang đi" },
+];
+
+const statusLabel: Record<OrderStatus, string> = {
+  paid: "Đã thanh toán",
+  open: "Đang mở",
+  void: "Đã hủy",
+};
+
+const statusClass: Record<OrderStatus, string> = {
+  paid: "bg-[#dcfce7] text-[#166534] border-[#bbf7d0]",
+  open: "bg-[#fef9c3] text-[#854d0e] border-[#fde68a]",
+  void: "bg-[#fee2e2] text-[#991b1b] border-[#fecaca]",
+};
+
+const formatMoney = (amount: number): string => formatVnd(amount).replace(/\s/g, "").replace("₫", "đ");
+
+const itemLineTotal = (item: OrderItemSnapshot): number => {
+  const optionDelta = item.options.reduce((sum, option) => sum + option.priceDelta, 0);
+  return (item.unitPrice + optionDelta) * item.quantity;
+};
+
+const itemMeta = (item: OrderItemSnapshot): string => {
+  const options = item.options.map((option) => option.optionName);
+  const note = item.note ? [`ghi chú: ${item.note}`] : [];
+  return [...options, ...note].join(" · ");
+};
+
+const IconButton = ({
+  children,
+  disabled = false,
+  label,
+  onClick,
+}: {
+  children: ReactNode;
+  disabled?: boolean;
+  label: string;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    aria-label={label}
+    title={label}
+    disabled={disabled}
+    onClick={onClick}
+    className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] border border-pos-line bg-white text-pos-ink transition-[border-color,color,background] hover:border-pos-primary hover:bg-pos-primarySoft hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40 max-[760px]:h-8 max-[760px]:w-8"
+  >
+    {children}
+  </button>
+);
+
 function OrderHistoryDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const settingsQuery = useStoreSettingsQuery();
+  const employeesQuery = useAdminEmployeesQuery();
   const floorQuery = useFloorPlanQuery();
   const [dateRange, setDateRange] = useState<HistoryDateRange>("today");
+  const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<HistoryStatusFilter>("all");
   const [orderTypeFilter, setOrderTypeFilter] = useState<HistoryOrderTypeFilter>("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 8;
+
   const timezone = settingsQuery.data?.timezone ?? DEFAULT_TIMEZONE;
   const today = businessDateInTimezone(new Date(), timezone);
   const [customFrom, setCustomFrom] = useState(today);
@@ -46,30 +126,72 @@ function OrderHistoryDrawer() {
     () => businessRangeFor(dateRange, today, customFrom, customTo),
     [customFrom, customTo, dateRange, today],
   );
-  const historyQuery = useOrderHistoryQuery({ ...selectedRange, page, pageSize: PAGE_SIZE });
-  const detailQuery = useOrderDetailQuery(selectedId);
+
   const tables = useMemo(() => tableNameMap(floorQuery.data), [floorQuery.data]);
+  const normalizedSearch = search.trim();
+  const matchedTableIds = useMemo(() => {
+    if (!normalizedSearch) return undefined;
+    const query = normalizedSearch.toLowerCase();
+    const ids = Array.from(tables.entries())
+      .filter(([, tableName]) => tableName.toLowerCase().includes(query))
+      .map(([tableId]) => tableId);
+    return ids.length > 0 ? ids : undefined;
+  }, [normalizedSearch, tables]);
+  const historyQuery = useOrderHistoryQuery({
+    ...selectedRange,
+    page,
+    pageSize: PAGE_SIZE,
+    status: statusFilter === "all" ? undefined : statusFilter,
+    orderType: orderTypeFilter === "all" ? undefined : orderTypeFilter,
+    search: normalizedSearch || undefined,
+    tableIds: matchedTableIds,
+  });
+  const detailQuery = useOrderDetailQuery(selectedId);
+
+  const employeeNames = useMemo(
+    () => new Map((employeesQuery.data ?? []).map((employee) => [employee.id, employee.name])),
+    [employeesQuery.data],
+  );
   const historyRows = useMemo(
     () => (historyQuery.data?.items ?? []).map((order) => historyRowFromOrder(order, tables)),
     [historyQuery.data?.items, tables],
   );
 
-  const filtered = historyRows.filter((o) => {
-    if (statusFilter !== "all" && o.status !== statusFilter) return false;
-    if (orderTypeFilter !== "all" && o.orderType !== orderTypeFilter) return false;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      const haystack = [o.orderNo, o.tableLabel, o.status, o.id, o.employeeName ?? ""].join(" ").toLowerCase();
-      if (!haystack.includes(q)) return false;
-    }
-    return true;
-  });
+  const filtered = historyRows;
 
   const totalPages = Math.max(1, Math.ceil((historyQuery.data?.total ?? 0) / PAGE_SIZE));
-  const paginated = filtered;
-  const selected = historyRows.find((o) => o.id === selectedId) ?? null;
-  const selectedDetail = detailQuery.data;
-  const pageRevenue = historyRows.filter((o) => o.status === "paid").reduce((sum, o) => sum + o.total, 0);
+  const selected = historyRows.find((order) => order.id === selectedId) ?? null;
+  const selectedDetail = detailQuery.data?.id === selectedId ? detailQuery.data : null;
+  const selectedPayment = selectedDetail?.payment ?? null;
+  const selectedDateLabel = dateRangeOptions.find((option) => option.key === dateRange)?.label ?? "Hôm nay";
+  const cashierLabel = selectedPayment?.employeeId
+    ? employeeNames.get(selectedPayment.employeeId) ?? selectedPayment.employeeId
+    : "Chưa ghi nhận";
+  const paymentMethodLabel = selectedPayment?.method
+    ? PAY_METHOD_LABEL[selectedPayment.method] ?? selectedPayment.method
+    : "Chưa ghi nhận";
+  const paidTimeLabel = selectedDetail?.paidAt
+    ? new Intl.DateTimeFormat("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(new Date(selectedDetail.paidAt))
+    : "Chưa ghi nhận";
+
+  const resetList = () => {
+    setPage(1);
+    setSelectedId(null);
+  };
+
+  const selectDateRange = (range: HistoryDateRange) => {
+    setDateRange(range);
+    resetList();
+    if (range !== "custom") {
+      setIsDateMenuOpen(false);
+    }
+  };
 
   useEffect(() => {
     if (historyQuery.data && page > totalPages) {
@@ -77,325 +199,468 @@ function OrderHistoryDrawer() {
     }
   }, [historyQuery.data, page, totalPages]);
 
-  // Auto-select first available order so the detail pane is never idle on load.
-  // Keeps the current selection if it is still in the filtered list; re-picks the
-  // first row when data arrives or filters change so no stale detail lingers.
   useEffect(() => {
     if (filtered.length === 0) return;
-    if (selectedId && filtered.some((o) => o.id === selectedId)) return;
+    if (selectedId && filtered.some((order) => order.id === selectedId)) return;
     setSelectedId(filtered[0].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [historyQuery.data, statusFilter, orderTypeFilter, search]);
 
-  const dateRangeChips: Array<{ key: HistoryDateRange; label: string }> = [
-    { key: "today", label: "Hôm nay" },
-    { key: "7days", label: "7 ngày" },
-    { key: "month", label: "Tháng này" },
-    { key: "custom", label: "Tuỳ chọn" },
-  ];
-
-  const statusChips: Array<{ key: HistoryStatusFilter; label: string }> = [
-    { key: "all", label: "Tất cả" },
-    { key: "paid", label: "Đã thanh toán" },
-    { key: "void", label: "Đã huỷ" },
-    { key: "open", label: "Đang mở" },
-  ];
-
-  const orderTypeChips: Array<{ key: HistoryOrderTypeFilter; label: string }> = [
-    { key: "all", label: "Tất cả" },
-    { key: "dine_in", label: "Tại bàn" },
-    { key: "takeaway", label: "Mang đi" },
-  ];
-
-  const handleFilterChange = () => { setPage(1); setSelectedId(null); };
-
-  const statusBadgeClass = (status: string) =>
-    clsx(
-      "inline-block rounded-[20px] px-2 py-0.5 text-[11px] font-bold",
-      status === "paid" ? "bg-[#d1fae5] text-[#065f46]" : status === "void" ? "bg-[#fee2e2] text-[#991b1b]" : "bg-[#fef9c3] text-[#854d0e]",
-    );
-  const orderTypePillClass = (orderType: HistoryOrderTypeFilter) =>
-    clsx("inline-block rounded-[20px] px-2 py-0.5 text-[11px] font-semibold", orderType === "takeaway" ? "bg-[#ede9fe] text-[#5b21b6]" : "bg-[#e0f2fe] text-[#075985]");
-  const statusLabel = (s: string) => s === "paid" ? "Đã thanh toán" : s === "void" ? "Đã huỷ" : "Đang mở";
+  const copyOrderNo = () => {
+    if (!selected) return;
+    const text = `#${selected.orderNo}`;
+    void navigator.clipboard?.writeText(text);
+    toast.success(`Đã sao chép ${text}`);
+  };
 
   return (
     <PortalDrawer testId="order-history-drawer" onOutsideClick={closeDrawer}>
-      <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-pos-line bg-white/95 px-[18px] py-3 max-[980px]:min-h-[50px] max-[980px]:gap-x-2.5 max-[980px]:gap-y-2 max-[980px]:px-2.5 max-[980px]:py-2">
-        <div className="min-w-0 flex-[1_1_240px] grid gap-1 [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-normal [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-normal [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-normal [&_p]:mb-0 [&_p]:mt-1 [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-xs [&_p]:text-pos-muted max-sm:[&_h1]:text-[17px] max-sm:[&_h2]:text-[15px] max-sm:[&_h3]:text-[15px] [&_h2]:overflow-hidden [&_h2]:text-ellipsis [&_h2]:whitespace-nowrap [&_h3]:overflow-hidden [&_h3]:text-ellipsis [&_h3]:whitespace-nowrap">
-          <h2>Lịch sử đơn</h2>
-          <p><span className="mr-1 inline-block h-[7px] w-[7px] align-middle rounded-full bg-[#22c55e]" />{historyQuery.data?.total ?? 0} đơn · online</p>
+      <header className="flex min-h-[68px] items-center justify-between gap-3 border-b border-pos-line bg-white px-4 py-3 max-[900px]:min-h-[58px] max-[900px]:gap-2 max-[900px]:px-3 max-[900px]:py-2">
+        <div className="min-w-0">
+          <h2 className="m-0 truncate text-[22px] font-black leading-tight text-pos-ink max-[760px]:text-[17px]">
+            Lịch sử đơn
+          </h2>
+          <p className="m-0 mt-1 truncate text-xs font-semibold text-pos-muted max-[760px]:hidden">
+            Xem nhanh đơn đã thực hiện theo ngày, trạng thái và loại đơn
+          </p>
         </div>
-        <div className="flex min-w-0 flex-[0_1_auto] flex-wrap items-center justify-end gap-2.5 [&>*]:shrink-0 [&_.MuiButton-root]:min-h-9 [&_.MuiButton-root]:whitespace-nowrap max-sm:w-full max-sm:justify-start max-sm:[&_.MuiButton-root]:flex-[1_1_128px] max-[980px]:gap-2 max-[980px]:[&_.MuiButton-root]:min-h-[34px]">
-          <div className="flex flex-wrap gap-1.5">
-            {dateRangeChips.map((dc) => (
-              <button
-                key={dc.key}
-                className={clsx(
-                  "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
-                  dateRange === dc.key
-                    ? "border-pos-primary bg-pos-primary text-white"
-                    : "border-pos-line bg-pos-surface text-pos-muted",
+
+        <div className="flex min-w-0 items-center justify-end gap-2 max-[760px]:gap-1.5">
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              data-testid="history-date-filter-button"
+              onClick={() => setIsDateMenuOpen((open) => !open)}
+              className="inline-flex h-10 items-center gap-2 rounded-[9px] border border-pos-primaryLine bg-pos-primarySoft px-3 text-sm font-black text-pos-primary transition-colors hover:border-pos-primary max-[760px]:h-9 max-[760px]:px-2 max-[760px]:text-xs"
+            >
+              <CalendarDays size={17} />
+              <span className="max-[640px]:max-w-[70px] max-[640px]:truncate">{selectedDateLabel}</span>
+              <ChevronDown size={16} />
+            </button>
+
+            {isDateMenuOpen && (
+              <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-[292px] rounded-[10px] border border-pos-line bg-white p-2 shadow-[0_18px_45px_rgb(15_23_42_/_16%)] max-[760px]:right-[-44px] max-[760px]:w-[260px]">
+                <div className="grid grid-cols-2 gap-1.5">
+                  {dateRangeOptions.map((option) => (
+                    <button
+                      type="button"
+                      key={option.key}
+                      data-testid={`history-date-range-${option.key}`}
+                      onClick={() => selectDateRange(option.key)}
+                      className={clsx(
+                        "min-h-9 rounded-[8px] border px-2 text-sm font-extrabold transition-colors max-[760px]:text-xs",
+                        dateRange === option.key
+                          ? "border-pos-primary bg-pos-primary text-white"
+                          : "border-pos-line bg-pos-surface2 text-pos-ink hover:border-pos-primaryLine",
+                      )}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                {dateRange === "custom" && (
+                  <div className="mt-2 grid grid-cols-2 gap-2 border-t border-pos-line pt-2">
+                    <label className="grid gap-1 text-[11px] font-bold text-pos-muted">
+                      Từ ngày
+                      <input
+                        type="date"
+                        data-testid="history-from-date"
+                        value={customFrom}
+                        onChange={(event) => {
+                          setCustomFrom(event.target.value);
+                          resetList();
+                        }}
+                        className="h-9 min-w-0 rounded-[8px] border border-pos-line bg-white px-2 text-xs font-bold text-pos-ink outline-none focus:border-pos-primary"
+                      />
+                    </label>
+                    <label className="grid gap-1 text-[11px] font-bold text-pos-muted">
+                      Đến ngày
+                      <input
+                        type="date"
+                        data-testid="history-to-date"
+                        value={customTo}
+                        onChange={(event) => {
+                          setCustomTo(event.target.value);
+                          resetList();
+                        }}
+                        className="h-9 min-w-0 rounded-[8px] border border-pos-line bg-white px-2 text-xs font-bold text-pos-ink outline-none focus:border-pos-primary"
+                      />
+                    </label>
+                  </div>
                 )}
-                onClick={() => { setDateRange(dc.key); handleFilterChange(); }}
-              >
-                {dc.label}
-              </button>
-            ))}
+              </div>
+            )}
           </div>
-          {dateRange === "custom" && (
-            <div className="flex flex-wrap gap-1.5">
-              <TextField
-                type="date"
-                size="small"
-                label="Từ"
-                value={customFrom}
-                onChange={(e) => { setCustomFrom(e.target.value); handleFilterChange(); }}
-                InputLabelProps={{ shrink: true }}
-                inputProps={{ "data-testid": "history-from-date" }}
-              />
-              <TextField
-                type="date"
-                size="small"
-                label="Đến"
-                value={customTo}
-                onChange={(e) => { setCustomTo(e.target.value); handleFilterChange(); }}
-                InputLabelProps={{ shrink: true }}
-                inputProps={{ "data-testid": "history-to-date" }}
-              />
-            </div>
-          )}
-          <TextField
-            size="small"
-            placeholder="Tìm mã đơn / bàn..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); handleFilterChange(); }}
-            className="max-w-[200px]"
-            inputProps={{ "data-testid": "history-search" }}
-          />
-          <Button variant="outlined" onClick={closeDrawer}>Đóng</Button>
+
+          <label className="relative block w-[230px] max-[900px]:w-[184px] max-[700px]:w-[132px]">
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-pos-muted max-[760px]:left-2"
+            />
+            <input
+              data-testid="history-search"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                resetList();
+              }}
+              placeholder="Mã đơn, bàn..."
+              className="h-10 w-full rounded-[9px] border border-pos-line bg-pos-surface2 pl-9 pr-3 text-sm font-semibold text-pos-ink outline-none transition-colors placeholder:text-pos-muted focus:border-pos-primary max-[760px]:h-9 max-[760px]:pl-7 max-[760px]:text-xs"
+            />
+          </label>
+
+          <IconButton label="Làm mới danh sách" onClick={() => void historyQuery.refetch()}>
+            <RefreshCw size={17} />
+          </IconButton>
+          <IconButton label="Đóng" onClick={closeDrawer}>
+            <X size={18} />
+          </IconButton>
         </div>
       </header>
 
-      <div className="min-h-0 overflow-auto bg-pos-bg p-3 max-[980px]:p-2 grid grid-rows-[auto_minmax(0,1fr)] gap-2 overflow-hidden">
-        <div className="flex flex-wrap items-center gap-2 overflow-x-auto overflow-y-hidden px-0.5 pb-0.5 pt-px [scrollbar-width:thin] gap-1.5">
-          {statusChips.map((sc) => (
-            <button
-              key={sc.key}
-              className={clsx(
-                "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
-                statusFilter === sc.key
-                  ? "border-pos-primary bg-pos-primary text-white"
-                  : "border-pos-line bg-pos-surface text-pos-muted",
-              )}
-              onClick={() => { setStatusFilter(sc.key); handleFilterChange(); }}
-            >
-              {sc.label}
-              <span className="rounded-[10px] bg-pos-surface2 px-1.5 py-px text-[11px] font-semibold text-pos-muted">
-                {sc.key === "all" ? historyRows.length : historyRows.filter((o) => o.status === sc.key).length}
-              </span>
-            </button>
-          ))}
-          <span className="mx-1 my-0.5 min-h-6 w-px self-stretch bg-pos-line" aria-hidden="true" />
-          {orderTypeChips.map((oc) => (
-            <button
-              key={oc.key}
-              className={clsx(
-                "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
-                orderTypeFilter === oc.key
-                  ? "border-pos-primary bg-pos-primary text-white"
-                  : "border-pos-line bg-pos-surface text-pos-muted",
-              )}
-              onClick={() => { setOrderTypeFilter(oc.key); handleFilterChange(); }}
-            >
-              {oc.label}
-              <span className="rounded-[10px] bg-pos-surface2 px-1.5 py-px text-[11px] font-semibold text-pos-muted">
-                {oc.key === "all" ? historyRows.length : historyRows.filter((o) => o.orderType === oc.key).length}
-              </span>
-            </button>
-          ))}
+      <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden bg-pos-bg p-3 max-[900px]:gap-2 max-[900px]:p-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 max-[760px]:gap-1.5">
+          <div className="flex min-w-0 flex-wrap gap-1.5">
+            {statusOptions.map((option) => (
+              <button
+                type="button"
+                key={option.key}
+                onClick={() => {
+                  setStatusFilter(option.key);
+                  resetList();
+                }}
+                className={clsx(
+                  "min-h-8 rounded-full border px-3 text-xs font-black transition-colors max-[760px]:min-h-7 max-[760px]:px-2 max-[760px]:text-[11px]",
+                  statusFilter === option.key
+                    ? "border-pos-primary bg-pos-primary text-white"
+                    : "border-pos-line bg-white text-pos-muted hover:border-pos-primaryLine hover:text-pos-ink",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <div className="h-6 w-px bg-pos-line max-[700px]:hidden" />
+          <div className="flex min-w-0 flex-wrap gap-1.5">
+            {orderTypeOptions.map((option) => (
+              <button
+                type="button"
+                key={option.key}
+                onClick={() => {
+                  setOrderTypeFilter(option.key);
+                  resetList();
+                }}
+                className={clsx(
+                  "min-h-8 rounded-full border px-3 text-xs font-black transition-colors max-[760px]:min-h-7 max-[760px]:px-2 max-[760px]:text-[11px]",
+                  orderTypeFilter === option.key
+                    ? "border-pos-primary bg-pos-primary text-white"
+                    : "border-pos-line bg-white text-pos-muted hover:border-pos-primaryLine hover:text-pos-ink",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(300px,360px)] gap-2.5 max-[980px]:min-w-[650px]">
-          {/* List */}
-          <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface">
-            <div className="flex min-h-11 items-center justify-between gap-2.5 border-b border-pos-line bg-[#fbfcfd] px-3 py-2.5 font-black max-[980px]:min-h-9 max-[980px]:px-2 max-[980px]:py-[7px] max-[980px]:text-xs">
-              <span>Danh sách đơn</span>
-              <span className="text-pos-muted">{filtered.length} kết quả</span>
+        <div className="grid min-h-0 grid-cols-[minmax(0,0.52fr)_minmax(0,0.48fr)] gap-3 max-[900px]:gap-2 max-[760px]:grid-cols-[minmax(0,0.45fr)_minmax(0,0.55fr)]">
+          <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[10px] border border-pos-line bg-white">
+            <div className="flex min-h-[48px] items-center justify-between gap-2 border-b border-pos-line px-3 py-2 max-[760px]:min-h-[40px] max-[760px]:px-2">
+              <div className="min-w-0">
+                <h3 className="m-0 truncate text-[15px] font-black text-pos-ink max-[760px]:text-[13px]">
+                  Danh sách đơn
+                </h3>
+                <p className="m-0 mt-0.5 truncate text-[11px] font-semibold text-pos-muted max-[760px]:hidden">
+                  {formatBusinessDate(selectedRange.fromDate)} - {formatBusinessDate(selectedRange.toDate)}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-pos-surface2 px-2 py-1 text-xs font-black text-pos-muted max-[760px]:text-[11px]">
+                {filtered.length}/{historyQuery.data?.total ?? 0}
+              </span>
             </div>
-            <div className="min-h-0 overflow-auto p-2.5 max-[980px]:p-2 !p-0 flex flex-col gap-0">
+
+            <div className="min-h-0 overflow-auto p-2 max-[760px]:p-1.5">
               {historyQuery.isLoading ? (
-                <div className="flex flex-col gap-2 p-2">
-                  {[1, 2, 3].map((i) => <div key={i} className="h-20 rounded-pos bg-[linear-gradient(90deg,var(--surface-2)_25%,var(--surface)_50%,var(--surface-2)_75%)] bg-[length:200%_100%] animate-[skeleton-shimmer_1.4s_infinite]" />)}
+                <div className="grid gap-2">
+                  {[1, 2, 3, 4].map((item) => (
+                    <div
+                      key={item}
+                      className="h-[76px] rounded-[9px] bg-[linear-gradient(90deg,var(--surface-2)_25%,var(--surface)_50%,var(--surface-2)_75%)] bg-[length:200%_100%] animate-[skeleton-shimmer_1.4s_infinite]"
+                    />
+                  ))}
                 </div>
               ) : historyQuery.isError ? (
-                <div className="flex flex-col items-center justify-center gap-3 px-5 py-10 text-center text-pos-muted">
+                <div className="grid h-full min-h-[220px] place-items-center content-center gap-3 text-center text-pos-muted">
                   <AlertTriangle size={32} color="#b45309" />
-                  <p>{toToastError(historyQuery.error)}</p>
-                  <Button variant="outlined" size="small" onClick={() => void historyQuery.refetch()}>
+                  <p className="m-0 px-4 text-sm">{toToastError(historyQuery.error)}</p>
+                  <button
+                    type="button"
+                    onClick={() => void historyQuery.refetch()}
+                    className="min-h-9 rounded-[8px] border border-pos-line bg-white px-3 text-sm font-black text-pos-ink hover:border-pos-primary"
+                  >
                     Tải lại
-                  </Button>
+                  </button>
                 </div>
               ) : filtered.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 px-5 py-10 text-center text-pos-muted">
-                  <ReceiptText size={32} color="#94a3b8" />
-                  <p>Chưa có đơn đã thanh toán trong khoảng này.</p>
-                  {dateRange === "today" ? (
-                    <Button variant="outlined" size="small" startIcon={<RefreshCw size={15} />} onClick={() => void historyQuery.refetch()}>
-                      Làm mới
-                    </Button>
-                  ) : (
-                    <Button variant="outlined" size="small" onClick={() => { setDateRange("today"); handleFilterChange(); }}>
-                      Xem hôm nay
-                    </Button>
-                  )}
+                <div className="grid h-full min-h-[220px] place-items-center content-center gap-3 text-center text-pos-muted">
+                  <ReceiptText size={34} color="#94a3b8" />
+                  <p className="m-0 px-4 text-sm">Không có đơn phù hợp với bộ lọc hiện tại.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDateRange("today");
+                      setStatusFilter("all");
+                      setOrderTypeFilter("all");
+                      setSearch("");
+                      resetList();
+                    }}
+                    className="min-h-9 rounded-[8px] border border-pos-line bg-white px-3 text-sm font-black text-pos-ink hover:border-pos-primary"
+                  >
+                    Xem hôm nay
+                  </button>
                 </div>
               ) : (
-                <>
-                  <div className="mb-2.5 flex flex-wrap gap-x-[18px] gap-y-2 rounded-pos border border-pos-line bg-pos-surface2 px-2.5 py-2 text-xs text-pos-muted [&_strong]:text-pos-ink">
-                    <span>Doanh thu trang này <strong className="font-black text-pos-primary">{formatVnd(pageRevenue)}</strong></span>
-                    <span>Đã thanh toán <strong>{historyRows.filter((o) => o.status === "paid").length}</strong></span>
-                    <span>Đã huỷ <strong>{historyRows.filter((o) => o.status === "void").length}</strong></span>
-                  </div>
-                  {/* Desktop/tablet table */}
-                  <table className="w-full border-collapse text-[13px] max-[768px]:hidden [&_td]:border-b [&_td]:border-pos-line [&_td]:px-3 [&_td]:py-[9px] [&_td]:align-middle [&_th]:sticky [&_th]:top-0 [&_th]:z-[1] [&_th]:border-b-[1.5px] [&_th]:border-pos-line [&_th]:bg-pos-surface [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-[11px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[0.05em] [&_th]:text-pos-muted">
-                    <thead>
-                      <tr>
-                        <th>Ngày</th>
-                        <th>Mã đơn</th>
-                        <th>Bàn / Loại</th>
-                        <th>Nhân viên</th>
-                        <th>Tổng tiền</th>
-                        <th>Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginated.map((o) => (
-                        <tr
-                          key={o.id}
-                          className={clsx(
-                            "cursor-pointer transition-colors",
-                            selectedId === o.id ? "bg-pos-primarySoft" : "hover:bg-pos-surface2",
-                          )}
-                          data-testid={`history-row-${o.id}`}
-                          onClick={() => setSelectedId(o.id)}
-                        >
-                          <td className="text-pos-muted">{o.createdAt}</td>
-                          <td><strong>#{o.orderNo}</strong></td>
-                          <td>
-                            <span className={orderTypePillClass(o.orderType)}>
-                              {o.orderType === "takeaway" ? "Mang đi" : o.tableLabel}
-                            </span>
-                          </td>
-                          <td>{o.employeeName ?? "—"}</td>
-                          <td><strong className="font-black text-pos-primary">{formatCompactVnd(o.total)}</strong></td>
-                          <td><span className={statusBadgeClass(o.status)}>{statusLabel(o.status)}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  {/* Phone landscape cards */}
-                  <div className="hidden flex-col gap-2 p-2 max-[768px]:flex">
-                    {paginated.map((o) => (
-                      <div
-                        key={o.id}
-                        className={clsx(
-                          "cursor-pointer rounded-pos border-[1.5px] px-3 py-2.5 transition-colors hover:border-pos-primary",
-                          selectedId === o.id
-                            ? "border-pos-primary bg-pos-primarySoft"
-                            : "border-pos-line",
-                        )}
-                        onClick={() => setSelectedId(o.id)}
-                      >
-                        <div className="mb-1 flex justify-between">
-                          <strong>#{o.orderNo}</strong>
-                          <span className={statusBadgeClass(o.status)}>{statusLabel(o.status)}</span>
+                <div className="grid gap-2">
+                  {filtered.map((order) => (
+                    <button
+                      type="button"
+                      key={order.id}
+                      data-testid={`history-row-${order.id}`}
+                      onClick={() => setSelectedId(order.id)}
+                      className={clsx(
+                        "grid min-h-[76px] grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-[9px] border px-3 py-2 text-left transition-[border-color,background,box-shadow] max-[760px]:min-h-[68px] max-[760px]:px-2 max-[760px]:py-1.5",
+                        selectedId === order.id
+                          ? "border-pos-primary bg-pos-primarySoft shadow-[inset_3px_0_0_var(--primary)]"
+                          : "border-pos-line bg-white hover:border-pos-primaryLine hover:bg-pos-surface2",
+                      )}
+                    >
+                      <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <strong className="truncate text-[18px] font-black text-pos-ink max-[760px]:text-[14px]">
+                            #{order.orderNo}
+                          </strong>
+                          <span
+                            className={clsx(
+                              "shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-black max-[760px]:px-1.5 max-[760px]:text-[10px]",
+                              statusClass[order.status],
+                            )}
+                          >
+                            {statusLabel[order.status]}
+                          </span>
                         </div>
-                        <div className="mb-1.5 flex flex-wrap gap-2 text-xs">
-                          <span className="text-pos-muted">{o.createdAt}</span>
-                          <span className={orderTypePillClass(o.orderType)}>{o.orderType === "takeaway" ? "Mang đi" : o.tableLabel}</span>
-                          <span className="text-pos-muted">{o.employeeName ?? "—"}</span>
+                        <div className="mt-1 flex min-w-0 flex-wrap gap-x-2 gap-y-0.5 text-xs font-semibold text-pos-muted max-[760px]:text-[11px]">
+                          <span className="truncate">{order.tableLabel}</span>
+                          <span className="max-[700px]:hidden">·</span>
+                          <span className="truncate max-[700px]:hidden">{order.createdAt}</span>
                         </div>
-                        <strong className="font-black text-pos-primary">{formatVnd(o.total)}</strong>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex shrink-0 items-center justify-center gap-3 border-t border-pos-line p-3">
-                      <button className="cursor-pointer rounded-[6px] border-[1.5px] border-pos-line bg-transparent px-3.5 py-[5px] text-[13px] font-semibold text-pos-ink transition-[background,border-color,color] enabled:hover:border-pos-primary enabled:hover:bg-pos-surface2 enabled:hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40" disabled={page === 1} onClick={() => setPage(page - 1)}>‹ Trước</button>
-                      <span className="text-[13px] text-pos-muted">Trang {page} / {totalPages}</span>
-                      <button className="cursor-pointer rounded-[6px] border-[1.5px] border-pos-line bg-transparent px-3.5 py-[5px] text-[13px] font-semibold text-pos-ink transition-[background,border-color,color] enabled:hover:border-pos-primary enabled:hover:bg-pos-surface2 enabled:hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40" disabled={page === totalPages} onClick={() => setPage(page + 1)}>Sau ›</button>
-                    </div>
-                  )}
-                </>
+                      <div className="grid justify-items-end gap-1 text-right">
+                        <strong className="whitespace-nowrap text-[16px] font-black text-pos-primary max-[760px]:text-[13px]">
+                          {formatMoney(order.total)}
+                        </strong>
+                        <span className="rounded-full bg-pos-surface2 px-2 py-0.5 text-[11px] font-black text-pos-muted max-[700px]:hidden">
+                          {order.orderType === "takeaway" ? "Mang đi" : "Tại bàn"}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               )}
+            </div>
+
+            <div className="flex min-h-[48px] items-center justify-between gap-2 border-t border-pos-line px-3 py-2 max-[760px]:min-h-[40px] max-[760px]:px-2">
+              <button
+                type="button"
+                disabled={page === 1}
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
+                className="inline-flex min-h-8 items-center gap-1 rounded-[8px] border border-pos-line bg-white px-2.5 text-xs font-black text-pos-ink hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-40 max-[760px]:px-1.5"
+              >
+                <ChevronLeft size={15} />
+                <span className="max-[700px]:hidden">Trước</span>
+              </button>
+              <span className="text-xs font-black text-pos-muted">
+                Trang {page}/{totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={page === totalPages}
+                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+                className="inline-flex min-h-8 items-center gap-1 rounded-[8px] border border-pos-line bg-white px-2.5 text-xs font-black text-pos-ink hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-40 max-[760px]:px-1.5"
+              >
+                <span className="max-[700px]:hidden">Sau</span>
+                <ChevronRight size={15} />
+              </button>
             </div>
           </section>
 
-          {/* Right: detail */}
-          <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface">
-            <div className="flex min-h-11 items-center justify-between gap-2.5 border-b border-pos-line bg-[#fbfcfd] px-3 py-2.5 font-black max-[980px]:min-h-9 max-[980px]:px-2 max-[980px]:py-[7px] max-[980px]:text-xs">Chi tiết đơn</div>
-            <div className="min-h-0 overflow-auto p-2.5 max-[980px]:p-2">
+          <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[10px] border border-pos-line bg-white">
+            <div className="flex min-h-[54px] items-center justify-between gap-2 border-b border-pos-line px-3 py-2 max-[760px]:min-h-[44px] max-[760px]:px-2">
+              <div className="min-w-0">
+                <h3 className="m-0 truncate text-[15px] font-black text-pos-ink max-[760px]:text-[13px]">
+                  {selected ? `Chi tiết đơn #${selected.orderNo}` : "Chi tiết đơn"}
+                </h3>
+                <p className="m-0 mt-0.5 truncate text-[11px] font-semibold text-pos-muted max-[760px]:hidden">
+                  {selected ? `${selected.tableLabel} · ${selected.createdAt}` : "Chọn một đơn bên trái"}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <IconButton disabled={!selected} label="In lại hóa đơn" onClick={() => toast("Chức năng in lại sẽ dùng bản lưu hóa đơn ở bước sau.")}>
+                  <Printer size={16} />
+                </IconButton>
+                <IconButton disabled={!selected} label="Sao chép mã đơn" onClick={copyOrderNo}>
+                  <Copy size={16} />
+                </IconButton>
+                <IconButton disabled={!selected} label="Tải lại chi tiết" onClick={() => void detailQuery.refetch()}>
+                  <RefreshCw size={16} />
+                </IconButton>
+              </div>
+            </div>
+
+            <div className="min-h-0 overflow-auto p-3 max-[760px]:p-2">
               {!selected ? (
-                <p className="text-pos-muted p-4">Chọn đơn để xem chi tiết.</p>
+                <div className="grid h-full min-h-[260px] place-items-center content-center gap-3 text-center text-pos-muted">
+                  <ReceiptText size={34} color="#94a3b8" />
+                  <p className="m-0 px-4 text-sm">Chọn một đơn để xem danh sách món và thông tin thanh toán.</p>
+                </div>
+              ) : detailQuery.isError ? (
+                <div className="grid h-full min-h-[260px] place-items-center content-center gap-3 text-center text-pos-muted">
+                  <AlertTriangle size={32} color="#b45309" />
+                  <p className="m-0 px-4 text-sm">{toToastError(detailQuery.error)}</p>
+                  <button
+                    type="button"
+                    onClick={() => void detailQuery.refetch()}
+                    className="min-h-9 rounded-[8px] border border-pos-line bg-white px-3 text-sm font-black text-pos-ink hover:border-pos-primary"
+                  >
+                    Tải lại
+                  </button>
+                </div>
               ) : (
-                <div className="flex flex-col gap-2 px-3.5 py-3">
-                  <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Đơn số</span><strong>#{selected.orderNo}</strong></div>
-                  <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Ngày</span><strong>{selected.createdAt}</strong></div>
-                  <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted">
-                    <span>Loại</span>
-                    <strong>
-                      <span className={orderTypePillClass(selected.orderType)}>
-                        {selected.orderType === "takeaway" ? "Mang đi" : `Tại bàn · ${selected.tableLabel}`}
-                      </span>
-                    </strong>
-                  </div>
-                  {selected.employeeName && (
-                    <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Nhân viên</span><strong>{selected.employeeName}</strong></div>
-                  )}
-                  <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted">
-                    <span>Trạng thái</span>
-                    <strong><span className={statusBadgeClass(selected.status)}>{statusLabel(selected.status)}</span></strong>
-                  </div>
-                  {selected.payMethod && (
-                    <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Thanh toán</span><strong>{PAY_METHOD_LABEL[selected.payMethod] ?? selected.payMethod}</strong></div>
-                  )}
-                  <div className="my-1 border-t border-pos-line" />
-                  <div className="mb-1 px-3 text-[11px] font-bold uppercase tracking-[0.05em] text-pos-muted">Món</div>
-                  {detailQuery.isLoading ? (
-                    <p className="text-pos-muted">Đang tải chi tiết...</p>
-                  ) : detailQuery.isError ? (
-                    <p className="text-pos-muted">{toToastError(detailQuery.error)}</p>
-                  ) : selectedDetail?.items.length ? (
-                    selectedDetail.items.map((item) => (
-                      <div key={item.id} className="flex justify-between gap-2 text-[13px]">
-                        <span>{item.itemName} × {item.quantity}</span>
-                        <strong>{formatCompactVnd(item.unitPrice * item.quantity)}</strong>
+                <div className="grid gap-3">
+                  <div className="flex min-w-0 items-start justify-between gap-2 border-b border-pos-line pb-3">
+                    <div className="min-w-0">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <strong className="truncate text-[24px] font-black leading-tight text-pos-ink max-[760px]:text-[17px]">
+                          #{selected.orderNo}
+                        </strong>
+                        <span
+                          className={clsx(
+                            "shrink-0 rounded-full border px-2 py-1 text-xs font-black max-[760px]:px-1.5 max-[760px]:py-0.5 max-[760px]:text-[10px]",
+                            statusClass[selected.status],
+                          )}
+                        >
+                          {statusLabel[selected.status]}
+                        </span>
                       </div>
-                    ))
-                  ) : (
-                    <p className="text-pos-muted">Không có chi tiết món.</p>
-                  )}
-                  <div className="my-1 border-t border-pos-line" />
-                  <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted mt-1 text-[15px]"><span>Tổng</span><strong className="font-black text-pos-primary">{formatVnd(selectedDetail?.total ?? selected.total)}</strong></div>
-                  <div className="mt-2 flex flex-col gap-2">
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      fullWidth
-                      startIcon={<ReceiptText size={15} />}
-                      onClick={() => toast("Tính năng in lại sẽ dùng bản lưu hoá đơn ở bước sau.")}
-                    >
-                      In lại
-                    </Button>
-                    <Button variant="outlined" size="small" fullWidth onClick={() => setSelectedId(null)}>
-                      Đóng chi tiết
-                    </Button>
+                      <p className="m-0 mt-1 text-xs font-semibold text-pos-muted max-[760px]:text-[11px]">
+                        Ngày bán {selected.createdAt} · Thanh toán {paidTimeLabel}
+                      </p>
+                    </div>
+                    {selected.status === "paid" && <CheckCircle2 className="shrink-0 text-[#16a34a]" size={22} />}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs max-[760px]:gap-1.5">
+                    <div className="min-w-0 rounded-[8px] border border-pos-line bg-pos-surface2 px-2 py-1.5">
+                      <span className="block truncate font-bold text-pos-muted">Khách hàng</span>
+                      <strong className="block truncate text-[13px] text-pos-ink max-[760px]:text-xs">Khách lẻ</strong>
+                    </div>
+                    <div className="min-w-0 rounded-[8px] border border-pos-line bg-pos-surface2 px-2 py-1.5">
+                      <span className="block truncate font-bold text-pos-muted">Người thanh toán</span>
+                      <strong className="block truncate text-[13px] text-pos-ink max-[760px]:text-xs">Khách lẻ</strong>
+                    </div>
+                    <div className="min-w-0 rounded-[8px] border border-pos-line bg-pos-surface2 px-2 py-1.5">
+                      <span className="block truncate font-bold text-pos-muted">Thu ngân</span>
+                      <strong className="block truncate text-[13px] text-pos-ink max-[760px]:text-xs">{cashierLabel}</strong>
+                    </div>
+                    <div className="min-w-0 rounded-[8px] border border-pos-line bg-pos-surface2 px-2 py-1.5">
+                      <span className="block truncate font-bold text-pos-muted">Phương thức</span>
+                      <strong className="block truncate text-[13px] text-pos-ink max-[760px]:text-xs">{paymentMethodLabel}</strong>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="m-0 text-sm font-black text-pos-ink max-[760px]:text-xs">
+                        Danh sách món
+                      </h4>
+                      <span className="text-xs font-bold text-pos-muted">
+                        {selectedDetail?.items.length ?? 0} món
+                      </span>
+                    </div>
+
+                    {detailQuery.isLoading ? (
+                      <div className="grid gap-2">
+                        {[1, 2, 3].map((item) => (
+                          <div
+                            key={item}
+                            className="h-[64px] rounded-[9px] bg-[linear-gradient(90deg,var(--surface-2)_25%,var(--surface)_50%,var(--surface-2)_75%)] bg-[length:200%_100%] animate-[skeleton-shimmer_1.4s_infinite]"
+                          />
+                        ))}
+                      </div>
+                    ) : selectedDetail?.items.length ? (
+                      <div className="grid gap-2">
+                        {selectedDetail.items.map((item) => {
+                          const meta = itemMeta(item);
+                          return (
+                            <div
+                              key={item.id}
+                              className="grid min-h-[68px] grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 rounded-[9px] border border-pos-line bg-pos-surface2 px-2.5 py-2 max-[760px]:grid-cols-[34px_minmax(0,1fr)_auto] max-[760px]:gap-2 max-[760px]:px-2"
+                            >
+                              <div className="grid h-11 w-11 place-items-center rounded-[8px] border border-pos-line bg-white text-xs font-black text-pos-primary max-[760px]:h-[34px] max-[760px]:w-[34px]">
+                                x{item.quantity}
+                              </div>
+                              <div className="min-w-0">
+                                <strong className="block truncate text-sm font-black text-pos-ink max-[760px]:text-xs">
+                                  {item.itemName}
+                                </strong>
+                                <span className="mt-0.5 block truncate text-xs font-semibold text-pos-muted max-[760px]:text-[11px]">
+                                  {meta || "Không có tuỳ chọn"}
+                                </span>
+                              </div>
+                              <strong className="whitespace-nowrap text-sm font-black text-pos-ink max-[760px]:text-xs">
+                                {formatMoney(itemLineTotal(item))}
+                              </strong>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="m-0 rounded-[9px] border border-pos-line bg-pos-surface2 p-3 text-sm font-semibold text-pos-muted">
+                        Không có chi tiết món.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
+            </div>
+
+            <div
+              data-testid="history-payment-summary"
+              className="grid gap-1.5 border-t border-pos-line bg-white px-3 py-3 shadow-[0_-10px_28px_rgb(15_23_42_/_6%)] max-[760px]:px-2 max-[760px]:py-2"
+            >
+              <div className="flex items-center justify-between gap-3 text-sm max-[760px]:text-xs">
+                <span data-testid="history-payment-label" className="font-bold text-pos-muted">
+                  Khách đưa
+                </span>
+                <strong className="whitespace-nowrap font-black text-pos-ink">
+                  {selectedPayment ? formatMoney(selectedPayment.receivedAmount) : "Chưa ghi nhận"}
+                </strong>
+              </div>
+              <div className="flex items-center justify-between gap-3 text-sm max-[760px]:text-xs">
+                <span data-testid="history-payment-label" className="font-bold text-pos-muted">
+                  Tiền thừa
+                </span>
+                <strong className="whitespace-nowrap font-black text-[#0f766e]">
+                  {selectedPayment ? formatMoney(selectedPayment.changeAmount) : "Chưa ghi nhận"}
+                </strong>
+              </div>
+              <div className="mt-1 flex items-center justify-between gap-3 border-t border-pos-line pt-2">
+                <span data-testid="history-payment-label" className="text-sm font-black text-pos-ink max-[760px]:text-xs">
+                  Tổng tiền
+                </span>
+                <strong className="whitespace-nowrap text-[24px] font-black text-pos-primary max-[760px]:text-[17px]">
+                  {formatMoney(selectedDetail?.total ?? selected?.total ?? 0)}
+                </strong>
+              </div>
             </div>
           </aside>
         </div>

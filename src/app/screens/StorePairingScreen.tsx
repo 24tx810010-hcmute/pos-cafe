@@ -6,6 +6,8 @@ import { usePairStoreMutation } from "@/features/session";
 import { useAppStore } from "../useAppStore";
 import { toToastError } from "../appErrors";
 
+const sampleStoreKey = "0001-X8F3QA";
+
 export function StorePairingScreen() {
   const setScreen = useAppStore((state) => state.setScreen);
   const [key, setKey] = useState("");
@@ -64,8 +66,8 @@ export function StorePairingScreen() {
             <div className="grid gap-1">
               <TextField
                 label="Store Key"
-                placeholder="0001-X8F3QA"
-                value={key || '0036-SV75VNXD'}
+                placeholder={sampleStoreKey}
+                value={key}
                 onChange={(e) => { setKey(e.target.value); setError(""); }}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 error={!!error}
