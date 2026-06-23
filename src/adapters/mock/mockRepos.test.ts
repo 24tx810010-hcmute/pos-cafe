@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { FloorPlanChanges, MenuChanges } from "@/domain";
 import { createMockPorts, createMockState } from "./mockRepos";
 
@@ -189,6 +189,20 @@ describe("mock repositories", () => {
     expect(menu.categories.some((category) => category.id === "cat-blended")).toBe(false);
     expect(menu.menuItems.find((item) => item.id === "mi-latte")?.price).toBe(47000);
     expect(menu.menuItems.some((item) => item.id === "mi-cold-brew")).toBe(false);
+  });
+
+  it("returns browser object URLs for uploaded mock menu item images", async () => {
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: vi.fn(() => "blob:mock-menu-image"),
+    });
+    const ports = createMockPorts();
+    const file = new File(["image"], "latte.webp", { type: "image/webp" });
+
+    const uploaded = await ports.menuImages.uploadMenuItemImage({ itemId: "mi-latte", file });
+
+    expect(URL.createObjectURL).toHaveBeenCalledWith(file);
+    expect(ports.menuImages.getImageUrl(uploaded.assetKey)).toBe("blob:mock-menu-image");
   });
 
   it("applies mock floor-plan changesets without overwriting table status", async () => {

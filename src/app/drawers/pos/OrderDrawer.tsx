@@ -17,6 +17,7 @@ import {
   useOrderDetailQuery,
   useSubmitOrderMutation,
 } from "@/features/pos";
+import { usePorts } from "@/features/shared/portsContext";
 import { notifyUiError, toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { PortalPopup } from "../../components/PortalPopup";
@@ -33,6 +34,7 @@ export function OrderDrawer() {
   const setDraftItems = useAppStore((state) => state.setDraftItems);
   const activeCategoryId = useAppStore((state) => state.activeCategoryId);
   const setActiveCategoryId = useAppStore((state) => state.setActiveCategoryId);
+  const ports = usePorts();
 
   const [search, setSearch] = useState("");
   const [confirmClose, setConfirmClose] = useState(false);
@@ -248,6 +250,7 @@ export function OrderDrawer() {
             isLoading={menuQuery.isLoading}
             isError={menuQuery.isError}
             error={menuQuery.error}
+            getMenuImageUrl={(assetKey) => ports.menuImages.getImageUrl(assetKey)}
             onSelectCategory={(selectedCategoryId) => {
               setActiveCategoryId(selectedCategoryId);
               setSearch("");

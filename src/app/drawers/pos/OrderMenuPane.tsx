@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Coffee } from "lucide-react";
 import clsx from "clsx";
 import { Button, TextField } from "@mui/material";
 import type { Category, MenuItem } from "@/domain";
@@ -13,6 +13,7 @@ type OrderMenuPaneProps = {
   isLoading: boolean;
   isError: boolean;
   error: unknown;
+  getMenuImageUrl: (assetKey: string | null | undefined) => string | null;
   onSelectCategory: (categoryId: string) => void;
   onSearchChange: (search: string) => void;
   onRetry: () => void;
@@ -27,6 +28,7 @@ export function OrderMenuPane({
   isLoading,
   isError,
   error,
+  getMenuImageUrl,
   onSelectCategory,
   onSearchChange,
   onRetry,
@@ -75,23 +77,53 @@ export function OrderMenuPane({
         ) : items.length === 0 ? (
           <p className="text-pos-muted p-3">Không có món.</p>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(136px,1fr))] gap-2.5">
-            {items.map((item) => (
-              <button
-                key={item.id}
-                className={clsx("grid min-h-24 cursor-pointer grid-rows-[6px_1fr_auto] overflow-hidden rounded-pos border border-pos-line bg-white p-0 text-left transition-[border-color,box-shadow] hover:border-pos-primary hover:shadow-[0_0_0_2px_rgb(15_118_110_/_12%)] disabled:cursor-not-allowed", !item.isAvailable && "cursor-not-allowed opacity-50")}
-                data-testid={`menu-item-${item.id}`}
-                onClick={() => onAddItem(item)}
-                disabled={!item.isAvailable}
-              >
-                <div className={clsx("h-1.5 w-full rounded-t-pos", item.categoryId === "cat-coffee" && "bg-[#7c3aed]", item.categoryId === "cat-tea" && "bg-[#0891b2]", item.categoryId === "cat-blended" && "bg-[#0d9488]", item.categoryId === "cat-snack" && "bg-[#d97706]", item.categoryId !== "cat-coffee" && item.categoryId !== "cat-tea" && item.categoryId !== "cat-blended" && item.categoryId !== "cat-snack" && "bg-[#64748b]")} />
-                <div className="grid gap-[3px] px-2.5 pb-1 pt-2">
-                  <strong className="text-[13px] font-bold leading-[1.3]">{item.name}</strong>
-                  {!item.isAvailable && <span className="w-fit rounded bg-[#fee2e2] px-1.5 py-px text-[10px] font-bold text-pos-danger">Tạm hết</span>}
-                </div>
-                <span className="font-black text-pos-primary">{formatVnd(item.price)}</span>
-              </button>
-            ))}
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2.5">
+            {items.map((item) => {
+              const imageUrl = getMenuImageUrl(item.imageAssetKey);
+              return (
+                <button
+                  key={item.id}
+                  className={clsx(
+                    "grid min-h-[96px] cursor-pointer grid-cols-[82px_minmax(0,1fr)] overflow-hidden rounded-pos border p-2 text-left transition-[border-color,box-shadow] disabled:cursor-not-allowed",
+                    item.isAvailable
+                      ? "border-pos-line bg-white hover:border-pos-primary hover:shadow-[0_0_0_2px_rgb(15_118_110_/_12%)]"
+                      : "border-[#fecaca] bg-[#fff7f7] hover:border-[#fecaca] hover:shadow-none",
+                  )}
+                  data-testid={`menu-item-${item.id}`}
+                  onClick={() => onAddItem(item)}
+                  disabled={!item.isAvailable}
+                >
+                  <div
+                    className={clsx(
+                      "relative grid h-20 w-20 place-items-center overflow-hidden rounded-[7px] border",
+                      item.isAvailable
+                        ? "border-pos-line bg-pos-primarySoft text-pos-primary"
+                        : "border-[#fecaca] bg-[#fff7f7] text-pos-danger",
+                    )}
+                  >
+                    {imageUrl ? (
+                      <img src={imageUrl} alt={`Ảnh ${item.name}`} className="h-full w-full object-cover" />
+                    ) : (
+                      <Coffee size={22} />
+                    )}
+                    {!item.isAvailable && (
+                      <>
+                        <span className="absolute inset-0 bg-white/70" />
+                        <span className="absolute left-1/2 top-1/2 w-[calc(100%-10px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#fecaca] bg-white/95 px-1.5 py-1 text-center text-[10px] font-black leading-tight text-pos-danger shadow-sm">
+                          Đã bán hết
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <div className="grid min-w-0 content-between gap-1 px-2">
+                    <div className="grid min-w-0 gap-1">
+                      <strong className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-bold leading-[1.3]">{item.name}</strong>
+                    </div>
+                    <span className="font-black text-pos-primary">{formatVnd(item.price)}</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

@@ -46,6 +46,22 @@ export interface IMenuRepo {
   saveMenuChanges(changes: MenuChanges): Promise<void>;
 }
 
+export type MenuItemImageUploadInput = {
+  itemId: string;
+  file: File;
+};
+
+export type MenuItemImageUploadResult = {
+  assetKey: string;
+  publicUrl: string;
+};
+
+export interface IMenuImagePort {
+  uploadMenuItemImage(input: MenuItemImageUploadInput): Promise<MenuItemImageUploadResult>;
+  deleteMenuItemImage(assetKey: string): Promise<void>;
+  getImageUrl(assetKey: string | null | undefined): string | null;
+}
+
 export interface IFloorPlanRepo {
   getFloorPlan(): Promise<FloorPlan>;
   saveFloorPlan(changes: FloorPlanChanges): Promise<void>;
@@ -100,6 +116,7 @@ export type AppPorts = {
   auth: IAuthRepo;
   employee: IEmployeeRepo;
   menu: IMenuRepo;
+  menuImages: IMenuImagePort;
   floorPlan: IFloorPlanRepo;
   order: IOrderRepo;
   payment: IPaymentRepo;

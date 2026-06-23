@@ -1,21 +1,28 @@
 import clsx from "clsx";
-import { Button, TextField } from "@mui/material";
-import { ChevronRight, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Button, FormControlLabel, MenuItem as MuiMenuItem, Switch, TextField } from "@mui/material";
+import { Plus, RotateCcw, Trash2 } from "lucide-react";
 import { toInt } from "@/features/admin/draftUtils";
 import type { DraftCategory, DraftGroup, DraftItem, DraftValue } from "@/features/admin/menuDraft";
+import { MENU_IMAGE_HELP_TEXT } from "@/features/admin/menuImageDraft";
 
 type PatchDraft<T> = (id: string, patch: Partial<T>) => void;
 
 interface MenuEditorDetailPaneProps {
   selectedItem: DraftItem | null;
   selectedCategory: DraftCategory | null;
+  selectedItemImageUrl: string | null;
   sortedCats: DraftCategory[];
   itemGroups: DraftGroup[];
   groupValues: (groupId: string) => DraftValue[];
-  advancedOpen: boolean;
-  onToggleAdvanced: () => void;
+  controlsLocked: boolean;
+  itemSwapMode: boolean;
+  onItemSwapModeChange: (enabled: boolean) => void;
   patchItem: PatchDraft<DraftItem>;
+  onItemCategoryChange: (id: string, categoryId: string) => void;
   toggleDeleteItem: (id: string) => void;
+  onImageSelected: (id: string, file: File) => void;
+  onImageRemoved: (id: string) => void;
+  addItem: () => void;
   addGroup: (itemId: string) => void;
   patchGroup: PatchDraft<DraftGroup>;
   toggleDeleteGroup: (id: string) => void;
@@ -30,13 +37,19 @@ interface MenuEditorDetailPaneProps {
 export function MenuEditorDetailPane({
   selectedItem,
   selectedCategory,
+  selectedItemImageUrl,
   sortedCats,
   itemGroups,
   groupValues,
-  advancedOpen,
-  onToggleAdvanced,
+  controlsLocked,
+  itemSwapMode,
+  onItemSwapModeChange,
   patchItem,
+  onItemCategoryChange,
   toggleDeleteItem,
+  onImageSelected,
+  onImageRemoved,
+  addItem,
   addGroup,
   patchGroup,
   toggleDeleteGroup,
@@ -47,12 +60,69 @@ export function MenuEditorDetailPane({
   moveCategory,
   toggleDeleteCategory,
 }: MenuEditorDetailPaneProps) {
+  const activeCategories = sortedCats.filter((category) => !category.deleted);
+  const selectedItemCategoryValue =
+    selectedItem && activeCategories.some((category) => category.id === selectedItem.categoryId)
+      ? selectedItem.categoryId
+      : "";
+  const canAddItem = Boolean(selectedCategory && !selectedCategory.deleted);
+
   return (
-    <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface">
-      <div className="flex min-h-11 items-center justify-between gap-2.5 border-b border-pos-line bg-[#fbfcfd] px-3 py-2.5 font-black max-[980px]:min-h-9 max-[980px]:px-2 max-[980px]:py-[7px] max-[980px]:text-xs">{selectedItem ? "Chi tiết món" : selectedCategory ? "Chi tiết danh mục" : "Thuộc tính"}</div>
+    <aside className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface" data-testid="menu-editor-detail-pane">
+      <div className="flex min-h-11 items-center justify-between gap-2.5 border-b border-pos-line bg-[#fbfcfd] px-3 py-2.5 font-black max-[980px]:min-h-9 max-[980px]:px-2 max-[980px]:py-[7px] max-[980px]:text-xs">
+        <span>{selectedItem ? "Chi tiết món" : selectedCategory ? "Chi tiết danh mục" : "Thuộc tính"}</span>
+        {selectedCategory && (
+          <button className="inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border border-pos-line bg-pos-surface2 px-2 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40 px-2.5" data-testid="add-item-button" disabled={controlsLocked || !canAddItem} onClick={addItem}>
+            <Plus size={13} /> Thêm món
+          </button>
+        )}
+      </div>
       <div className="min-h-0 overflow-auto p-2.5 max-[980px]:p-2 grid content-start gap-3">
         {selectedItem ? (
           <>
+            <div className="flex items-center justify-between rounded-[7px] border border-pos-line bg-pos-surface2 px-2.5 py-1.5">
+              <FormControlLabel
+                control={<Switch checked={itemSwapMode} onChange={(event) => onItemSwapModeChange(event.target.checked)} />}
+                label="Đổi vị trí"
+              />
+            </div>
+            <fieldset className="contents" disabled={controlsLocked}>
+            <div className="grid gap-2 rounded-[7px] border border-pos-line bg-pos-surface2 p-2.5">
+              <span className="text-xs font-extrabold text-pos-muted">Ảnh món</span>
+              <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center gap-2.5">
+                <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-[7px] border border-pos-line bg-pos-primarySoft text-pos-primary">
+                  {selectedItemImageUrl ? (
+                    <img src={selectedItemImageUrl} alt={`Ảnh ${selectedItem.name || "món"}`} className="h-full w-full object-contain" />
+                  ) : (
+                    <span className="text-[11px] font-bold text-pos-muted">Chưa có ảnh</span>
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <label className="inline-flex h-8 w-fit cursor-pointer items-center justify-center rounded-[6px] border border-pos-line bg-white px-3 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary">
+                    Chọn ảnh
+                    <input
+                      aria-label="Chọn ảnh món"
+                      className="sr-only"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(event) => {
+                        const file = event.currentTarget.files?.[0];
+                        if (file) onImageSelected(selectedItem.id, file);
+                        event.currentTarget.value = "";
+                      }}
+                    />
+                  </label>
+                  <button
+                    className="inline-flex h-8 w-fit cursor-pointer items-center justify-center rounded-[6px] border border-pos-line bg-white px-3 text-xs font-bold text-pos-muted transition-[border-color,color] hover:border-pos-danger hover:text-pos-danger disabled:cursor-not-allowed disabled:opacity-45"
+                    disabled={!selectedItemImageUrl && !selectedItem.imageAssetKey}
+                    onClick={() => onImageRemoved(selectedItem.id)}
+                  >
+                    Xóa ảnh
+                  </button>
+                  <p className="m-0 text-[11px] font-semibold leading-snug text-pos-muted">{MENU_IMAGE_HELP_TEXT}</p>
+                </div>
+              </div>
+            </div>
             <TextField
               label="Tên món"
               value={selectedItem.name}
@@ -61,6 +131,7 @@ export function MenuEditorDetailPane({
               helperText={!selectedItem.name.trim() ? "Tên món bắt buộc." : ""}
               size="small"
               fullWidth
+              disabled={controlsLocked}
               inputProps={{ "data-testid": "menu-item-name-input" }}
             />
             <TextField
@@ -69,27 +140,30 @@ export function MenuEditorDetailPane({
               onChange={(e) => patchItem(selectedItem.id, { price: toInt(e.target.value) })}
               size="small"
               fullWidth
+              disabled={controlsLocked}
               inputProps={{ inputMode: "numeric" }}
             />
-            <div className="grid gap-1.5">
-              <span className="text-xs font-extrabold text-pos-muted">Danh mục</span>
-              <div className="flex flex-wrap gap-1.5">
-                {sortedCats.filter((c) => !c.deleted).map((c) => (
-                  <button
-                    key={c.id}
-                    className={clsx(
-                      "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
-                      selectedItem.categoryId === c.id
-                        ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
-                        : "border-pos-line bg-pos-surface text-pos-ink",
-                    )}
-                    onClick={() => patchItem(selectedItem.id, { categoryId: c.id })}
-                  >
-                    {c.name || "(chưa đặt tên)"}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <TextField
+              select
+              label="Danh mục"
+              value={selectedItemCategoryValue}
+              onChange={(event) => {
+                const categoryId = event.target.value;
+                if (categoryId) onItemCategoryChange(selectedItem.id, categoryId);
+              }}
+              size="small"
+              fullWidth
+              disabled={controlsLocked}
+            >
+              <MuiMenuItem value="" disabled>
+                Chọn danh mục
+              </MuiMenuItem>
+              {activeCategories.map((category) => (
+                <MuiMenuItem key={category.id} value={category.id}>
+                  {category.name || "(chưa đặt tên)"}
+                </MuiMenuItem>
+              ))}
+            </TextField>
             <div className="grid gap-1.5">
               <span className="text-xs font-extrabold text-pos-muted">Trạng thái</span>
               <div className="flex flex-wrap gap-1.5">
@@ -124,29 +198,7 @@ export function MenuEditorDetailPane({
               </div>
             )}
 
-            <button
-              type="button"
-              className="flex w-full cursor-pointer items-center gap-2 rounded-[7px] border border-pos-line bg-pos-surface2 px-2.5 py-[9px] text-left text-[13px] font-extrabold text-pos-ink hover:border-pos-primary"
-              aria-expanded={advancedOpen}
-              onClick={onToggleAdvanced}
-            >
-              <ChevronRight size={15} className={clsx("shrink-0 transition-transform duration-150", advancedOpen && "rotate-90")} />
-              Nâng cao
-              <span className="text-pos-muted">Thứ tự · nhóm tuỳ chọn</span>
-            </button>
-
-            {advancedOpen && (
-              <div className="grid gap-3">
-                <TextField
-                  label="Thứ tự"
-                  value={String(selectedItem.sortOrder)}
-                  onChange={(e) => patchItem(selectedItem.id, { sortOrder: toInt(e.target.value) })}
-                  size="small"
-                  fullWidth
-                  inputProps={{ inputMode: "numeric" }}
-                />
-
-                <div className="grid gap-2.5 border-t border-dashed border-pos-line pt-3">
+            <div className="grid gap-2.5 border-t border-dashed border-pos-line pt-3">
                   <div className="flex items-center justify-between text-[13px] font-extrabold">
                     <span>Nhóm tuỳ chọn</span>
                     <button className="inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border border-pos-line bg-pos-surface2 px-2 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40 px-2.5" onClick={() => addGroup(selectedItem.id)}><Plus size={13} /> Nhóm</button>
@@ -226,9 +278,8 @@ export function MenuEditorDetailPane({
                       </div>
                     ))
                   )}
-                </div>
-              </div>
-            )}
+            </div>
+            </fieldset>
           </>
         ) : selectedCategory ? (
           <>
