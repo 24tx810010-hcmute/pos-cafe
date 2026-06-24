@@ -542,6 +542,8 @@ describe("Tailwind UI migration", () => {
   test("Order history views do not use legacy history table and card CSS class names", () => {
     const source = [
       "src/app/drawers/admin/OrderHistoryDrawer.tsx",
+      "src/app/drawers/admin/OrderHistoryListPane.tsx",
+      "src/app/drawers/admin/OrderHistoryDetailPane.tsx",
       "src/app/drawers/admin/KitchenQueueDrawer.tsx",
     ].map((path) => withoutTestIds(sourceFile(path))).join("\n");
     const legacyClasses = [

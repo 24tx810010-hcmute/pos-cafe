@@ -1,4 +1,5 @@
-import { useAppStore } from "../useAppStore";
+import type { ComponentType } from "react";
+import { useAppStore, type DrawerModule } from "../useAppStore";
 import { EmployeesStubDrawer } from "../drawers/admin/EmployeesDrawer";
 import { FloorEditorDrawer } from "../drawers/admin/FloorEditorDrawer";
 import { GeneralSettingsDrawer } from "../drawers/admin/GeneralSettingsDrawer";
@@ -14,8 +15,23 @@ import { ReceiptPreviewPopup } from "../components/ReceiptPreview";
 import { FloorWorkspace } from "./FloorWorkspace";
 import { LeftNav } from "./LeftNav";
 
+const DRAWER_REGISTRY: Record<NonNullable<DrawerModule>, ComponentType> = {
+  order: OrderDrawer,
+  payment: PaymentDrawer,
+  takeaway: TakeawayDrawer,
+  menuEditor: MenuEditorDrawer,
+  floorEditor: FloorEditorDrawer,
+  reportSettings: ReportSettingsDrawer,
+  orderHistory: OrderHistoryDrawer,
+  employees: EmployeesStubDrawer,
+  settings: GeneralSettingsDrawer,
+  kitchen: KitchenQueueDrawer,
+  paymentSettings: PaymentSettingsDrawer,
+};
+
 export function AppShell() {
   const drawer = useAppStore((state) => state.drawer);
+  const ActiveDrawer = drawer ? DRAWER_REGISTRY[drawer] : null;
 
   return (
     <main
@@ -26,17 +42,7 @@ export function AppShell() {
 
       <section className="relative min-h-0 min-w-0 overflow-hidden bg-pos-bg">
         <FloorWorkspace />
-        {drawer === "order" ? <OrderDrawer /> : null}
-        {drawer === "payment" ? <PaymentDrawer /> : null}
-        {drawer === "menuEditor" ? <MenuEditorDrawer /> : null}
-        {drawer === "floorEditor" ? <FloorEditorDrawer /> : null}
-        {drawer === "reportSettings" ? <ReportSettingsDrawer /> : null}
-        {drawer === "takeaway" ? <TakeawayDrawer /> : null}
-        {drawer === "orderHistory" ? <OrderHistoryDrawer /> : null}
-        {drawer === "employees" ? <EmployeesStubDrawer /> : null}
-        {drawer === "settings" ? <GeneralSettingsDrawer /> : null}
-        {drawer === "kitchen" ? <KitchenQueueDrawer /> : null}
-        {drawer === "paymentSettings" ? <PaymentSettingsDrawer /> : null}
+        {ActiveDrawer ? <ActiveDrawer /> : null}
         <ReceiptPreviewPopup />
       </section>
     </main>
