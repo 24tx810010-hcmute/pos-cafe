@@ -9,6 +9,7 @@ import type { OrderDetail } from "@/domain";
 import { useFloorPlanQuery, useOrderDetailQuery, usePayOrderMutation } from "@/features/pos";
 import { notifyUiError, toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
+import { ticketFromOrderDetail } from "../../components/ReceiptPreview";
 import { useAppStore } from "../../useAppStore";
 
 const keypadKeys = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "00", "0"] as const;
@@ -39,6 +40,7 @@ const formatAmountInputValue = (rawDigits: string) => {
 
 export function PaymentDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
+  const openReceiptPreview = useAppStore((state) => state.openReceiptPreview);
   const paymentOrderId = useAppStore((state) => state.paymentOrderId);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
   const floorPlanQuery = useFloorPlanQuery();
@@ -130,6 +132,11 @@ export function PaymentDrawer() {
     setReceivedAmountInput((current) => (current.length > 1 ? current.slice(0, -1) : "0"));
   };
 
+  const printProvisional = () => {
+    if (!order) return;
+    openReceiptPreview({ variant: "ticket", doc: ticketFromOrderDetail(order, table?.name ?? null) });
+  };
+
   const payOrder = () => {
     if (!order || !currentEmployee) return;
 
@@ -141,7 +148,10 @@ export function PaymentDrawer() {
     payMutation.mutate(
       { order, employeeId: currentEmployee.id, receivedAmount, printReceipt },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
+          if (printReceipt) {
+            openReceiptPreview({ variant: "receipt", doc: result.receipt });
+          }
           toast.success("Đã thanh toán. Bàn đã trống.");
           closeDrawer();
         },
@@ -414,6 +424,16 @@ export function PaymentDrawer() {
                   <Printer size={16} />
                   <span>In hóa đơn sau khi thanh toán</span>
                 </label>
+
+                <button
+                  type="button"
+                  data-testid="print-provisional-button"
+                  disabled={!order || orderQuery.isError}
+                  onClick={printProvisional}
+                  className="mt-2 inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-pos border border-pos-line bg-white px-4 text-sm font-bold text-pos-ink hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40 max-[900px]:min-h-[36px]"
+                >
+                  <Printer size={15} /> In tạm tính
+                </button>
 
                 <Button
                   variant="contained"

@@ -35,6 +35,7 @@ import {
   type HistoryStatusFilter,
 } from "@/features/pos/historyHelpers";
 import { PortalDrawer } from "../../components/PortalDrawer";
+import { receiptFromOrderDetail } from "../../components/ReceiptPreview";
 
 const PAGE_SIZE = 8;
 
@@ -107,6 +108,7 @@ const IconButton = ({
 
 function OrderHistoryDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
+  const openReceiptPreview = useAppStore((state) => state.openReceiptPreview);
   const settingsQuery = useStoreSettingsQuery();
   const employeesQuery = useAdminEmployeesQuery();
   const floorQuery = useFloorPlanQuery();
@@ -504,7 +506,23 @@ function OrderHistoryDrawer() {
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
-                <IconButton disabled={!selected} label="In lại hóa đơn" onClick={() => toast("Chức năng in lại sẽ dùng bản lưu hóa đơn ở bước sau.")}>
+                <IconButton
+                  disabled={!selected}
+                  label="In lại hóa đơn"
+                  onClick={() => {
+                    if (!selectedDetail) {
+                      toast("Đang tải chi tiết đơn, thử lại sau giây lát.");
+                      return;
+                    }
+                    const tableName = selectedDetail.tableId ? tables.get(selectedDetail.tableId) ?? null : null;
+                    const receipt = receiptFromOrderDetail(selectedDetail, tableName);
+                    if (!receipt) {
+                      toast("Đơn này chưa có thông tin thanh toán để in lại.");
+                      return;
+                    }
+                    openReceiptPreview({ variant: "receipt", doc: receipt });
+                  }}
+                >
                   <Printer size={16} />
                 </IconButton>
                 <IconButton disabled={!selected} label="Sao chép mã đơn" onClick={copyOrderNo}>

@@ -10,6 +10,7 @@ import { ReportSettingsDrawer } from "../drawers/admin/ReportSettingsDrawer";
 import { OrderDrawer } from "../drawers/pos/OrderDrawer";
 import { PaymentDrawer } from "../drawers/pos/PaymentDrawer";
 import { TakeawayDrawer } from "../drawers/pos/TakeawayDrawer";
+import { ReceiptPreviewPopup } from "../components/ReceiptPreview";
 import { FloorWorkspace } from "./FloorWorkspace";
 import { LeftNav } from "./LeftNav";
 
@@ -36,6 +37,7 @@ export function AppShell() {
         {drawer === "settings" ? <GeneralSettingsDrawer /> : null}
         {drawer === "kitchen" ? <KitchenQueueDrawer /> : null}
         {drawer === "paymentSettings" ? <PaymentSettingsDrawer /> : null}
+        <ReceiptPreviewPopup />
       </section>
     </main>
   );

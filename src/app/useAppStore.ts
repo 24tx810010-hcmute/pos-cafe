@@ -1,5 +1,9 @@
 import { create } from "zustand";
-import type { Employee, OrderType, SubmitOrderDraftItem } from "@/domain";
+import type { Employee, OrderType, PrintReceipt, PrintTicket, SubmitOrderDraftItem } from "@/domain";
+
+export type ReceiptPreview =
+  | { variant: "ticket"; doc: PrintTicket }
+  | { variant: "receipt"; doc: PrintReceipt };
 
 export type DrawerModule = "order" | "payment" | "takeaway" | "menuEditor" | "floorEditor" | "reportSettings" | "orderHistory" | "employees" | "settings" | "kitchen" | "paymentSettings" | null;
 export type AppScreen = "landing" | "storePairing" | "createStore" | "passcode";
@@ -19,6 +23,7 @@ type AppState = {
   orderContext: OrderDrawerContext | null;
   paymentOrderId: string | null;
   draftItems: SubmitOrderDraftItem[];
+  receiptPreview: ReceiptPreview | null;
   setCurrentEmployee: (employee: Employee | null) => void;
   setScreen: (screen: AppScreen) => void;
   setActiveAreaId: (areaId: string) => void;
@@ -28,6 +33,8 @@ type AppState = {
   openOrder: (context: OrderDrawerContext) => void;
   openPayment: (orderId: string) => void;
   setDraftItems: (items: SubmitOrderDraftItem[]) => void;
+  openReceiptPreview: (preview: ReceiptPreview) => void;
+  closeReceiptPreview: () => void;
 };
 
 export const useAppStore = create<AppState>((set) => ({
@@ -39,6 +46,7 @@ export const useAppStore = create<AppState>((set) => ({
   orderContext: null,
   paymentOrderId: null,
   draftItems: [],
+  receiptPreview: null,
   setCurrentEmployee: (employee) => set({ currentEmployee: employee }),
   setScreen: (screen) => set({ screen }),
   setActiveAreaId: (areaId) => set({ activeAreaId: areaId }),
@@ -48,4 +56,6 @@ export const useAppStore = create<AppState>((set) => ({
   openOrder: (context) => set({ drawer: "order", orderContext: context, paymentOrderId: null }),
   openPayment: (orderId) => set({ drawer: "payment", paymentOrderId: orderId }),
   setDraftItems: (items) => set({ draftItems: items }),
+  openReceiptPreview: (preview) => set({ receiptPreview: preview }),
+  closeReceiptPreview: () => set({ receiptPreview: null }),
 }));
