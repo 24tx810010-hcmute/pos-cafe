@@ -31,6 +31,8 @@
 - Chọn món theo danh mục.
 - Chọn option/topping, số lượng và ghi chú.
 - Submit order lên backend qua RPC; backend quyết định snapshot tên/giá.
+- Khi `Gửi đơn`, mở popup `Phiếu gửi bếp` (variant `kitchen`) chỉ liệt kê các món **mới thêm** so với đơn hiện tại — so khớp theo nội dung (món + option + ghi chú) vì draft sinh id mới mỗi lần; chỉ hiện tên + số lượng, không giá. Tính từ dữ liệu local lúc bấm (`diffAddedPrintLines`).
+- Cập nhật query sau submit/pay theo kiểu fire-and-forget (UI/popup hiện ngay, không chờ refetch); máy khác nhận trễ tối đa ~5s qua realtime/poll.
 - Mở lại order đang mở để chỉnh sửa.
 - Dirty close confirm cho draft/chỉnh sửa chưa lưu.
 - Nếu order đã đóng/stale, UI hiển thị trạng thái không thể thanh toán/chỉnh như order mở.
@@ -46,7 +48,8 @@
 - Chặn hoàn tất khi tiền nhận chưa đủ.
 - Complete payment gọi RPC transaction: tạo payment, set order paid, set bàn empty nếu dine-in.
 - Có nút `In tạm tính` mở popup phiếu tạm tính (chưa thanh toán) từ đơn hiện tại.
-- Khi checkbox in hóa đơn bật, sau khi thanh toán mở popup hoá đơn thanh toán in-app (PortalPopup); bỏ chọn thì vẫn thanh toán nhưng không mở popup. Phase này in chỉ là preview UI (popup + browser print qua iframe cô lập), chưa nối phần cứng; seam `IPrintPort` giữ nguyên cho adapter ESC/POS tương lai.
+- Khi checkbox in hóa đơn bật, sau khi thanh toán mở popup hoá đơn thanh toán in-app (PortalPopup); bỏ chọn thì vẫn thanh toán nhưng không mở popup. Phase này in chỉ là preview UI (popup + browser print qua iframe cô lập), chưa nối phần cứng; seam `IPrintPort` giữ nguyên cho adapter ESC/POS tương lai (`BrowserPrintPort` hiện no-op, không còn `window.open`).
+- Bill in ngay sau thanh toán dựng từ dữ liệu trên máy lúc bấm hoàn tất (đơn + tiền khách đưa + giờ máy), không phụ thuộc payload server; in lại ở Lịch sử thì lấy từ payment snapshot đã lưu.
 - Hoá đơn dùng template dùng chung `ReceiptDocument` (khổ 80mm): 2 biến thể `ticket` (phiếu tạm tính) / `receipt` (hoá đơn thanh toán); dòng món kiểu Bách Hoá Xanh (tên + `SL × đơn giá` / thành tiền); header/footer lấy từ store settings.
 
 ## Takeaway
