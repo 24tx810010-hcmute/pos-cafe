@@ -106,7 +106,7 @@ const IconButton = ({
   </button>
 );
 
-function OrderHistoryDrawer() {
+export function OrderHistoryDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const openReceiptPreview = useAppStore((state) => state.openReceiptPreview);
   const settingsQuery = useStoreSettingsQuery();
@@ -685,8 +685,4 @@ function OrderHistoryDrawer() {
       </div>
     </PortalDrawer>
   );
-}
-
-export function OrderHistoryStubDrawer() {
-  return <OrderHistoryDrawer />;
 }

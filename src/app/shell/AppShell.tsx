@@ -4,7 +4,7 @@ import { FloorEditorDrawer } from "../drawers/admin/FloorEditorDrawer";
 import { GeneralSettingsDrawer } from "../drawers/admin/GeneralSettingsDrawer";
 import { KitchenQueueDrawer } from "../drawers/admin/KitchenQueueDrawer";
 import { MenuEditorDrawer } from "../drawers/admin/MenuEditorDrawer";
-import { OrderHistoryStubDrawer } from "../drawers/admin/OrderHistoryDrawer";
+import { OrderHistoryDrawer } from "../drawers/admin/OrderHistoryDrawer";
 import { PaymentSettingsDrawer } from "../drawers/admin/PaymentSettingsDrawer";
 import { ReportSettingsDrawer } from "../drawers/admin/ReportSettingsDrawer";
 import { OrderDrawer } from "../drawers/pos/OrderDrawer";
@@ -32,7 +32,7 @@ export function AppShell() {
         {drawer === "floorEditor" ? <FloorEditorDrawer /> : null}
         {drawer === "reportSettings" ? <ReportSettingsDrawer /> : null}
         {drawer === "takeaway" ? <TakeawayDrawer /> : null}
-        {drawer === "orderHistory" ? <OrderHistoryStubDrawer /> : null}
+        {drawer === "orderHistory" ? <OrderHistoryDrawer /> : null}
         {drawer === "employees" ? <EmployeesStubDrawer /> : null}
         {drawer === "settings" ? <GeneralSettingsDrawer /> : null}
         {drawer === "kitchen" ? <KitchenQueueDrawer /> : null}
