@@ -44,6 +44,9 @@ export class SupabaseRealtimePort implements IRealtimePort {
     // SUBSCRIBED bắn cả lần đầu lẫn mỗi lần tự reconnect/resubscribe sau khi
     // socket rớt. Resync ngay tại đó để máy tự lành khi mạng chập chờn, thay vì
     // phải chờ poll 5s — giữ sync giữa các máy nhanh kể cả khi realtime gián đoạn.
+    // TODO(verify, Supabase): chưa kiểm chứng cross-device trực tiếp (mock realtime
+    // là no-op). Mở 2 thiết bị cùng store thật + ngắt/khôi phục mạng để xác nhận
+    // self-heal & độ trễ. Xem docs/implementation-log/phase-15-realtime-hardening.md.
     channel.subscribe((status: string) => {
       if (status === "SUBSCRIBED") {
         resyncAll();
