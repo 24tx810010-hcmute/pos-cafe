@@ -27,6 +27,10 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 - Chuẩn bị 4G/hotspot vì phase này online-only.
 - Không mở các màn optional/future như kitchen/QR nếu chưa muốn giải thích scope.
 
+## Cần Kiểm Chứng Trên Supabase (chưa làm)
+
+- **Realtime cross-device + self-heal (phase 15):** mở 2 thiết bị cùng store thật; trên máy A tạo/sửa/thanh toán đơn → máy B cập nhật trong ≤5s. Ngắt mạng máy B rồi nối lại → sau khi realtime `SUBSCRIBED` lại phải tự resync ngay (không chờ poll). Mock realtime là no-op nên chỉ kiểm được trên Supabase (`npm run smoke:supabase` hoặc thủ công). Xem [implementation-log/phase-15-realtime-hardening.md](implementation-log/phase-15-realtime-hardening.md).
+
 ## Luận Điểm Nên Nói Khi Bảo Vệ
 
 - Scope tiểu luận tập trung vào POS cafe nhỏ, không cố làm ERP/chuỗi/quản lý kho.
