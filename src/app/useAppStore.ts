@@ -3,6 +3,7 @@ import type { Employee, OrderType, PrintReceipt, PrintTicket, SubmitOrderDraftIt
 
 export type ReceiptPreview =
   | { variant: "ticket"; doc: PrintTicket }
+  | { variant: "kitchen"; doc: PrintTicket }
   | { variant: "receipt"; doc: PrintReceipt };
 
 export type DrawerModule = "order" | "payment" | "takeaway" | "menuEditor" | "floorEditor" | "reportSettings" | "orderHistory" | "employees" | "settings" | "kitchen" | "paymentSettings" | null;

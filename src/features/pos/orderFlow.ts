@@ -6,6 +6,7 @@ import type {
   OrderItemSnapshot,
   OrderType,
   PayOrderResult,
+  PrintLine,
   SubmitOrderChangesResult,
   SubmitOrderDraftItem,
 } from "@/domain";
@@ -84,6 +85,65 @@ export const buildCartLines = (menu: MenuCatalog, draftItems: SubmitOrderDraftIt
 
 export const calculateCartTotal = (cartLines: CartLine[]): number =>
   cartLines.reduce((sum, line) => sum + line.total, 0);
+
+/**
+ * Các dòng món MỚI THÊM so với đơn hiện tại (để in phiếu gửi bếp khi "Gửi đơn").
+ * Khớp theo nội dung (menuItem + tổ hợp option + ghi chú) vì draft sinh id mới
+ * mỗi lần nên không thể khớp theo id với snapshot đơn cũ. Trả về phần chênh > 0.
+ */
+export const diffAddedPrintLines = (
+  menu: MenuCatalog,
+  order: OrderDetail | null,
+  draftItems: SubmitOrderDraftItem[],
+): PrintLine[] => {
+  const signature = (menuItemId: string, optionValueIds: string[], note: string | null): string =>
+    `${menuItemId}|${[...optionValueIds].sort().join(",")}|${note ?? ""}`;
+
+  const oldQty = new Map<string, number>();
+  for (const item of order?.items ?? []) {
+    const key = signature(item.menuItemId, item.options.map((option) => option.optionValueId), item.note ?? null);
+    oldQty.set(key, (oldQty.get(key) ?? 0) + item.quantity);
+  }
+
+  const aggregated = new Map<
+    string,
+    { qty: number; menuItemId: string; optionValueIds: string[]; note: string | null }
+  >();
+  for (const draft of draftItems) {
+    if (draft.quantity <= 0) continue;
+    const optionValueIds = draft.options.map((option) => option.optionValueId);
+    const key = signature(draft.menuItemId, optionValueIds, draft.note ?? null);
+    const current = aggregated.get(key);
+    if (current) current.qty += draft.quantity;
+    else aggregated.set(key, { qty: draft.quantity, menuItemId: draft.menuItemId, optionValueIds, note: draft.note ?? null });
+  }
+
+  const lines: PrintLine[] = [];
+  for (const entry of aggregated.values()) {
+    const key = signature(entry.menuItemId, entry.optionValueIds, entry.note);
+    const added = entry.qty - (oldQty.get(key) ?? 0);
+    if (added <= 0) continue;
+
+    const menuItem = menu.menuItems.find((candidate) => candidate.id === entry.menuItemId);
+    const optionNames: string[] = [];
+    let optionDelta = 0;
+    for (const optionValueId of entry.optionValueIds) {
+      const optionValue = menu.optionValues.find((candidate) => candidate.id === optionValueId);
+      if (optionValue) {
+        optionNames.push(optionValue.name);
+        optionDelta += optionValue.priceDelta;
+      }
+    }
+
+    lines.push({
+      name: menuItem?.name ?? "Món",
+      quantity: added,
+      unitPrice: (menuItem?.price ?? 0) + optionDelta,
+      options: [...optionNames, ...(entry.note ? [`Ghi chú: ${entry.note}`] : [])],
+    });
+  }
+  return lines;
+};
 
 export const addDraftMenuItem = (
   draftItems: SubmitOrderDraftItem[],

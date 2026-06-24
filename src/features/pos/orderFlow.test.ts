@@ -7,6 +7,7 @@ import {
   adjustDraftQuantity,
   buildCartLines,
   calculateCartTotal,
+  diffAddedPrintLines,
   getOrderPrimaryAction,
   isDraftChangedFromOrder,
   orderDetailToDraft,
@@ -34,6 +35,29 @@ describe("orderFlow", () => {
     expect(draft[0].options[0].id).not.toBe("oio-b02-1");
     expect(draft[0]).not.toHaveProperty("itemName");
     expect(draft[0]).not.toHaveProperty("unitPrice");
+  });
+
+  it("diffs only the newly added kitchen lines when re-submitting an order", async () => {
+    const order = await getMockOrder();
+    const base = orderDetailToDraft(order);
+
+    // Không thay đổi -> không có dòng món mới.
+    expect(diffAddedPrintLines(mockMenuCatalog, order, base)).toEqual([]);
+
+    // Thêm 1 Latte -> phiếu bếp chỉ có Latte x1.
+    const withLatte = addDraftMenuItem(base, { id: "mi-latte" });
+    expect(diffAddedPrintLines(mockMenuCatalog, order, withLatte)).toEqual([
+      expect.objectContaining({ name: "Latte", quantity: 1, options: [] }),
+    ]);
+
+    // Tăng số lượng món đã có -> delta = phần tăng thêm.
+    const moreCoffee = adjustDraftQuantity(base, base[0].id, 1);
+    expect(diffAddedPrintLines(mockMenuCatalog, order, moreCoffee)).toEqual([
+      expect.objectContaining({ name: "Cà phê sữa", quantity: 1 }),
+    ]);
+
+    // Đơn mới (chưa có order) -> tất cả draft đều là món mới.
+    expect(diffAddedPrintLines(mockMenuCatalog, null, withLatte).length).toBeGreaterThan(0);
   });
 
   it("builds cart lines from menu catalog and option deltas", () => {

@@ -9,6 +9,7 @@ import {
   adjustDraftQuantity,
   buildCartLines,
   calculateCartTotal,
+  diffAddedPrintLines,
   getOrderPrimaryAction,
   isDraftChangedFromOrder,
   orderDetailToDraft,
@@ -32,6 +33,7 @@ export function OrderDrawer() {
   const currentEmployee = useAppStore((state) => state.currentEmployee);
   const draftItems = useAppStore((state) => state.draftItems);
   const setDraftItems = useAppStore((state) => state.setDraftItems);
+  const openReceiptPreview = useAppStore((state) => state.openReceiptPreview);
   const activeCategoryId = useAppStore((state) => state.activeCategoryId);
   const setActiveCategoryId = useAppStore((state) => state.setActiveCategoryId);
   const ports = usePorts();
@@ -121,6 +123,10 @@ export function OrderDrawer() {
   const submitOrder = () => {
     if (!context || !currentEmployee) return;
 
+    // Chốt các món MỚI THÊM ngay tại thời điểm bấm gửi (dữ liệu trên máy) để in
+    // phiếu gửi bếp — không phụ thuộc payload/refetch từ server.
+    const addedLines = menu ? diffAddedPrintLines(menu, orderDetail, draftItems) : [];
+
     submitMutation.mutate(
       {
         context,
@@ -130,6 +136,18 @@ export function OrderDrawer() {
       },
       {
         onSuccess: (result) => {
+          if (result.status !== "void" && addedLines.length > 0) {
+            openReceiptPreview({
+              variant: "kitchen",
+              doc: {
+                orderNo: result.orderNo,
+                tableName: table?.name ?? null,
+                orderType: context.orderType,
+                lines: addedLines,
+                total: addedLines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0),
+              },
+            });
+          }
           toast.success(result.status === "void" ? "Đã huỷ đơn mở." : "Đã in/gửi đơn.");
           closeDrawer();
         },

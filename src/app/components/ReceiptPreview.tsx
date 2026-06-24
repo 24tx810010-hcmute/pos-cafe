@@ -115,6 +115,8 @@ const s = {
   lineOpt: { fontSize: 11, color: "#5b6470", marginTop: 1 } as CSSProperties,
   lineCalc: { display: "flex", justifyContent: "space-between", gap: 10, marginTop: 2, color: "#374151" } as CSSProperties,
   lineAmt: { whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" } as CSSProperties,
+  kitchenRow: { display: "flex", justifyContent: "space-between", gap: 10, alignItems: "baseline" } as CSSProperties,
+  kitchenQty: { fontWeight: 700, fontSize: 14, whiteSpace: "nowrap" } as CSSProperties,
   totalRow: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 6 } as CSSProperties,
   totalLabel: { fontWeight: 700, fontSize: 13 } as CSSProperties,
   totalValue: { fontWeight: 700, fontSize: 18, fontVariantNumeric: "tabular-nums" } as CSSProperties,
@@ -126,13 +128,20 @@ const s = {
 type ReceiptStore = { name: string; address: string; footer: string };
 
 type ReceiptDocumentProps = {
-  variant: "ticket" | "receipt";
+  variant: "ticket" | "kitchen" | "receipt";
   doc: PrintTicket | PrintReceipt;
   store: ReceiptStore;
 };
 
+const VARIANT_TITLE: Record<ReceiptDocumentProps["variant"], string> = {
+  ticket: "PHIẾU TẠM TÍNH",
+  kitchen: "PHIẾU GỬI BẾP",
+  receipt: "HOÁ ĐƠN THANH TOÁN",
+};
+
 export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(({ variant, doc, store }, ref) => {
   const isReceipt = variant === "receipt";
+  const isKitchen = variant === "kitchen";
   const receipt = isReceipt ? (doc as PrintReceipt) : null;
   const location = doc.orderType === "takeaway" ? "Mang đi" : doc.tableName ? `Bàn ${doc.tableName}` : "Tại bàn";
 
@@ -144,7 +153,7 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
       </div>
 
       <div style={s.divider} />
-      <div style={s.title}>{isReceipt ? "HOÁ ĐƠN THANH TOÁN" : "PHIẾU TẠM TÍNH"}</div>
+      <div style={s.title}>{VARIANT_TITLE[variant]}</div>
       <div style={{ ...s.divider, marginTop: 8 }} />
 
       <div style={s.metaRow}>
@@ -163,27 +172,41 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
       <div style={{ ...s.divider, marginBottom: 6 }} />
       <div style={s.thead}>
         <span>Món</span>
-        <span>Thành tiền</span>
+        <span>{isKitchen ? "SL" : "Thành tiền"}</span>
       </div>
 
-      {doc.lines.map((line, index) => (
-        <div key={`${line.name}-${index}`} style={s.lineBlock}>
-          <div style={s.lineName}>{line.name}</div>
-          {line.options.length ? <div style={s.lineOpt}>{line.options.join(" · ")}</div> : null}
-          <div style={s.lineCalc}>
-            <span>
-              {line.quantity} × {formatPlain(line.unitPrice)}
-            </span>
-            <span style={s.lineAmt}>{formatPlain(line.unitPrice * line.quantity)}</span>
+      {doc.lines.map((line, index) =>
+        isKitchen ? (
+          <div key={`${line.name}-${index}`} style={s.lineBlock}>
+            <div style={s.kitchenRow}>
+              <div style={s.lineName}>{line.name}</div>
+              <div style={s.kitchenQty}>×{line.quantity}</div>
+            </div>
+            {line.options.length ? <div style={s.lineOpt}>{line.options.join(" · ")}</div> : null}
           </div>
-        </div>
-      ))}
+        ) : (
+          <div key={`${line.name}-${index}`} style={s.lineBlock}>
+            <div style={s.lineName}>{line.name}</div>
+            {line.options.length ? <div style={s.lineOpt}>{line.options.join(" · ")}</div> : null}
+            <div style={s.lineCalc}>
+              <span>
+                {line.quantity} × {formatPlain(line.unitPrice)}
+              </span>
+              <span style={s.lineAmt}>{formatPlain(line.unitPrice * line.quantity)}</span>
+            </div>
+          </div>
+        ),
+      )}
 
-      <div style={s.divider} />
-      <div style={s.totalRow}>
-        <span style={s.totalLabel}>TỔNG CỘNG</span>
-        <span style={s.totalValue}>{formatVnd(doc.total)}</span>
-      </div>
+      {isKitchen ? null : (
+        <>
+          <div style={s.divider} />
+          <div style={s.totalRow}>
+            <span style={s.totalLabel}>TỔNG CỘNG</span>
+            <span style={s.totalValue}>{formatVnd(doc.total)}</span>
+          </div>
+        </>
+      )}
 
       {receipt ? (
         <>
@@ -200,8 +223,12 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
       ) : null}
 
       <div style={s.divider} />
-      <div style={s.footer}>{store.footer}</div>
-      {isReceipt ? null : <div style={s.stamp}>(Phiếu tạm tính — chưa thanh toán)</div>}
+      {isKitchen ? null : <div style={s.footer}>{store.footer}</div>}
+      {isReceipt ? null : (
+        <div style={s.stamp}>
+          {isKitchen ? "(Phiếu gửi bếp — báo chế biến)" : "(Phiếu tạm tính — chưa thanh toán)"}
+        </div>
+      )}
     </div>
   );
 });
@@ -234,7 +261,11 @@ export function ReceiptPreviewPopup() {
     >
       <div className="flex items-center justify-between gap-2 border-b border-pos-line px-4 py-3">
         <div className="text-sm font-extrabold text-pos-ink">
-          {preview.variant === "receipt" ? "Hoá đơn thanh toán" : "Phiếu tạm tính"}
+          {preview.variant === "receipt"
+            ? "Hoá đơn thanh toán"
+            : preview.variant === "kitchen"
+              ? "Phiếu gửi bếp"
+              : "Phiếu tạm tính"}
         </div>
         <button
           type="button"

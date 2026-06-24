@@ -148,9 +148,19 @@ export function PaymentDrawer() {
     payMutation.mutate(
       { order, employeeId: currentEmployee.id, receivedAmount, printReceipt },
       {
-        onSuccess: (result) => {
-          if (printReceipt) {
-            openReceiptPreview({ variant: "receipt", doc: result.receipt });
+        onSuccess: () => {
+          // In bill ngay từ dữ liệu đang có trên máy (đơn + tiền khách đưa lúc
+          // bấm hoàn tất), không chờ refetch hay payload receipt từ server.
+          if (printReceipt && order) {
+            openReceiptPreview({
+              variant: "receipt",
+              doc: {
+                ...ticketFromOrderDetail(order, table?.name ?? null),
+                receivedAmount,
+                changeAmount,
+                paidAt: new Date().toISOString(),
+              },
+            });
           }
           toast.success("Đã thanh toán. Bàn đã trống.");
           closeDrawer();

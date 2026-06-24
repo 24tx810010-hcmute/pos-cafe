@@ -14,8 +14,10 @@ export const useSubmitOrderMutation = () => {
 
   return useMutation({
     mutationFn: (input: SubmitOrderFlowInput) => submitOrderAndPrint(ports, input),
-    onSuccess: async (result, input) => {
-      await invalidateAfterOrderMutation(queryClient, result.orderId ?? input.context.orderId);
+    // Fire-and-forget: cập nhật UI ngay (đóng drawer, mở popup gửi bếp), đồng bộ
+    // các query nền song song; máy khác nhận trễ tối đa ~5s (poll/realtime).
+    onSuccess: (result, input) => {
+      void invalidateAfterOrderMutation(queryClient, result.orderId ?? input.context.orderId).catch(() => {});
     },
   });
 };
@@ -26,8 +28,8 @@ export const usePayOrderMutation = () => {
 
   return useMutation({
     mutationFn: (input: PayOrderFlowInput) => payOrderAndPrint(ports, input),
-    onSuccess: async (result) => {
-      await invalidateAfterOrderMutation(queryClient, result.orderId);
+    onSuccess: (result) => {
+      void invalidateAfterOrderMutation(queryClient, result.orderId).catch(() => {});
     },
   });
 };
