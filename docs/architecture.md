@@ -50,7 +50,7 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 
 - App dùng một URL.
 - Pre-login screen state: `landing`, `storePairing`, `createStore`, `passcode`.
-- Logged-in shell dùng `LeftNav` left rail và drawer state: `order`, `payment`, `takeaway`, `menuEditor`, `floorEditor`, `reportSettings`, `orderHistory`, `employees`, `settings`, `kitchen`, `paymentSettings`.
+- Logged-in shell dùng `LeftNav` left rail và drawer state: `order`, `payment`, `takeaway`, `menuEditor`, `floorEditor`, `report`, `orderHistory`, `employees`, `settings`, `kitchen`, `paymentSettings`. Mỗi key map tới đúng một drawer qua `DRAWER_REGISTRY` (Record có type ràng buộc) trong `AppShell`.
 - Zustand giữ UI state như current employee, active area/category, drawer context, payment order id và draft items.
 
 ## Server State
