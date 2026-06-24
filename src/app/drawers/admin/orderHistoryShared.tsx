@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import type { OrderItemSnapshot, OrderStatus } from "@/domain";
-import { formatVnd } from "@/core/money";
 
 export const statusLabel: Record<OrderStatus, string> = {
   paid: "Đã thanh toán",
@@ -13,9 +12,6 @@ export const statusClass: Record<OrderStatus, string> = {
   open: "bg-[#fef9c3] text-[#854d0e] border-[#fde68a]",
   void: "bg-[#fee2e2] text-[#991b1b] border-[#fecaca]",
 };
-
-export const formatMoney = (amount: number): string =>
-  formatVnd(amount).replace(/\s/g, "").replace("₫", "đ");
 
 export const itemLineTotal = (item: OrderItemSnapshot): number => {
   const optionDelta = item.options.reduce((sum, option) => sum + option.priceDelta, 0);

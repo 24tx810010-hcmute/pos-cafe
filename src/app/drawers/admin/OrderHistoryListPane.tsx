@@ -1,8 +1,9 @@
 import clsx from "clsx";
 import { AlertTriangle, ChevronLeft, ChevronRight, ReceiptText } from "lucide-react";
+import { formatVndShort } from "@/core/money";
 import type { HistoryOrderRow } from "@/features/pos/historyHelpers";
 import { toToastError } from "../../appErrors";
-import { formatMoney, statusClass, statusLabel } from "./orderHistoryShared";
+import { statusClass, statusLabel } from "./orderHistoryShared";
 
 interface OrderHistoryListPaneProps {
   rows: HistoryOrderRow[];
@@ -122,7 +123,7 @@ export function OrderHistoryListPane({
                 </div>
                 <div className="grid justify-items-end gap-1 text-right">
                   <strong className="whitespace-nowrap text-[16px] font-black text-pos-primary max-[760px]:text-[13px]">
-                    {formatMoney(order.total)}
+                    {formatVndShort(order.total)}
                   </strong>
                   <span className="rounded-full bg-pos-surface2 px-2 py-0.5 text-[11px] font-black text-pos-muted max-[700px]:hidden">
                     {order.orderType === "takeaway" ? "Mang đi" : "Tại bàn"}

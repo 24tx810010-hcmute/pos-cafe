@@ -1,9 +1,10 @@
 import clsx from "clsx";
 import { AlertTriangle, CheckCircle2, Copy, Printer, ReceiptText, RefreshCw } from "lucide-react";
+import { formatVndShort } from "@/core/money";
 import type { OrderDetail, OrderPaymentSnapshot } from "@/domain";
 import type { HistoryOrderRow } from "@/features/pos/historyHelpers";
 import { toToastError } from "../../appErrors";
-import { IconButton, formatMoney, itemLineTotal, itemMeta, statusClass, statusLabel } from "./orderHistoryShared";
+import { IconButton, itemLineTotal, itemMeta, statusClass, statusLabel } from "./orderHistoryShared";
 
 interface OrderHistoryDetailPaneProps {
   selected: HistoryOrderRow | null;
@@ -159,7 +160,7 @@ export function OrderHistoryDetailPane({
                           </span>
                         </div>
                         <strong className="whitespace-nowrap text-sm font-black text-pos-ink max-[760px]:text-xs">
-                          {formatMoney(itemLineTotal(item))}
+                          {formatVndShort(itemLineTotal(item))}
                         </strong>
                       </div>
                     );
@@ -184,7 +185,7 @@ export function OrderHistoryDetailPane({
             Khách đưa
           </span>
           <strong className="whitespace-nowrap font-black text-pos-ink">
-            {payment ? formatMoney(payment.receivedAmount) : "Chưa ghi nhận"}
+            {payment ? formatVndShort(payment.receivedAmount) : "Chưa ghi nhận"}
           </strong>
         </div>
         <div className="flex items-center justify-between gap-3 text-sm max-[760px]:text-xs">
@@ -192,7 +193,7 @@ export function OrderHistoryDetailPane({
             Tiền thừa
           </span>
           <strong className="whitespace-nowrap font-black text-[#0f766e]">
-            {payment ? formatMoney(payment.changeAmount) : "Chưa ghi nhận"}
+            {payment ? formatVndShort(payment.changeAmount) : "Chưa ghi nhận"}
           </strong>
         </div>
         <div className="mt-1 flex items-center justify-between gap-3 border-t border-pos-line pt-2">
@@ -200,7 +201,7 @@ export function OrderHistoryDetailPane({
             Tổng tiền
           </span>
           <strong className="whitespace-nowrap text-[24px] font-black text-pos-primary max-[760px]:text-[17px]">
-            {formatMoney(detail?.total ?? selected?.total ?? 0)}
+            {formatVndShort(detail?.total ?? selected?.total ?? 0)}
           </strong>
         </div>
       </div>
