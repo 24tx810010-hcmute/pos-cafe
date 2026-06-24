@@ -96,12 +96,12 @@ export function LeftNav() {
             testId="nav-floor-editor"
           />
           <RailButton
-            active={drawer === "reportSettings"}
+            active={drawer === "report"}
             icon={<BarChart3 size={18} />}
             label="Báo cáo"
-            onClick={() => guardedOpen("reportSettings", "report")}
+            onClick={() => guardedOpen("report", "report")}
             disabled={!canAccess("report")}
-            testId="nav-report-settings"
+            testId="nav-report"
           />
           <RailButton
             active={drawer === "kitchen"}

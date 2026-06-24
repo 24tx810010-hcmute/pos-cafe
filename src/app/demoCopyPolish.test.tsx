@@ -136,10 +136,10 @@ describe("demo copy polish", () => {
   });
 
   it("keeps admin drawers free of implementation copy", async () => {
-    for (const drawer of ["menuEditor", "floorEditor", "reportSettings", "kitchen", "paymentSettings"] as const) {
+    for (const drawer of ["menuEditor", "floorEditor", "report", "kitchen", "paymentSettings"] as const) {
       cleanup();
       const { container } = renderApp({ drawer });
-      expect(await screen.findByTestId(drawer === "reportSettings" ? "report-settings" : drawer === "menuEditor" ? "menu-editor" : drawer === "floorEditor" ? "floor-editor" : drawer === "kitchen" ? "kitchen-drawer" : "payment-settings-drawer")).toBeInTheDocument();
+      expect(await screen.findByTestId(drawer === "report" ? "report" : drawer === "menuEditor" ? "menu-editor" : drawer === "floorEditor" ? "floor-editor" : drawer === "kitchen" ? "kitchen-drawer" : "payment-settings-drawer")).toBeInTheDocument();
       expectNoImplementationCopy(container);
     }
   });

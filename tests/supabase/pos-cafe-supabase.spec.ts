@@ -76,9 +76,9 @@ test("Supabase UI E2E creates a store, pays an order, and shows history/report",
   await expect(page.getByTestId("order-history-drawer").locator('[data-testid^="history-row-"]').first()).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole("button", { name: "Báo cáo" }).click();
-  await expect(page.getByTestId("report-settings")).toBeVisible();
-  await expect(page.getByTestId("report-settings").getByText("Doanh thu", { exact: true })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByTestId("report-settings").getByText("Số đơn đã thanh toán", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("report")).toBeVisible();
+  await expect(page.getByTestId("report").getByText("Doanh thu", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("report").getByText("Số đơn đã thanh toán", { exact: true })).toBeVisible();
 
   test.info().annotations.push({ type: "store-key", description: storeKey });
 });

@@ -204,11 +204,11 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await expect(page.getByTestId("fe-table-name-input")).toBeVisible();
   await cancelDirtyDrawer(page, "floor-editor");
 
-  await page.getByTestId("nav-report-settings").click();
-  await expect(page.getByTestId("report-settings")).toBeVisible();
-  await page.getByTestId("report-settings").getByRole("button", { name: /7/ }).click();
-  await expect(page.getByTestId("report-settings").getByText("Doanh thu", { exact: true })).toBeVisible();
-  await closeCleanDrawer(page, "report-settings");
+  await page.getByTestId("nav-report").click();
+  await expect(page.getByTestId("report")).toBeVisible();
+  await page.getByTestId("report").getByRole("button", { name: /7/ }).click();
+  await expect(page.getByTestId("report").getByText("Doanh thu", { exact: true })).toBeVisible();
+  await closeCleanDrawer(page, "report");
 
   await page.getByTestId("nav-employees").click();
   await expect(page.getByTestId("employees-drawer")).toBeVisible();

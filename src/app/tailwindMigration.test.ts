@@ -390,7 +390,7 @@ describe("Tailwind UI migration", () => {
       "src/app/drawers/admin/EmployeesDrawer.tsx",
       "src/app/drawers/admin/GeneralSettingsDrawer.tsx",
       "src/app/drawers/admin/PaymentSettingsDrawer.tsx",
-      "src/app/drawers/admin/ReportSettingsDrawer.tsx",
+      "src/app/drawers/admin/ReportDrawer.tsx",
     ].map((path) => withoutTestIds(sourceFile(path))).join("\n");
     const legacyClasses = ["emp-forbidden"];
 
@@ -526,7 +526,7 @@ describe("Tailwind UI migration", () => {
   test("History date filters do not use legacy history filter layout CSS class names", () => {
     const source = [
       "src/app/drawers/admin/OrderHistoryDrawer.tsx",
-      "src/app/drawers/admin/ReportSettingsDrawer.tsx",
+      "src/app/drawers/admin/ReportDrawer.tsx",
     ].map((path) => withoutTestIds(sourceFile(path))).join("\n");
     const legacyClasses = [
       "hx-date-chips",
@@ -572,7 +572,7 @@ describe("Tailwind UI migration", () => {
     const source = [
       "src/app/drawers/admin/FloorEditorDrawer.tsx",
       "src/app/drawers/admin/KitchenQueueDrawer.tsx",
-      "src/app/drawers/admin/ReportSettingsDrawer.tsx",
+      "src/app/drawers/admin/ReportDrawer.tsx",
     ].map((path) => withoutTestIds(sourceFile(path))).join("\n");
     const legacyClasses = ["fe-area-tabs"];
 
@@ -646,7 +646,7 @@ describe("Tailwind UI migration", () => {
 
   test("Report and kitchen detail views do not use legacy report CSS class names", () => {
     const source = [
-      "src/app/drawers/admin/ReportSettingsDrawer.tsx",
+      "src/app/drawers/admin/ReportDrawer.tsx",
       "src/app/drawers/admin/KitchenQueueDrawer.tsx",
     ].map((path) => withoutTestIds(sourceFile(path))).join("\n");
     const legacyClasses = [

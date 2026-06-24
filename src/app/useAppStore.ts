@@ -6,7 +6,7 @@ export type ReceiptPreview =
   | { variant: "kitchen"; doc: PrintTicket }
   | { variant: "receipt"; doc: PrintReceipt };
 
-export type DrawerModule = "order" | "payment" | "takeaway" | "menuEditor" | "floorEditor" | "reportSettings" | "orderHistory" | "employees" | "settings" | "kitchen" | "paymentSettings" | null;
+export type DrawerModule = "order" | "payment" | "takeaway" | "menuEditor" | "floorEditor" | "report" | "orderHistory" | "employees" | "settings" | "kitchen" | "paymentSettings" | null;
 export type AppScreen = "landing" | "storePairing" | "createStore" | "passcode";
 
 export type OrderDrawerContext = {

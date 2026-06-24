@@ -46,7 +46,7 @@ const seedOrdersForToday = (state: MockState, businessDate: string) => {
   }));
 };
 
-const resetAppStoreForDrawer = (drawer: "orderHistory" | "reportSettings") => {
+const resetAppStoreForDrawer = (drawer: "orderHistory" | "report") => {
   useAppStore.setState({
     screen: "passcode",
     currentEmployee: admin,
@@ -59,7 +59,7 @@ const resetAppStoreForDrawer = (drawer: "orderHistory" | "reportSettings") => {
   });
 };
 
-const renderDrawer = (drawer: "orderHistory" | "reportSettings") => {
+const renderDrawer = (drawer: "orderHistory" | "report") => {
   const state = createSeededMockState();
   state.session = { storeId: "store-demo-001", storeNo: 1 };
   const businessDate = businessDateForTest();
@@ -169,7 +169,7 @@ describe("Report and history drawers", () => {
   });
 
   it("loads report metrics through daily core report queries", async () => {
-    const { businessDate, historySpy, reportSpy } = renderDrawer("reportSettings");
+    const { businessDate, historySpy, reportSpy } = renderDrawer("report");
 
     await waitFor(() => expect(reportSpy).toHaveBeenCalledWith({ businessDate }));
     await waitFor(() =>
@@ -186,7 +186,7 @@ describe("Report and history drawers", () => {
 
   it("expands 7-day report ranges into daily report calls without changing the port contract", async () => {
     const user = userEvent.setup();
-    const { businessDate, reportSpy } = renderDrawer("reportSettings");
+    const { businessDate, reportSpy } = renderDrawer("report");
     const expectedDates = Array.from({ length: 7 }, (_, index) => shiftBusinessDate(businessDate, index - 6));
 
     await user.click(await screen.findByRole("button", { name: "7 ngày" }));

@@ -7,7 +7,7 @@ import { KitchenQueueDrawer } from "../drawers/admin/KitchenQueueDrawer";
 import { MenuEditorDrawer } from "../drawers/admin/MenuEditorDrawer";
 import { OrderHistoryDrawer } from "../drawers/admin/OrderHistoryDrawer";
 import { PaymentSettingsDrawer } from "../drawers/admin/PaymentSettingsDrawer";
-import { ReportSettingsDrawer } from "../drawers/admin/ReportSettingsDrawer";
+import { ReportDrawer } from "../drawers/admin/ReportDrawer";
 import { OrderDrawer } from "../drawers/pos/OrderDrawer";
 import { PaymentDrawer } from "../drawers/pos/PaymentDrawer";
 import { TakeawayDrawer } from "../drawers/pos/TakeawayDrawer";
@@ -21,7 +21,7 @@ const DRAWER_REGISTRY: Record<NonNullable<DrawerModule>, ComponentType> = {
   takeaway: TakeawayDrawer,
   menuEditor: MenuEditorDrawer,
   floorEditor: FloorEditorDrawer,
-  reportSettings: ReportSettingsDrawer,
+  report: ReportDrawer,
   orderHistory: OrderHistoryDrawer,
   employees: EmployeesStubDrawer,
   settings: GeneralSettingsDrawer,
