@@ -72,6 +72,11 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 - Supabase Realtime chỉ dùng làm tín hiệu invalidation/refetch.
 - App không merge payload realtime thủ công vào cache.
 - Realtime nằm trong `IRealtimePort`/feature integration để giữ transport tập trung.
+- **Quyết định (phase tiểu luận, online-only): KHÔNG optimistic update / KHÔNG patch cache.** Ưu tiên độ chính xác giữa các máy (server là nguồn sự thật) hơn là cảm giác "tức thì" trên máy đang thao tác. Optimistic guessing dễ gây lệch trạng thái đa thiết bị và phá đường đọc đơn nhất — vốn cũng là seam cho offline-first sau này (đổi nguồn đọc sang bản sao local + outbox mà không phải gỡ cache-patch). Đánh đổi chấp nhận: một nhịp refetch nền trên máy đang thao tác.
+- **Phủ tín hiệu:** publication gồm `orders, payments, tables` + bảng menu/floor. `order_items` cố ý KHÔNG publish vì `submit_order_changes` luôn bump `orders.lock_version` → một event trên `orders` đã đủ (tránh double-refetch). `orders/payments/tables` → invalidate open orders + floor + report; order detail (`["orders","detail",id]`) nằm dưới prefix `["orders"]` nên cũng được refetch theo.
+- **Tự lành khi rớt kết nối:** `channel.subscribe` lắng trạng thái; mỗi lần `SUBSCRIBED` (lần đầu và mỗi lần auto-reconnect resubscribe) sẽ resync toàn bộ (open orders + floor + report + menu) ngay, không chờ poll.
+- **SLA hội tụ:** floor plan / open orders / order detail còn poll `refetchInterval` 5s làm lưới an toàn — cam kết mọi máy đồng bộ trong **≤5s** kể cả khi realtime gián đoạn.
+- **Xung đột ghi:** optimistic locking bằng `lock_version`; ghi sau nhận `ORDER_VERSION_CONFLICT` → UI refetch lại sự thật và báo "đơn đã đổi trên thiết bị khác" (`uiError` → action `reloadOrder`).
 
 ## Permission
 

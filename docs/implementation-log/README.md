@@ -33,6 +33,7 @@ Folder này ghi nhật ký implement theo phase. Mục tiêu là track nhanh nh�
 - [phase-12-report-redesign.md](phase-12-report-redesign.md): Report redesign sang dashboard master/detail (rail trái doanh thu + nav, pane phải chi tiết), look Tremor dựng bằng Tailwind/Recharts.
 - [phase-13-receipt-print-popup.md](phase-13-receipt-print-popup.md): giả lập in đơn bằng popup (phiếu tạm tính + hoá đơn, template 80mm dùng chung), in lại từ Lịch sử; UI-only, giữ seam IPrintPort.
 - [phase-14-kitchen-ticket-optimistic-print.md](phase-14-kitchen-ticket-optimistic-print.md): "Gửi đơn" in phiếu gửi bếp các món mới thêm (diff theo nội dung), bỏ window.open, in từ dữ liệu local + invalidate fire-and-forget.
+- [phase-15-realtime-hardening.md](phase-15-realtime-hardening.md): chốt accuracy-first online-only/refetch-only (ADR), realtime tự lành khi reconnect (resync on SUBSCRIBED), SLA hội tụ ≤5s.
 
 ## Template Duy Trì
 
