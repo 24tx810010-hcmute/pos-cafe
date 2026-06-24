@@ -9,6 +9,18 @@ export class SupabaseRealtimePort implements IRealtimePort {
     const channel = this.client.channel(`store-${input.storeId}-invalidation`);
     const filter = `store_id=eq.${input.storeId}`;
 
+    // Đồng bộ lại toàn bộ trạng thái phụ thuộc realtime của store.
+    const resyncAll = () => {
+      input.invalidateOpenOrders();
+      input.invalidateFloorPlan();
+      input.invalidateReport();
+      input.invalidateMenu();
+    };
+
+    // order_items không được publish: submit_order_changes luôn bump
+    // orders.lock_version nên một event trên `orders` đã đủ tín hiệu (tránh
+    // double-refetch). orders | payments | tables -> open orders + floor +
+    // report; order detail nằm dưới prefix ["orders"] nên cũng được refetch.
     for (const table of ["orders", "payments", "tables"]) {
       channel.on("postgres_changes", { event: "*", schema: "public", table, filter }, () => {
         input.invalidateOpenOrders();
@@ -29,7 +41,14 @@ export class SupabaseRealtimePort implements IRealtimePort {
       });
     }
 
-    channel.subscribe();
+    // SUBSCRIBED bắn cả lần đầu lẫn mỗi lần tự reconnect/resubscribe sau khi
+    // socket rớt. Resync ngay tại đó để máy tự lành khi mạng chập chờn, thay vì
+    // phải chờ poll 5s — giữ sync giữa các máy nhanh kể cả khi realtime gián đoạn.
+    channel.subscribe((status: string) => {
+      if (status === "SUBSCRIBED") {
+        resyncAll();
+      }
+    });
 
     return () => {
       void this.client.removeChannel(channel);
