@@ -36,14 +36,17 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 
 - `categories`: danh mục món.
 - `menu_items`: món, giá, category, availability, image asset key.
-- `option_groups`: nhóm option theo món, single/multi, required, min/max.
-- `option_values`: giá trị option và price delta.
+- `option_groups`: nhóm tuỳ chọn (modifier) **dùng chung cho mọi món** — `select_type` single/multi + `is_required`. Không gắn cứng vào một món (đã bỏ `menu_item_id`, `min_select`, `max_select`).
+- `option_values`: giá trị tuỳ chọn và `price_delta` (giá của modifier, có thể 0).
+- `menu_item_option_groups`: bảng nối nhiều-nhiều cho biết **món nào dùng nhóm nào** (`menu_item_id` × `option_group_id`, `sort_order`). Cũng xóa mềm như các bảng menu khác.
 
 Ý nghĩa:
 
-- Menu editor lưu thay đổi bằng changeset.
+- Modifier là thư viện dùng chung: quản lý nhóm/giá trị ở một nơi, gắn vào nhiều món bằng cách tick (tạo/xoá link). Sửa một nhóm ảnh hưởng mọi món đang dùng.
+- Nhóm `single` cho chọn tối đa 1 giá trị; `multi` cho chọn nhiều giá trị, mỗi giá trị có số lượng riêng (xem `order_item_options.quantity`). Nhóm `is_required` bắt buộc chọn ≥ 1.
+- Menu editor lưu thay đổi bằng changeset (gồm cả changeset cho `menu_item_option_groups`).
 - Các bảng menu dùng xóa mềm để giữ đường mở rộng sync/offline.
-- Khi submit order, backend lấy tên/giá hiện tại từ DB để tạo snapshot; client không quyết định giá cuối.
+- Khi submit order, backend lấy tên/giá hiện tại từ DB để tạo snapshot; client không quyết định giá cuối. Tuỳ chọn chỉ hợp lệ khi nhóm của nó **có liên kết với đúng món** qua `menu_item_option_groups`.
 
 ## Nhóm Floor
 
@@ -61,7 +64,7 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 
 - `orders`: order number theo business date, loại order, table nullable, subtotal/discount/total, status, employee, lock version.
 - `order_items`: snapshot item name, quantity, unit price, note, status.
-- `order_item_options`: snapshot option name và price delta.
+- `order_item_options`: snapshot option name, price delta và **`quantity`** (số lượng modifier; nhóm single luôn 1, nhóm multi cho >1).
 
 Ý nghĩa:
 

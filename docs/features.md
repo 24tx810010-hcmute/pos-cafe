@@ -29,8 +29,9 @@
 
 - Tạo order dine-in hoặc takeaway.
 - Chọn món theo danh mục.
-- Chọn option/topping, số lượng và ghi chú.
-- Submit order lên backend qua RPC; backend quyết định snapshot tên/giá.
+- Món **có nhóm tuỳ chọn** → bấm vào hiện popup `ModifierPickerPopup` để chọn modifier (size/topping...); món **không có** nhóm thì thêm thẳng vào giỏ như cũ. Nhóm `single` chọn 1 (radio); nhóm `multi` tick nhiều giá trị, mỗi giá trị có stepper số lượng (mặc định 1). Nhóm bắt buộc thì nút `Thêm vào đơn` khoá đến khi chọn hợp lệ (`validateModifierSelection`).
+- Số lượng món và ghi chú chỉnh ở giỏ; dòng giỏ hiển thị option kèm `×N` khi số lượng > 1. Giá dòng = (giá món + Σ giá_modifier × số_lượng) × số_lượng_món.
+- Submit order lên backend qua RPC; backend quyết định snapshot tên/giá. Tuỳ chọn chỉ hợp lệ khi nhóm của nó được gắn với đúng món.
 - Khi `Gửi đơn`, mở popup `Phiếu gửi bếp` (variant `kitchen`) chỉ liệt kê các món **mới thêm** so với đơn hiện tại — so khớp theo nội dung (món + option + ghi chú) vì draft sinh id mới mỗi lần; chỉ hiện tên + số lượng, không giá. Tính từ dữ liệu local lúc bấm (`diffAddedPrintLines`).
 - Cập nhật query sau submit/pay theo kiểu fire-and-forget (UI/popup hiện ngay, không chờ refetch); máy khác nhận trễ tối đa ~5s qua realtime/poll.
 - Mở lại order đang mở để chỉnh sửa.
@@ -86,12 +87,12 @@
 - Upload ảnh món có cảnh báo và chặn file quá 5MB trước khi lưu.
 - Màn chọn món khi bán hàng hiển thị ảnh món nếu có, fallback bằng icon khi chưa có ảnh; card hết hàng có overlay `Đã bán hết`.
 - Card món trong Menu Editor dùng ảnh cover, bỏ pill trạng thái bán khỏi card; trạng thái vẫn chỉnh ở panel chi tiết.
-- Panel chi tiết món dùng select `Danh mục`, upload/preview ảnh, trạng thái bán và nhóm tùy chọn.
+- Panel chi tiết món dùng select `Danh mục`, upload/preview ảnh, trạng thái bán và **danh sách checkbox nhóm tuỳ chọn dùng chung** — tick để gắn/bỏ nhóm cho món (tạo/xoá link). Nút bút chì mở popup `ModifierGroupEditor` để sửa nhóm (tên, chọn-1/chọn-nhiều, bắt buộc, các giá trị + giá).
 - Đổi thứ tự món bằng switch `Đổi vị trí`: chọn món gốc, bật switch, bấm món khác trong cùng danh mục để swap rồi tự tắt switch.
 
 - Quản lý category.
 - Quản lý món: tên, giá, danh mục, trạng thái bán.
-- Quản lý option group và option value cho size/topping.
+- Quản lý nhóm tuỳ chọn (size/topping) **dùng chung** cho mọi món: tạo/sửa nhóm + giá trị một nơi, gắn vào nhiều món bằng checkbox. Sửa nhóm ảnh hưởng mọi món đang dùng.
 - Lưu theo changeset create/update/delete, không hard-delete dữ liệu editor.
 
 ## Floor Editor
