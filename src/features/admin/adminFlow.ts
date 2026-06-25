@@ -65,6 +65,7 @@ export const createEmptyMenuChanges = (): MenuChanges => ({
   menuItems: emptyChangeset(),
   optionGroups: emptyChangeset(),
   optionValues: emptyChangeset(),
+  menuItemOptionGroups: emptyChangeset(),
 });
 
 export const createEmptyFloorPlanChanges = (): FloorPlanChanges => ({
@@ -85,7 +86,10 @@ export const hasMenuChanges = (changes: MenuChanges): boolean =>
   changes.optionGroups.deleted.length > 0 ||
   changes.optionValues.created.length > 0 ||
   changes.optionValues.updated.length > 0 ||
-  changes.optionValues.deleted.length > 0;
+  changes.optionValues.deleted.length > 0 ||
+  changes.menuItemOptionGroups.created.length > 0 ||
+  changes.menuItemOptionGroups.updated.length > 0 ||
+  changes.menuItemOptionGroups.deleted.length > 0;
 
 export const hasFloorPlanChanges = (changes: FloorPlanChanges): boolean =>
   changes.areas.created.length > 0 ||

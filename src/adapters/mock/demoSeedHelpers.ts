@@ -22,6 +22,7 @@ export const applyDemoSeed = (state: MockState): void => {
     menuItems: upsertById(state.menu.menuItems, demoMenuCatalog.menuItems),
     optionGroups: upsertById(state.menu.optionGroups, demoMenuCatalog.optionGroups),
     optionValues: upsertById(state.menu.optionValues, demoMenuCatalog.optionValues),
+    menuItemOptionGroups: upsertById(state.menu.menuItemOptionGroups, demoMenuCatalog.menuItemOptionGroups),
   };
   state.floorPlan = {
     areas: upsertById(state.floorPlan.areas, demoFloorPlan.areas),
@@ -41,6 +42,7 @@ export const removeDemoSeed = (state: MockState): void => {
     menuItems: removeByIds(state.menu.menuItems, demoSeedIds.menuItems),
     optionGroups: removeByIds(state.menu.optionGroups, demoSeedIds.optionGroups),
     optionValues: removeByIds(state.menu.optionValues, demoSeedIds.optionValues),
+    menuItemOptionGroups: removeByIds(state.menu.menuItemOptionGroups, demoSeedIds.menuItemOptionGroups),
   };
   state.floorPlan = {
     areas: removeByIds(state.floorPlan.areas, demoSeedIds.areas),

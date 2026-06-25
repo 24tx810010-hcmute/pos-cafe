@@ -126,6 +126,25 @@ test("POS mock flow keeps primary actions visible on landscape viewports", async
   await expect(page.getByTestId("submit-order-button")).toBeVisible();
 });
 
+test("ordering an item with modifiers opens the picker and adds the choice to the cart", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "portrait", "landscape-only flow");
+  await page.goto("/");
+  await loginAsAdmin(page);
+
+  await page.getByTestId("table-tbl-b01").click();
+  await expect(page.getByTestId("order-drawer")).toBeVisible();
+
+  // Cà phê sữa có nhóm tuỳ chọn (Size/Đá) → bấm vào phải hiện popup chọn modifier.
+  await page.getByTestId("menu-item-mi-ca-phe-sua").click();
+  await expect(page.getByTestId("modifier-confirm")).toBeVisible();
+
+  await page.getByTestId("modifier-value-ov-size-l").click();
+  await page.getByTestId("modifier-confirm").click();
+
+  await expect(page.getByTestId("modifier-confirm")).toBeHidden();
+  await expect(page.getByTestId("order-drawer").getByText("Size L")).toBeVisible();
+});
+
 test("floor plan stage keeps demo layout readable across landscape viewports", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "portrait", "landscape-only flow");
   await page.goto("/");

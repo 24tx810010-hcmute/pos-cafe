@@ -137,7 +137,7 @@ describe("Supabase adapter ports", () => {
         menuItemId: "mi-latte",
         quantity: 1,
         note: "Ít đá",
-        options: [{ id: "draft-option-1", optionValueId: "ov-them-shot" }],
+        options: [{ id: "draft-option-1", optionValueId: "ov-them-shot", quantity: 1 }],
       },
     ];
 
@@ -312,6 +312,7 @@ describe("Supabase adapter ports", () => {
       menuItems: { created: [], updated: [], deleted: [] },
       optionGroups: { created: [], updated: [], deleted: [] },
       optionValues: { created: [], updated: [], deleted: [] },
+      menuItemOptionGroups: { created: [], updated: [], deleted: [] },
     };
 
     await ports.menu.saveMenuChanges(changes);

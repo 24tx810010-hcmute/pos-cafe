@@ -12,13 +12,10 @@ import { usePorts } from "@/features/shared/portsContext";
 import { useAppStore } from "../../useAppStore";
 import { toToastError } from "../../appErrors";
 import { nextDraftId, nextSort } from "@/features/admin/draftUtils";
-import {
-  type DraftCategory,
-  type DraftItem,
-  type DraftGroup,
-  type DraftValue,
-} from "@/features/admin/menuDraft";
+import { type DraftCategory, type DraftItem } from "@/features/admin/menuDraft";
 import { buildMenuChangesFromDrafts } from "@/features/admin/menuEditorDraft";
+import { useMenuModifierDrafts } from "@/features/admin/useMenuModifierDrafts";
+import { ModifierGroupEditor } from "./ModifierGroupEditor";
 import { swapMenuItemSortOrderInCategory } from "@/features/admin/menuItemOrderDraft";
 import { getMenuImageError, revokePendingItemPreviews } from "@/features/admin/menuImageDraft";
 import { deleteMenuImagesBestEffort, uploadPendingMenuItemImages } from "@/features/admin/menuImageSaveDraft";
@@ -45,14 +42,15 @@ export function MenuEditorDrawer() {
   const [baseMenu, setBaseMenu] = useState<MenuCatalog | null>(null);
   const [cats, setCats] = useState<DraftCategory[]>([]);
   const [items, setItems] = useState<DraftItem[]>([]);
-  const [groups, setGroups] = useState<DraftGroup[]>([]);
-  const [values, setValues] = useState<DraftValue[]>([]);
   const [dirty, setDirty] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [itemSwapMode, setItemSwapMode] = useState(false);
+
+  const touch = () => setDirty(true);
+  const mod = useMenuModifierDrafts(touch);
 
   const seedDraftFromMenu = (catalog: MenuCatalog) => {
     revokePendingItemPreviews(items);
@@ -69,27 +67,7 @@ export function MenuEditorDrawer() {
         isAvailable: m.isAvailable,
       })),
     );
-    setGroups(
-      catalog.optionGroups.map((g) => ({
-        id: g.id,
-        menuItemId: g.menuItemId,
-        name: g.name,
-        selectType: g.selectType,
-        isRequired: g.isRequired,
-        minSelect: g.minSelect,
-        maxSelect: g.maxSelect,
-        sortOrder: g.sortOrder,
-      })),
-    );
-    setValues(
-      catalog.optionValues.map((v) => ({
-        id: v.id,
-        optionGroupId: v.optionGroupId,
-        name: v.name,
-        priceDelta: v.priceDelta,
-        sortOrder: v.sortOrder,
-      })),
-    );
+    mod.reset(catalog);
     setSelectedCategoryId(catalog.categories[0]?.id ?? "");
     setSelectedItemId(null);
     setItemSwapMode(false);
@@ -102,8 +80,6 @@ export function MenuEditorDrawer() {
       seedDraftFromMenu(menuQuery.data);
     }
   }, [menuQuery.data, seeded]);
-
-  const touch = () => setDirty(true);
 
   // --- Category ops ---
   const addCategory = () => {
@@ -216,59 +192,16 @@ export function MenuEditorDrawer() {
     touch();
   };
 
-  // --- Option group ops ---
-  const addGroup = (itemId: string) => {
-    const id = nextDraftId("og");
-    setGroups((list) => [
-      ...list,
-      {
-        id,
-        menuItemId: itemId,
-        name: "Nhóm tuỳ chọn",
-        selectType: "single",
-        isRequired: false,
-        minSelect: 0,
-        maxSelect: 1,
-        sortOrder: nextSort(list.filter((g) => g.menuItemId === itemId).map((g) => g.sortOrder)),
-        isNew: true,
-      },
-    ]);
-    touch();
-  };
-  const patchGroup = (id: string, patch: Partial<DraftGroup>) => {
-    setGroups((list) => list.map((g) => (g.id === id ? { ...g, ...patch } : g)));
-    touch();
-  };
-  const toggleDeleteGroup = (id: string) => {
-    setGroups((list) => list.map((g) => (g.id === id ? { ...g, deleted: !g.deleted } : g)));
-    touch();
-  };
-
-  // --- Option value ops ---
-  const addValue = (groupId: string) => {
-    const id = nextDraftId("ov");
-    setValues((list) => [
-      ...list,
-      { id, optionGroupId: groupId, name: "Giá trị mới", priceDelta: 0, sortOrder: nextSort(list.filter((v) => v.optionGroupId === groupId).map((v) => v.sortOrder)), isNew: true },
-    ]);
-    touch();
-  };
-  const patchValue = (id: string, patch: Partial<DraftValue>) => {
-    setValues((list) => list.map((v) => (v.id === id ? { ...v, ...patch } : v)));
-    touch();
-  };
-  const toggleDeleteValue = (id: string) => {
-    setValues((list) => list.map((v) => (v.id === id ? { ...v, deleted: !v.deleted } : v)));
-    touch();
-  };
-
   // --- Derived ---
   const sortedCats = [...cats].sort((a, b) => a.sortOrder - b.sortOrder);
   const selectedCategory = cats.find((c) => c.id === selectedCategoryId) ?? null;
   const catItems = items.filter((i) => i.categoryId === selectedCategoryId).sort((a, b) => a.sortOrder - b.sortOrder);
   const selectedItem = items.find((i) => i.id === selectedItemId) ?? null;
-  const itemGroups = selectedItem ? groups.filter((g) => g.menuItemId === selectedItem.id).sort((a, b) => a.sortOrder - b.sortOrder) : [];
-  const groupValues = (gid: string) => values.filter((v) => v.optionGroupId === gid).sort((a, b) => a.sortOrder - b.sortOrder);
+  const activeGroups = mod.groups.filter((g) => !g.deleted).sort((a, b) => a.sortOrder - b.sortOrder);
+  const linkedGroupIds = selectedItem
+    ? new Set(mod.links.filter((l) => l.menuItemId === selectedItem.id && !l.deleted).map((l) => l.optionGroupId))
+    : new Set<string>();
+  const editingGroup = mod.editingGroupId ? mod.groups.find((g) => g.id === mod.editingGroupId) ?? null : null;
   const activeCatCount = cats.filter((c) => !c.deleted).length;
   const activeItemCount = items.filter((i) => !i.deleted).length;
   const selectedItemImageUrl = selectedItem
@@ -289,10 +222,10 @@ export function MenuEditorDrawer() {
       toast.error("Kiểm tra lại: tên món bắt buộc, giá ≥ 0.");
       return;
     }
-    const badGroup = groups.find((g) => !g.deleted && g.maxSelect < g.minSelect);
+    const badGroup = mod.groups.find((g) => !g.deleted && !g.name.trim());
     if (badGroup) {
-      setSelectedItemId(badGroup.menuItemId);
-      toast.error("Nhóm tuỳ chọn: số chọn tối đa phải ≥ tối thiểu.");
+      mod.setEditingGroupId(badGroup.id);
+      toast.error("Nhóm tuỳ chọn: tên nhóm bắt buộc.");
       return;
     }
 
@@ -304,8 +237,9 @@ export function MenuEditorDrawer() {
       base: sourceMenu,
       categories: cats,
       items: uploadResult.itemsForSave,
-      groups,
-      values,
+      groups: mod.groups,
+      values: mod.values,
+      links: mod.links,
       actorId: currentEmployee?.id,
     });
     if (!hasMenuChanges(changes)) {
@@ -387,7 +321,7 @@ export function MenuEditorDrawer() {
                 preview={preview}
                 catItems={catItems}
                 items={items}
-                groups={groups}
+                links={mod.links}
                 getMenuImageUrl={(assetKey) => ports.menuImages.getImageUrl(assetKey)}
                 setSelectedCategoryId={setSelectedCategoryId}
                 setSelectedItemId={setSelectedItemId}
@@ -404,8 +338,9 @@ export function MenuEditorDrawer() {
                 selectedCategory={selectedCategory}
                 selectedItemImageUrl={selectedItemImageUrl}
                 sortedCats={sortedCats}
-                itemGroups={itemGroups}
-                groupValues={groupValues}
+                sharedGroups={activeGroups}
+                linkedGroupIds={linkedGroupIds}
+                groupValues={mod.groupValues}
                 controlsLocked={itemSwapMode}
                 itemSwapMode={itemSwapMode}
                 onItemSwapModeChange={setItemSwapMode}
@@ -415,12 +350,9 @@ export function MenuEditorDrawer() {
                 onImageSelected={setItemImageFile}
                 onImageRemoved={removeItemImage}
                 addItem={addItem}
-                addGroup={addGroup}
-                patchGroup={patchGroup}
-                toggleDeleteGroup={toggleDeleteGroup}
-                addValue={addValue}
-                patchValue={patchValue}
-                toggleDeleteValue={toggleDeleteValue}
+                onAddGroup={mod.addGroup}
+                onToggleLink={mod.toggleLink}
+                onEditGroup={mod.setEditingGroupId}
                 patchCategory={patchCategory}
                 moveCategory={moveCategory}
                 toggleDeleteCategory={toggleDeleteCategory}
@@ -429,6 +361,19 @@ export function MenuEditorDrawer() {
           </>
         )}
       </div>
+
+      {editingGroup && (
+        <ModifierGroupEditor
+          group={editingGroup}
+          values={mod.groupValues(editingGroup.id)}
+          onPatchGroup={mod.patchGroup}
+          onAddValue={mod.addValue}
+          onPatchValue={mod.patchValue}
+          onDeleteValue={mod.toggleDeleteValue}
+          onDeleteGroup={mod.deleteGroup}
+          onClose={() => mod.setEditingGroupId(null)}
+        />
+      )}
 
       {confirmCancel && (
         <PortalPopup placement="Centered" viewport="workspace" overlayClassName="bg-slate-900/50" onOutsideClick={() => setConfirmCancel(false)}>

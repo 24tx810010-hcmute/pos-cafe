@@ -9,7 +9,7 @@ export class SupabaseMenuRepo implements IMenuRepo {
   constructor(private readonly client: SupabaseAnyClient) {}
 
   async getMenu(): Promise<MenuCatalog> {
-    const [categories, menuItems, optionGroups, optionValues] = await Promise.all([
+    const [categories, menuItems, optionGroups, optionValues, menuItemOptionGroups] = await Promise.all([
       this.client.from("categories").select("id,name,sort_order").is("deleted_at", null).order("sort_order"),
       this.client
         .from("menu_items")
@@ -18,12 +18,17 @@ export class SupabaseMenuRepo implements IMenuRepo {
         .order("sort_order"),
       this.client
         .from("option_groups")
-        .select("id,menu_item_id,name,select_type,is_required,min_select,max_select,sort_order")
+        .select("id,name,select_type,is_required,sort_order")
         .is("deleted_at", null)
         .order("sort_order"),
       this.client
         .from("option_values")
         .select("id,option_group_id,name,price_delta,sort_order")
+        .is("deleted_at", null)
+        .order("sort_order"),
+      this.client
+        .from("menu_item_option_groups")
+        .select("id,menu_item_id,option_group_id,sort_order")
         .is("deleted_at", null)
         .order("sort_order"),
     ]);
@@ -32,12 +37,14 @@ export class SupabaseMenuRepo implements IMenuRepo {
     throwIfError(menuItems.error);
     throwIfError(optionGroups.error);
     throwIfError(optionValues.error);
+    throwIfError(menuItemOptionGroups.error);
 
     return mapMenuCatalog(
       (categories.data ?? []) as Row[],
       (menuItems.data ?? []) as Row[],
       (optionGroups.data ?? []) as Row[],
       (optionValues.data ?? []) as Row[],
+      (menuItemOptionGroups.data ?? []) as Row[],
     );
   }
 
@@ -74,12 +81,9 @@ export class SupabaseMenuRepo implements IMenuRepo {
       changes.optionGroups.created.map((group) => ({
         id: group.id,
         store_id: storeId,
-        menu_item_id: group.menuItemId,
         name: group.name,
         select_type: group.selectType,
         is_required: group.isRequired,
-        min_select: group.minSelect,
-        max_select: group.maxSelect,
         sort_order: group.sortOrder,
       })),
     );
@@ -93,6 +97,17 @@ export class SupabaseMenuRepo implements IMenuRepo {
         name: value.name,
         price_delta: value.priceDelta,
         sort_order: value.sortOrder,
+      })),
+    );
+    await insertRows(
+      this.client,
+      "menu_item_option_groups",
+      changes.menuItemOptionGroups.created.map((link) => ({
+        id: link.id,
+        store_id: storeId,
+        menu_item_id: link.menuItemId,
+        option_group_id: link.optionGroupId,
+        sort_order: link.sortOrder,
       })),
     );
 
@@ -114,12 +129,9 @@ export class SupabaseMenuRepo implements IMenuRepo {
     }
     for (const group of changes.optionGroups.updated) {
       await updateRow(this.client, "option_groups", group.id, {
-        menu_item_id: group.menuItemId,
         name: group.name,
         select_type: group.selectType,
         is_required: group.isRequired,
-        min_select: group.minSelect,
-        max_select: group.maxSelect,
         sort_order: group.sortOrder,
       });
     }
@@ -131,7 +143,17 @@ export class SupabaseMenuRepo implements IMenuRepo {
         sort_order: value.sortOrder,
       });
     }
+    for (const link of changes.menuItemOptionGroups.updated) {
+      await updateRow(this.client, "menu_item_option_groups", link.id, {
+        menu_item_id: link.menuItemId,
+        option_group_id: link.optionGroupId,
+        sort_order: link.sortOrder,
+      });
+    }
 
+    for (const link of changes.menuItemOptionGroups.deleted) {
+      await tombstoneRow(this.client, "menu_item_option_groups", link.id, link.deletedByEmployeeId);
+    }
     for (const value of changes.optionValues.deleted) {
       await tombstoneRow(this.client, "option_values", value.id, value.deletedByEmployeeId);
     }

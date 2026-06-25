@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Button, FormControlLabel, MenuItem as MuiMenuItem, Switch, TextField } from "@mui/material";
-import { Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Pencil, Plus, RotateCcw } from "lucide-react";
 import { toInt } from "@/features/admin/draftUtils";
 import type { DraftCategory, DraftGroup, DraftItem, DraftValue } from "@/features/admin/menuDraft";
 import { MENU_IMAGE_HELP_TEXT } from "@/features/admin/menuImageDraft";
@@ -12,7 +12,8 @@ interface MenuEditorDetailPaneProps {
   selectedCategory: DraftCategory | null;
   selectedItemImageUrl: string | null;
   sortedCats: DraftCategory[];
-  itemGroups: DraftGroup[];
+  sharedGroups: DraftGroup[];
+  linkedGroupIds: Set<string>;
   groupValues: (groupId: string) => DraftValue[];
   controlsLocked: boolean;
   itemSwapMode: boolean;
@@ -23,12 +24,9 @@ interface MenuEditorDetailPaneProps {
   onImageSelected: (id: string, file: File) => void;
   onImageRemoved: (id: string) => void;
   addItem: () => void;
-  addGroup: (itemId: string) => void;
-  patchGroup: PatchDraft<DraftGroup>;
-  toggleDeleteGroup: (id: string) => void;
-  addValue: (groupId: string) => void;
-  patchValue: PatchDraft<DraftValue>;
-  toggleDeleteValue: (id: string) => void;
+  onAddGroup: (itemId?: string) => void;
+  onToggleLink: (itemId: string, groupId: string) => void;
+  onEditGroup: (groupId: string) => void;
   patchCategory: PatchDraft<DraftCategory>;
   moveCategory: (id: string, dir: -1 | 1) => void;
   toggleDeleteCategory: (id: string) => void;
@@ -39,7 +37,8 @@ export function MenuEditorDetailPane({
   selectedCategory,
   selectedItemImageUrl,
   sortedCats,
-  itemGroups,
+  sharedGroups,
+  linkedGroupIds,
   groupValues,
   controlsLocked,
   itemSwapMode,
@@ -50,12 +49,9 @@ export function MenuEditorDetailPane({
   onImageSelected,
   onImageRemoved,
   addItem,
-  addGroup,
-  patchGroup,
-  toggleDeleteGroup,
-  addValue,
-  patchValue,
-  toggleDeleteValue,
+  onAddGroup,
+  onToggleLink,
+  onEditGroup,
   patchCategory,
   moveCategory,
   toggleDeleteCategory,
@@ -200,83 +196,45 @@ export function MenuEditorDetailPane({
 
             <div className="grid gap-2.5 border-t border-dashed border-pos-line pt-3">
                   <div className="flex items-center justify-between text-[13px] font-extrabold">
-                    <span>Nhóm tuỳ chọn</span>
-                    <button className="inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border border-pos-line bg-pos-surface2 px-2 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40 px-2.5" onClick={() => addGroup(selectedItem.id)}><Plus size={13} /> Nhóm</button>
+                    <span>Nhóm tuỳ chọn dùng chung</span>
+                    <button className="inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border border-pos-line bg-pos-surface2 px-2.5 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40" onClick={() => onAddGroup(selectedItem.id)}><Plus size={13} /> Tạo nhóm</button>
                   </div>
-                  {itemGroups.length === 0 ? (
-                    <p className="text-pos-muted">Chưa có nhóm tuỳ chọn.</p>
+                  <p className="m-0 text-[11px] leading-snug text-pos-muted">Tick để gắn nhóm vào món này. Nhóm dùng chung cho mọi món — sửa nhóm sẽ ảnh hưởng tất cả món đang dùng.</p>
+                  {sharedGroups.length === 0 ? (
+                    <p className="text-pos-muted">Chưa có nhóm tuỳ chọn nào. Bấm "Tạo nhóm" để thêm.</p>
                   ) : (
-                    itemGroups.map((g) => (
-                      <div key={g.id} className={clsx("grid gap-2.5 rounded-pos border border-pos-line bg-pos-surface2 p-2.5", g.deleted && "opacity-55")}>
-                        <div className="flex items-start gap-2 [&>*:first-child]:flex-[1_1_auto]">
-                          <TextField label="Tên nhóm" value={g.name} onChange={(e) => patchGroup(g.id, { name: e.target.value })} size="small" fullWidth />
-                          <button className="inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border border-pos-line bg-pos-surface2 px-2 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40" title={g.deleted ? "Khôi phục" : "Xoá nhóm"} onClick={() => toggleDeleteGroup(g.id)}>
-                            {g.deleted ? <RotateCcw size={13} /> : <Trash2 size={13} />}
-                          </button>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="flex flex-wrap gap-1.5">
-                            <button
-                              className={clsx(
-                                "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
-                                g.selectType === "single"
-                                  ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
-                                  : "border-pos-line bg-pos-surface text-pos-ink",
-                              )}
-                              onClick={() => patchGroup(g.id, { selectType: "single" })}
-                            >
-                              Chọn 1
-                            </button>
-                            <button
-                              className={clsx(
-                                "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
-                                g.selectType === "multi"
-                                  ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
-                                  : "border-pos-line bg-pos-surface text-pos-ink",
-                              )}
-                              onClick={() => patchGroup(g.id, { selectType: "multi" })}
-                            >
-                              Chọn nhiều
-                            </button>
+                    sharedGroups.map((g) => {
+                      const linked = linkedGroupIds.has(g.id);
+                      const valueSummary = groupValues(g.id).map((v) => v.name).filter(Boolean).join(", ");
+                      return (
+                        <div key={g.id} className={clsx("flex items-start gap-2.5 rounded-pos border bg-pos-surface2 p-2.5", linked ? "border-pos-primaryLine" : "border-pos-line")}>
+                          <input
+                            type="checkbox"
+                            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-pos-primary"
+                            checked={linked}
+                            aria-label={`Gắn nhóm ${g.name}`}
+                            data-testid={`link-group-${g.id}`}
+                            onChange={() => onToggleLink(selectedItem.id, g.id)}
+                          />
+                          <div className="grid min-w-0 flex-[1_1_auto] gap-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <strong className="truncate text-[13px]">{g.name || "(chưa đặt tên)"}</strong>
+                              <span className="shrink-0 rounded-full bg-pos-surface px-1.5 py-px text-[10px] font-bold text-pos-muted">{g.selectType === "single" ? "Chọn 1" : "Chọn nhiều"}</span>
+                              {g.isRequired && <span className="shrink-0 rounded-full bg-pos-primarySoft px-1.5 py-px text-[10px] font-bold text-pos-primary">Bắt buộc</span>}
+                            </div>
+                            <span className="truncate text-[11px] text-pos-muted">{valueSummary || "Chưa có lựa chọn"}</span>
                           </div>
                           <button
-                            className={clsx(
-                              "cursor-pointer whitespace-nowrap rounded-[7px] border px-3 py-[7px] text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50",
-                              g.isRequired
-                                ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
-                                : "border-pos-line bg-pos-surface text-pos-muted",
-                            )}
-                            onClick={() => patchGroup(g.id, { isRequired: !g.isRequired })}
+                            className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-[6px] border border-pos-line bg-pos-surface text-pos-muted transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary"
+                            title="Sửa nhóm"
+                            data-testid={`edit-group-${g.id}`}
+                            onClick={() => onEditGroup(g.id)}
                           >
-                            {g.isRequired ? "Bắt buộc" : "Tuỳ chọn"}
+                            <Pencil size={13} />
                           </button>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <TextField label="Tối thiểu" value={String(g.minSelect)} onChange={(e) => patchGroup(g.id, { minSelect: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                          <TextField
-                            label="Tối đa"
-                            value={String(g.maxSelect)}
-                            onChange={(e) => patchGroup(g.id, { maxSelect: toInt(e.target.value) })}
-                            error={g.maxSelect < g.minSelect}
-                            helperText={g.maxSelect < g.minSelect ? "≥ tối thiểu" : ""}
-                            size="small"
-                            inputProps={{ inputMode: "numeric" }}
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          {groupValues(g.id).map((v) => (
-                            <div key={v.id} className={clsx("grid grid-cols-[1.4fr_0.9fr_auto] items-start gap-1.5", v.deleted && "opacity-55")}>
-                              <TextField label="Tên" value={v.name} onChange={(e) => patchValue(v.id, { name: e.target.value })} size="small" />
-                              <TextField label="+Giá" value={String(v.priceDelta)} onChange={(e) => patchValue(v.id, { priceDelta: toInt(e.target.value) })} size="small" inputProps={{ inputMode: "numeric" }} />
-                              <button className="inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border border-pos-line bg-pos-surface2 px-2 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40" title={v.deleted ? "Khôi phục" : "Xoá"} onClick={() => toggleDeleteValue(v.id)}>
-                                {v.deleted ? <RotateCcw size={12} /> : <Trash2 size={12} />}
-                              </button>
-                            </div>
-                          ))}
-                          <button className="inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border border-pos-line bg-pos-surface2 px-2 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40 w-full justify-center border-dashed" onClick={() => addValue(g.id)}><Plus size={12} /> Giá trị</button>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
             </div>
             </fieldset>

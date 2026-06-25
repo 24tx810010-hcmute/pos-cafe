@@ -10,6 +10,7 @@ import type {
   FloorTable,
   MenuCatalog,
   MenuItem,
+  MenuItemOptionGroup,
   OptionGroup,
   OptionValue,
   OrderDetail,
@@ -70,12 +71,9 @@ export const mapMenuItem = (row: Row): MenuItem => ({
 
 export const mapOptionGroup = (row: Row): OptionGroup => ({
   id: asString(row.id),
-  menuItemId: asString(row.menu_item_id),
   name: asString(row.name),
   selectType: asString(row.select_type) as OptionGroup["selectType"],
   isRequired: asBoolean(row.is_required),
-  minSelect: asNumber(row.min_select),
-  maxSelect: asNumber(row.max_select),
   sortOrder: asNumber(row.sort_order),
 });
 
@@ -87,16 +85,25 @@ export const mapOptionValue = (row: Row): OptionValue => ({
   sortOrder: asNumber(row.sort_order),
 });
 
+export const mapMenuItemOptionGroup = (row: Row): MenuItemOptionGroup => ({
+  id: asString(row.id),
+  menuItemId: asString(row.menu_item_id),
+  optionGroupId: asString(row.option_group_id),
+  sortOrder: asNumber(row.sort_order),
+});
+
 export const mapMenuCatalog = (
   categories: Row[],
   menuItems: Row[],
   optionGroups: Row[],
   optionValues: Row[],
+  menuItemOptionGroups: Row[],
 ): MenuCatalog => ({
   categories: categories.map(mapCategory),
   menuItems: menuItems.map(mapMenuItem),
   optionGroups: optionGroups.map(mapOptionGroup),
   optionValues: optionValues.map(mapOptionValue),
+  menuItemOptionGroups: menuItemOptionGroups.map(mapMenuItemOptionGroup),
 });
 
 export const mapFloorArea = (row: Row): FloorArea => ({
@@ -157,6 +164,7 @@ export const mapOrderItemOption = (row: Row): OrderItemOptionSnapshot => ({
   optionValueId: asString(row.option_value_id),
   optionName: asString(row.option_name),
   priceDelta: asNumber(row.price_delta),
+  quantity: row.quantity == null ? 1 : asNumber(row.quantity),
 });
 
 export const mapOrderItem = (row: Row, options: OrderItemOptionSnapshot[]): OrderItemSnapshot => ({

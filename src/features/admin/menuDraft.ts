@@ -18,14 +18,12 @@ export interface DraftItem {
   deleted?: boolean;
   isNew?: boolean;
 }
+// Nhóm tuỳ chọn dùng CHUNG cho mọi món (không gắn cứng vào 1 món).
 export interface DraftGroup {
   id: string;
-  menuItemId: string;
   name: string;
   selectType: "single" | "multi";
   isRequired: boolean;
-  minSelect: number;
-  maxSelect: number;
   sortOrder: number;
   deleted?: boolean;
   isNew?: boolean;
@@ -35,6 +33,15 @@ export interface DraftValue {
   optionGroupId: string;
   name: string;
   priceDelta: number;
+  sortOrder: number;
+  deleted?: boolean;
+  isNew?: boolean;
+}
+// Liên kết món <-> nhóm tuỳ chọn dùng chung (món nào "tick" dùng nhóm nào).
+export interface DraftLink {
+  id: string;
+  menuItemId: string;
+  optionGroupId: string;
   sortOrder: number;
   deleted?: boolean;
   isNew?: boolean;

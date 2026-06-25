@@ -20,6 +20,7 @@ export class MockMenuRepo implements IMenuRepo {
     );
     this.state.menu.optionGroups.push(...changes.optionGroups.created);
     this.state.menu.optionValues.push(...changes.optionValues.created);
+    this.state.menu.menuItemOptionGroups.push(...changes.menuItemOptionGroups.created);
 
     for (const category of changes.categories.updated) {
       this.state.menu.categories = updateById(this.state.menu.categories, category);
@@ -33,7 +34,11 @@ export class MockMenuRepo implements IMenuRepo {
     for (const value of changes.optionValues.updated) {
       this.state.menu.optionValues = updateById(this.state.menu.optionValues, value);
     }
+    for (const link of changes.menuItemOptionGroups.updated) {
+      this.state.menu.menuItemOptionGroups = updateById(this.state.menu.menuItemOptionGroups, link);
+    }
 
+    this.state.menu.menuItemOptionGroups = removeByIds(this.state.menu.menuItemOptionGroups, changes.menuItemOptionGroups.deleted);
     this.state.menu.optionValues = removeByIds(this.state.menu.optionValues, changes.optionValues.deleted);
     this.state.menu.optionGroups = removeByIds(this.state.menu.optionGroups, changes.optionGroups.deleted);
     this.state.menu.menuItems = removeByIds(this.state.menu.menuItems, changes.menuItems.deleted);

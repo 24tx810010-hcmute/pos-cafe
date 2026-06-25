@@ -64,12 +64,13 @@ export const mockMenuCatalog: MenuCatalog = {
     { id: "mi-tiramisu", categoryId: "cat-snack", name: "Tiramisu", price: 45000, imageAssetKey: null, sortOrder: 21, isAvailable: true },
     { id: "mi-khoai-tay-chien", categoryId: "cat-snack", name: "Khoai tây chiên", price: 39000, imageAssetKey: null, sortOrder: 22, isAvailable: true },
   ],
+  // Nhóm tuỳ chọn dùng chung — không gắn cứng vào món, liên kết qua menuItemOptionGroups.
   optionGroups: [
-    { id: "og-coffee-size", menuItemId: "mi-ca-phe-sua", name: "Size", selectType: "single", isRequired: false, minSelect: 0, maxSelect: 1, sortOrder: 1 },
-    { id: "og-coffee-ice", menuItemId: "mi-ca-phe-sua", name: "Đá", selectType: "single", isRequired: false, minSelect: 0, maxSelect: 1, sortOrder: 2 },
-    { id: "og-bac-xiu-sugar", menuItemId: "mi-bac-xiu", name: "Đường", selectType: "single", isRequired: false, minSelect: 0, maxSelect: 1, sortOrder: 1 },
-    { id: "og-tea-topping", menuItemId: "mi-tra-sua-truyen-thong", name: "Topping", selectType: "multi", isRequired: false, minSelect: 0, maxSelect: 3, sortOrder: 1 },
-    { id: "og-latte-shot", menuItemId: "mi-latte", name: "Thêm shot", selectType: "multi", isRequired: false, minSelect: 0, maxSelect: 1, sortOrder: 1 },
+    { id: "og-coffee-size", name: "Size", selectType: "single", isRequired: false, sortOrder: 1 },
+    { id: "og-coffee-ice", name: "Đá", selectType: "single", isRequired: false, sortOrder: 2 },
+    { id: "og-bac-xiu-sugar", name: "Đường", selectType: "single", isRequired: false, sortOrder: 3 },
+    { id: "og-tea-topping", name: "Topping", selectType: "multi", isRequired: false, sortOrder: 4 },
+    { id: "og-latte-shot", name: "Thêm shot", selectType: "multi", isRequired: false, sortOrder: 5 },
   ],
   optionValues: [
     { id: "ov-size-m", optionGroupId: "og-coffee-size", name: "Size M", priceDelta: 0, sortOrder: 1 },
@@ -81,6 +82,17 @@ export const mockMenuCatalog: MenuCatalog = {
     { id: "ov-tran-chau", optionGroupId: "og-tea-topping", name: "Trân châu", priceDelta: 7000, sortOrder: 1 },
     { id: "ov-kem-pho-mai", optionGroupId: "og-tea-topping", name: "Kem phô mai", priceDelta: 10000, sortOrder: 2 },
     { id: "ov-them-shot", optionGroupId: "og-latte-shot", name: "Thêm shot", priceDelta: 10000, sortOrder: 1 },
+  ],
+  menuItemOptionGroups: [
+    // Size dùng chung cho nhiều món cà phê.
+    { id: "miog-size-ca-phe-sua", menuItemId: "mi-ca-phe-sua", optionGroupId: "og-coffee-size", sortOrder: 1 },
+    { id: "miog-ice-ca-phe-sua", menuItemId: "mi-ca-phe-sua", optionGroupId: "og-coffee-ice", sortOrder: 2 },
+    { id: "miog-size-bac-xiu", menuItemId: "mi-bac-xiu", optionGroupId: "og-coffee-size", sortOrder: 1 },
+    { id: "miog-sugar-bac-xiu", menuItemId: "mi-bac-xiu", optionGroupId: "og-bac-xiu-sugar", sortOrder: 2 },
+    { id: "miog-size-latte", menuItemId: "mi-latte", optionGroupId: "og-coffee-size", sortOrder: 1 },
+    { id: "miog-shot-latte", menuItemId: "mi-latte", optionGroupId: "og-latte-shot", sortOrder: 2 },
+    { id: "miog-topping-tra-sua", menuItemId: "mi-tra-sua-truyen-thong", optionGroupId: "og-tea-topping", sortOrder: 1 },
+    { id: "miog-topping-sua-tuoi", menuItemId: "mi-sua-tuoi-tran-chau", optionGroupId: "og-tea-topping", sortOrder: 1 },
   ],
 };
 
@@ -133,7 +145,7 @@ export const mockOpenOrders: OrderDetail[] = [
         quantity: 2,
         unitPrice: 29000,
         note: "Ít đá",
-        options: [{ id: "oio-b02-1", optionValueId: "ov-size-m", optionName: "Size M", priceDelta: 0 }],
+        options: [{ id: "oio-b02-1", optionValueId: "ov-size-m", optionName: "Size M", priceDelta: 0, quantity: 1 }],
       },
       {
         id: "oi-b02-2",
@@ -142,7 +154,7 @@ export const mockOpenOrders: OrderDetail[] = [
         quantity: 1,
         unitPrice: 32000,
         note: null,
-        options: [{ id: "oio-b02-2", optionValueId: "ov-duong-50", optionName: "50% đường", priceDelta: 0 }],
+        options: [{ id: "oio-b02-2", optionValueId: "ov-duong-50", optionName: "50% đường", priceDelta: 0, quantity: 1 }],
       },
       {
         id: "oi-b02-3",
@@ -227,7 +239,7 @@ export const mockPaidOrders: OrderDetail[] = [
         quantity: 1,
         unitPrice: 32000,
         note: null,
-        options: [{ id: "oio-paid-2", optionValueId: "ov-duong-50", optionName: "50% đường", priceDelta: 0 }],
+        options: [{ id: "oio-paid-2", optionValueId: "ov-duong-50", optionName: "50% đường", priceDelta: 0, quantity: 1 }],
       },
     ],
   },
@@ -238,7 +250,7 @@ export const mockOrders: OrderDetail[] = [...mockOpenOrders, ...mockPaidOrders];
 // Blank store: chỉ có 1 admin, không menu/floor/order. Dùng cho createMockState().
 export const mockAdminEmployee: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true };
 export const mockAdminPin = "123456";
-export const emptyMenuCatalog: MenuCatalog = { categories: [], menuItems: [], optionGroups: [], optionValues: [] };
+export const emptyMenuCatalog: MenuCatalog = { categories: [], menuItems: [], optionGroups: [], optionValues: [], menuItemOptionGroups: [] };
 export const emptyFloorPlan: FloorPlan = { areas: [], tables: [], decorItems: [] };
 export const blankSettings: StoreSettings = {
   storeId: mockStoreId,

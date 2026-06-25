@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Coffee, Plus, RotateCcw, Trash2 } from "lucide-react";
-import type { DraftCategory, DraftGroup, DraftItem } from "@/features/admin/menuDraft";
+import type { DraftCategory, DraftItem, DraftLink } from "@/features/admin/menuDraft";
 import { formatVnd } from "@/core/money";
 
 interface MenuCatalogPaneProps {
@@ -10,7 +10,7 @@ interface MenuCatalogPaneProps {
   preview: boolean;
   catItems: DraftItem[];
   items: DraftItem[];
-  groups: DraftGroup[];
+  links: DraftLink[];
   getMenuImageUrl: (assetKey: string | null | undefined) => string | null;
   setSelectedCategoryId: (id: string) => void;
   setSelectedItemId: (id: string | null) => void;
@@ -70,7 +70,7 @@ export function MenuCatalogPane({
   preview,
   catItems,
   items,
-  groups,
+  links,
   getMenuImageUrl,
   setSelectedCategoryId,
   setSelectedItemId,
@@ -182,7 +182,7 @@ export function MenuCatalogPane({
                     <strong className="overflow-hidden text-ellipsis whitespace-nowrap">{item.name || "(chưa đặt tên)"}</strong>
                     <span className="font-black text-pos-primary">{formatVnd(item.price)}</span>
                     <div className="flex flex-wrap content-start gap-1.5">
-                      <span className="inline-flex min-h-[22px] w-fit items-center rounded-full border border-pos-line bg-pos-surface2 px-2 py-0.5 text-[11px] font-bold text-pos-muted">{groups.filter((group) => group.menuItemId === item.id && !group.deleted).length} tùy chọn</span>
+                      <span className="inline-flex min-h-[22px] w-fit items-center rounded-full border border-pos-line bg-pos-surface2 px-2 py-0.5 text-[11px] font-bold text-pos-muted">{links.filter((link) => link.menuItemId === item.id && !link.deleted).length} tùy chọn</span>
                     </div>
                     <div className="flex flex-wrap gap-2 pt-1" onClick={(event) => event.stopPropagation()}>
                       <button className="inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border border-pos-line bg-pos-surface2 px-2.5 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40" disabled={controlsLocked} onClick={() => patchItem(item.id, { isAvailable: !item.isAvailable })}>

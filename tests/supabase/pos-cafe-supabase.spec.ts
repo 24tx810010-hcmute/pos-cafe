@@ -47,6 +47,12 @@ async function createOpenOrderOnFirstTable(page: Page) {
   await page.getByTestId("floor-view").locator('[data-testid^="table-"]').first().click();
   await expect(page.getByTestId("order-drawer")).toBeVisible();
   await page.getByTestId("order-drawer").locator('[data-testid^="menu-item-"]').first().click();
+  // Món có nhóm tuỳ chọn sẽ mở popup chọn modifier; xác nhận nếu xuất hiện.
+  const confirmModifier = page.getByTestId("modifier-confirm");
+  await confirmModifier
+    .waitFor({ state: "visible", timeout: 1500 })
+    .then(() => confirmModifier.click())
+    .catch(() => undefined);
   await page.getByTestId("submit-order-button-footer").click();
   await expect(page.getByTestId("order-drawer")).toBeHidden({ timeout: 30_000 });
 }

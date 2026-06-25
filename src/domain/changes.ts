@@ -30,12 +30,9 @@ export type MenuItemUpdate = Partial<MenuItemCreate> & { id: string };
 
 export type OptionGroupCreate = {
   id: string;
-  menuItemId: string;
   name: string;
   selectType: "single" | "multi";
   isRequired: boolean;
-  minSelect: number;
-  maxSelect: number;
   sortOrder: number;
 };
 export type OptionGroupUpdate = Partial<OptionGroupCreate> & { id: string };
@@ -49,11 +46,24 @@ export type OptionValueCreate = {
 };
 export type OptionValueUpdate = Partial<OptionValueCreate> & { id: string };
 
+export type MenuItemOptionGroupCreate = {
+  id: string;
+  menuItemId: string;
+  optionGroupId: string;
+  sortOrder: number;
+};
+export type MenuItemOptionGroupUpdate = Partial<MenuItemOptionGroupCreate> & { id: string };
+
 export type MenuChanges = {
   categories: Changeset<CategoryCreate, CategoryUpdate, TombstoneDelete>;
   menuItems: Changeset<MenuItemCreate, MenuItemUpdate, TombstoneDelete>;
   optionGroups: Changeset<OptionGroupCreate, OptionGroupUpdate, TombstoneDelete>;
   optionValues: Changeset<OptionValueCreate, OptionValueUpdate, TombstoneDelete>;
+  menuItemOptionGroups: Changeset<
+    MenuItemOptionGroupCreate,
+    MenuItemOptionGroupUpdate,
+    TombstoneDelete
+  >;
 };
 
 export type FloorAreaCreate = { id: string; name: string; sortOrder: number };

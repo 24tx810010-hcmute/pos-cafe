@@ -67,7 +67,7 @@ describe("orderFlow", () => {
         menuItemId: "mi-latte",
         quantity: 2,
         note: null,
-        options: [{ id: "draft-option-1", optionValueId: "ov-them-shot" }],
+        options: [{ id: "draft-option-1", optionValueId: "ov-them-shot", quantity: 1 }],
       },
     ];
 

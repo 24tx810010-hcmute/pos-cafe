@@ -3,16 +3,16 @@ import clsx from "clsx";
 import { Button } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import type { MenuItem } from "@/domain";
 import {
-  addDraftMenuItem,
   adjustDraftQuantity,
   buildCartLines,
   calculateCartTotal,
   diffAddedPrintLines,
+  getItemModifierGroups,
   getOrderPrimaryAction,
   isDraftChangedFromOrder,
   orderDetailToDraft,
+  useOrderModifierPicker,
   useFloorPlanQuery,
   useMenuQuery,
   useOrderDetailQuery,
@@ -23,6 +23,7 @@ import { notifyUiError, toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { PortalPopup } from "../../components/PortalPopup";
 import { useAppStore } from "../../useAppStore";
+import { ModifierPickerPopup } from "./ModifierPickerPopup";
 import { OrderCartPane } from "./OrderCartPane";
 import { OrderMenuPane } from "./OrderMenuPane";
 
@@ -60,6 +61,7 @@ export function OrderDrawer() {
   }, [context, orderQuery.data, setDraftItems]);
 
   const menu = menuQuery.data;
+  const picker = useOrderModifierPicker(menu, draftItems, setDraftItems);
   const categoryId = activeCategoryId ?? menu?.categories[0]?.id ?? "";
   const allCategoryItems = menu?.menuItems.filter((item) => item.categoryId === categoryId) ?? [];
   const items = search
@@ -96,11 +98,6 @@ export function OrderDrawer() {
       return;
     }
     closeDrawer();
-  };
-
-  const addItem = (menuItem: MenuItem) => {
-    if (!menuItem.isAvailable) return;
-    setDraftItems(addDraftMenuItem(draftItems, menuItem));
   };
 
   const adjustQuantity = (id: string, delta: number) => {
@@ -275,7 +272,7 @@ export function OrderDrawer() {
             }}
             onSearchChange={setSearch}
             onRetry={() => void menuQuery.refetch()}
-            onAddItem={addItem}
+            onAddItem={picker.requestAdd}
           />
           <OrderCartPane
             cartLines={cartLines}
@@ -292,6 +289,15 @@ export function OrderDrawer() {
           />
         </div>
       </div>
+
+      {picker.modifierItem && menu && (
+        <ModifierPickerPopup
+          menuItem={picker.modifierItem}
+          groups={getItemModifierGroups(menu, picker.modifierItem.id)}
+          onConfirm={picker.confirm}
+          onClose={picker.cancel}
+        />
+      )}
     </PortalDrawer>
   );
 }

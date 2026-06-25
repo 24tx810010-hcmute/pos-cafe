@@ -1,6 +1,14 @@
-import type { Category, MenuCatalog, MenuChanges, MenuItem, OptionGroup, OptionValue } from "@/domain";
+import type {
+  Category,
+  MenuCatalog,
+  MenuChanges,
+  MenuItem,
+  MenuItemOptionGroup,
+  OptionGroup,
+  OptionValue,
+} from "@/domain";
 import { mapById, tombstoneFor, trimDraftName } from "./draftUtils";
-import type { DraftCategory, DraftGroup, DraftItem, DraftValue } from "./menuDraft";
+import type { DraftCategory, DraftGroup, DraftItem, DraftLink, DraftValue } from "./menuDraft";
 
 export function buildMenuChangesFromDrafts(input: {
   base: MenuCatalog;
@@ -8,6 +16,7 @@ export function buildMenuChangesFromDrafts(input: {
   items: DraftItem[];
   groups: DraftGroup[];
   values: DraftValue[];
+  links: DraftLink[];
   actorId: string | null | undefined;
 }): MenuChanges {
   const changes: MenuChanges = {
@@ -15,11 +24,13 @@ export function buildMenuChangesFromDrafts(input: {
     menuItems: { created: [], updated: [], deleted: [] },
     optionGroups: { created: [], updated: [], deleted: [] },
     optionValues: { created: [], updated: [], deleted: [] },
+    menuItemOptionGroups: { created: [], updated: [], deleted: [] },
   };
   const baseCategories = mapById<Category>(input.base.categories);
   const baseItems = mapById<MenuItem>(input.base.menuItems);
   const baseGroups = mapById<OptionGroup>(input.base.optionGroups);
   const baseValues = mapById<OptionValue>(input.base.optionValues);
+  const baseLinks = mapById<MenuItemOptionGroup>(input.base.menuItemOptionGroups);
 
   for (const category of input.categories) {
     const name = trimDraftName(category.name);
@@ -80,12 +91,9 @@ export function buildMenuChangesFromDrafts(input: {
       if (!group.deleted) {
         changes.optionGroups.created.push({
           id: group.id,
-          menuItemId: group.menuItemId,
           name,
           selectType: group.selectType,
           isRequired: group.isRequired,
-          minSelect: group.minSelect,
-          maxSelect: group.maxSelect,
           sortOrder: group.sortOrder,
         });
       }
@@ -97,12 +105,9 @@ export function buildMenuChangesFromDrafts(input: {
     }
 
     const update: MenuChanges["optionGroups"]["updated"][number] = { id: group.id };
-    if (group.menuItemId !== original.menuItemId) update.menuItemId = group.menuItemId;
     if (name !== original.name) update.name = name;
     if (group.selectType !== original.selectType) update.selectType = group.selectType;
     if (group.isRequired !== original.isRequired) update.isRequired = group.isRequired;
-    if (group.minSelect !== original.minSelect) update.minSelect = group.minSelect;
-    if (group.maxSelect !== original.maxSelect) update.maxSelect = group.maxSelect;
     if (group.sortOrder !== original.sortOrder) update.sortOrder = group.sortOrder;
     if (Object.keys(update).length > 1) changes.optionGroups.updated.push(update);
   }
@@ -133,6 +138,31 @@ export function buildMenuChangesFromDrafts(input: {
     if (value.priceDelta !== original.priceDelta) update.priceDelta = value.priceDelta;
     if (value.sortOrder !== original.sortOrder) update.sortOrder = value.sortOrder;
     if (Object.keys(update).length > 1) changes.optionValues.updated.push(update);
+  }
+
+  for (const link of input.links) {
+    const original = baseLinks.get(link.id);
+    if (!original || link.isNew) {
+      if (!link.deleted) {
+        changes.menuItemOptionGroups.created.push({
+          id: link.id,
+          menuItemId: link.menuItemId,
+          optionGroupId: link.optionGroupId,
+          sortOrder: link.sortOrder,
+        });
+      }
+      continue;
+    }
+    if (link.deleted) {
+      changes.menuItemOptionGroups.deleted.push(tombstoneFor(link.id, input.actorId));
+      continue;
+    }
+
+    const update: MenuChanges["menuItemOptionGroups"]["updated"][number] = { id: link.id };
+    if (link.menuItemId !== original.menuItemId) update.menuItemId = link.menuItemId;
+    if (link.optionGroupId !== original.optionGroupId) update.optionGroupId = link.optionGroupId;
+    if (link.sortOrder !== original.sortOrder) update.sortOrder = link.sortOrder;
+    if (Object.keys(update).length > 1) changes.menuItemOptionGroups.updated.push(update);
   }
 
   return changes;

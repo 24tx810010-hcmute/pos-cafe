@@ -7,6 +7,7 @@ const baseMenu: MenuCatalog = {
   menuItems: [],
   optionGroups: [],
   optionValues: [],
+  menuItemOptionGroups: [],
 };
 
 describe("buildMenuChangesFromDrafts", () => {
@@ -20,6 +21,7 @@ describe("buildMenuChangesFromDrafts", () => {
       items: [],
       groups: [],
       values: [],
+      links: [],
       actorId: "emp-1",
     });
 
@@ -70,6 +72,7 @@ describe("buildMenuChangesFromDrafts", () => {
       ],
       groups: [],
       values: [],
+      links: [],
       actorId: "emp-1",
     });
 
@@ -123,6 +126,7 @@ describe("buildMenuChangesFromDrafts", () => {
       ],
       groups: [],
       values: [],
+      links: [],
       actorId: "emp-1",
     });
 

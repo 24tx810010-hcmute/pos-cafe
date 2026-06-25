@@ -43,7 +43,7 @@ describe("mock repositories", () => {
       menuItemId: item.menuItemId,
       quantity: item.quantity,
       note: item.note,
-      options: item.options.map((option) => ({ id: option.id, optionValueId: option.optionValueId })),
+      options: item.options.map((option) => ({ id: option.id, optionValueId: option.optionValueId, quantity: option.quantity })),
     }));
 
     const result = await ports.order.submitOrderChanges({
@@ -226,7 +226,7 @@ describe("mock repositories", () => {
             menuItemId: "mi-latte",
             quantity: 1,
             note: null,
-            options: [{ id: "draft-option-1", optionValueId: "ov-size-l" }],
+            options: [{ id: "draft-option-1", optionValueId: "ov-tran-chau", quantity: 1 }],
           },
         ],
       }),
@@ -258,6 +258,7 @@ describe("mock repositories", () => {
       },
       optionGroups: { created: [], updated: [], deleted: [] },
       optionValues: { created: [], updated: [], deleted: [] },
+      menuItemOptionGroups: { created: [], updated: [], deleted: [] },
     };
 
     await ports.menu.saveMenuChanges(changes);

@@ -16,12 +16,21 @@ export const demoMenuCatalog: MenuCatalog = {
     { id: "mi-tra-sua-truyen-thong", categoryId: "cat-tea", name: "Trà sữa truyền thống", price: 39000, imageAssetKey: null, sortOrder: 5, isAvailable: true },
     { id: "mi-tra-chanh", categoryId: "cat-tea", name: "Trà chanh", price: 29000, imageAssetKey: null, sortOrder: 6, isAvailable: true },
   ],
+  // Nhóm tuỳ chọn dùng chung — gắn vào món qua menuItemOptionGroups.
   optionGroups: [
-    { id: "og-coffee-size", menuItemId: "mi-ca-phe-sua", name: "Size", selectType: "single", isRequired: false, minSelect: 0, maxSelect: 1, sortOrder: 1 },
+    { id: "og-coffee-size", name: "Size", selectType: "single", isRequired: false, sortOrder: 1 },
+    { id: "og-tea-topping", name: "Topping", selectType: "multi", isRequired: false, sortOrder: 2 },
   ],
   optionValues: [
     { id: "ov-size-m", optionGroupId: "og-coffee-size", name: "Size M", priceDelta: 0, sortOrder: 1 },
     { id: "ov-size-l", optionGroupId: "og-coffee-size", name: "Size L", priceDelta: 7000, sortOrder: 2 },
+    { id: "ov-tran-chau", optionGroupId: "og-tea-topping", name: "Trân châu", priceDelta: 7000, sortOrder: 1 },
+    { id: "ov-kem-pho-mai", optionGroupId: "og-tea-topping", name: "Kem phô mai", priceDelta: 10000, sortOrder: 2 },
+  ],
+  menuItemOptionGroups: [
+    { id: "miog-size-ca-phe-sua", menuItemId: "mi-ca-phe-sua", optionGroupId: "og-coffee-size", sortOrder: 1 },
+    { id: "miog-size-bac-xiu", menuItemId: "mi-bac-xiu", optionGroupId: "og-coffee-size", sortOrder: 1 },
+    { id: "miog-topping-tra-sua", menuItemId: "mi-tra-sua-truyen-thong", optionGroupId: "og-tea-topping", sortOrder: 1 },
   ],
 };
 
@@ -48,6 +57,7 @@ export const demoSeedIds = {
   menuItems: demoMenuCatalog.menuItems.map((i) => i.id),
   optionGroups: demoMenuCatalog.optionGroups.map((g) => g.id),
   optionValues: demoMenuCatalog.optionValues.map((v) => v.id),
+  menuItemOptionGroups: demoMenuCatalog.menuItemOptionGroups.map((l) => l.id),
   areas: demoFloorPlan.areas.map((a) => a.id),
   tables: demoFloorPlan.tables.map((t) => t.id),
   decorItems: demoFloorPlan.decorItems.map((d) => d.id),

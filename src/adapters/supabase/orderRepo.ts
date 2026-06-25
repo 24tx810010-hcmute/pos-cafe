@@ -15,7 +15,7 @@ import type { SupabaseAnyClient } from "./repoShared";
 const orderFields =
   "id,table_id,order_type,order_no,business_date,status,total,lock_version,paid_at";
 const orderItemFields = "id,menu_item_id,item_name,quantity,unit_price,note,status,sort_order";
-const orderItemOptionFields = "id,order_item_id,option_value_id,option_name,price_delta";
+const orderItemOptionFields = "id,order_item_id,option_value_id,option_name,price_delta,quantity";
 const paymentFields = "id,employee_id,method,amount,received_amount,change_amount,paid_at";
 
 const sanitizeOrValue = (value: string): string => value.replace(/[%,()]/g, "").trim();

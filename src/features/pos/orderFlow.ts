@@ -2,6 +2,8 @@ import { AppError } from "@/core/appError";
 import type {
   MenuCatalog,
   MenuItem,
+  OptionGroup,
+  OptionValue,
   OrderDetail,
   OrderItemSnapshot,
   OrderType,
@@ -9,6 +11,7 @@ import type {
   PrintLine,
   SubmitOrderChangesResult,
   SubmitOrderDraftItem,
+  SubmitOrderDraftOption,
 } from "@/domain";
 import type { AppPorts } from "@/ports";
 
@@ -53,6 +56,7 @@ export const snapshotToDraft = (item: OrderItemSnapshot): SubmitOrderDraftItem =
   options: item.options.map((option) => ({
     id: createClientId(),
     optionValueId: option.optionValueId,
+    quantity: option.quantity,
   })),
 });
 
@@ -68,7 +72,10 @@ export const buildCartLines = (menu: MenuCatalog, draftItems: SubmitOrderDraftIt
         option,
         value: menu.optionValues.find((candidate) => candidate.id === option.optionValueId),
       }));
-      const optionDelta = options.reduce((sum, option) => sum + (option.value?.priceDelta ?? 0), 0);
+      const optionDelta = options.reduce(
+        (sum, option) => sum + (option.value?.priceDelta ?? 0) * option.option.quantity,
+        0,
+      );
       const unitPrice = menuItem?.price ?? 0;
 
       return {
@@ -76,7 +83,10 @@ export const buildCartLines = (menu: MenuCatalog, draftItems: SubmitOrderDraftIt
         name: menuItem?.name ?? "Món không còn hợp lệ",
         quantity: draft.quantity,
         optionText: options
-          .map((option) => option.value?.name ?? "Tuỳ chọn không còn hợp lệ")
+          .map((option) => {
+            const name = option.value?.name ?? "Tuỳ chọn không còn hợp lệ";
+            return option.option.quantity > 1 ? `${name} ×${option.option.quantity}` : name;
+          })
           .filter(Boolean)
           .join(", "),
         total: (unitPrice + optionDelta) * draft.quantity,
@@ -96,42 +106,44 @@ export const diffAddedPrintLines = (
   order: OrderDetail | null,
   draftItems: SubmitOrderDraftItem[],
 ): PrintLine[] => {
-  const signature = (menuItemId: string, optionValueIds: string[], note: string | null): string =>
-    `${menuItemId}|${[...optionValueIds].sort().join(",")}|${note ?? ""}`;
+  type OptionPair = { optionValueId: string; quantity: number };
+  const optionTokens = (options: OptionPair[]): string[] =>
+    options.map((option) => `${option.optionValueId}:${option.quantity}`).sort();
+  const signature = (menuItemId: string, options: OptionPair[], note: string | null): string =>
+    `${menuItemId}|${optionTokens(options).join(",")}|${note ?? ""}`;
 
   const oldQty = new Map<string, number>();
   for (const item of order?.items ?? []) {
-    const key = signature(item.menuItemId, item.options.map((option) => option.optionValueId), item.note ?? null);
+    const key = signature(item.menuItemId, item.options, item.note ?? null);
     oldQty.set(key, (oldQty.get(key) ?? 0) + item.quantity);
   }
 
   const aggregated = new Map<
     string,
-    { qty: number; menuItemId: string; optionValueIds: string[]; note: string | null }
+    { qty: number; menuItemId: string; options: OptionPair[]; note: string | null }
   >();
   for (const draft of draftItems) {
     if (draft.quantity <= 0) continue;
-    const optionValueIds = draft.options.map((option) => option.optionValueId);
-    const key = signature(draft.menuItemId, optionValueIds, draft.note ?? null);
+    const key = signature(draft.menuItemId, draft.options, draft.note ?? null);
     const current = aggregated.get(key);
     if (current) current.qty += draft.quantity;
-    else aggregated.set(key, { qty: draft.quantity, menuItemId: draft.menuItemId, optionValueIds, note: draft.note ?? null });
+    else aggregated.set(key, { qty: draft.quantity, menuItemId: draft.menuItemId, options: draft.options, note: draft.note ?? null });
   }
 
   const lines: PrintLine[] = [];
   for (const entry of aggregated.values()) {
-    const key = signature(entry.menuItemId, entry.optionValueIds, entry.note);
+    const key = signature(entry.menuItemId, entry.options, entry.note);
     const added = entry.qty - (oldQty.get(key) ?? 0);
     if (added <= 0) continue;
 
     const menuItem = menu.menuItems.find((candidate) => candidate.id === entry.menuItemId);
     const optionNames: string[] = [];
     let optionDelta = 0;
-    for (const optionValueId of entry.optionValueIds) {
-      const optionValue = menu.optionValues.find((candidate) => candidate.id === optionValueId);
+    for (const option of entry.options) {
+      const optionValue = menu.optionValues.find((candidate) => candidate.id === option.optionValueId);
       if (optionValue) {
-        optionNames.push(optionValue.name);
-        optionDelta += optionValue.priceDelta;
+        optionNames.push(option.quantity > 1 ? `${optionValue.name} ×${option.quantity}` : optionValue.name);
+        optionDelta += optionValue.priceDelta * option.quantity;
       }
     }
 
@@ -145,11 +157,42 @@ export const diffAddedPrintLines = (
   return lines;
 };
 
+const optionSignature = (options: Pick<SubmitOrderDraftOption, "optionValueId" | "quantity">[]): string =>
+  options.map((option) => `${option.optionValueId}:${option.quantity}`).sort().join(",");
+
+export type ItemModifierGroup = {
+  group: OptionGroup;
+  values: OptionValue[];
+};
+
+/**
+ * Các nhóm tuỳ chọn (kèm giá trị) gắn với một món, theo thứ tự sortOrder của liên kết.
+ * Dùng để quyết định có hiện popup chọn modifier hay không và để dựng popup.
+ */
+export const getItemModifierGroups = (menu: MenuCatalog, menuItemId: string): ItemModifierGroup[] =>
+  menu.menuItemOptionGroups
+    .filter((link) => link.menuItemId === menuItemId)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((link) => menu.optionGroups.find((group) => group.id === link.optionGroupId))
+    .filter((group): group is OptionGroup => !!group)
+    .map((group) => ({
+      group,
+      values: menu.optionValues
+        .filter((value) => value.optionGroupId === group.id)
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    }));
+
 export const addDraftMenuItem = (
   draftItems: SubmitOrderDraftItem[],
   menuItem: Pick<MenuItem, "id">,
+  options: SubmitOrderDraftOption[] = [],
 ): SubmitOrderDraftItem[] => {
-  const existing = draftItems.find((item) => item.menuItemId === menuItem.id && item.options.length === 0);
+  // Gộp với dòng cùng món, cùng tổ hợp tuỳ chọn và chưa có ghi chú riêng.
+  const signature = optionSignature(options);
+  const existing = draftItems.find(
+    (item) =>
+      item.menuItemId === menuItem.id && !item.note && optionSignature(item.options) === signature,
+  );
 
   if (existing) {
     return draftItems.map((item) =>
@@ -164,7 +207,7 @@ export const addDraftMenuItem = (
       menuItemId: menuItem.id,
       quantity: 1,
       note: null,
-      options: [],
+      options,
     },
   ];
 };
@@ -187,7 +230,7 @@ const normalizedDraft = (items: SubmitOrderDraftItem[]): string[] =>
       menuItemId: item.menuItemId,
       quantity: item.quantity,
       note: item.note ?? null,
-      options: item.options.map((option) => option.optionValueId).sort(),
+      options: item.options.map((option) => `${option.optionValueId}:${option.quantity}`).sort(),
     }))
     .map((item) => JSON.stringify(item))
     .sort((a, b) => a.localeCompare(b));

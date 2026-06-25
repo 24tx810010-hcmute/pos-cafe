@@ -42,14 +42,13 @@ export type MenuItem = {
   isAvailable: boolean;
 };
 
+// Nhóm tuỳ chọn (modifier) dùng CHUNG cho mọi món — không gắn cứng vào 1 món.
+// Món nào cần thì liên kết qua MenuItemOptionGroup.
 export type OptionGroup = {
   id: string;
-  menuItemId: string;
   name: string;
   selectType: "single" | "multi";
   isRequired: boolean;
-  minSelect: number;
-  maxSelect: number;
   sortOrder: number;
 };
 
@@ -61,11 +60,20 @@ export type OptionValue = {
   sortOrder: number;
 };
 
+// Liên kết nhiều-nhiều giữa món và nhóm tuỳ chọn dùng chung.
+export type MenuItemOptionGroup = {
+  id: string;
+  menuItemId: string;
+  optionGroupId: string;
+  sortOrder: number;
+};
+
 export type MenuCatalog = {
   categories: Category[];
   menuItems: MenuItem[];
   optionGroups: OptionGroup[];
   optionValues: OptionValue[];
+  menuItemOptionGroups: MenuItemOptionGroup[];
 };
 
 export type FloorArea = {
@@ -117,6 +125,7 @@ export type FloorPlan = {
 export type SubmitOrderDraftOption = {
   id: string;
   optionValueId: string;
+  quantity: number;
 };
 
 export type SubmitOrderDraftItem = {
@@ -132,6 +141,7 @@ export type OrderItemOptionSnapshot = {
   optionValueId: string;
   optionName: string;
   priceDelta: number;
+  quantity: number;
 };
 
 export type OrderItemSnapshot = {

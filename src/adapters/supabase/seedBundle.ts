@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { FloorDecorItem, FloorTable, MenuItem, OptionGroup, OptionValue } from "@/domain";
+import type { FloorDecorItem, FloorTable, MenuItem, MenuItemOptionGroup, OptionGroup, OptionValue } from "@/domain";
 import { AppError } from "@/core/appError";
 import { demoFloorPlan, demoMenuCatalog } from "@/seed/demoSeedData";
 import { deterministicUuid } from "./deterministicId";
@@ -66,19 +66,31 @@ const optionGroupRows = (
   storeId: string,
   groups: OptionGroup[],
   groupIds: Record<string, string>,
-  itemIds: Record<string, string>,
 ): Row[] =>
   groups.map((group) => ({
     id: groupIds[group.id],
     store_id: storeId,
-    menu_item_id: itemIds[group.menuItemId],
     name: group.name,
     select_type: group.selectType,
     is_required: group.isRequired,
-    min_select: group.minSelect,
-    max_select: group.maxSelect,
     sort_order: group.sortOrder,
     seed_key: seedKey("option_group", group.id),
+  }));
+
+const menuItemOptionGroupRows = (
+  storeId: string,
+  links: MenuItemOptionGroup[],
+  linkIds: Record<string, string>,
+  itemIds: Record<string, string>,
+  groupIds: Record<string, string>,
+): Row[] =>
+  links.map((link) => ({
+    id: linkIds[link.id],
+    store_id: storeId,
+    menu_item_id: itemIds[link.menuItemId],
+    option_group_id: groupIds[link.optionGroupId],
+    sort_order: link.sortOrder,
+    seed_key: seedKey("menu_item_option_group", link.id),
   }));
 
 const optionValueRows = (
@@ -149,6 +161,7 @@ export const seedDemoData = async (client: SupabaseAnyClient, storeId: string): 
     const itemIds = await buildIdMap(storeId, "menu_item", demoMenuCatalog.menuItems.map((item) => item.id));
     const groupIds = await buildIdMap(storeId, "option_group", demoMenuCatalog.optionGroups.map((group) => group.id));
     const valueIds = await buildIdMap(storeId, "option_value", demoMenuCatalog.optionValues.map((value) => value.id));
+    const linkIds = await buildIdMap(storeId, "menu_item_option_group", demoMenuCatalog.menuItemOptionGroups.map((link) => link.id));
     const areaIds = await buildIdMap(storeId, "area", demoFloorPlan.areas.map((area) => area.id));
     const tableIds = await buildIdMap(storeId, "table", demoFloorPlan.tables.map((table) => table.id));
     const decorIds = await buildIdMap(storeId, "decor", demoFloorPlan.decorItems.map((decor) => decor.id));
@@ -181,8 +194,14 @@ export const seedDemoData = async (client: SupabaseAnyClient, storeId: string): 
     );
 
     await upsertRows(client, "menu_items", menuItemRows(storeId, demoMenuCatalog.menuItems, itemIds, categoryIds), { revive: true });
-    await upsertRows(client, "option_groups", optionGroupRows(storeId, demoMenuCatalog.optionGroups, groupIds, itemIds), { revive: true });
+    await upsertRows(client, "option_groups", optionGroupRows(storeId, demoMenuCatalog.optionGroups, groupIds), { revive: true });
     await upsertRows(client, "option_values", optionValueRows(storeId, demoMenuCatalog.optionValues, valueIds, groupIds), { revive: true });
+    await upsertRows(
+      client,
+      "menu_item_option_groups",
+      menuItemOptionGroupRows(storeId, demoMenuCatalog.menuItemOptionGroups, linkIds, itemIds, groupIds),
+      { revive: true },
+    );
     await upsertRows(
       client,
       "floor_areas",

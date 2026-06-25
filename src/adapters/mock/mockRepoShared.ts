@@ -37,7 +37,9 @@ export const makeTicket = (order: OrderDetail, floorPlan: FloorPlan): PrintTicke
       name: item.itemName,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
-      options: item.options.map((option) => option.optionName),
+      options: item.options.map((option) =>
+        option.quantity > 1 ? `${option.optionName} ×${option.quantity}` : option.optionName,
+      ),
     })),
   };
 };
