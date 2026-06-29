@@ -112,6 +112,15 @@ describe("demo copy polish", () => {
     expectNoImplementationCopy(container);
   });
 
+  it("does not show feature bullets on the landing screen", async () => {
+    renderApp({ screen: "landing", currentEmployee: null }, { paired: false });
+
+    expect(await screen.findByTestId("landing-screen")).toBeInTheDocument();
+    expect(screen.queryByText("Dùng được trên máy tính, máy tính bảng và điện thoại nằm ngang.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Nhân viên đăng nhập nhanh bằng mã PIN riêng.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Dữ liệu đồng bộ tức thời giữa các thiết bị cùng quán.")).not.toBeInTheDocument();
+  });
+
   it("keeps the sample Store Key as placeholder copy instead of a submitted value", async () => {
     const user = userEvent.setup();
     renderApp({ screen: "landing", currentEmployee: null }, { paired: false });

@@ -1,4 +1,4 @@
-import { KeyRound, LogIn, MonitorSmartphone, RefreshCw, Store } from "lucide-react";
+import { LogIn, Store } from "lucide-react";
 import { useAppStore } from "../useAppStore";
 
 export function LandingScreen() {
@@ -36,20 +36,6 @@ export function LandingScreen() {
               <strong>Tạo quán mới</strong>
               <span>Thiết lập quán và nhận Store Key + Admin PIN.</span>
             </button>
-          </div>
-          <div className="grid grid-cols-1 gap-3 border-t border-pos-line pt-5 sm:grid-cols-3">
-            <div className="flex items-start gap-2 text-[13px] leading-[1.45] text-pos-muted">
-              <MonitorSmartphone size={16} className="shrink-0 text-pos-primary mt-px" />
-              <span>Dùng được trên máy tính, máy tính bảng và điện thoại nằm ngang.</span>
-            </div>
-            <div className="flex items-start gap-2 text-[13px] leading-[1.45] text-pos-muted">
-              <KeyRound size={16} className="shrink-0 text-pos-primary mt-px" />
-              <span>Nhân viên đăng nhập nhanh bằng mã PIN riêng.</span>
-            </div>
-            <div className="flex items-start gap-2 text-[13px] leading-[1.45] text-pos-muted">
-              <RefreshCw size={16} className="shrink-0 text-pos-primary mt-px" />
-              <span>Dữ liệu đồng bộ tức thời giữa các thiết bị cùng quán.</span>
-            </div>
           </div>
         </div>
       </div>
