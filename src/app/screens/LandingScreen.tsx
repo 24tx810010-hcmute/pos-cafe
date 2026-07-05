@@ -4,8 +4,8 @@ import { useAppStore } from "../useAppStore";
 export function LandingScreen() {
   const setScreen = useAppStore((state) => state.setScreen);
   return (
-    <main className="h-screen w-screen overflow-y-auto bg-pos-bg [@media(orientation:portrait)]:hidden" data-testid="landing-screen">
-      <div className="flex min-h-full w-full items-center justify-center px-[clamp(16px,4vw,48px)] py-[clamp(20px,4vw,56px)]">
+    <main className="min-h-[100dvh] w-full overflow-y-auto bg-pos-bg" data-testid="landing-screen">
+      <div className="flex min-h-[100dvh] w-full items-center justify-center px-[clamp(16px,4vw,48px)] py-[clamp(20px,4vw,56px)]">
         <div className="grid w-[min(960px,100%)] gap-[clamp(18px,3.5vw,28px)]">
           <header className="flex items-center gap-3">
             <div className="grid h-[42px] w-[42px] place-items-center rounded-pos bg-pos-primary font-black text-white">P</div>

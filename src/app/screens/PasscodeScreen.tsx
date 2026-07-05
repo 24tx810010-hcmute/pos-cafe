@@ -75,11 +75,11 @@ export function PasscodeScreen() {
     setPin((current) => current.slice(0, -1));
   };
 
-  const keypadButtonClass = "flex min-h-0 items-center justify-center rounded-pos border border-pos-line bg-pos-surface text-[clamp(18px,3vh,38px)] font-extrabold text-pos-ink";
+  const keypadButtonClass = "flex min-h-0 items-center justify-center rounded-pos border border-pos-line bg-pos-surface text-[clamp(18px,3dvh,38px)] font-extrabold text-pos-ink";
 
   return (
     <main
-      className="flex h-screen w-screen flex-col overflow-hidden bg-pos-bg [@media(orientation:portrait)]:hidden"
+      className="flex min-h-[100dvh] w-full flex-col overflow-y-auto overflow-x-hidden bg-pos-bg"
       data-testid="passcode-screen"
     >
       {/* Top nav — flush to the top edge, full width */}
@@ -106,15 +106,15 @@ export function PasscodeScreen() {
       </header>
 
       {/* Body — split in two halves with a small gap */}
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-[clamp(10px,1.5vw,24px)] p-[clamp(12px,2vw,40px)]">
+      <div className="grid min-h-0 flex-1 grid-cols-2 gap-[clamp(10px,1.5vw,24px)] p-[clamp(12px,2vw,40px)] max-[700px]:flex max-[700px]:flex-col max-[700px]:gap-3 max-[700px]:p-3">
         {/* Left — employee picker, only this column scrolls */}
-        <section className="flex min-h-0 flex-col gap-[clamp(8px,1vh,16px)]">
+        <section className="flex min-h-0 flex-col gap-[clamp(8px,1vh,16px)] max-[700px]:shrink-0">
           <div className="shrink-0">
             <h2 className="m-0 text-[clamp(16px,1.6vw,30px)] font-bold leading-tight tracking-normal text-pos-ink">Chọn nhân viên</h2>
             <p className="m-0 mt-0.5 truncate text-[clamp(12px,0.9vw,16px)] text-pos-muted">Ca làm việc · {dateStr}</p>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">
+          <div className="min-h-0 flex-1 overflow-y-auto pr-0.5 max-[700px]:max-h-[150px] max-[700px]:flex-none">
             {employeesQuery.isLoading ? (
               <div className="rounded-pos border border-dashed border-pos-line p-4 text-center text-sm text-pos-muted">Đang tải danh sách nhân viên...</div>
             ) : !employeesQuery.data?.length ? (
@@ -125,7 +125,7 @@ export function PasscodeScreen() {
                   <button
                     key={employee.id}
                     className={clsx(
-                      "grid min-h-[clamp(64px,9vh,116px)] content-start gap-[clamp(6px,0.8vh,12px)] rounded-pos border px-[clamp(12px,1.1vw,26px)] py-[clamp(10px,1vh,20px)] text-left font-extrabold",
+                      "grid min-h-[clamp(64px,9dvh,116px)] content-start gap-[clamp(6px,0.8dvh,12px)] rounded-pos border px-[clamp(12px,1.1vw,26px)] py-[clamp(10px,1dvh,20px)] text-left font-extrabold max-[700px]:min-h-[54px] max-[700px]:gap-1.5 max-[700px]:px-3 max-[700px]:py-2",
                       employee.id === selectedEmployeeId
                         ? "border-[rgb(15_118_110_/_45%)] bg-pos-primarySoft text-pos-primary"
                         : "border-pos-line bg-pos-surface text-pos-ink",
@@ -146,16 +146,16 @@ export function PasscodeScreen() {
         </section>
 
         {/* Right — passcode entry, scales with the viewport, never scrolls */}
-        <section className="flex min-h-0 items-center justify-center">
-          <div className={clsx("flex h-full max-h-[min(86vh,630px)] w-full max-w-[min(92%,560px)] flex-col gap-[clamp(8px,1.6vh,22px)]", shaking && "animate-[pin-shake_0.45s_ease]")}>
-            <div className={clsx("flex h-[clamp(44px,8vh,96px)] shrink-0 items-center justify-center gap-[clamp(8px,1vw,18px)] rounded-pos border border-pos-line bg-pos-surface", pinError && "border-pos-danger")} aria-label="PIN hiện tại">
+        <section className="flex min-h-0 items-center justify-center max-[700px]:items-start">
+          <div className={clsx("flex h-full max-h-[min(86dvh,630px)] w-full max-w-[min(92%,560px)] flex-col gap-[clamp(8px,1.6dvh,22px)] max-[700px]:h-[300px] max-[700px]:max-h-none max-[700px]:max-w-none max-[700px]:gap-2", shaking && "animate-[pin-shake_0.45s_ease]")}>
+            <div className={clsx("flex h-[clamp(44px,8dvh,96px)] shrink-0 items-center justify-center gap-[clamp(8px,1vw,18px)] rounded-pos border border-pos-line bg-pos-surface", pinError && "border-pos-danger")} aria-label="PIN hiện tại">
               {Array.from({ length: 6 }).map((_, index) => (
-                <span className={clsx("h-[clamp(10px,1.2vh,18px)] w-[clamp(10px,1.2vh,18px)] rounded-full transition-colors", index < pin.length ? "bg-pos-ink" : "bg-transparent")} key={index} />
+                <span className={clsx("h-[clamp(10px,1.2dvh,18px)] w-[clamp(10px,1.2dvh,18px)] rounded-full transition-colors", index < pin.length ? "bg-pos-ink" : "bg-transparent")} key={index} />
               ))}
             </div>
             {pinError && <p className="m-0 shrink-0 text-center text-[clamp(12px,1vw,16px)] font-semibold text-pos-danger">{pinError}</p>}
 
-            <div className="grid min-h-0 flex-1 grid-cols-3 grid-rows-4 gap-[clamp(6px,1.2vh,18px)]">
+            <div className="grid min-h-0 flex-1 grid-cols-3 grid-rows-4 gap-[clamp(6px,1.2dvh,18px)]">
               {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((value) => (
                 <button className={keypadButtonClass} data-testid={`pin-${value}`} key={value} onClick={() => appendPin(value)}>
                   {value}

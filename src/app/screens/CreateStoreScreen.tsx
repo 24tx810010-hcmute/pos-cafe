@@ -62,7 +62,7 @@ export function CreateStoreScreen() {
   };
 
   return (
-    <main className="box-border grid h-screen w-screen place-items-center overflow-auto bg-pos-bg p-4" data-testid="create-store-screen">
+    <main className="box-border grid min-h-[100dvh] w-full place-items-center overflow-y-auto overflow-x-hidden bg-pos-bg p-4" data-testid="create-store-screen">
       <div className="w-[min(960px,100%)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface">
         <header className="flex items-center justify-between border-b border-pos-line bg-pos-surface px-5 py-3.5">
           <button className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent px-0 py-1 text-sm font-semibold text-pos-primary hover:underline" onClick={() => setScreen("landing")}>
@@ -128,7 +128,7 @@ export function CreateStoreScreen() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+          <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] max-[700px]:grid-cols-1">
             <div className="grid gap-4 p-[clamp(20px,4vw,40px)]">
               <div className="min-w-0 flex-[1_1_240px] grid gap-1 [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-normal [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-normal [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-normal [&_p]:mb-0 [&_p]:mt-1 [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-xs [&_p]:text-pos-muted max-sm:[&_h1]:text-[17px] max-sm:[&_h2]:text-[15px] max-sm:[&_h3]:text-[15px] mb-5">
                 <h2>Tạo quán mới</h2>
@@ -194,7 +194,7 @@ export function CreateStoreScreen() {
               </button>
             </div>
 
-            <aside className="grid content-start gap-5 border-l border-pos-line bg-pos-surface2 p-[clamp(20px,4vw,40px)]">
+            <aside className="grid content-start gap-5 border-l border-pos-line bg-pos-surface2 p-[clamp(20px,4vw,40px)] max-[700px]:border-l-0 max-[700px]:border-t">
               <div className="flex items-start gap-2.5 [&_p]:m-0 [&_p]:text-[13px] [&_p]:leading-[1.5] [&_p]:text-pos-muted">
                 <Store size={16} className="shrink-0 text-pos-primary mt-0.5" />
                 <p>Store Key sinh ra sau khi tạo, dùng để ghép nhiều thiết bị vào cùng một quán.</p>

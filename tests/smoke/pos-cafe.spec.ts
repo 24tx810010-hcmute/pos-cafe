@@ -97,7 +97,7 @@ async function closeCleanDrawer(page: Page, drawerTestId: string) {
 
 async function cancelDirtyDrawer(page: Page, drawerTestId: string) {
   const drawer = page.getByTestId(drawerTestId);
-  await drawer.locator("header").getByRole("button", { name: "Huỷ" }).click();
+  await drawer.locator("header").getByRole("button", { name: /^(Hu|Tho)/ }).click();
 
   const discardButton = page.getByRole("button", { name: "Bỏ thay đổi" });
   await discardButton
@@ -108,9 +108,30 @@ async function cancelDirtyDrawer(page: Page, drawerTestId: string) {
   await expect(drawer).toBeHidden();
 }
 
-test("portrait viewport shows rotate guidance", async ({ page }, testInfo) => {
+test("portrait pre-login flow keeps primary actions reachable", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "portrait", "portrait-only assertion");
   await page.goto("/");
+  await expect(page.getByTestId("landing-screen")).toBeVisible();
+  await expect(page.getByTestId("rotate-guidance")).toBeHidden();
+  await expect(page.getByTestId("go-store-pairing")).toBeInViewport();
+
+  await page.setViewportSize({ width: 390, height: 620 });
+  await expect(page.getByTestId("go-store-pairing")).toBeInViewport();
+  await page.getByTestId("go-store-pairing").click();
+
+  await expect(page.getByTestId("store-pairing-screen")).toBeVisible();
+  await page.getByTestId("store-key-input").fill("0001-X8F3QA");
+  await expect(page.getByTestId("go-passcode")).toBeInViewport();
+  await page.getByTestId("go-passcode").click();
+
+  await expect(page.getByTestId("passcode-screen")).toBeVisible();
+  await expect(page.getByTestId("unlock-button")).toBeInViewport();
+  await page.getByTestId("employee-emp-admin").click();
+  for (const digit of ["1", "2", "3", "4", "5", "6"]) {
+    await page.getByTestId(`pin-${digit}`).click();
+  }
+  await page.getByTestId("unlock-button").click();
+
   await expect(page.getByTestId("rotate-guidance")).toBeVisible();
 });
 

@@ -21,9 +21,11 @@ const posBaseStyles = {
   },
   "html, body, #root": {
     "width": "100%",
-    "height": "100%",
-    "margin": "0",
-    "overflow": "hidden"
+    "min-height": "100%",
+    "margin": "0"
+  },
+  "html, body": {
+    "overflow-x": "hidden"
   },
   "button, input, textarea": {
     "font": "inherit"

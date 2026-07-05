@@ -35,7 +35,7 @@ export function AppShell() {
 
   return (
     <main
-      className="grid h-screen w-screen grid-cols-[176px_minmax(0,1fr)] overflow-hidden [@media(orientation:portrait)]:hidden max-[980px]:grid-cols-[68px_minmax(0,1fr)]"
+      className="grid h-[100dvh] w-full grid-cols-[176px_minmax(0,1fr)] overflow-hidden [@media(orientation:portrait)]:hidden max-[980px]:grid-cols-[68px_minmax(0,1fr)]"
       data-testid="app-shell"
     >
       <LeftNav />

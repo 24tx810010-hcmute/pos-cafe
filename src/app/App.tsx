@@ -46,9 +46,11 @@ export function App() {
 
   return (
     <>
-      <RotateGuidance />
       {currentEmployee ? (
-        <AppShell />
+        <>
+          <RotateGuidance />
+          <AppShell />
+        </>
       ) : screen === "landing" ? (
         <LandingScreen />
       ) : screen === "storePairing" ? (

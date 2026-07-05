@@ -3,7 +3,7 @@ import { Store } from "lucide-react";
 export function RotateGuidance() {
   return (
     <div
-      className="hidden min-h-screen place-items-center bg-pos-bg p-6 [@media(orientation:portrait)]:grid"
+      className="hidden min-h-[100dvh] place-items-center bg-pos-bg p-6 [@media(orientation:portrait)]:grid"
       data-testid="rotate-guidance"
     >
       <section className="w-[min(380px,100%)] rounded-pos border border-pos-line bg-pos-surface p-[22px] text-center shadow-[0_16px_42px_rgb(15_23_42_/_10%)]">
