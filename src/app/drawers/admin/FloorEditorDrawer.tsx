@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { AlertTriangle, LayoutGrid, Lock, Plus, Save } from "lucide-react";
 import { Button } from "@mui/material";
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import type { DecorKind, FloorPlan, TableShape } from "@/domain";
 import {
@@ -24,10 +24,11 @@ import {
 } from "@/features/admin/floorEditorDraft";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { PortalPopup } from "../../components/PortalPopup";
-import { getLabelBoost, getObjectBoost, logicalStage, pointerClientToLogical, stageStyle } from "../../floorStage";
+import { getLabelBoost, getObjectBoost, logicalStage, stageStyle } from "../../floorStage";
 import { ScaledFloorStage } from "../../components/ScaledFloorStage";
 import { FloorEditorInspectorPane } from "./FloorEditorInspectorPane";
 import { FloorEditorToolbar } from "./FloorEditorToolbar";
+import { useFloorObjectTransforms } from "./floorObjectTransforms";
 
 const decorToneClass = (kind: DecorKind) => {
   switch (kind) {
@@ -68,7 +69,6 @@ export function FloorEditorDrawer() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const dragRef = useRef<{ kind: "table" | "decor"; id: string; offX: number; offY: number } | null>(null);
 
   const seedDraftFromFloorPlan = (plan: FloorPlan) => {
     setBaseFloorPlan(plan);
@@ -90,12 +90,6 @@ export function FloorEditorDrawer() {
   const touch = () => setDirty(true);
 
   // --- Geometry ---
-  const toLogical = (clientX: number, clientY: number) => {
-    const rect = stageRef.current?.getBoundingClientRect();
-    if (!rect) return { x: logicalStage.width / 2, y: logicalStage.height / 2 };
-    return pointerClientToLogical(clientX, clientY, rect);
-  };
-  const snapVal = (v: number) => (snap ? Math.round(v / 20) * 20 : Math.round(v));
   const nodeStyle = (o: { posX: number; posY: number; width: number; height: number; rotation: number }, boost = 1) => ({
     ...stageStyle(o.posX, o.posY, o.width, o.height),
     transform: `translate(-50%, -50%) rotate(${o.rotation}deg) scale(${boost})`,
@@ -193,30 +187,16 @@ export function FloorEditorDrawer() {
     touch();
   };
 
-  // --- Drag ---
-  const onNodePointerDown = (e: ReactPointerEvent, kind: "table" | "decor", obj: { id: string; posX: number; posY: number; isLocked?: boolean }) => {
-    e.stopPropagation();
-    setSelected({ type: kind, id: obj.id });
-    if (obj.isLocked) return;
-    try { (e.target as HTMLElement).setPointerCapture?.(e.pointerId); } catch { /* noop */ }
-    const p = toLogical(e.clientX, e.clientY);
-    dragRef.current = { kind, id: obj.id, offX: p.x - obj.posX, offY: p.y - obj.posY };
-  };
-  const onNodePointerMove = (e: ReactPointerEvent) => {
-    const d = dragRef.current;
-    if (!d) return;
-    const p = toLogical(e.clientX, e.clientY);
-    const nx = Math.max(0, Math.min(logicalStage.width, snapVal(p.x - d.offX)));
-    const ny = Math.max(0, Math.min(logicalStage.height, snapVal(p.y - d.offY)));
-    if (d.kind === "table") patchTable(d.id, { posX: nx, posY: ny });
-    else patchDecor(d.id, { posX: nx, posY: ny });
-  };
-  const onNodePointerUp = (e: ReactPointerEvent) => {
-    if (dragRef.current) {
-      try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* noop */ }
-    }
-    dragRef.current = null;
-  };
+  const { onNodePointerDown, onNodePointerMove, onNodePointerUp, renderTransformHandles } = useFloorObjectTransforms({
+    decor,
+    patchDecor,
+    patchTable,
+    selected,
+    setSelected,
+    snap,
+    stageRef,
+    tables,
+  });
 
   // --- Derived ---
   const currentArea = areas.find((area) => area.id === areaId) ?? null;
@@ -376,8 +356,10 @@ export function FloorEditorDrawer() {
                       </div>
                     ))}
                     {areaTables.map((t) => (
-                      <button
+                      <div
                         key={t.id}
+                        role="button"
+                        tabIndex={0}
                         className={clsx(
                           "absolute grid cursor-grab place-items-center rounded-pos border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)] active:cursor-grabbing [&_small]:mt-[3px] [&_small]:block [&_small]:text-[10px] [&_small]:font-bold [&_small]:text-pos-muted",
                           t.status === "occupied" ? "border-[#f97316] bg-[#fff7ed]" : "border-[#86efac] bg-[#f0fdf4]",
@@ -398,8 +380,10 @@ export function FloorEditorDrawer() {
                           <span data-floor-label="name">{t.name}</span>
                           <small>{t.seats} chỗ</small>
                         </span>
-                      </button>
+                      </div>
                     ))}
+                    {areaDecor.map((d) => renderTransformHandles("decor", d))}
+                    {areaTables.map((t) => renderTransformHandles("table", t))}
 
                     {isEmptyArea && (
                       <div className="absolute inset-0 m-auto grid h-fit w-fit justify-items-center gap-2 rounded-[10px] border border-dashed border-pos-line bg-white/90 px-[22px] py-[18px] text-center text-pos-muted [&_p]:m-0" onPointerDown={(e) => e.stopPropagation()}>
