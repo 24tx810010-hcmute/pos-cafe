@@ -100,6 +100,7 @@
 - Quản lý khu/tầng.
 - Tạo/sửa/xóa mềm bàn.
 - Tạo/sửa/xóa mềm decor cơ bản: tường, cây, quầy, cửa, decor/image asset.
+- Khi chọn một object trên sơ đồ (bàn hoặc decor), hiện 2 handle kéo trực tiếp để xoay và resize; handle luôn nằm ngang bên dưới object, không xoay theo object, và ẩn với object đã xoá hoặc decor đang khoá.
 - Lưu layout không ghi đè `table.status`.
 
 ## Report
