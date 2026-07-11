@@ -224,6 +224,29 @@ export type PayOrderResult = {
   receipt: PrintReceipt;
 };
 
+/**
+ * Kết quả instant pay: các món được chọn TÁCH ra một đơn mới độc lập và đơn đó
+ * được thanh toán ngay. Đơn tách KẾ THỪA order_no của đơn gốc (bill trả trước
+ * mang số nhỏ hơn); đơn gốc còn lại trên bàn nhận order_no mới.
+ */
+export type PayOrderItemsResult = {
+  /** Đơn mới đã tách + thanh toán. */
+  orderId: string;
+  orderNo: number;
+  paymentId: string;
+  status: "paid";
+  total: number;
+  receivedAmount: number;
+  changeAmount: number;
+  /** Bill của đơn tách (chỉ các món vừa trả). */
+  receipt: PrintReceipt;
+  /** Đơn gốc còn lại trên bàn sau khi tách. */
+  sourceOrderId: string;
+  sourceOrderNo: number;
+  sourceTotal: number;
+  sourceLockVersion: number;
+};
+
 export type CoreReport = {
   businessDate: string;
   revenue: number;

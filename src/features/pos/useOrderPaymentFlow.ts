@@ -3,8 +3,10 @@ import { usePorts } from "@/features/shared/portsContext";
 import { invalidateAfterOrderMutation } from "./posInvalidation";
 import {
   payOrderAndPrint,
+  payOrderItemsAndPrint,
   submitOrderAndPrint,
   type PayOrderFlowInput,
+  type PayOrderItemsFlowInput,
   type SubmitOrderFlowInput,
 } from "./orderFlow";
 
@@ -30,6 +32,21 @@ export const usePayOrderMutation = () => {
     mutationFn: (input: PayOrderFlowInput) => payOrderAndPrint(ports, input),
     onSuccess: (result) => {
       void invalidateAfterOrderMutation(queryClient, result.orderId).catch(() => {});
+    },
+  });
+};
+
+/** Instant pay theo selection: tự rẽ nhánh trả toàn bộ / tách đơn trả riêng trong flow. */
+export const usePayOrderItemsMutation = () => {
+  const ports = usePorts();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: PayOrderItemsFlowInput) => payOrderItemsAndPrint(ports, input),
+    onSuccess: (result) => {
+      // Tách đơn: đơn gốc trên bàn cũng đổi (order_no mới, tổng mới) -> invalidate cả hai.
+      const sourceOrderId = result.mode === "split" ? result.sourceOrderId : result.orderId;
+      void invalidateAfterOrderMutation(queryClient, sourceOrderId).catch(() => {});
     },
   });
 };

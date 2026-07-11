@@ -1,10 +1,10 @@
 import clsx from "clsx";
-import { AlertTriangle, Printer } from "lucide-react";
+import { AlertTriangle, Plus, Printer } from "lucide-react";
 import { Button } from "@mui/material";
 import { formatVnd } from "@/core/money";
 import type { OrderDetail } from "@/domain";
+import type { PayableLine, PaymentSelection } from "@/features/pos";
 import {
-  OrderItems,
   SummaryRow,
   getOrderTypeLabel,
   paymentButtonText,
@@ -13,7 +13,10 @@ import {
 
 interface PaymentSummaryPaneProps {
   order?: OrderDetail | null;
-  orderItemCount: number;
+  payableLines: PayableLine[];
+  selection: PaymentSelection;
+  selectAllChecked: boolean;
+  amountDue: number;
   orderClosed: boolean;
   receivedAmount: number;
   changeAmount: number;
@@ -23,6 +26,9 @@ interface PaymentSummaryPaneProps {
   paymentDisabled: boolean;
   paymentButtonLabel: string;
   isError: boolean;
+  onToggleSelectAll: (checked: boolean) => void;
+  onToggleLine: (orderItemId: string) => void;
+  onCycleLineQuantity: (orderItemId: string) => void;
   onReloadOrder: () => void;
   onTogglePrint: (checked: boolean) => void;
   onPrintProvisional: () => void;
@@ -31,7 +37,10 @@ interface PaymentSummaryPaneProps {
 
 export function PaymentSummaryPane({
   order,
-  orderItemCount,
+  payableLines,
+  selection,
+  selectAllChecked,
+  amountDue,
   orderClosed,
   receivedAmount,
   changeAmount,
@@ -41,11 +50,16 @@ export function PaymentSummaryPane({
   paymentDisabled,
   paymentButtonLabel,
   isError,
+  onToggleSelectAll,
+  onToggleLine,
+  onCycleLineQuantity,
   onReloadOrder,
   onTogglePrint,
   onPrintProvisional,
   onPay,
 }: PaymentSummaryPaneProps) {
+  const selectedCount = payableLines.reduce((sum, line) => sum + (selection[line.orderItemId] ?? 0), 0);
+
   return (
     <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-pos border border-pos-line bg-pos-surface">
       <section className="border-b border-pos-line bg-[#eef4ff] px-4 py-3 max-[900px]:px-3 max-[900px]:py-2">
@@ -66,11 +80,88 @@ export function PaymentSummaryPane({
 
       <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
         <div className="flex items-center justify-between gap-2 border-b border-pos-line px-4 py-2.5 max-[900px]:px-3 max-[900px]:py-2">
-          <h3 className={clsx("m-0 font-black leading-tight text-pos-ink", paymentText.strong)}>Món trong đơn</h3>
-          <span className={clsx("font-bold text-pos-muted", paymentText.micro)}>{orderItemCount} món</span>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              data-testid="pay-select-all"
+              checked={selectAllChecked}
+              disabled={orderClosed || payableLines.length === 0}
+              onChange={(event) => onToggleSelectAll(event.target.checked)}
+              className="size-4 accent-pos-primary"
+            />
+            <span className={clsx("font-black leading-tight text-pos-ink", paymentText.strong)}>Chọn tất cả</span>
+          </label>
+          <span className={clsx("font-bold text-pos-muted", paymentText.micro)}>{selectedCount} món đã chọn</span>
         </div>
         <div data-testid="payment-order-items" className="min-h-0 overflow-y-auto px-3 py-2 max-[900px]:px-2 max-[900px]:py-1.5">
-          <OrderItems order={order} />
+          {payableLines.length === 0 ? (
+            <p className={clsx("m-0 p-3 text-center text-pos-muted", paymentText.secondary)}>Chưa có món trong đơn.</p>
+          ) : (
+            <div className="grid gap-2">
+              {payableLines.map((line) => {
+                const selected = selection[line.orderItemId] ?? 0;
+                return (
+                  <article
+                    key={line.orderItemId}
+                    data-testid="pay-item-line"
+                    className={clsx(
+                      "rounded-pos border bg-white px-3 py-2 max-[900px]:px-2 max-[900px]:py-1.5",
+                      selected > 0 ? "border-pos-primaryLine" : "border-pos-line",
+                    )}
+                  >
+                    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+                      <input
+                        type="checkbox"
+                        data-testid="pay-item-checkbox"
+                        checked={selected > 0}
+                        disabled={orderClosed}
+                        onChange={() => onToggleLine(line.orderItemId)}
+                        className="size-4 accent-pos-primary"
+                      />
+                      <div className="min-w-0">
+                        <h4 className={clsx("m-0 truncate font-black leading-tight text-pos-ink", paymentText.strong)}>
+                          {line.name}
+                        </h4>
+                        {(line.optionText || line.note) && (
+                          <p className={clsx("m-0 mt-0.5 truncate font-bold text-pos-muted", paymentText.micro)}>
+                            {[line.optionText, line.note ? `Ghi chú: ${line.note}` : ""].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
+                      </div>
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          data-testid="pay-item-quantity"
+                          className={clsx(
+                            "min-w-[44px] rounded-full border px-2 py-0.5 text-center font-black",
+                            paymentText.micro,
+                            selected > 0
+                              ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
+                              : "border-pos-line text-pos-muted",
+                          )}
+                        >
+                          {selected}/{line.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          data-testid="pay-item-plus"
+                          aria-label={`Tăng số lượng thanh toán ${line.name}`}
+                          disabled={orderClosed}
+                          onClick={() => onCycleLineQuantity(line.orderItemId)}
+                          className="grid size-7 place-items-center rounded-full border border-pos-line bg-white text-pos-primary transition hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </span>
+                    </div>
+                    <div className={clsx("mt-1 flex items-center justify-between gap-2 font-bold", paymentText.micro)}>
+                      <span className="text-pos-muted">{formatVnd(line.unitTotal)}</span>
+                      <span className="text-pos-primary">{formatVnd(line.unitTotal * selected)}</span>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
@@ -109,11 +200,15 @@ export function PaymentSummaryPane({
             value={formatVnd(Math.abs(changeAmount))}
             valueTestId="payment-change-summary-value"
           />
+          <SummaryRow label="Tổng đơn" value={formatVnd(orderTotal)} valueTestId="payment-order-total-value" />
           <div className="my-1 border-t border-pos-line" />
           <div className="flex items-end justify-between gap-3">
-            <span className={clsx("font-black text-pos-muted", paymentText.secondary)}>Tổng đơn</span>
-            <strong className={clsx("text-right font-black leading-none text-pos-primary", paymentText.emphasis)}>
-              {formatVnd(orderTotal)}
+            <span className={clsx("font-black text-pos-muted", paymentText.secondary)}>Thanh toán lần này</span>
+            <strong
+              data-testid="payment-amount-due-value"
+              className={clsx("text-right font-black leading-none text-pos-primary", paymentText.emphasis)}
+            >
+              {formatVnd(amountDue)}
             </strong>
           </div>
         </div>

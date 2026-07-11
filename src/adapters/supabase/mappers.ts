@@ -19,6 +19,7 @@ import type {
   OrderPaymentSnapshot,
   OrderStatus,
   OrderSummary,
+  PayOrderItemsResult,
   PayOrderResult,
   PaymentMethod,
   PrintLine,
@@ -265,6 +266,21 @@ export const mapSubmitOrderChangesResult = (row: Row): SubmitOrderChangesResult 
   businessDate: asString(row.businessDate),
   lockVersion: asNumber(row.lockVersion),
   ticket: mapPrintTicket(row.ticket),
+});
+
+export const mapPayOrderItemsResult = (row: Row): PayOrderItemsResult => ({
+  orderId: asString(row.orderId),
+  orderNo: asNumber(row.orderNo),
+  paymentId: asString(row.paymentId),
+  status: "paid",
+  total: asNumber(row.total),
+  receivedAmount: asNumber(row.receivedAmount),
+  changeAmount: asNumber(row.changeAmount),
+  receipt: mapPrintReceipt(row.receipt),
+  sourceOrderId: asString(row.sourceOrderId),
+  sourceOrderNo: asNumber(row.sourceOrderNo),
+  sourceTotal: asNumber(row.sourceTotal),
+  sourceLockVersion: asNumber(row.sourceLockVersion),
 });
 
 export const mapPayOrderResult = (row: Row): PayOrderResult => ({

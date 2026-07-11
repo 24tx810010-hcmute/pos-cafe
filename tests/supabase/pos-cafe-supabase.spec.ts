@@ -43,9 +43,7 @@ async function pairStoreThroughUi(page: Page, storeKey: string) {
   await unlockAsAdmin(page);
 }
 
-async function createOpenOrderOnFirstTable(page: Page) {
-  await page.getByTestId("floor-view").locator('[data-testid^="table-"]').first().click();
-  await expect(page.getByTestId("order-drawer")).toBeVisible();
+async function addFirstMenuItem(page: Page) {
   await page.getByTestId("order-drawer").locator('[data-testid^="menu-item-"]').first().click();
   // Món có nhóm tuỳ chọn sẽ mở popup chọn modifier; xác nhận nếu xuất hiện.
   const confirmModifier = page.getByTestId("modifier-confirm");
@@ -53,12 +51,34 @@ async function createOpenOrderOnFirstTable(page: Page) {
     .waitFor({ state: "visible", timeout: 1500 })
     .then(() => confirmModifier.click())
     .catch(() => undefined);
+}
+
+async function closeReceiptPopupIfAny(page: Page) {
+  const closeButton = page.getByTestId("receipt-preview").getByRole("button", { name: "Đóng" }).first();
+  await closeButton
+    .waitFor({ state: "visible", timeout: 5_000 })
+    .then(() => closeButton.click())
+    .catch(() => undefined);
+}
+
+async function createOpenOrderOnFirstTable(page: Page, itemQuantity = 1) {
+  await page.getByTestId("floor-view").locator('[data-testid^="table-"]').first().click();
+  await expect(page.getByTestId("order-drawer")).toBeVisible();
+  for (let index = 0; index < itemQuantity; index += 1) {
+    await addFirstMenuItem(page);
+  }
   await page.getByTestId("submit-order-button-footer").click();
   await expect(page.getByTestId("order-drawer")).toBeHidden({ timeout: 30_000 });
+  // "Gửi đơn" mở popup phiếu gửi bếp — đóng để overlay không che sơ đồ bàn.
+  await closeReceiptPopupIfAny(page);
 }
 
 function openOrderTables(page: Page) {
-  return page.getByTestId("floor-view").locator('[data-testid^="table-"]').filter({ hasText: /#\d+/ });
+  // Bàn đang phục vụ hiển thị giá compact (label "price") trên tile, không còn badge #N.
+  return page
+    .getByTestId("floor-view")
+    .locator('[data-testid^="table-"]')
+    .filter({ has: page.locator('[data-floor-label="price"]') });
 }
 
 async function payFirstOccupiedTable(page: Page) {
@@ -69,6 +89,8 @@ async function payFirstOccupiedTable(page: Page) {
   await expect(page.getByTestId("pay-button-footer")).toBeEnabled();
   await page.getByTestId("pay-button-footer").click();
   await expect(page.getByTestId("payment-drawer")).toBeHidden({ timeout: 30_000 });
+  // Thanh toán xong mở popup hoá đơn — đóng để overlay không che left nav.
+  await closeReceiptPopupIfAny(page);
 }
 
 test("Supabase UI E2E creates a store, pays an order, and shows history/report", async ({ page }) => {
@@ -81,10 +103,62 @@ test("Supabase UI E2E creates a store, pays an order, and shows history/report",
   await expect(page.getByTestId("order-history-drawer")).toBeVisible();
   await expect(page.getByTestId("order-history-drawer").locator('[data-testid^="history-row-"]').first()).toBeVisible({ timeout: 30_000 });
 
+  // Đóng drawer lịch sử trước khi mở module khác (drawer che vùng nav khi mở).
+  await page.getByTestId("order-history-drawer").getByRole("button", { name: "Đóng" }).first().click();
+  await expect(page.getByTestId("order-history-drawer")).toBeHidden();
+
   await page.getByRole("button", { name: "Báo cáo" }).click();
   await expect(page.getByTestId("report")).toBeVisible();
-  await expect(page.getByTestId("report").getByText("Doanh thu", { exact: true })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByTestId("report").getByText("Số đơn đã thanh toán", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("report").getByText("Doanh thu hôm nay").first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("report").getByText("Số đơn đã thanh toán").first()).toBeVisible();
+
+  test.info().annotations.push({ type: "store-key", description: storeKey });
+});
+
+test("Supabase instant pay splits selected items into an independent paid order", async ({ page }) => {
+  const storeKey = await createStoreThroughUi(page);
+  await unlockAsAdmin(page);
+  // Đơn #1 có 2 × món đầu tiên để trả một phần số lượng (tách dòng qua pay_order_items).
+  await createOpenOrderOnFirstTable(page, 2);
+
+  await openOrderTables(page).first().click();
+  await expect(page.getByTestId("order-drawer")).toBeVisible();
+  await page.getByTestId("submit-order-button-footer").click();
+  await expect(page.getByTestId("payment-drawer")).toBeVisible();
+
+  // Bỏ "Chọn tất cả", chọn 1/2 món đầu -> tách đơn thanh toán riêng.
+  await page.getByTestId("pay-select-all").uncheck();
+  await page.getByTestId("pay-item-checkbox").first().check();
+  await expect(page.getByTestId("pay-item-quantity").first()).toHaveText("2/2");
+  await page.getByTestId("pay-item-plus").first().click();
+  await expect(page.getByTestId("pay-item-quantity").first()).toHaveText("1/2");
+  await expect(page.getByTestId("pay-button-footer")).toBeEnabled();
+  await page.getByTestId("pay-button-footer").click();
+
+  // Quy tắc đánh số: bill trả trước kế thừa số #1 của đơn gốc.
+  await expect(page.getByTestId("receipt-preview")).toContainText("#1", { timeout: 30_000 });
+  await closeReceiptPopupIfAny(page);
+
+  // Đơn gốc còn lại trên bàn: drawer giữ nguyên, selection quay về "Chọn tất cả" phần còn lại.
+  await expect(page.getByTestId("payment-drawer")).toBeVisible();
+  await expect(page.getByTestId("pay-select-all")).toBeChecked({ timeout: 30_000 });
+  await expect(page.getByTestId("pay-item-line")).toHaveCount(1, { timeout: 30_000 });
+
+  // Trả nốt phần còn lại -> đơn gốc (giờ mang số #2) đóng, bàn trống.
+  await expect(page.getByTestId("pay-button-footer")).toBeEnabled();
+  await page.getByTestId("pay-button-footer").click();
+  await expect(page.getByTestId("payment-drawer")).toBeHidden({ timeout: 30_000 });
+  await expect(page.getByTestId("receipt-preview")).toContainText("#2", { timeout: 30_000 });
+  await closeReceiptPopupIfAny(page);
+  await expect(openOrderTables(page)).toHaveCount(0, { timeout: 30_000 });
+
+  // Lịch sử: 2 ĐƠN độc lập (#1 trả trước, #2 trả sau), không liên kết gì nhau.
+  await page.getByRole("button", { name: "Lịch sử" }).click();
+  await expect(page.getByTestId("order-history-drawer")).toBeVisible();
+  const rows = page.getByTestId("order-history-drawer").locator('[data-testid^="history-row-"]');
+  await expect(rows).toHaveCount(2, { timeout: 30_000 });
+  await expect(page.getByTestId("order-history-drawer").getByText("#1", { exact: true }).first()).toBeVisible();
+  await expect(page.getByTestId("order-history-drawer").getByText("#2", { exact: true }).first()).toBeVisible();
 
   test.info().annotations.push({ type: "store-key", description: storeKey });
 });

@@ -7,6 +7,8 @@ import type {
   OrderDetail,
   OrderItemSnapshot,
   OrderType,
+  PayOrderItemLine,
+  PayOrderItemsResult,
   PayOrderResult,
   PrintLine,
   SubmitOrderChangesResult,
@@ -299,4 +301,121 @@ export const payOrderAndPrint = async (
   }
 
   return result;
+};
+
+// ----- Instant pay: chọn món/số lượng để tách đơn thanh toán riêng -------------
+
+export type PayableLine = {
+  orderItemId: string;
+  name: string;
+  optionText: string;
+  note: string | null;
+  quantity: number;
+  /** Đơn giá 1 món đã gồm chênh lệch tuỳ chọn. */
+  unitTotal: number;
+};
+
+/** Lựa chọn thanh toán: orderItemId -> số lượng trả lần này. */
+export type PaymentSelection = Record<string, number>;
+
+export const buildPayableLines = (order: OrderDetail): PayableLine[] =>
+  order.items.map((item) => ({
+    orderItemId: item.id,
+    name: item.itemName,
+    optionText: item.options
+      .map((option) => (option.quantity > 1 ? `${option.optionName} ×${option.quantity}` : option.optionName))
+      .join(", "),
+    note: item.note ?? null,
+    quantity: item.quantity,
+    unitTotal: item.unitPrice + item.options.reduce((sum, option) => sum + option.priceDelta * option.quantity, 0),
+  }));
+
+/** Selection "Chọn tất cả": toàn bộ số lượng của mọi dòng. */
+export const fullSelection = (lines: PayableLine[]): PaymentSelection =>
+  Object.fromEntries(lines.map((line) => [line.orderItemId, line.quantity]));
+
+/** Kẹp selection về dữ liệu đơn mới nhất (sau refetch): bỏ dòng không còn, chặn vượt số lượng. */
+export const clampSelection = (lines: PayableLine[], selection: PaymentSelection): PaymentSelection => {
+  const clamped: PaymentSelection = {};
+  for (const line of lines) {
+    const quantity = Math.min(selection[line.orderItemId] ?? 0, line.quantity);
+    if (quantity > 0) clamped[line.orderItemId] = quantity;
+  }
+  return clamped;
+};
+
+export const selectionAmount = (lines: PayableLine[], selection: PaymentSelection): number =>
+  lines.reduce((sum, line) => sum + (selection[line.orderItemId] ?? 0) * line.unitTotal, 0);
+
+/** Chọn đủ 100% -> đi đường payOrder (đơn đóng, bàn trống), không tách đơn. */
+export const isFullSelection = (lines: PayableLine[], selection: PaymentSelection): boolean =>
+  lines.length > 0 && lines.every((line) => (selection[line.orderItemId] ?? 0) === line.quantity);
+
+export type PayOrderItemsFlowInput = {
+  order: OrderDetail;
+  employeeId: string;
+  receivedAmount: number;
+  selection: PaymentSelection;
+  paymentId?: string;
+  printReceipt?: boolean;
+};
+
+export type PayOrderItemsFlowResult =
+  | ({ mode: "full" } & PayOrderResult)
+  | ({ mode: "split" } & PayOrderItemsResult);
+
+/**
+ * Thanh toán theo selection: đủ 100% -> payOrder (đơn đóng, bàn trống); một phần
+ * -> payOrderItems TÁCH các món được chọn ra đơn mới độc lập và trả đơn đó ngay,
+ * đơn gốc vẫn mở trên bàn với phần còn lại (và nhận order_no mới).
+ */
+export const payOrderItemsAndPrint = async (
+  ports: AppPorts,
+  input: PayOrderItemsFlowInput,
+): Promise<PayOrderItemsFlowResult> => {
+  const lines = buildPayableLines(input.order);
+  const selection = clampSelection(lines, input.selection);
+  const amount = selectionAmount(lines, selection);
+
+  if (amount <= 0 || Object.keys(selection).length === 0) {
+    throw new AppError("INVALID_ORDER_ITEMS", "Chưa chọn món để thanh toán.");
+  }
+
+  if (isFullSelection(lines, selection)) {
+    const result = await payOrderAndPrint(ports, {
+      order: input.order,
+      employeeId: input.employeeId,
+      receivedAmount: input.receivedAmount,
+      paymentId: input.paymentId,
+      printReceipt: input.printReceipt,
+    });
+    return { mode: "full", ...result };
+  }
+
+  if (input.receivedAmount < amount) {
+    throw new AppError("PAYMENT_AMOUNT_TOO_LOW", "Tiền khách đưa nhỏ hơn tổng tiền.");
+  }
+
+  const items: PayOrderItemLine[] = Object.entries(selection).map(([orderItemId, quantity]) => ({
+    orderItemId,
+    quantity,
+    splitItemId: createClientId(),
+  }));
+
+  const result = await ports.payment.payOrderItems({
+    paymentId: input.paymentId ?? createClientId(),
+    orderId: input.order.id,
+    newOrderId: createClientId(),
+    employeeId: input.employeeId,
+    method: "cash",
+    expectedVersion: input.order.lockVersion,
+    receivedAmount: input.receivedAmount,
+    items,
+  });
+
+  if (input.printReceipt ?? true) {
+    await ports.print.renderReceipt(result.receipt);
+  }
+
+  return { mode: "split", ...result };
 };

@@ -6,12 +6,18 @@ import {
   addDraftMenuItem,
   adjustDraftQuantity,
   buildCartLines,
+  buildPayableLines,
   calculateCartTotal,
+  clampSelection,
   diffAddedPrintLines,
+  fullSelection,
   getOrderPrimaryAction,
   isDraftChangedFromOrder,
+  isFullSelection,
   orderDetailToDraft,
   payOrderAndPrint,
+  payOrderItemsAndPrint,
+  selectionAmount,
   submitOrderAndPrint,
 } from "./orderFlow";
 
@@ -185,5 +191,130 @@ describe("orderFlow", () => {
 
     expect(result.status).toBe("paid");
     expect(printSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("instant pay selection", () => {
+  // ord-b02: Cà phê sữa ×2 (29k, đã gồm option) + Bạc xỉu ×1 (32k) + Croissant ×1 (35k) = 125k.
+  it("builds payable lines with per-unit totals", async () => {
+    const order = await getMockOrder();
+    const lines = buildPayableLines(order);
+
+    expect(lines).toEqual([
+      expect.objectContaining({ orderItemId: "oi-b02-1", name: "Cà phê sữa", quantity: 2, unitTotal: 29000 }),
+      expect.objectContaining({ orderItemId: "oi-b02-2", unitTotal: 32000 }),
+      expect.objectContaining({ orderItemId: "oi-b02-3", unitTotal: 35000 }),
+    ]);
+  });
+
+  it("computes selection totals, full-selection detection, and clamping", async () => {
+    const order = await getMockOrder();
+    const lines = buildPayableLines(order);
+
+    const all = fullSelection(lines);
+    expect(selectionAmount(lines, all)).toBe(125000);
+    expect(isFullSelection(lines, all)).toBe(true);
+
+    const partial = { "oi-b02-1": 1, "oi-b02-2": 1 };
+    expect(selectionAmount(lines, partial)).toBe(61000);
+    expect(isFullSelection(lines, partial)).toBe(false);
+
+    // Clamp: vượt số lượng -> hạ về còn lại; dòng lạ -> loại bỏ; qty 0 -> loại bỏ.
+    expect(clampSelection(lines, { "oi-b02-1": 9, "oi-missing": 1, "oi-b02-3": 0 })).toEqual({
+      "oi-b02-1": 2,
+    });
+  });
+
+  it("routes a partial selection through payOrderItems: split order paid, source stays open", async () => {
+    const ports = createMockPorts(createSeededMockState());
+    const order = await ports.order.getOrder("ord-b02");
+    const payOrderSpy = vi.spyOn(ports.payment, "payOrder");
+    const printSpy = vi.spyOn(ports.print, "renderReceipt");
+
+    const result = await payOrderItemsAndPrint(ports, {
+      order,
+      employeeId: "emp-admin",
+      receivedAmount: 61000,
+      selection: { "oi-b02-1": 1, "oi-b02-2": 1 },
+      paymentId: "pay-part",
+    });
+
+    expect(payOrderSpy).not.toHaveBeenCalled();
+    // Đơn tách kế thừa số #24 và paid ngay; đơn gốc còn 64k, vẫn mở.
+    expect(result).toMatchObject({
+      mode: "split",
+      status: "paid",
+      orderNo: 24,
+      total: 61000,
+      sourceOrderId: "ord-b02",
+      sourceTotal: 64000,
+    });
+    expect(printSpy).toHaveBeenCalledWith(result.receipt);
+
+    const source = await ports.order.getOrder("ord-b02");
+    expect(source.status).toBe("open");
+  });
+
+  it("routes a full selection through payOrder so the table is freed in one call", async () => {
+    const ports = createMockPorts(createSeededMockState());
+    const order = await ports.order.getOrder("ord-b02");
+    const payItemsSpy = vi.spyOn(ports.payment, "payOrderItems");
+
+    const result = await payOrderItemsAndPrint(ports, {
+      order,
+      employeeId: "emp-admin",
+      receivedAmount: 125000,
+      selection: fullSelection(buildPayableLines(order)),
+      paymentId: "pay-full",
+    });
+
+    expect(payItemsSpy).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ mode: "full", status: "paid", total: 125000 });
+  });
+
+  it("rejects empty selections and low cash before calling the payment port", async () => {
+    const ports = createMockPorts(createSeededMockState());
+    const order = await ports.order.getOrder("ord-b02");
+    const payItemsSpy = vi.spyOn(ports.payment, "payOrderItems");
+
+    await expect(
+      payOrderItemsAndPrint(ports, { order, employeeId: "emp-admin", receivedAmount: 99000, selection: {} }),
+    ).rejects.toMatchObject({ code: "INVALID_ORDER_ITEMS" });
+    await expect(
+      payOrderItemsAndPrint(ports, {
+        order,
+        employeeId: "emp-admin",
+        receivedAmount: 28000,
+        selection: { "oi-b02-1": 1 },
+      }),
+    ).rejects.toMatchObject({ code: "PAYMENT_AMOUNT_TOO_LOW" });
+    expect(payItemsSpy).not.toHaveBeenCalled();
+  });
+
+  it("keeps the source order draft-able like a normal order after a split", async () => {
+    const ports = createMockPorts(createSeededMockState());
+    const before = await ports.order.getOrder("ord-b02");
+    await payOrderItemsAndPrint(ports, {
+      order: before,
+      employeeId: "emp-admin",
+      receivedAmount: 61000,
+      selection: { "oi-b02-1": 1, "oi-b02-2": 1 },
+      printReceipt: false,
+    });
+
+    const order = await ports.order.getOrder("ord-b02");
+    const draft = orderDetailToDraft(order);
+
+    // Đơn gốc là đơn thường: draft = phần còn lại (1 Cà phê sữa + 1 Croissant).
+    expect(draft).toHaveLength(2);
+    expect(isDraftChangedFromOrder(order, draft)).toBe(false);
+    expect(getOrderPrimaryAction(order, draft)).toBe("payment");
+
+    // Thêm 1 Cà phê sữa nữa: phiếu bếp chỉ in phần chênh so với đơn gốc hiện tại.
+    const coffeeLine = draft.find((item) => item.menuItemId === "mi-ca-phe-sua");
+    const moreCoffee = adjustDraftQuantity(draft, coffeeLine!.id, 1);
+    expect(diffAddedPrintLines(mockMenuCatalog, order, moreCoffee)).toEqual([
+      expect.objectContaining({ name: "Cà phê sữa", quantity: 1 }),
+    ]);
   });
 });

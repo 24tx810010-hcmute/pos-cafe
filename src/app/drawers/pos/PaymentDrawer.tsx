@@ -1,9 +1,20 @@
 import { AlertTriangle, Banknote, CreditCard, Landmark, QrCode, ReceiptText } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { useFloorPlanQuery, useOrderDetailQuery, usePayOrderMutation } from "@/features/pos";
+import { formatVnd } from "@/core/money";
+import type { PaymentSelection } from "@/features/pos";
+import {
+  buildPayableLines,
+  clampSelection,
+  fullSelection,
+  isFullSelection,
+  selectionAmount,
+  useFloorPlanQuery,
+  useOrderDetailQuery,
+  usePayOrderItemsMutation,
+} from "@/features/pos";
 import { notifyUiError, toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { ticketFromOrderDetail } from "../../components/ReceiptPreview";
@@ -25,30 +36,55 @@ export function PaymentDrawer() {
   const currentEmployee = useAppStore((state) => state.currentEmployee);
   const floorPlanQuery = useFloorPlanQuery();
   const orderQuery = useOrderDetailQuery(paymentOrderId);
-  const payMutation = usePayOrderMutation();
+  const payMutation = usePayOrderItemsMutation();
   const order = orderQuery.data;
   const [receivedAmountInput, setReceivedAmountInput] = useState("0");
   const [printReceipt, setPrintReceipt] = useState(true);
 
+  // Instant pay: selection = món/số lượng trả lần này. Mặc định "Chọn tất cả".
+  const payableLines = useMemo(() => (order ? buildPayableLines(order) : []), [order]);
+  const [selection, setSelection] = useState<PaymentSelection>({});
+  const orderStamp = order ? `${order.id}:${order.lockVersion}` : null;
+  const lastStampRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (order) setReceivedAmountInput(String(order.total));
-  }, [order?.id, order?.total]);
+    if (!order || !orderStamp || orderStamp === lastStampRef.current) return;
+    const sameOrder = lastStampRef.current?.startsWith(`${order.id}:`) ?? false;
+    lastStampRef.current = orderStamp;
+    setSelection((previous) => {
+      // Đơn đổi phiên bản (máy khác sửa / vừa trả một phần): kẹp selection về dữ
+      // liệu mới; nếu không còn gì hợp lệ thì quay về mặc định "Chọn tất cả".
+      const next = sameOrder ? clampSelection(payableLines, previous) : fullSelection(payableLines);
+      return Object.keys(next).length > 0 ? next : fullSelection(payableLines);
+    });
+  }, [order, orderStamp, payableLines]);
+
+  const amountDue = selectionAmount(payableLines, selection);
+  const selectAllChecked = isFullSelection(payableLines, selection);
+
+  useEffect(() => {
+    setReceivedAmountInput(String(amountDue));
+  }, [order?.id, amountDue]);
 
   const table = order?.tableId ? floorPlanQuery.data?.tables.find((candidate) => candidate.id === order.tableId) : null;
   const receivedAmount = Number.parseInt(receivedAmountInput || "0", 10) || 0;
   const orderTotal = order?.total ?? 0;
-  const changeAmount = receivedAmount - orderTotal;
-  const insufficient = receivedAmount < orderTotal;
+  const changeAmount = receivedAmount - amountDue;
+  const insufficient = receivedAmount < amountDue;
   const orderClosed = !!order && order.status !== "open";
   const orderItemCount = order?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
-  const paymentDisabled = !order || orderClosed || orderQuery.isError || insufficient || payMutation.isPending;
+  const nothingSelected = !!order && !orderClosed && amountDue <= 0;
+  const paymentDisabled =
+    !order || orderClosed || orderQuery.isError || insufficient || nothingSelected || payMutation.isPending;
   const paymentButtonLabel = orderClosed
     ? order.status === "paid"
       ? "Đơn đã thanh toán"
       : "Đơn đã đóng"
     : payMutation.isPending
       ? "Đang xử lý..."
-      : "Hoàn tất thanh toán";
+      : selectAllChecked
+        ? "Hoàn tất thanh toán"
+        : "Thanh toán món đã chọn";
 
   const orderLocationLabel = table ? `Bàn ${table.name}` : getOrderTypeLabel(order);
   const headerMeta = [
@@ -98,6 +134,34 @@ export function PaymentDrawer() {
     void floorPlanQuery.refetch();
   };
 
+  const toggleSelectAll = (checked: boolean) => {
+    setSelection(checked ? fullSelection(payableLines) : {});
+  };
+
+  const toggleLine = (orderItemId: string) => {
+    setSelection((previous) => {
+      const next = { ...previous };
+      if (next[orderItemId]) {
+        delete next[orderItemId];
+        return next;
+      }
+      const line = payableLines.find((candidate) => candidate.orderItemId === orderItemId);
+      if (line) next[orderItemId] = line.quantity;
+      return next;
+    });
+  };
+
+  // Nút "+": tăng số lượng trả lần này, chạm trần thì quay về 1 (một nút, hợp tablet).
+  const cycleLineQuantity = (orderItemId: string) => {
+    const line = payableLines.find((candidate) => candidate.orderItemId === orderItemId);
+    if (!line) return;
+    setSelection((previous) => {
+      const current = previous[orderItemId] ?? 0;
+      const next = current + 1 > line.quantity ? 1 : current + 1;
+      return { ...previous, [orderItemId]: next };
+    });
+  };
+
   const payOrder = () => {
     if (!order || !currentEmployee) return;
 
@@ -107,24 +171,25 @@ export function PaymentDrawer() {
     }
 
     payMutation.mutate(
-      { order, employeeId: currentEmployee.id, receivedAmount, printReceipt },
+      { order, employeeId: currentEmployee.id, receivedAmount, selection, printReceipt },
       {
-        onSuccess: () => {
-          // In bill ngay từ dữ liệu đang có trên máy (đơn + tiền khách đưa lúc
-          // bấm hoàn tất), không chờ refetch hay payload receipt từ server.
-          if (printReceipt && order) {
-            openReceiptPreview({
-              variant: "receipt",
-              doc: {
-                ...ticketFromOrderDetail(order, table?.name ?? null),
-                receivedAmount,
-                changeAmount,
-                paidAt: new Date().toISOString(),
-              },
-            });
+        onSuccess: (result) => {
+          // In bill từ payload trả về ngay trong mutation (không chờ refetch).
+          if (printReceipt) {
+            openReceiptPreview({ variant: "receipt", doc: result.receipt });
           }
-          toast.success("Đã thanh toán. Bàn đã trống.");
-          closeDrawer();
+          if (result.mode === "full") {
+            toast.success("Đã thanh toán. Bàn đã trống.");
+            closeDrawer();
+            return;
+          }
+          // Tách đơn: các món được chọn thành đơn #N đã thanh toán; đơn gốc còn lại trên bàn.
+          toast.success(
+            `Đã tách và thanh toán đơn #${result.orderNo} (${formatVnd(result.total)}). Bàn còn ${formatVnd(result.sourceTotal)}.`,
+          );
+          // Xoá selection để effect đồng bộ đưa về mặc định "Chọn tất cả" phần còn lại.
+          setSelection({});
+          void orderQuery.refetch();
         },
         onError: (error) => {
           const uiError = notifyUiError(error);
@@ -193,7 +258,7 @@ export function PaymentDrawer() {
               receivedAmountInput={receivedAmountInput}
               insufficient={insufficient}
               changeAmount={changeAmount}
-              orderTotal={orderTotal}
+              orderTotal={amountDue}
               onAmountChange={handleAmountChange}
               onSetReceivedAmount={setReceivedAmount}
               onAppendKey={appendKey}
@@ -202,7 +267,10 @@ export function PaymentDrawer() {
 
             <PaymentSummaryPane
               order={order}
-              orderItemCount={orderItemCount}
+              payableLines={payableLines}
+              selection={selection}
+              selectAllChecked={selectAllChecked}
+              amountDue={amountDue}
               orderClosed={orderClosed}
               receivedAmount={receivedAmount}
               changeAmount={changeAmount}
@@ -212,6 +280,9 @@ export function PaymentDrawer() {
               paymentDisabled={paymentDisabled}
               paymentButtonLabel={paymentButtonLabel}
               isError={orderQuery.isError}
+              onToggleSelectAll={toggleSelectAll}
+              onToggleLine={toggleLine}
+              onCycleLineQuantity={cycleLineQuantity}
               onReloadOrder={reloadOrder}
               onTogglePrint={setPrintReceipt}
               onPrintProvisional={printProvisional}

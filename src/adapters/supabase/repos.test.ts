@@ -300,6 +300,51 @@ describe("Supabase adapter ports", () => {
     expect(chain.range).toHaveBeenCalledWith(0, 7);
   });
 
+  it("maps payOrderItems (tách đơn) to its RPC param contract", async () => {
+    const client = createRpcClient({
+      pay_order_items: {
+        orderId: "ord-split",
+        orderNo: 12,
+        paymentId: "pay-1",
+        status: "paid",
+        total: 29000,
+        receivedAmount: 30000,
+        changeAmount: 1000,
+        receipt: payResult.receipt,
+        sourceOrderId: "ord-1",
+        sourceOrderNo: 13,
+        sourceTotal: 64000,
+        sourceLockVersion: 4,
+      },
+    });
+    const ports = createSupabasePorts(client as never);
+
+    const result = await ports.payment.payOrderItems({
+      paymentId: "pay-1",
+      orderId: "ord-1",
+      newOrderId: "ord-split",
+      employeeId: "emp-admin",
+      method: "cash",
+      expectedVersion: 3,
+      receivedAmount: 30000,
+      items: [{ orderItemId: "oi-1", quantity: 1, splitItemId: "oi-split" }],
+    });
+
+    expect(client.rpc).toHaveBeenCalledWith("pay_order_items", {
+      p_payment_id: "pay-1",
+      p_order_id: "ord-1",
+      p_new_order_id: "ord-split",
+      p_employee_id: "emp-admin",
+      p_method: "cash",
+      p_expected_lock_version: 3,
+      p_received_amount: 30000,
+      p_items: [{ orderItemId: "oi-1", quantity: 1, splitItemId: "oi-split" }],
+    });
+    // Quy tắc đánh số: đơn tách kế thừa số nhỏ hơn (12), đơn gốc nhận số mới (13).
+    expect(result.orderNo).toBeLessThan(result.sourceOrderNo);
+    expect(result).toMatchObject({ orderId: "ord-split", sourceOrderId: "ord-1", sourceTotal: 64000 });
+  });
+
   it("maps menu changesets to table row mutations without Supabase types leaking to callers", async () => {
     const { client, calls } = createMutationClient();
     const ports = createSupabasePorts(client as never);

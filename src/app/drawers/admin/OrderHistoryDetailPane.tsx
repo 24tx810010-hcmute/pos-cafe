@@ -172,6 +172,7 @@ export function OrderHistoryDetailPane({
                 </p>
               )}
             </div>
+
           </div>
         )}
       </div>

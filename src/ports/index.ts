@@ -14,6 +14,8 @@ import type {
   OrderSummary,
   OrderSummaryPage,
   PayOrderInput,
+  PayOrderItemsInput,
+  PayOrderItemsResult,
   PayOrderResult,
   PrintReceipt,
   PrintTicket,
@@ -76,7 +78,10 @@ export interface IOrderRepo {
 }
 
 export interface IPaymentRepo {
+  /** Thanh toán toàn bộ đơn; đơn chuyển "paid", bàn được trả. */
   payOrder(input: PayOrderInput): Promise<PayOrderResult>;
+  /** Instant pay: tách các món được chọn ra đơn mới độc lập và thanh toán đơn đó ngay; đơn gốc vẫn mở với phần còn lại. */
+  payOrderItems(input: PayOrderItemsInput): Promise<PayOrderItemsResult>;
 }
 
 export interface IReportRepo {

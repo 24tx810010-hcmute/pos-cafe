@@ -51,6 +51,28 @@ export type PayOrderInput = {
   receivedAmount: number;
 };
 
+export type PayOrderItemLine = {
+  orderItemId: string;
+  /** Số lượng trả lần này, 1..số lượng của dòng. */
+  quantity: number;
+  /** UUID client sinh sẵn cho dòng tách ra khi trả một phần số lượng (offline-seam: id do client cấp). */
+  splitItemId: string;
+};
+
+/** Instant pay: tách các món được chọn ra một đơn mới (UUID client cấp) và thanh toán đơn đó ngay. */
+export type PayOrderItemsInput = {
+  paymentId: string;
+  /** Đơn gốc đang mở trên bàn. */
+  orderId: string;
+  /** UUID client sinh sẵn cho đơn tách. */
+  newOrderId: string;
+  employeeId: string;
+  method: PaymentMethod;
+  expectedVersion: number;
+  receivedAmount: number;
+  items: PayOrderItemLine[];
+};
+
 export type OrderHistoryFilter = {
   fromDate: string;
   toDate: string;

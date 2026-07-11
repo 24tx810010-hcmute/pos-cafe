@@ -322,3 +322,205 @@ describe("mock repositories", () => {
     expect(movedTable).toMatchObject({ posX: 540, posY: 240, status: originalStatus });
   });
 });
+
+
+describe("mock instant pay (payOrderItems - tách đơn độc lập)", () => {
+  // ord-b02 (#24, lockVersion 3): Cà phê sữa ×2 (29k) + Bạc xỉu ×1 (32k) + Croissant ×1 (35k) = 125k.
+  // Seeded nextOrderNo = 30.
+  const paySplit = async (ports: ReturnType<typeof createMockPorts>) => {
+    const order = await ports.order.getOrder("ord-b02");
+    return ports.payment.payOrderItems({
+      paymentId: "pay-split-1",
+      orderId: order.id,
+      newOrderId: "ord-split-1",
+      employeeId: "emp-admin",
+      method: "cash",
+      expectedVersion: order.lockVersion,
+      receivedAmount: 61000,
+      items: [
+        { orderItemId: "oi-b02-1", quantity: 1, splitItemId: "oi-b02-1-split" },
+        { orderItemId: "oi-b02-2", quantity: 1, splitItemId: "oi-b02-2-split" },
+      ],
+    });
+  };
+
+  it("splits selected items into an independent paid order and keeps the source open", async () => {
+    const ports = createMockPorts(createSeededMockState());
+    const result = await paySplit(ports);
+
+    // Đơn tách kế thừa số #24 của đơn gốc; đơn gốc nhận số mới (30).
+    expect(result).toMatchObject({
+      orderId: "ord-split-1",
+      orderNo: 24,
+      status: "paid",
+      total: 61000,
+      changeAmount: 0,
+      sourceOrderId: "ord-b02",
+      sourceOrderNo: 30,
+      sourceTotal: 64000,
+    });
+    expect(result.receipt.total).toBe(61000);
+    expect(result.receipt.lines).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "Cà phê sữa", quantity: 1 }),
+        expect.objectContaining({ name: "Bạc xỉu", quantity: 1 }),
+      ]),
+    );
+
+    // Đơn tách: paid ngay, có payment snapshot riêng — hai đơn không liên kết gì nhau.
+    const splitOrder = await ports.order.getOrder("ord-split-1");
+    expect(splitOrder.status).toBe("paid");
+    expect(splitOrder.total).toBe(61000);
+    expect(splitOrder.payment).toMatchObject({ id: "pay-split-1", amount: 61000, employeeId: "emp-admin" });
+    expect(splitOrder.items).toHaveLength(2);
+
+    // Đơn gốc: vẫn mở, chỉ còn phần chưa trả (1 Cà phê sữa + Croissant), bàn vẫn occupied.
+    const source = await ports.order.getOrder("ord-b02");
+    expect(source.status).toBe("open");
+    expect(source.orderNo).toBe(30);
+    expect(source.total).toBe(64000);
+    expect(source.items).toHaveLength(2);
+    expect(source.items.find((item) => item.id === "oi-b02-1")?.quantity).toBe(1);
+
+    const floorPlan = await ports.floorPlan.getFloorPlan();
+    expect(floorPlan.tables.find((table) => table.id === "tbl-b02")?.status).toBe("occupied");
+  });
+
+  it("shows the split order in history and report immediately, while the source stays out", async () => {
+    const ports = createMockPorts(createSeededMockState());
+    await paySplit(ports);
+    const today = businessDateInTimezone(new Date(), "Asia/Saigon");
+
+    const history = await ports.order.listOrderHistory({
+      fromDate: today,
+      toDate: today,
+      page: 1,
+      pageSize: 20,
+    });
+    expect(history.items.map((item) => item.id)).toContain("ord-split-1");
+    expect(history.items.map((item) => item.id)).not.toContain("ord-b02");
+
+    // Tiền đã thu vào report NGAY (đơn tách là đơn paid) — không chờ đơn gốc đóng.
+    const report = await ports.report.getCoreReport({ businessDate: today });
+    expect(report.revenue).toBe(61000);
+    expect(report.paidOrders).toBe(1);
+  });
+
+  it("numbers bills by payment order: earlier payment gets the smaller order number", async () => {
+    const ports = createMockPorts(createSeededMockState());
+    const billNos: number[] = [];
+
+    // Lần 1: tách 1 Cà phê sữa.
+    let order = await ports.order.getOrder("ord-b02");
+    const first = await ports.payment.payOrderItems({
+      paymentId: "pay-1",
+      orderId: order.id,
+      newOrderId: "ord-split-a",
+      employeeId: "emp-admin",
+      method: "cash",
+      expectedVersion: order.lockVersion,
+      receivedAmount: 29000,
+      items: [{ orderItemId: "oi-b02-1", quantity: 1, splitItemId: "split-a" }],
+    });
+    billNos.push(first.orderNo);
+
+    // Lần 2: tách Bạc xỉu.
+    order = await ports.order.getOrder("ord-b02");
+    const second = await ports.payment.payOrderItems({
+      paymentId: "pay-2",
+      orderId: order.id,
+      newOrderId: "ord-split-b",
+      employeeId: "emp-admin",
+      method: "cash",
+      expectedVersion: order.lockVersion,
+      receivedAmount: 32000,
+      items: [{ orderItemId: "oi-b02-2", quantity: 1, splitItemId: "split-b" }],
+    });
+    billNos.push(second.orderNo);
+
+    // Lần 3: trả nốt phần còn lại bằng payOrder (đơn gốc đóng với số hiện tại).
+    order = await ports.order.getOrder("ord-b02");
+    await ports.payment.payOrder({
+      paymentId: "pay-3",
+      orderId: order.id,
+      employeeId: "emp-admin",
+      method: "cash",
+      expectedVersion: order.lockVersion,
+      receivedAmount: order.total,
+    });
+    billNos.push(order.orderNo);
+
+    // Bill trả trước luôn mang số nhỏ hơn: #24 -> #30 -> #31.
+    expect(billNos).toEqual([24, 30, 31]);
+    expect(billNos[0]).toBeLessThan(billNos[1]);
+    expect(billNos[1]).toBeLessThan(billNos[2]);
+
+    const floorPlan = await ports.floorPlan.getFloorPlan();
+    expect(floorPlan.tables.find((table) => table.id === "tbl-b02")?.status).toBe("empty");
+  });
+
+  it("keeps the source order editable and voidable after a split", async () => {
+    const ports = createMockPorts(createSeededMockState());
+    await paySplit(ports);
+    const source = await ports.order.getOrder("ord-b02");
+
+    // Đơn gốc là đơn bình thường: huỷ toàn bộ phần còn lại -> void, bàn trống.
+    const result = await ports.order.submitOrderChanges({
+      orderId: source.id,
+      tableId: source.tableId,
+      orderType: source.orderType,
+      employeeId: "emp-admin",
+      expectedVersion: source.lockVersion,
+      items: [],
+    });
+    expect(result.status).toBe("void");
+    expect(result.tableStatus).toBe("empty");
+
+    // Tiền đã thu nằm an toàn ở đơn tách, không bị ảnh hưởng.
+    const splitOrder = await ports.order.getOrder("ord-split-1");
+    expect(splitOrder.status).toBe("paid");
+    expect(splitOrder.total).toBe(61000);
+  });
+
+  it("rejects over-quantity, duplicates, empty/full selections, low cash, and stale versions", async () => {
+    const ports = createMockPorts(createSeededMockState());
+    const order = await ports.order.getOrder("ord-b02");
+    const base = {
+      orderId: order.id,
+      employeeId: "emp-admin",
+      method: "cash" as const,
+      expectedVersion: order.lockVersion,
+    };
+    const line = { orderItemId: "oi-b02-1", quantity: 1, splitItemId: "split-x" };
+
+    await expect(
+      ports.payment.payOrderItems({ ...base, paymentId: "p1", newOrderId: "n1", receivedAmount: 999000, items: [{ ...line, quantity: 3 }] }),
+    ).rejects.toMatchObject({ code: "INVALID_ORDER_ITEMS" });
+    await expect(
+      ports.payment.payOrderItems({ ...base, paymentId: "p2", newOrderId: "n2", receivedAmount: 999000, items: [] }),
+    ).rejects.toMatchObject({ code: "INVALID_ORDER_ITEMS" });
+    await expect(
+      ports.payment.payOrderItems({ ...base, paymentId: "p3", newOrderId: "n3", receivedAmount: 999000, items: [line, { ...line, splitItemId: "split-y" }] }),
+    ).rejects.toMatchObject({ code: "INVALID_ORDER_ITEMS" });
+    await expect(
+      ports.payment.payOrderItems({ ...base, paymentId: "p4", newOrderId: "n4", receivedAmount: 28000, items: [line] }),
+    ).rejects.toMatchObject({ code: "PAYMENT_AMOUNT_TOO_LOW" });
+    await expect(
+      ports.payment.payOrderItems({ ...base, paymentId: "p5", newOrderId: "n5", expectedVersion: order.lockVersion + 9, receivedAmount: 29000, items: [line] }),
+    ).rejects.toMatchObject({ code: "ORDER_VERSION_CONFLICT" });
+    // Chọn đủ 100% đơn -> phải dùng payOrder, không tách.
+    await expect(
+      ports.payment.payOrderItems({
+        ...base,
+        paymentId: "p6",
+        newOrderId: "n6",
+        receivedAmount: 999000,
+        items: [
+          { orderItemId: "oi-b02-1", quantity: 2, splitItemId: "s1" },
+          { orderItemId: "oi-b02-2", quantity: 1, splitItemId: "s2" },
+          { orderItemId: "oi-b02-3", quantity: 1, splitItemId: "s3" },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: "INVALID_ORDER_ITEMS" });
+  });
+});

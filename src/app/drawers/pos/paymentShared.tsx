@@ -2,7 +2,6 @@ import clsx from "clsx";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@mui/material";
-import { formatVnd } from "@/core/money";
 import type { OrderDetail } from "@/domain";
 
 export const keypadKeys = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "00", "0"] as const;
@@ -133,43 +132,6 @@ export function QuickAmountButtons({
           {option.label}
         </button>
       ))}
-    </div>
-  );
-}
-
-export function OrderItems({ order }: { order?: OrderDetail | null }) {
-  if (!order?.items.length) {
-    return <p className={clsx("m-0 p-3 text-center text-pos-muted", paymentText.secondary)}>Chưa có món trong đơn.</p>;
-  }
-
-  return (
-    <div className="grid gap-2">
-      {order.items.map((item) => {
-        const optionText = item.options.map((option) => option.optionName).filter(Boolean).join(", ");
-        const lineTotal = (item.unitPrice + item.options.reduce((sum, option) => sum + option.priceDelta, 0)) * item.quantity;
-
-        return (
-          <article key={item.id} className="rounded-pos border border-pos-line bg-white px-3 py-2 max-[900px]:px-2 max-[900px]:py-1.5">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-              <div className="min-w-0">
-                <h4 className={clsx("m-0 truncate font-black leading-tight text-pos-ink", paymentText.strong)}>
-                  {item.itemName}
-                </h4>
-                {optionText && (
-                  <p className={clsx("m-0 mt-0.5 truncate font-bold text-pos-muted", paymentText.micro)}>
-                    {optionText}
-                  </p>
-                )}
-              </div>
-              <strong className={clsx("font-black text-pos-ink", paymentText.strong)}>x{item.quantity}</strong>
-            </div>
-            <div className={clsx("mt-1 flex items-center justify-between gap-2 font-bold", paymentText.micro)}>
-              <span className="text-pos-muted">{formatVnd(item.unitPrice)}</span>
-              <span className="text-pos-primary">{formatVnd(lineTotal)}</span>
-            </div>
-          </article>
-        );
-      })}
     </div>
   );
 }
