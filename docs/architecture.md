@@ -64,8 +64,21 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 - Business-critical mutations đi qua RPC để DB quyết định transaction:
   - `submit_order_changes`
   - `pay_order`
+  - `pay_order_items` (instant pay: TÁCH các món được chọn ra một đơn mới độc lập và thanh toán đơn đó ngay trong cùng transaction)
   - `clear_demo_data`
-- RPC đảm bảo lock/version, order number, snapshot giá/tên/options, status order/table và payment consistency.
+- RPC đảm bảo lock/version, order number, snapshot giá/tên/options, status order/table và payment consistency. Mỗi lần tách đơn cũng bump `lock_version` của đơn gốc nên các máy khác nhận tín hiệu như mọi mutation khác.
+
+### ADR: Instant Pay — TÁCH ĐƠN ĐỘC LẬP (split-order)
+
+**Quyết định (phase 18, bản chốt):** thanh toán một phần = tách các món được chọn ra một **đơn mới hoàn toàn độc lập** (UUID client cấp) và thanh toán đơn đó ngay trong cùng transaction. Hai đơn không có liên kết dữ liệu nào — chỉ tình cờ chung `table_id` lúc thanh toán. Đơn gốc còn lại trên bàn là đơn `open` bình thường.
+
+**Lịch sử quyết định:** bản đầu của phase 18 làm theo mô hình "partial payment trên cùng một đơn" (nhiều payments/đơn, `order_items.payment_id`, view `history_entries` — migration 009). Người dùng **không chấp nhận các đánh đổi** của mô hình đó — report lệch két trong ngày, phải ẩn/đóng băng món đã trả, lịch sử phải chế khái niệm "Lần x/y" — nên rework sang split-order (migration 010 dọn toàn bộ 009).
+
+**Lý do chọn split-order:** (1) **report đúng két ngay** — mỗi lần thu là một đơn `paid` nên doanh thu vào report tức thì, không có trạng thái "tiền đã thu nhưng chưa ghi nhận"; (2) **không có trạng thái đặc biệt** — không món đóng băng, không ẩn UI, đơn gốc sửa/void như mọi đơn; (3) **lịch sử giữ nguyên order-centric** — mỗi bill một dòng đơn bình thường; (4) đổi lại chấp nhận từ bỏ "1 phiên bàn = 1 đơn tổng" — điều người dùng chủ động muốn ("hai đơn không liên quan gì nhau").
+
+**Quy tắc đánh số (yêu cầu cứng, có test):** bill thanh toán TRƯỚC mang `order_no` NHỎ hơn. Cơ chế: đơn tách **kế thừa** `order_no` của đơn gốc; đơn gốc nhận `order_no` mới (max+1 theo `business_date`). Ví dụ bàn #12 trả 2 lần → bill #12 (lần 1), phần còn lại trên bàn thành #13, bill #13 (lần 2). Hệ quả chấp nhận: phiếu bếp in trước đó mang số cũ trong khi đơn trên bàn đã đổi số.
+
+**Đánh đổi còn lại:** muốn biết cả phiên bàn tiêu bao nhiêu phải cộng nhiều đơn; mỗi lần tách tốn một `order_no`; hoàn tiền theo payment vẫn ngoài scope phase này; chỉ trả theo món (không trả theo số tiền tuỳ ý).
 
 ## Realtime
 

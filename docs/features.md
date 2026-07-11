@@ -40,18 +40,23 @@
 
 ## Payment
 
-- Thanh toán tiền mặt cho order mở.
+- Thanh toán tiền mặt cho order mở, theo mô hình **instant pay (split-order)**: trả cả đơn một lần, hoặc chọn món/số lượng để **tách thành một đơn mới độc lập và thanh toán đơn đó ngay**.
 - Màn thanh toán là console dành cho thu ngân, không phải màn đưa cho khách.
 - Header hiển thị thu ngân đang đăng nhập, vị trí/order type và số lượng món; khách hàng hiện fallback là `Khách lẻ` vì `OrderDetail` chưa có customer field.
 - Khu phương thức thanh toán dùng danh sách có thể mở rộng; hiện chỉ bật `Tiền mặt`, các phương thức thẻ/chuyển khoản/QR hiển thị disabled để tránh hiểu nhầm là đã xử lý thật.
-- Khu nhập tiền đặt input `Tiền khách đưa` phía trên keypad custom, có quick cash buttons và hỗ trợ nhập số thủ công.
-- Summary bên phải hiển thị danh sách món cuộn dọc, `Khách đưa`, `Tiền thối`/`Còn thiếu`, `Tổng đơn`, checkbox `In hóa đơn sau khi thanh toán` mặc định bật và nút hoàn tất ở cuối summary.
-- Chặn hoàn tất khi tiền nhận chưa đủ.
-- Complete payment gọi RPC transaction: tạo payment, set order paid, set bàn empty nếu dine-in.
+- Khu nhập tiền đặt input `Tiền khách đưa` phía trên keypad custom, có quick cash buttons và hỗ trợ nhập số thủ công; input tự điền theo tổng phần đang chọn.
+- **Chọn món để thanh toán** (pane phải): checkbox `Chọn tất cả` **mặc định bật** (= trả nhanh cả bàn, một chạm như cũ). Bỏ chọn thì tick từng dòng (tick = chọn cả dòng) và chỉnh số lượng bằng chip `đã chọn/tổng` + nút `+` xoay vòng (chạm trần quay về 1). Chỉnh bất kỳ dòng nào dưới mức tối đa → `Chọn tất cả` tự tắt; chọn đủ 100% → tự bật lại.
+- Summary: `Khách đưa`, `Tiền thối`/`Còn thiếu`, `Tổng đơn`, dòng nổi bật `Thanh toán lần này`, checkbox `In hóa đơn sau khi thanh toán` mặc định bật và nút hoàn tất.
+- Chặn hoàn tất khi tiền nhận chưa đủ **so với phần đang chọn**, hoặc khi chưa chọn món nào.
+- Flow tự rẽ nhánh (`payOrderItemsAndPrint`): chọn đủ 100% → RPC `pay_order` (đơn paid, bàn trống, đóng drawer); chọn một phần → RPC `pay_order_items` **tách đơn**: món được chọn thành đơn mới paid ngay (bill riêng, vào report/lịch sử ngay), đơn gốc còn lại trên bàn với phần chưa trả; drawer mở tiếp, toast `Đã tách và thanh toán đơn #N (X). Bàn còn Y.`, selection reset về `Chọn tất cả` phần còn lại.
+- **Đánh số theo thứ tự thanh toán**: bill trả trước mang số nhỏ hơn — đơn tách kế thừa `order_no` của đơn gốc, đơn gốc nhận số mới (header drawer đổi số tương ứng sau khi tách).
+- Đơn gốc sau khi tách là đơn bình thường: sửa món, thêm món, thậm chí huỷ đều được (tiền đã thu nằm an toàn ở các đơn tách đã paid).
+- Selection được clamp theo dữ liệu mới nhất khi đơn bị máy khác cập nhật (lock_version đổi) — không thể trả vượt số lượng.
 - Có nút `In tạm tính` mở popup phiếu tạm tính (chưa thanh toán) từ đơn hiện tại.
 - Khi checkbox in hóa đơn bật, sau khi thanh toán mở popup hoá đơn thanh toán in-app (PortalPopup); bỏ chọn thì vẫn thanh toán nhưng không mở popup. Phase này in chỉ là preview UI (popup + browser print qua iframe cô lập), chưa nối phần cứng; seam `IPrintPort` giữ nguyên cho adapter ESC/POS tương lai (`BrowserPrintPort` hiện no-op, không còn `window.open`).
-- Bill in ngay sau thanh toán dựng từ dữ liệu trên máy lúc bấm hoàn tất (đơn + tiền khách đưa + giờ máy), không phụ thuộc payload server; in lại ở Lịch sử thì lấy từ payment snapshot đã lưu.
+- Bill dựng từ payload receipt trả về ngay trong mutation (không chờ refetch); in lại ở Lịch sử thì lấy từ payment snapshot của đơn đó.
 - Hoá đơn dùng template dùng chung `ReceiptDocument` (khổ 80mm): 2 biến thể `ticket` (phiếu tạm tính) / `receipt` (hoá đơn thanh toán); dòng món kiểu Bách Hoá Xanh (tên + `SL × đơn giá` / thành tiền); header/footer lấy từ store settings.
+- Lý do chọn mô hình split-order (và vì sao bỏ mô hình partial-cùng-đơn của migration 009), ưu/nhược điểm: xem ADR "Instant Pay" trong [architecture.md](architecture.md) và phân tích đầy đủ ở [implementation-log/phase-18-instant-pay.md](implementation-log/phase-18-instant-pay.md).
 
 ## Takeaway
 
@@ -64,6 +69,7 @@
 
 - Xem danh sách đơn theo khoảng ngày; mặc định `Hôm nay`.
 - Chỉ hiển thị đơn đã kết thúc (`Đã thanh toán`, `Đã hủy`); đơn đang mở thuộc màn Bàn/Mang đi.
+- **Instant pay**: mỗi lần tách thanh toán là một ĐƠN độc lập → tự nhiên là một dòng lịch sử riêng, hiện **ngay sau khi thu tiền** (không chờ bàn đóng). Bàn trả 2 lần = 2 đơn không liên kết gì nhau, chỉ cùng nhãn bàn; số đơn tăng theo thứ tự thanh toán.
 - Bộ lọc ngày là một nút `Filter date`, mở popup chọn `Hôm nay`, `7 ngày`, `Tháng này` hoặc khoảng ngày tùy chọn.
 - Danh sách đơn dùng phân trang để giữ payload ổn định; date/status/type/search được áp dụng ở repository trước khi cắt trang.
 - Layout chính là 2 cột: cột trái hiển thị thông tin nhanh của đơn, cột phải hiển thị chi tiết dạng receipt.

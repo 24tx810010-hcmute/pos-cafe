@@ -11,11 +11,12 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 5. Tạo order dine-in: chọn món, option/topping, chỉnh số lượng/ghi chú, gửi đơn.
 6. Quay lại floor, thấy bàn chuyển sang đang phục vụ.
 7. Mở lại order, chuyển sang payment.
-8. Nhập tiền khách đưa, kiểm tra trạng thái thiếu/đủ tiền, hoàn tất thanh toán.
-9. Xem receipt preview, quay lại floor thấy bàn trống.
-10. Mở report/history để thấy order đã thanh toán.
-11. Demo admin: employees, menu editor, floor editor, settings.
-12. Demo clear dữ liệu mẫu khi không còn order mở; nếu còn order mở thì giải thích trạng thái blocked.
+8. **Demo instant pay (điểm nhấn):** bỏ `Chọn tất cả`, tick 1-2 món (chỉnh số lượng bằng nút `+`), hoàn tất → bill riêng in ra (kế thừa số đơn gốc), đơn gốc còn lại trên bàn với số mới; mở report thấy doanh thu vào NGAY.
+9. Nhập tiền khách đưa cho phần còn lại, kiểm tra trạng thái thiếu/đủ tiền, hoàn tất thanh toán.
+10. Xem receipt preview, quay lại floor thấy bàn trống.
+11. Mở report/history: 2 đơn độc lập từ cùng một bàn, số đơn tăng theo thứ tự thanh toán.
+12. Demo admin: employees, menu editor, floor editor, settings.
+13. Demo clear dữ liệu mẫu khi không còn order mở; nếu còn order mở thì giải thích trạng thái blocked.
 
 ## Checklist Trước Demo
 
@@ -27,9 +28,10 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 - Chuẩn bị 4G/hotspot vì phase này online-only.
 - Không mở các màn optional/future như kitchen/QR nếu chưa muốn giải thích scope.
 
-## Cần Kiểm Chứng Trên Supabase (chưa làm)
+## Kiểm Chứng Trên Supabase
 
-- **Realtime cross-device + self-heal (phase 15):** mở 2 thiết bị cùng store thật; trên máy A tạo/sửa/thanh toán đơn → máy B cập nhật trong ≤5s. Ngắt mạng máy B rồi nối lại → sau khi realtime `SUBSCRIBED` lại phải tự resync ngay (không chờ poll). Mock realtime là no-op nên chỉ kiểm được trên Supabase (`npm run smoke:supabase` hoặc thủ công). Xem [implementation-log/phase-15-realtime-hardening.md](implementation-log/phase-15-realtime-hardening.md).
+- **Realtime cross-device (phase 15): ĐÃ kiểm chứng** qua `npm run smoke:supabase` (phase 18): 2 browser cùng store thật, máy A tạo đơn → máy B thấy bàn đang phục vụ ≤30s; máy B thanh toán → máy A thấy bàn trống. Phần self-heal khi ngắt/nối mạng vẫn chỉ kiểm được thủ công (ngắt mạng máy B rồi nối lại → sau `SUBSCRIBED` phải tự resync ngay). Xem [implementation-log/phase-15-realtime-hardening.md](implementation-log/phase-15-realtime-hardening.md).
+- **Instant pay tách đơn (phase 18): ĐÃ kiểm chứng** qua E2E trên cloud đã áp migration 009+010 (tách dòng, số bill theo thứ tự trả, lịch sử 2 đơn độc lập).
 
 ## Luận Điểm Nên Nói Khi Bảo Vệ
 

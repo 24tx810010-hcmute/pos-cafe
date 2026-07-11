@@ -10,7 +10,7 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 | Quyền | Role `admin`, `cashier`, `kitchen`; admin dùng toàn bộ, cashier dùng POS core, kitchen giữ seam |
 | POS core | Floor view, mở bàn, tạo/sửa order dine-in, tạo/sửa takeaway, trạng thái bàn trống/đang phục vụ |
 | Order | Chọn món, option/topping, ghi chú, cập nhật order mở, hủy order mở bằng cách xóa hết item |
-| Payment | Thanh toán tiền mặt, nhập tiền khách đưa, tính tiền thối, hoàn tất order, set bàn trống, bill/receipt preview |
+| Payment | Thanh toán tiền mặt, nhập tiền khách đưa, tính tiền thối, hoàn tất order, set bàn trống, bill/receipt preview; instant pay: chọn món/số lượng tách thành đơn độc lập thanh toán ngay (bill trả trước mang số nhỏ hơn) |
 | Admin | Quản lý nhân viên, menu editor có option/topping và upload ảnh món, floor editor có khu/tầng/decor cơ bản |
 | Report | Doanh thu theo ngày, số đơn đã thanh toán, trung bình đơn, top món, biểu đồ giờ |
 | Settings | Tên quán, địa chỉ, footer hóa đơn, timezone, clear dữ liệu mẫu có block khi còn order mở |

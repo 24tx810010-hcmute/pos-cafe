@@ -101,7 +101,7 @@ File này là technical decision record rút gọn. Mỗi quyết định nêu r
 - **Đánh đổi:** E2E tốn thời gian hơn unit test và cần data/test mode ổn định.
 - **Giảm rủi ro:** tách `npm run test`, `npm run smoke`, `npm run smoke:supabase`.
 - **Liên quan tới tiểu luận:** có bằng chứng kiểm thử từ logic tới flow demo.
-- **Validation gần nhất trên `origin/main@cb24887`:** `npm test` pass 39 files/182 tests; `npx tsc -b` pass. Đã verify qua Playwright (mock) các luồng in: phiếu tạm tính, hoá đơn thanh toán, phiếu gửi bếp (món mới thêm). **Chưa chạy lại** `npm run smoke:supabase` — phần realtime cross-device + self-heal (phase 15) còn chờ kiểm chứng trên Supabase thật (xem demo-runbook → "Cần Kiểm Chứng Trên Supabase").
+- **Validation gần nhất (phase 18, working tree chưa commit):** `npm test` pass 42 files/211 tests; `npm run build` (tsc strict) pass; `npm run smoke` (mock, 5 viewport) 26 pass; **`npm run smoke:supabase` 3/3 pass** trên cloud đã áp migration 009+010 — gồm full-pay + history/report, **instant pay tách đơn** (kèm assert số bill theo thứ tự trả), và realtime cross-device 2 browser (phase 15 coi như đã kiểm chứng trên Supabase thật).
 
 ## 10. Browser Print Preview
 

@@ -70,26 +70,28 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 
 - `business_date` lấy theo timezone của store, không theo timezone máy.
 - `order_no` unique theo `(store_id, business_date, order_no)`.
-- `lock_version` dùng để phát hiện stale/conflict khi nhiều máy cùng thao tác.
+- `lock_version` dùng để phát hiện stale/conflict khi nhiều máy cùng thao tác (tách đơn instant pay cũng bump version đơn gốc).
 - Replace order lines không hard-delete item cũ; item cũ được mark `removed`.
 
 ## Nhóm Payment & Report
 
-- `payments`: payment theo order, employee, method, amount, received amount, change amount, paid_at.
+- `payments`: payment theo order, employee, method, amount, received amount, change amount, paid_at. Mỗi đơn có đúng một payment khi `paid`.
 - Report không có bảng riêng trong MVP; report query tính từ order/payment đã thanh toán.
 
 Ý nghĩa:
 
 - Phase này payment UI dùng cash-only.
-- `pay_order` tạo payment, set order paid và set table empty trong cùng transaction.
-- Report chỉ tính order paid, loại void, lọc theo `business_date`.
-- Order history đọc các order đã kết thúc (`paid`, `void`) theo `business_date`; order `open` chỉ dùng cho floor/takeaway vận hành hiện tại.
-- Order history detail đọc payment snapshot mới nhất theo `order_id` để hiển thị lại `method`, `employee_id`, `amount`, `received_amount`, `change_amount` và `paid_at`.
+- **Instant pay (split-order, migration 010)**: thanh toán một phần = `pay_order_items` **tách các món được chọn ra một ĐƠN MỚI độc lập** (UUID client cấp) và pay đơn đó ngay trong cùng transaction. Hai đơn không liên kết gì nhau — chỉ chung `table_id` lúc thanh toán. Đơn gốc còn lại trên bàn là đơn `open` bình thường (sửa/void được); bàn chỉ trống khi đơn gốc được trả nốt (qua `pay_order`).
+- **Quy tắc đánh số**: bill trả trước mang `order_no` nhỏ hơn — đơn tách kế thừa số của đơn gốc, đơn gốc nhận số mới (max+1 theo `business_date`). Bàn #12 trả 2 lần → bill #12, phần còn lại thành #13, bill #13.
+- Trả một phần số lượng của một dòng (vd 1 trong 2 Cà phê sữa) → tách dòng: dòng mới (UUID client cấp qua `splitItemId`) thuộc **đơn tách**; dòng gốc giảm quantity. Options của dòng tách là snapshot copy (id server cấp).
+- Report tính order `paid` theo `business_date` — **mỗi lần thu vào report NGAY** vì đơn tách paid tức thì (không có trạng thái "tiền đã thu nhưng chưa ghi nhận").
+- Order history là order-centric: mỗi bill (đơn tách hoặc đơn thường) một dòng, không có liên kết giữa các đơn tách từ cùng một bàn.
 
 ## RPC Chính
 
 - `submit_order_changes`: tạo/cập nhật order mở, snapshot giá/tên/options, cập nhật table occupied/empty, in ticket khi có order mở.
 - `pay_order`: tạo payment, set order paid, set table empty, trả payload receipt.
+- `pay_order_items`: instant pay tách đơn — validate từng dòng + tính tiền phía server, swap `order_no` (đơn tách kế thừa số, đơn gốc nhận số mới), move/tách dòng sang đơn mới, tạo payment và set đơn mới `paid` ngay, tính lại tổng + bump `lock_version` đơn gốc. Từ chối selection phủ 100% đơn (client phải dùng `pay_order`). Trả về thông tin đơn tách (`orderId/orderNo/total/receipt`) + đơn gốc (`sourceOrderId/sourceOrderNo/sourceTotal/sourceLockVersion`).
 - `clear_demo_data`: admin-only, block nếu còn open orders, xóa mềm dữ liệu seed và giữ admin.
 
 ## Domain Types Trong App
@@ -98,6 +100,7 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 - `FloorPlan`: areas, tables, decorItems.
 - `OrderSummary`/`OrderDetail`: order state, total, table/order type, snapshot items; `OrderDetail.payment` giữ payment snapshot nullable cho đơn đã thanh toán.
 - `PayOrderInput`/`PayOrderResult`: payment cash flow và receipt payload.
+- `PayOrderItemsInput`/`PayOrderItemsResult`: instant pay tách đơn (`newOrderId` + `items: {orderItemId, quantity, splitItemId}`), kết quả gồm đơn tách đã paid + trạng thái đơn gốc còn lại.
 - `MenuChanges`/`FloorPlanChanges`: changeset create/update/delete cho editor.
 
 ## Menu Image Storage

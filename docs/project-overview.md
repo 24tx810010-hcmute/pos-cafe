@@ -23,7 +23,7 @@ Phase tiểu luận ưu tiên demo end-to-end:
 1. Tạo hoặc ghép cửa hàng.
 2. Đăng nhập nhân viên bằng PIN.
 3. Vận hành floor/table, order dine-in và takeaway.
-4. Thanh toán tiền mặt và in/preview hóa đơn.
+4. Thanh toán tiền mặt và in/preview hóa đơn — cả bàn một chạm, hoặc instant pay tách món thành đơn riêng cho từng khách.
 5. Quản lý nhân viên, menu có option/topping, sơ đồ bàn có khu/tầng/decor.
 6. Xem lịch sử đơn, báo cáo doanh thu cơ bản.
 7. Cài đặt thông tin quán và reset dữ liệu mẫu có kiểm soát.
