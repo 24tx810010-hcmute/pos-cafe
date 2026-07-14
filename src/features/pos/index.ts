@@ -1,6 +1,6 @@
 export * from "./orderFlow";
 export * from "./posInvalidation";
-export * from "./posQueryKeys";
+export { posQueryKeys } from "@/features/shared/queryKeys";
 export * from "./useOrderPaymentFlow";
 export * from "./usePosData";
 export * from "./useOrderModifierPicker";

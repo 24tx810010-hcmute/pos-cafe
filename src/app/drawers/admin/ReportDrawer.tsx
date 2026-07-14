@@ -28,7 +28,7 @@ import {
   buildReportDatasetFromReports,
   type ReportRange,
   type ReportSection,
-} from "@/features/pos/reportHelpers";
+} from "@/features/admin/reportHelpers";
 import { Metric } from "../../components/Metric";
 import { PortalDrawer } from "../../components/PortalDrawer";
 
