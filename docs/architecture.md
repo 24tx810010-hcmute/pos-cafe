@@ -23,7 +23,7 @@ Kiến trúc hiện tại tách UI, feature flow, domain/ports và adapters đ�
 | App UI | React screens, shell, drawers, portal popup/drawer primitives, local UI state |
 | Features | Session/order/admin/realtime flows, query hooks, mutation hooks |
 | Core/domain | Money, guards, order draft, AppError, domain types |
-| Ports | Interface dữ liệu và side-effect: auth, employee, menu, floor, order, payment, report, settings, seed, print, realtime |
+| Ports | Interface dữ liệu và side-effect: auth, employee, menu, menu images, floor, order, payment, report, settings, seed, print, realtime |
 | Adapters | Supabase adapter và mock adapter implement ports |
 
 ## Folder Boundary Guard

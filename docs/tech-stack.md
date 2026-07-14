@@ -55,7 +55,7 @@ File này là technical decision record rút gọn. Mỗi quyết định nêu r
 ## 5. Ports/Adapters
 
 - **Quyết định:** UI/features phụ thuộc `AppPorts`, không phụ thuộc trực tiếp Supabase.
-- **Dùng cho:** auth, employee, menu, floor, order, payment, report, settings, seed, print, realtime.
+- **Dùng cho:** auth, employee, menu, menu images, floor, order, payment, report, settings, seed, print, realtime.
 - **Vì sao chọn:** dễ test bằng mock adapter, dễ đổi backend/offline sau này.
 - **Không chọn:** import Supabase client trực tiếp trong components/features.
 - **Đánh đổi:** phải duy trì interface và mapper.
