@@ -53,6 +53,23 @@
 - `reportHelpers.test.ts`: cộng voidCount/voidAmount từ CoreReport.
 - `npm run build` + `npm test` (231 test) xanh. Verify trực quan mock mode: admin hủy đơn #23 (77.000đ) → badge Đã hủy, khối người hủy/lý do đúng, nút in lại disabled, popup cảnh báo đúng số tiền/ngày.
 
+## Validate trên Supabase cloud (2026-07-16)
+
+Áp `011_void_paid_order.sql` lên cloud rồi chạy E2E thật (`smoke:supabase`) — bắt được một bug
+mà mock không lộ:
+
+- **Conflict giả khi hủy đơn vừa thanh toán.** Cache order-detail (TanStack Query) sau khi
+  thanh toán có thể còn `lock_version` cũ (phiên bản lúc đơn còn `open`, trước khi pay bump
+  version). Popup hủy đọc `selectedDetail.lockVersion` từ cache đó → gửi version cũ lên
+  `void_order` → server trả `ORDER_VERSION_CONFLICT` dù chẳng có ai sửa đơn. An toàn (server
+  từ chối, không hủy sai) nhưng UX sai: lần hủy đầu báo "dữ liệu đã thay đổi".
+- **Fix (tất định):** `confirmVoid` **refetch order detail ngay trước khi hủy** và dùng
+  `lock_version` tươi từ kết quả refetch (không phụ thuộc trạng thái cache/poll); chặn
+  double-click bằng cờ `isVoiding`; nếu sau refetch đơn không còn `paid` thì báo tải lại thay
+  vì gọi RPC. `void_order` và `verify_employee_pin` (đã đổi return type) chạy đúng trên cloud.
+- Bổ sung E2E `tests/supabase`: admin tạo store → thanh toán → hủy đơn (chọn lý do) → assert
+  popup đóng, khối "Người hủy" hiện, badge chuyển "Đã hủy". Chạy lặp 3× đều pass.
+
 ## Lưu ý vận hành
 
 - **Phải áp `011_void_paid_order.sql`** lên Supabase (sau 010): thêm cột orders/employees, drop+tạo lại `verify_employee_pin` và `void_order`. Mock mode đủ tính năng, không cần migration.
