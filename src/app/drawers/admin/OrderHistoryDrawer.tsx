@@ -69,6 +69,7 @@ export function OrderHistoryDrawer() {
   const [voidConfirmOpen, setVoidConfirmOpen] = useState(false);
   const [voidReasonCode, setVoidReasonCode] = useState<VoidReasonCode>("wrong_order");
   const [voidReasonNote, setVoidReasonNote] = useState("");
+  const [isVoiding, setIsVoiding] = useState(false);
 
   const canVoid = hasPermission(currentEmployee, "order.voidPaid");
 
@@ -208,23 +209,42 @@ export function OrderHistoryDrawer() {
     setVoidConfirmOpen(true);
   };
 
-  const confirmVoid = () => {
-    if (!currentEmployee || !selectedDetail) return;
+  const confirmVoid = async () => {
+    if (!currentEmployee || !selectedDetail || isVoiding) return;
+    setIsVoiding(true);
+    // Lấy lock_version tươi ngay trước khi hủy: cache order detail có thể còn phiên bản
+    // cũ (vd version lúc đơn còn mở, trước khi thanh toán) và gây conflict giả.
+    let order = selectedDetail;
+    try {
+      const fresh = await detailQuery.refetch();
+      if (fresh.data?.id === selectedDetail.id) order = fresh.data;
+    } catch {
+      // Giữ selectedDetail nếu refetch lỗi; server vẫn kiểm tra lock_version.
+    }
+    if (order.status !== "paid") {
+      toast.error("Đơn đã thay đổi trạng thái, vui lòng tải lại.");
+      setVoidConfirmOpen(false);
+      setIsVoiding(false);
+      return;
+    }
     voidMutation.mutate(
       {
         actor: currentEmployee,
-        order: selectedDetail,
+        order,
         reasonCode: voidReasonCode,
         reasonNote: voidReasonNote,
       },
       {
         onSuccess: () => {
-          toast.success(`Đã hủy đơn #${selectedDetail.orderNo}`);
+          toast.success(`Đã hủy đơn #${order.orderNo}`);
           setVoidConfirmOpen(false);
         },
         onError: (error) => {
           toast.error(toToastError(error));
           void detailQuery.refetch();
+        },
+        onSettled: () => {
+          setIsVoiding(false);
         },
       },
     );
@@ -470,7 +490,7 @@ export function OrderHistoryDrawer() {
                 variant="contained"
                 color="error"
                 data-testid="history-void-confirm"
-                disabled={voidMutation.isPending || voidNoteRequired}
+                disabled={isVoiding || voidMutation.isPending || voidNoteRequired}
                 onClick={confirmVoid}
               >
                 Xác nhận hủy đơn

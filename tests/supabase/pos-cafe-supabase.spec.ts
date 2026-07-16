@@ -115,6 +115,34 @@ test("Supabase UI E2E creates a store, pays an order, and shows history/report",
   test.info().annotations.push({ type: "store-key", description: storeKey });
 });
 
+test("Supabase admin voids a paid order and it leaves the paid revenue", async ({ page }) => {
+  const storeKey = await createStoreThroughUi(page);
+  await unlockAsAdmin(page);
+  await createOpenOrderOnFirstTable(page);
+  await payFirstOccupiedTable(page);
+
+  await page.getByRole("button", { name: "Lịch sử" }).click();
+  await expect(page.getByTestId("order-history-drawer")).toBeVisible();
+  const drawer = page.getByTestId("order-history-drawer");
+  await drawer.locator('[data-testid^="history-row-"]').first().click();
+
+  // Nút hủy chỉ bật khi order detail đã load (có lock_version).
+  const voidButton = page.getByTestId("history-void-order");
+  await expect(voidButton).toBeEnabled({ timeout: 30_000 });
+  await voidButton.click();
+
+  await expect(page.getByTestId("history-void-popup")).toBeVisible();
+  await page.getByTestId("history-void-reason").selectOption("duplicate");
+  await page.getByTestId("history-void-confirm").click();
+
+  // Void thành công: popup đóng, khối thông tin hủy hiện, badge chuyển "Đã hủy".
+  await expect(page.getByTestId("history-void-popup")).toBeHidden({ timeout: 30_000 });
+  await expect(page.getByTestId("history-void-info")).toBeVisible({ timeout: 30_000 });
+  await expect(drawer.getByText("Đã hủy").first()).toBeVisible();
+
+  test.info().annotations.push({ type: "store-key", description: storeKey });
+});
+
 test("Supabase instant pay splits selected items into an independent paid order", async ({ page }) => {
   const storeKey = await createStoreThroughUi(page);
   await unlockAsAdmin(page);
