@@ -22,7 +22,7 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 
 - `stores`: store id, số store, email, trạng thái seed, trạng thái active.
 - `store_settings`: tên hiển thị, địa chỉ, currency VND, timezone, footer hóa đơn, QR info.
-- `employees`: nhân viên thuộc store, role, passcode hash, trạng thái active.
+- `employees`: nhân viên thuộc store, role, passcode hash, trạng thái active, `permission_overrides` (jsonb nullable — seam phân quyền theo hành động).
 
 Ý nghĩa:
 
@@ -30,6 +30,7 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 - Tạo store mới mặc định blank (store/settings + 1 admin), `seed_status=seeded`; chỉ seed dữ liệu mẫu khi `CreateStoreInput.seedDemo=true` (checkbox lúc tạo) hoặc khi admin bấm khởi tạo demo trong Cài đặt. Địa chỉ từ form được lưu vào `store_settings.address`.
 - Seed demo upsert theo `id`/`seed_key` và clear `deleted_at`/`deleted_by_employee_id` trên các bảng editor (cashier dùng `is_active`) nên idempotent với `clear_demo_data`.
 - Employee role dùng cho app-layer permission trong phase này.
+- `employees.permission_overrides` (migration 011) là seam **quyền theo hành động** tách khỏi quyền vào module: shape `{"grants": [...], "denies": [...]}` với các permission như `order.voidPaid`. Quyền hiệu lực = (default theo role ∪ grants) − denies (denies luôn thắng). Mặc định `null` (mọi người theo role). Đây là app-layer guardrail; check trong RPC chỉ để phòng thủ/audit, **không** phải DB-secured — vẫn spoof được với session hợp lệ. UI chỉnh sửa per-employee sẽ làm ở phase phân quyền sau.
 - `store_settings.qr_info` là seam schema cho QR/bank sau này; drawer Payment Settings hiện là preview/local UI, chưa persist field này qua `settingsRepo`.
 
 ## Nhóm Menu
@@ -62,7 +63,7 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 
 ## Nhóm Order
 
-- `orders`: order number theo business date, loại order, table nullable, subtotal/discount/total, status, employee, lock version.
+- `orders`: order number theo business date, loại order, table nullable, subtotal/discount/total, status, employee, lock version, và metadata hủy (`voided_at`, `voided_by_employee_id`, `void_reason_code`, `void_reason_note` — migration 011).
 - `order_items`: snapshot item name, quantity, unit price, note, status.
 - `order_item_options`: snapshot option name, price delta và **`quantity`** (số lượng modifier; nhóm single luôn 1, nhóm multi cho >1).
 
@@ -72,6 +73,7 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 - `order_no` unique theo `(store_id, business_date, order_no)`.
 - `lock_version` dùng để phát hiện stale/conflict khi nhiều máy cùng thao tác (tách đơn instant pay cũng bump version đơn gốc).
 - Replace order lines không hard-delete item cũ; item cũ được mark `removed`.
+- Hủy đơn có 2 đường khác nhau: (1) đơn `open` bị hủy trước thanh toán = submit toàn bộ quantity 0 (đặt `total=0`, trả bàn, `paid_at` vẫn null); (2) đơn `paid` bị hủy = RPC `void_order` — **giữ nguyên** `total`/`order_no`/`business_date`/`paid_at` và payment row (audit + report tính đúng), chỉ đổi `status='void'`, ghi metadata hủy, bump `lock_version`, không đụng bàn. Dấu `paid_at is not null` phân biệt đơn "hủy sau khi đã thu tiền" với đơn "hủy trước thanh toán".
 
 ## Nhóm Payment & Report
 
@@ -84,21 +86,25 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 - **Instant pay (split-order, migration 010)**: thanh toán một phần = `pay_order_items` **tách các món được chọn ra một ĐƠN MỚI độc lập** (UUID client cấp) và pay đơn đó ngay trong cùng transaction. Hai đơn không liên kết gì nhau — chỉ chung `table_id` lúc thanh toán. Đơn gốc còn lại trên bàn là đơn `open` bình thường (sửa/void được); bàn chỉ trống khi đơn gốc được trả nốt (qua `pay_order`).
 - **Quy tắc đánh số**: bill trả trước mang `order_no` nhỏ hơn — đơn tách kế thừa số của đơn gốc, đơn gốc nhận số mới (max+1 theo `business_date`). Bàn #12 trả 2 lần → bill #12, phần còn lại thành #13, bill #13.
 - Trả một phần số lượng của một dòng (vd 1 trong 2 Cà phê sữa) → tách dòng: dòng mới (UUID client cấp qua `splitItemId`) thuộc **đơn tách**; dòng gốc giảm quantity. Options của dòng tách là snapshot copy (id server cấp).
-- Report tính order `paid` theo `business_date` — **mỗi lần thu vào report NGAY** vì đơn tách paid tức thì (không có trạng thái "tiền đã thu nhưng chưa ghi nhận").
-- Order history là order-centric: mỗi bill (đơn tách hoặc đơn thường) một dòng, không có liên kết giữa các đơn tách từ cùng một bàn.
+- Report tính order `paid` theo `business_date` — **mỗi lần thu vào report NGAY** vì đơn tách paid tức thì (không có trạng thái "tiền đã thu nhưng chưa ghi nhận"). Không có bảng tổng hợp lưu sẵn nên khi một đơn chuyển `paid → void`, doanh thu ngày/tháng tự loại đơn đó ra (không cần bút toán điều chỉnh).
+- `CoreReport` bổ sung `voidCount`/`voidAmount` = số đơn và tổng tiền của các đơn **paid-rồi-hủy** (`status='void'` và `paid_at is not null`) theo `business_date`; đơn open-bị-hủy (`paid_at` null, `total` 0) không tính vào đây.
+- Order history là order-centric: mỗi bill (đơn tách hoặc đơn thường) một dòng, không có liên kết giữa các đơn tách từ cùng một bàn. Đơn `void` hiển thị trong history (filter "Đã hủy") kèm người hủy/thời điểm/lý do.
 
 ## RPC Chính
 
 - `submit_order_changes`: tạo/cập nhật order mở, snapshot giá/tên/options, cập nhật table occupied/empty, in ticket khi có order mở.
 - `pay_order`: tạo payment, set order paid, set table empty, trả payload receipt.
 - `pay_order_items`: instant pay tách đơn — validate từng dòng + tính tiền phía server, swap `order_no` (đơn tách kế thừa số, đơn gốc nhận số mới), move/tách dòng sang đơn mới, tạo payment và set đơn mới `paid` ngay, tính lại tổng + bump `lock_version` đơn gốc. Từ chối selection phủ 100% đơn (client phải dùng `pay_order`). Trả về thông tin đơn tách (`orderId/orderNo/total/receipt`) + đơn gốc (`sourceOrderId/sourceOrderNo/sourceTotal/sourceLockVersion`).
+- `void_order` (migration 011, thay stub reserved cũ): hủy một đơn **đã thanh toán**. Tham số `(p_order_id, p_employee_id, p_expected_lock_version, p_reason_code, p_reason_note)`. Check quyền `order.voidPaid` (role admin hoặc grant override, denies thắng), validate `reason_code` (5 giá trị; `other` bắt buộc có note), khóa đơn `for update`, chỉ nhận `status='paid'` + đúng `lock_version` (sai → `ORDER_VERSION_CONFLICT`), rồi set `void` + metadata hủy + bump version. Không đụng total/order_no/paid_at/payment/bàn.
+- `verify_employee_pin` (migration 011): trả thêm cột `permission_overrides` để client dựng quyền của nhân viên đang đăng nhập.
 - `clear_demo_data`: admin-only, block nếu còn open orders, xóa mềm dữ liệu seed và giữ admin.
 
 ## Domain Types Trong App
 
 - `MenuCatalog`: categories, menuItems, optionGroups, optionValues.
 - `FloorPlan`: areas, tables, decorItems.
-- `OrderSummary`/`OrderDetail`: order state, total, table/order type, snapshot items; `OrderDetail.payment` giữ payment snapshot nullable cho đơn đã thanh toán.
+- `OrderSummary`/`OrderDetail`: order state, total, table/order type, snapshot items; `OrderDetail.payment` giữ payment snapshot nullable cho đơn đã thanh toán; `OrderDetail` còn có metadata hủy (`voidedAt`, `voidedByEmployeeId`, `voidReasonCode`, `voidReasonNote`).
+- `VoidOrderInput`/`VoidOrderResult`: hủy đơn đã thanh toán (`reasonCode: VoidReasonCode`, `reasonNote`, `expectedVersion`). `EmployeePermission`/`EmployeePermissionOverrides`: seam quyền theo hành động trên `Employee.permissionOverrides`.
 - `PayOrderInput`/`PayOrderResult`: payment cash flow và receipt payload.
 - `PayOrderItemsInput`/`PayOrderItemsResult`: instant pay tách đơn (`newOrderId` + `items: {orderItemId, quantity, splitItemId}`), kết quả gồm đơn tách đã paid + trạng thái đơn gốc còn lại.
 - `MenuChanges`/`FloorPlanChanges`: changeset create/update/delete cho editor.

@@ -93,11 +93,12 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 
 ## Permission
 
-- `canAccessModule` phân quyền app-layer theo role.
-- `admin`: toàn bộ POS/admin.
-- `cashier`: floor/order/payment/order history.
-- `kitchen`: kitchen seam.
-- Các action admin gọi feature flow có guard, không chỉ dựa vào disabled button.
+- Hai trục quyền độc lập trong `core/guards.ts`:
+  - **Module** (`canAccessModule`/`requireModuleAccess`): thấy/mở được màn nào — theo role.
+  - **Hành động** (`hasPermission`/`requirePermission`): được thực hiện thao tác nào (vd `order.voidPaid`). Mặc định suy từ role qua `defaultRolePermissions`, ghi đè per-employee bằng `Employee.permissionOverrides` (`grants`/`denies`). Quyền hiệu lực = (default ∪ grants) − denies.
+- `admin`: toàn bộ POS/admin. `cashier`: floor/order/payment/order history. `kitchen`: kitchen seam.
+- Các action quan trọng gọi feature flow có guard (`requirePermission`/`requireAdminActor`), không chỉ dựa vào disabled button; RPC nhạy cảm (vd `void_order`) guardrail lại quyền ở DB nhưng đó chỉ là phòng thủ/audit — **quyền theo nhân viên là app-layer, không phải DB-secured** (spoof được với session hợp lệ). RLS chỉ cô lập dữ liệu theo store.
+- Seam phân quyền theo hành động (data `permission_overrides` + hàm check + consumer đầu tiên là hủy đơn đã thanh toán) đã có sẵn; UI chỉnh quyền per-employee là phase phân quyền sau.
 
 ## Print
 

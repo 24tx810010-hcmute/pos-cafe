@@ -16,6 +16,7 @@
 - `cashier`: dùng floor, order, payment, order history.
 - `kitchen`: role được chừa sẵn cho kitchen queue; không phải feature bắt buộc của phase này.
 - UI disable/guard module không có quyền; core guard vẫn kiểm tra ở action quan trọng.
+- Có 2 trục quyền độc lập trong `core/guards.ts`: **module** (`canAccessModule` — thấy gì trên nav) và **hành động** (`hasPermission`/`requirePermission` — được làm gì, vd `order.voidPaid`). Quyền hành động mặc định suy từ role, có thể ghi đè per-employee qua `Employee.permissionOverrides` (grants/denies) — nên hai nhân viên cùng role vẫn có thể khác quyền. Seam đã có (data + hàm check + consumer đầu tiên là hủy đơn); UI chỉnh quyền per-employee làm ở phase phân quyền sau.
 
 ## POS Floor
 
@@ -76,8 +77,9 @@
 - Cột phải hiển thị item snapshot/options/note/quantity, khách hàng fallback `Khách lẻ`, người thanh toán fallback `Khách lẻ`, thu ngân từ payment employee, phương thức thanh toán, paid time.
 - Summary thanh toán cố định cuối cột phải theo thứ tự `Khách đưa`, `Tiền thừa`, `Tổng tiền`; `Tổng tiền` nổi bật hơn.
 - `OrderDetail` đọc payment snapshot để lịch sử hiển thị đúng `receivedAmount` và `changeAmount`, không tính tạm ở UI.
-- Nút `In lại hóa đơn` dựng lại bill từ order detail đã lưu và mở popup hoá đơn (dùng chung `ReceiptDocument`); đơn chưa có payment thì báo không in được.
-- Dùng cho cashier và admin.
+- Nút `In lại hóa đơn` dựng lại bill từ order detail đã lưu và mở popup hoá đơn (dùng chung `ReceiptDocument`); đơn chưa có payment thì báo không in được. Đơn `void` không in lại được (nút bị disable).
+- **Hủy đơn đã thanh toán**: nút `Hủy đơn` chỉ hiện với người có quyền `order.voidPaid` (mặc định admin) và đơn đang ở `Đã thanh toán`. Bấm mở popup xác nhận: cảnh báo rõ "đơn <số tiền> sẽ bị loại khỏi doanh thu ngày DD/MM, không thể hoàn tác", chọn 1 trong các lý do ghi sẵn (Nhập sai đơn/sai món, Khách đổi ý/trả món, Hết món/hết nguyên liệu, Đơn bị trùng, Lý do khác) + ô ghi chú (bắt buộc khi chọn "Lý do khác"). Sau khi hủy, đơn chuyển `Đã hủy`, cột chi tiết hiển thị người hủy/thời điểm/lý do, và bị loại khỏi doanh thu (report tự cập nhật). Quyền được chốt ở flow (`requirePermission`) và guardrail lại trong RPC — không tin nút bị ẩn.
+- Dùng cho cashier và admin (hủy đơn đã thanh toán mặc định chỉ admin, trừ khi cashier được cấp `order.voidPaid`).
 
 ## Employees
 
@@ -114,7 +116,8 @@
 - Core report theo `business_date`.
 - Doanh thu, số đơn đã thanh toán, average ticket, top item.
 - Biểu đồ doanh thu theo giờ.
-- Report chỉ tính order đã thanh toán và loại order hủy.
+- Report chỉ tính order đã thanh toán và loại order hủy. Đơn `paid` bị hủy tự động rời khỏi doanh thu (report tính live, không có bảng tổng hợp).
+- Tổng hợp đơn hủy cho admin/chủ: `CoreReport.voidCount`/`voidAmount` đếm các đơn **paid-rồi-hủy** theo `business_date`; hiển thị ở rail trái (số đơn huỷ + tiền hủy). Nguồn lấy từ CoreReport chứ không đếm từ mảng orders phân trang.
 - Bộ lọc khoảng: Hôm nay / 7 ngày / Tháng này / Tuỳ chọn (from–to). Nút Xuất hiện disabled (chưa hỗ trợ export).
 - Layout dashboard **master/detail** (phase 12): rail trái = thẻ doanh thu + sparkline theo giờ, nav mục báo cáo (có badge) và tóm tắt nhanh (giờ cao điểm, thanh toán phổ biến, đơn huỷ); pane phải = chi tiết mục đang chọn. 4 mục: Tổng quan (KPI tile + biểu đồ giờ + món bán chạy), Theo giờ (bảng), Món bán chạy (bar-list), Đơn đã thanh toán (bảng).
 - Look mô phỏng Tremor nhưng dựng bằng Tailwind `pos-*` + Recharts, không thêm dependency.
