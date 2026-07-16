@@ -3,6 +3,7 @@ import type {
   PaymentMethod,
   SeedStatus,
   SubmitOrderDraftItem,
+  VoidReasonCode,
 } from "./models";
 
 export type CreateStoreInput = {
@@ -71,6 +72,14 @@ export type PayOrderItemsInput = {
   expectedVersion: number;
   receivedAmount: number;
   items: PayOrderItemLine[];
+};
+
+export type VoidOrderInput = {
+  orderId: string;
+  employeeId: string;
+  expectedVersion: number;
+  reasonCode: VoidReasonCode;
+  reasonNote: string | null;
 };
 
 export type OrderHistoryFilter = {

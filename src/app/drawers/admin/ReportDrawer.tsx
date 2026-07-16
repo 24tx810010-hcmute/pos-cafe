@@ -213,6 +213,7 @@ export function ReportDrawer() {
         <div className="flex justify-between text-xs"><span className="text-pos-muted">Giờ cao điểm</span><strong className="font-bold text-pos-warning">{hasData ? maxHour.label : "—"}</strong></div>
         <div className="flex justify-between text-xs"><span className="text-pos-muted">Thanh toán phổ biến</span><strong className="font-bold">{topMethod}</strong></div>
         <div className="flex justify-between text-xs"><span className="text-pos-muted">Đơn đã huỷ</span><strong className="font-bold">{dataset.voidCount}</strong></div>
+        <div className="flex justify-between text-xs"><span className="text-pos-muted">Tiền hủy</span><strong className="font-bold text-pos-warning">{formatVnd(dataset.voidAmount)}</strong></div>
       </div>
     </div>
   );

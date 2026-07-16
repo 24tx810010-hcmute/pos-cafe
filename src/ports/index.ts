@@ -25,6 +25,8 @@ import type {
   StoreSettingsUpdate,
   SubmitOrderChangesInput,
   SubmitOrderChangesResult,
+  VoidOrderInput,
+  VoidOrderResult,
 } from "@/domain";
 
 export interface IAuthRepo {
@@ -75,6 +77,8 @@ export interface IOrderRepo {
   submitOrderChanges(input: SubmitOrderChangesInput): Promise<SubmitOrderChangesResult>;
   listTakeawayOpenOrders(): Promise<OrderSummary[]>;
   listOrderHistory(filter: OrderHistoryFilter): Promise<OrderSummaryPage>;
+  /** Hủy một đơn ĐÃ THANH TOÁN: giữ nguyên total/order_no/payment, chỉ đổi status + metadata hủy. */
+  voidOrder(input: VoidOrderInput): Promise<VoidOrderResult>;
 }
 
 export interface IPaymentRepo {

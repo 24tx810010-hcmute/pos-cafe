@@ -1,5 +1,7 @@
 import { AppError } from "@/core/appError";
+import { requirePermission } from "@/core/guards";
 import type {
+  Employee,
   MenuCatalog,
   MenuItem,
   OptionGroup,
@@ -14,6 +16,8 @@ import type {
   SubmitOrderChangesResult,
   SubmitOrderDraftItem,
   SubmitOrderDraftOption,
+  VoidOrderResult,
+  VoidReasonCode,
 } from "@/domain";
 import type { AppPorts } from "@/ports";
 
@@ -418,4 +422,37 @@ export const payOrderItemsAndPrint = async (
   }
 
   return { mode: "split", ...result };
+};
+
+// ----- Hủy đơn đã thanh toán --------------------------------------------------
+
+export type VoidPaidOrderFlowInput = {
+  actor: Employee;
+  order: Pick<OrderDetail, "id" | "lockVersion">;
+  reasonCode: VoidReasonCode;
+  reasonNote: string;
+};
+
+/**
+ * Hủy một đơn ĐÃ THANH TOÁN. Chốt quyền tại flow (không tin nút bị ẩn) qua
+ * requirePermission("order.voidPaid"); "Lý do khác" bắt buộc có ghi chú.
+ */
+export const voidPaidOrder = async (
+  ports: AppPorts,
+  input: VoidPaidOrderFlowInput,
+): Promise<VoidOrderResult> => {
+  requirePermission(input.actor, "order.voidPaid");
+
+  const note = input.reasonNote.trim();
+  if (input.reasonCode === "other" && !note) {
+    throw new AppError("VOID_REASON_REQUIRED", "Vui lòng nhập lý do hủy.");
+  }
+
+  return ports.order.voidOrder({
+    orderId: input.order.id,
+    employeeId: input.actor.id,
+    expectedVersion: input.order.lockVersion,
+    reasonCode: input.reasonCode,
+    reasonNote: note || null,
+  });
 };

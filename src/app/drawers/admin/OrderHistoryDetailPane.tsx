@@ -1,8 +1,8 @@
 import clsx from "clsx";
-import { AlertTriangle, CheckCircle2, Copy, Printer, ReceiptText, RefreshCw } from "lucide-react";
+import { AlertTriangle, Ban, CheckCircle2, Copy, Printer, ReceiptText, RefreshCw } from "lucide-react";
 import { formatVndShort } from "@/core/money";
 import type { OrderDetail, OrderPaymentSnapshot } from "@/domain";
-import type { HistoryOrderRow } from "@/features/pos/historyHelpers";
+import { voidReasonLabel, type HistoryOrderRow } from "@/features/pos/historyHelpers";
 import { toToastError } from "../../appErrors";
 import { IconButton, itemLineTotal, itemMeta, statusClass, statusLabel } from "./orderHistoryShared";
 
@@ -16,9 +16,13 @@ interface OrderHistoryDetailPaneProps {
   cashierLabel: string;
   paymentMethodLabel: string;
   paidTimeLabel: string;
+  canVoid: boolean;
+  voidedByLabel: string;
+  voidedTimeLabel: string;
   onReprint: () => void;
   onCopyOrderNo: () => void;
   onRetry: () => void;
+  onVoid: () => void;
 }
 
 export function OrderHistoryDetailPane({
@@ -31,9 +35,13 @@ export function OrderHistoryDetailPane({
   cashierLabel,
   paymentMethodLabel,
   paidTimeLabel,
+  canVoid,
+  voidedByLabel,
+  voidedTimeLabel,
   onReprint,
   onCopyOrderNo,
   onRetry,
+  onVoid,
 }: OrderHistoryDetailPaneProps) {
   return (
     <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[10px] border border-pos-line bg-white">
@@ -47,7 +55,7 @@ export function OrderHistoryDetailPane({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <IconButton disabled={!selected} label="In lại hóa đơn" onClick={onReprint}>
+          <IconButton disabled={!selected || selected.status === "void"} label="In lại hóa đơn" onClick={onReprint}>
             <Printer size={16} />
           </IconButton>
           <IconButton disabled={!selected} label="Sao chép mã đơn" onClick={onCopyOrderNo}>
@@ -119,6 +127,31 @@ export function OrderHistoryDetailPane({
                 <strong className="block truncate text-[13px] text-pos-ink max-[760px]:text-xs">{paymentMethodLabel}</strong>
               </div>
             </div>
+
+            {selected.status === "void" && (
+              <div
+                data-testid="history-void-info"
+                className="grid gap-1 rounded-[8px] border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-xs"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-pos-muted">Người hủy</span>
+                  <strong className="truncate text-[13px] text-[#991b1b]">{voidedByLabel}</strong>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-pos-muted">Thời điểm hủy</span>
+                  <strong className="truncate text-[13px] text-[#991b1b]">{voidedTimeLabel}</strong>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-pos-muted">Lý do</span>
+                  <strong className="truncate text-[13px] text-[#991b1b]">{voidReasonLabel(detail?.voidReasonCode ?? null)}</strong>
+                </div>
+                {detail?.voidReasonNote && (
+                  <p className="m-0 mt-0.5 border-t border-[#fecaca] pt-1 text-[11px] font-semibold text-pos-muted">
+                    {detail.voidReasonNote}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="grid gap-2">
               <div className="flex items-center justify-between gap-2">
@@ -205,6 +238,19 @@ export function OrderHistoryDetailPane({
             {formatVndShort(detail?.total ?? selected?.total ?? 0)}
           </strong>
         </div>
+
+        {canVoid && selected?.status === "paid" && (
+          <button
+            type="button"
+            data-testid="history-void-order"
+            disabled={!detail}
+            onClick={onVoid}
+            className="mt-1 inline-flex min-h-10 items-center justify-center gap-2 rounded-[9px] border border-[#fecaca] bg-[#fef2f2] px-3 text-sm font-black text-[#b91c1c] transition-colors hover:border-[#f87171] hover:bg-[#fee2e2] disabled:cursor-not-allowed disabled:opacity-40 max-[760px]:min-h-9 max-[760px]:text-xs"
+          >
+            <Ban size={16} />
+            Hủy đơn
+          </button>
+        )}
       </div>
     </aside>
   );

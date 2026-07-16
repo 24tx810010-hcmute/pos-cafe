@@ -13,6 +13,7 @@ export interface RpDataset {
   avgTicket: number;
   topItemName: string;
   voidCount: number;
+  voidAmount: number;
   hourly: RpHour[];
   topItems: RpTopItem[];
   orders: RpOrder[];
@@ -60,7 +61,9 @@ export function buildReportDatasetFromReports(
     paidOrders,
     avgTicket: paidOrders ? Math.round(revenue / paidOrders) : 0,
     topItemName: topItems[0]?.name ?? "-",
-    voidCount: orders.filter((order) => order.status === "void").length,
+    // Nguồn từ CoreReport (đơn paid-rồi-hủy theo business_date), không đếm từ mảng orders phân trang.
+    voidCount: reports.reduce((sum, report) => sum + report.voidCount, 0),
+    voidAmount: reports.reduce((sum, report) => sum + report.voidAmount, 0),
     hourly,
     topItems,
     orders: orders

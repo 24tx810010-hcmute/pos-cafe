@@ -1,6 +1,15 @@
 import type { IOrderRepo } from "@/ports";
-import type { OrderDetail, OrderHistoryFilter, OrderSummary, SubmitOrderChangesInput, SubmitOrderChangesResult } from "@/domain";
+import type {
+  OrderDetail,
+  OrderHistoryFilter,
+  OrderSummary,
+  SubmitOrderChangesInput,
+  SubmitOrderChangesResult,
+  VoidOrderInput,
+  VoidOrderResult,
+} from "@/domain";
 import { AppError } from "@/core/appError";
+import { requirePermission } from "@/core/guards";
 import { calculateSnapshotTotal, snapshotDraftItems } from "@/core/orderDraft";
 import { clone, getTodayBusinessDate, type MockState } from "./mockState";
 import { makeTicket, toSummary } from "./mockRepoShared";
@@ -94,6 +103,10 @@ export class MockOrderRepo implements IOrderRepo {
       lockVersion: 0,
       paidAt: null,
       payment: null,
+      voidedAt: null,
+      voidedByEmployeeId: null,
+      voidReasonCode: null,
+      voidReasonNote: null,
       total: 0,
       items: snapshotDraftItems(this.state.menu, activeItems),
     };
@@ -145,6 +158,39 @@ export class MockOrderRepo implements IOrderRepo {
       ))
       .map(toSummary);
     return { items: items.slice(from, from + filter.pageSize), total: items.length };
+  }
+
+  async voidOrder(input: VoidOrderInput): Promise<VoidOrderResult> {
+    const employee = this.state.employees.find((candidate) => candidate.id === input.employeeId) ?? null;
+    requirePermission(employee, "order.voidPaid");
+
+    if (input.reasonCode === "other" && !input.reasonNote?.trim()) {
+      throw new AppError("VOID_REASON_REQUIRED", "Vui lòng nhập lý do hủy.");
+    }
+
+    const order = this.state.orders.find((candidate) => candidate.id === input.orderId);
+    if (!order) {
+      throw new AppError("NOT_FOUND", "Không tìm thấy đơn.");
+    }
+
+    if (order.status !== "paid" || order.lockVersion !== input.expectedVersion) {
+      throw new AppError("ORDER_VERSION_CONFLICT", "Dữ liệu đã thay đổi, vui lòng tải lại.");
+    }
+
+    // Giữ nguyên total/order_no/paidAt/payment/bàn; chỉ đổi status + ghi metadata hủy.
+    order.status = "void";
+    order.voidedAt = new Date().toISOString();
+    order.voidedByEmployeeId = input.employeeId;
+    order.voidReasonCode = input.reasonCode;
+    order.voidReasonNote = input.reasonNote?.trim() || null;
+    order.lockVersion += 1;
+
+    return {
+      orderId: order.id,
+      status: "void",
+      lockVersion: order.lockVersion,
+      voidedAt: order.voidedAt,
+    };
   }
 
   private setTableStatus(tableId: string, status: "empty" | "occupied"): void {

@@ -10,6 +10,7 @@ export type AppErrorCode =
   | "INVALID_ORDER_ITEMS"
   | "INVALID_ORDER_ID"
   | "INVALID_PAYMENT_ID"
+  | "VOID_REASON_REQUIRED"
   | "TABLE_NOT_FOUND"
   | "NOT_FOUND"
   | "UNKNOWN";

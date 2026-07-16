@@ -11,7 +11,7 @@ export class SupabaseEmployeeRepo implements IEmployeeRepo {
   async listEmployees(): Promise<Employee[]> {
     const { data, error } = await this.client
       .from("employees")
-      .select("id,name,role,is_active")
+      .select("id,name,role,is_active,permission_overrides")
       .order("name");
     throwIfError(error);
     return ((data ?? []) as Row[]).map(mapEmployee);
@@ -20,7 +20,7 @@ export class SupabaseEmployeeRepo implements IEmployeeRepo {
   async listActiveEmployees(): Promise<Employee[]> {
     const { data, error } = await this.client
       .from("employees")
-      .select("id,name,role,is_active")
+      .select("id,name,role,is_active,permission_overrides")
       .eq("is_active", true)
       .order("name");
     throwIfError(error);
@@ -51,7 +51,7 @@ export class SupabaseEmployeeRepo implements IEmployeeRepo {
         passcode_hash: passcodeHash,
         is_active: true,
       })
-      .select("id,name,role,is_active")
+      .select("id,name,role,is_active,permission_overrides")
       .single();
     return mapEmployee(requireData<Row>(data as Row | null, error));
   }
@@ -67,7 +67,7 @@ export class SupabaseEmployeeRepo implements IEmployeeRepo {
         }),
       )
       .eq("id", input.id)
-      .select("id,name,role,is_active")
+      .select("id,name,role,is_active,permission_overrides")
       .single();
     return mapEmployee(requireData<Row>(data as Row | null, error, "NOT_FOUND"));
   }

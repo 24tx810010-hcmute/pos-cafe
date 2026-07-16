@@ -9,6 +9,18 @@ export class SupabaseReportRepo implements IReportRepo {
   constructor(private readonly client: SupabaseAnyClient) {}
 
   async getCoreReport(filter: ReportFilter): Promise<CoreReport> {
+    // Đơn paid-rồi-hủy (paid_at not null): loại khỏi doanh thu, gom vào tổng hợp đơn hủy.
+    const { data: voidRows, error: voidError } = await this.client
+      .from("orders")
+      .select("total")
+      .eq("status", "void")
+      .not("paid_at", "is", null)
+      .eq("business_date", filter.businessDate);
+    throwIfError(voidError);
+    const voidOrders = (voidRows ?? []) as Row[];
+    const voidCount = voidOrders.length;
+    const voidAmount = voidOrders.reduce((sum, order) => sum + Number(order.total ?? 0), 0);
+
     const { data: orderRows, error } = await this.client
       .from("orders")
       .select("id,total,business_date,paid_at,created_at")
@@ -19,7 +31,7 @@ export class SupabaseReportRepo implements IReportRepo {
     const orders = (orderRows ?? []) as Row[];
 
     if (orders.length === 0) {
-      return emptyCoreReport(filter.businessDate);
+      return { ...emptyCoreReport(filter.businessDate), voidCount, voidAmount };
     }
 
     const orderIds = orders.map((order) => String(order.id));
@@ -58,6 +70,8 @@ export class SupabaseReportRepo implements IReportRepo {
       hourlyRevenue: [...hourlyRevenue.entries()]
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([label, value]) => ({ label, revenue: value })),
+      voidCount,
+      voidAmount,
     };
   }
 }

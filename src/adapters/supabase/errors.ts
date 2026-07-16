@@ -12,6 +12,7 @@ const appErrorMessages: Record<AppErrorCode, string> = {
   INVALID_ORDER_ITEMS: "Dữ liệu món trong đơn không hợp lệ.",
   INVALID_ORDER_ID: "Mã đơn hàng không hợp lệ.",
   INVALID_PAYMENT_ID: "Mã thanh toán không hợp lệ.",
+  VOID_REASON_REQUIRED: "Vui lòng nhập lý do hủy.",
   TABLE_NOT_FOUND: "Không tìm thấy bàn.",
   NOT_FOUND: "Không tìm thấy dữ liệu.",
   UNKNOWN: "Có lỗi xảy ra.",

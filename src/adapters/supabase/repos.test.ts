@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { MenuChanges, FloorPlanChanges } from "@/domain";
 import { createSupabasePorts } from "./repos";
-import { mapOrderDetail } from "./mappers";
+import { mapEmployee, mapOrderDetail } from "./mappers";
 
 const submitResult = {
   orderId: "ord-1",
@@ -120,7 +120,7 @@ describe("Supabase adapter ports", () => {
       expect.objectContaining({ id: "emp-cashier-1", isActive: false }),
     ]);
     expect(client.from).toHaveBeenCalledWith("employees");
-    expect(select).toHaveBeenCalledWith("id,name,role,is_active");
+    expect(select).toHaveBeenCalledWith("id,name,role,is_active,permission_overrides");
     expect(eq).not.toHaveBeenCalled();
 
     await ports.employee.listActiveEmployees();
@@ -224,6 +224,90 @@ describe("Supabase adapter ports", () => {
     });
     expect(client.rpc).toHaveBeenCalledWith("clear_demo_data", { p_employee_id: "emp-admin" });
     expect(result.receipt.changeAmount).toBe(5000);
+  });
+
+  it("maps voidOrder to its RPC param contract", async () => {
+    const client = createRpcClient({
+      void_order: {
+        orderId: "ord-1",
+        status: "void",
+        lockVersion: 3,
+        voidedAt: "2026-06-12T09:00:00.000Z",
+      },
+    });
+    const ports = createSupabasePorts(client as never);
+
+    const result = await ports.order.voidOrder({
+      orderId: "ord-1",
+      employeeId: "emp-admin",
+      expectedVersion: 2,
+      reasonCode: "wrong_order",
+      reasonNote: null,
+    });
+
+    expect(client.rpc).toHaveBeenCalledWith("void_order", {
+      p_order_id: "ord-1",
+      p_employee_id: "emp-admin",
+      p_expected_lock_version: 2,
+      p_reason_code: "wrong_order",
+      p_reason_note: null,
+    });
+    expect(result).toEqual({
+      orderId: "ord-1",
+      status: "void",
+      lockVersion: 3,
+      voidedAt: "2026-06-12T09:00:00.000Z",
+    });
+  });
+
+  it("maps void metadata on order detail", () => {
+    const detail = mapOrderDetail(
+      {
+        id: "ord-1",
+        order_no: 31,
+        status: "void",
+        total: 45000,
+        lock_version: 3,
+        table_id: "tbl-b01",
+        order_type: "dine_in",
+        business_date: "2026-06-12",
+        paid_at: "2026-06-12T08:30:00.000Z",
+        voided_at: "2026-06-12T09:00:00.000Z",
+        voided_by_employee_id: "emp-admin",
+        void_reason_code: "customer_request",
+        void_reason_note: "Khách đổi ý",
+      },
+      [],
+      [],
+      null,
+    );
+
+    expect(detail.voidedAt).toBe("2026-06-12T09:00:00.000Z");
+    expect(detail.voidedByEmployeeId).toBe("emp-admin");
+    expect(detail.voidReasonCode).toBe("customer_request");
+    expect(detail.voidReasonNote).toBe("Khách đổi ý");
+  });
+
+  it("maps employee permission overrides defensively", () => {
+    expect(
+      mapEmployee({
+        id: "e1",
+        name: "A",
+        role: "cashier",
+        is_active: true,
+        permission_overrides: { grants: ["order.voidPaid"], denies: [] },
+      }).permissionOverrides,
+    ).toEqual({ grants: ["order.voidPaid"], denies: [] });
+
+    expect(
+      mapEmployee({ id: "e2", name: "B", role: "cashier", is_active: true, permission_overrides: null })
+        .permissionOverrides,
+    ).toBeUndefined();
+
+    expect(
+      mapEmployee({ id: "e3", name: "C", role: "cashier", is_active: true, permission_overrides: "oops" })
+        .permissionOverrides,
+    ).toBeUndefined();
   });
 
   it("maps order detail payment snapshots from payment rows", () => {

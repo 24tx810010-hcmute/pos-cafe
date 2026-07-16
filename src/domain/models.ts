@@ -5,6 +5,27 @@ export type TableStatus = "empty" | "occupied";
 export type PaymentMethod = "cash" | "bank_transfer" | "qr" | "other";
 export type SeedStatus = "pending" | "seeded" | "failed";
 
+/** Lý do hủy một đơn đã thanh toán. */
+export type VoidReasonCode =
+  | "wrong_order"
+  | "customer_request"
+  | "out_of_stock"
+  | "duplicate"
+  | "other";
+
+/** Quyền theo hành động (tách khỏi quyền vào module trong core/guards). */
+export type EmployeePermission =
+  | "order.create"
+  | "order.update"
+  | "payment.take"
+  | "order.voidPaid";
+
+/** Ghi đè quyền cho từng nhân viên: quyền hiệu lực = (default_theo_role ∪ grants) − denies. */
+export type EmployeePermissionOverrides = {
+  grants: EmployeePermission[];
+  denies: EmployeePermission[];
+};
+
 export type StoreSession = {
   storeId: string;
   storeNo: number;
@@ -15,6 +36,7 @@ export type Employee = {
   name: string;
   role: EmployeeRole;
   isActive: boolean;
+  permissionOverrides?: EmployeePermissionOverrides;
 };
 
 export type StoreSettings = {
@@ -179,6 +201,10 @@ export type OrderDetail = OrderSummary & {
   items: OrderItemSnapshot[];
   paidAt: string | null;
   payment: OrderPaymentSnapshot | null;
+  voidedAt: string | null;
+  voidedByEmployeeId: string | null;
+  voidReasonCode: VoidReasonCode | null;
+  voidReasonNote: string | null;
 };
 
 export type PrintLine = {
@@ -254,4 +280,15 @@ export type CoreReport = {
   averageTicket: number;
   topItemName: string;
   hourlyRevenue: Array<{ label: string; revenue: number }>;
+  /** Số đơn đã thanh toán rồi bị hủy trong business_date. */
+  voidCount: number;
+  /** Tổng total của các đơn paid-rồi-hủy đó. */
+  voidAmount: number;
+};
+
+export type VoidOrderResult = {
+  orderId: string;
+  status: "void";
+  lockVersion: number;
+  voidedAt: string;
 };

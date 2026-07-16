@@ -135,6 +135,10 @@ export class MockPaymentRepo implements IPaymentRepo {
       status: "paid",
       lockVersion: 0,
       paidAt,
+      voidedAt: null,
+      voidedByEmployeeId: null,
+      voidReasonCode: null,
+      voidReasonNote: null,
       total: amount,
       items: movedItems,
       payment: {

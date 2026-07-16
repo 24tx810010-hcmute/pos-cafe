@@ -1,4 +1,15 @@
-import type { FloorPlan, OrderSummary } from "@/domain";
+import type { FloorPlan, OrderSummary, VoidReasonCode } from "@/domain";
+
+export const VOID_REASON_OPTIONS: Array<{ code: VoidReasonCode; label: string }> = [
+  { code: "wrong_order", label: "Nhập sai đơn / sai món" },
+  { code: "customer_request", label: "Khách đổi ý / trả món" },
+  { code: "out_of_stock", label: "Hết món / hết nguyên liệu" },
+  { code: "duplicate", label: "Đơn bị trùng" },
+  { code: "other", label: "Lý do khác" },
+];
+
+export const voidReasonLabel = (code: VoidReasonCode | null): string =>
+  VOID_REASON_OPTIONS.find((option) => option.code === code)?.label ?? "Không rõ";
 
 export type HistoryDateRange = "today" | "7days" | "month" | "custom";
 export type HistoryStatusFilter = "all" | "paid" | "void";

@@ -12,6 +12,8 @@ describe("buildReportDatasetFromReports", () => {
         averageTicket: 50_000,
         topItemName: "Latte",
         hourlyRevenue: [{ label: "09", revenue: 100_000 }],
+        voidCount: 1,
+        voidAmount: 20_000,
       },
       {
         businessDate: "2026-06-21",
@@ -20,6 +22,8 @@ describe("buildReportDatasetFromReports", () => {
         averageTicket: 50_000,
         topItemName: "Latte",
         hourlyRevenue: [{ label: "10", revenue: 50_000 }],
+        voidCount: 2,
+        voidAmount: 30_000,
       },
     ];
     const orders: OrderSummary[] = [
@@ -46,6 +50,8 @@ describe("buildReportDatasetFromReports", () => {
     expect(dataset.paidOrders).toBe(3);
     expect(dataset.avgTicket).toBe(50_000);
     expect(dataset.topItemName).toBe("Latte");
+    expect(dataset.voidCount).toBe(3);
+    expect(dataset.voidAmount).toBe(50_000);
     expect(dataset.orders).toEqual([
       { id: "ord-1", orderNo: 1, time: "21/06/2026", table: "B01", total: 100_000, method: "paid" },
     ]);

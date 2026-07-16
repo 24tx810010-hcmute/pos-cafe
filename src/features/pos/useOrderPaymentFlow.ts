@@ -5,9 +5,11 @@ import {
   payOrderAndPrint,
   payOrderItemsAndPrint,
   submitOrderAndPrint,
+  voidPaidOrder,
   type PayOrderFlowInput,
   type PayOrderItemsFlowInput,
   type SubmitOrderFlowInput,
+  type VoidPaidOrderFlowInput,
 } from "./orderFlow";
 
 export const useSubmitOrderMutation = () => {
@@ -47,6 +49,19 @@ export const usePayOrderItemsMutation = () => {
       // Tách đơn: đơn gốc trên bàn cũng đổi (order_no mới, tổng mới) -> invalidate cả hai.
       const sourceOrderId = result.mode === "split" ? result.sourceOrderId : result.orderId;
       void invalidateAfterOrderMutation(queryClient, sourceOrderId).catch(() => {});
+    },
+  });
+};
+
+export const useVoidOrderMutation = () => {
+  const ports = usePorts();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: VoidPaidOrderFlowInput) => voidPaidOrder(ports, input),
+    onSuccess: (result) => {
+      // Đơn chuyển 'void': history + order detail + report đều cần cập nhật.
+      void invalidateAfterOrderMutation(queryClient, result.orderId).catch(() => {});
     },
   });
 };

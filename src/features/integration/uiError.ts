@@ -110,6 +110,14 @@ const UI_ERROR_BY_CODE: Record<AppErrorCode, UiError> = {
     blocking: true,
     action: "retry",
   },
+  VOID_REASON_REQUIRED: {
+    code: "VOID_REASON_REQUIRED",
+    title: "Thiếu lý do hủy",
+    message: "Chọn lý do hủy; nếu chọn \"Lý do khác\" thì phải nhập nội dung.",
+    severity: "warning",
+    blocking: false,
+    action: "retry",
+  },
   TABLE_NOT_FOUND: {
     code: "TABLE_NOT_FOUND",
     title: "Không tìm thấy bàn",

@@ -321,6 +321,45 @@ describe("mock repositories", () => {
     expect(floorPlan.tables).toEqual(expect.arrayContaining([expect.objectContaining({ id: "tbl-r01", status: "empty" })]));
     expect(movedTable).toMatchObject({ posX: 540, posY: 240, status: originalStatus });
   });
+
+  it("voidOrder guards against missing orders, non-paid orders and lacking permission", async () => {
+    const ports = createMockPorts(createSeededMockState());
+
+    // Không tồn tại.
+    await expect(
+      ports.order.voidOrder({
+        orderId: "does-not-exist",
+        employeeId: "emp-admin",
+        expectedVersion: 0,
+        reasonCode: "wrong_order",
+        reasonNote: null,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    // Đơn đang mở (chưa thanh toán) không đi đường này.
+    const open = await ports.order.getOrder("ord-b02");
+    await expect(
+      ports.order.voidOrder({
+        orderId: "ord-b02",
+        employeeId: "emp-admin",
+        expectedVersion: open.lockVersion,
+        reasonCode: "wrong_order",
+        reasonNote: null,
+      }),
+    ).rejects.toMatchObject({ code: "ORDER_VERSION_CONFLICT" });
+
+    // Thu ngân không có quyền.
+    const paid = await ports.order.getOrder("ord-paid-1");
+    await expect(
+      ports.order.voidOrder({
+        orderId: "ord-paid-1",
+        employeeId: "emp-cashier-1",
+        expectedVersion: paid.lockVersion,
+        reasonCode: "wrong_order",
+        reasonNote: null,
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
 });
 
 

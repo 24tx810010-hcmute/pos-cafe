@@ -137,6 +137,10 @@ export const mockOpenOrders: OrderDetail[] = [
     orderType: "dine_in",
     paidAt: null,
     payment: null,
+    voidedAt: null,
+    voidedByEmployeeId: null,
+    voidReasonCode: null,
+    voidReasonNote: null,
     items: [
       {
         id: "oi-b02-1",
@@ -178,6 +182,10 @@ export const mockOpenOrders: OrderDetail[] = [
     orderType: "dine_in",
     paidAt: null,
     payment: null,
+    voidedAt: null,
+    voidedByEmployeeId: null,
+    voidReasonCode: null,
+    voidReasonNote: null,
     items: [
       { id: "oi-b05-1", menuItemId: "mi-tra-dao", itemName: "Trà đào", quantity: 1, unitPrice: 42000, note: null, options: [] },
       { id: "oi-b05-2", menuItemId: "mi-ca-phe-muoi", itemName: "Cà phê muối", quantity: 1, unitPrice: 39000, note: null, options: [] },
@@ -195,6 +203,10 @@ export const mockOpenOrders: OrderDetail[] = [
     orderType: "takeaway",
     paidAt: null,
     payment: null,
+    voidedAt: null,
+    voidedByEmployeeId: null,
+    voidReasonCode: null,
+    voidReasonNote: null,
     items: [
       { id: "oi-takeaway-1", menuItemId: "mi-tra-dao", itemName: "Trà đào", quantity: 1, unitPrice: 42000, note: null, options: [] },
       { id: "oi-takeaway-2", menuItemId: "mi-tra-vai", itemName: "Trà vải", quantity: 1, unitPrice: 42000, note: "Ít đá", options: [] },
@@ -222,6 +234,10 @@ export const mockPaidOrders: OrderDetail[] = [
       changeAmount: 23000,
       paidAt: "2026-06-11T09:15:00.000Z",
     },
+    voidedAt: null,
+    voidedByEmployeeId: null,
+    voidReasonCode: null,
+    voidReasonNote: null,
     items: [
       {
         id: "oi-paid-1",

@@ -3,6 +3,8 @@ import type {
   CoreReport,
   DecorKind,
   Employee,
+  EmployeePermission,
+  EmployeePermissionOverrides,
   EmployeeRole,
   FloorArea,
   FloorDecorItem,
@@ -29,6 +31,8 @@ import type {
   SubmitOrderChangesResult,
   TableShape,
   TableStatus,
+  VoidOrderResult,
+  VoidReasonCode,
 } from "@/domain";
 
 export type Row = Record<string, unknown>;
@@ -38,12 +42,28 @@ const asNullableString = (value: unknown): string | null => (value == null ? nul
 const asNumber = (value: unknown): number => Number(value ?? 0);
 const asBoolean = (value: unknown): boolean => Boolean(value);
 
-export const mapEmployee = (row: Row): Employee => ({
-  id: asString(row.id),
-  name: asString(row.name),
-  role: asString(row.role) as EmployeeRole,
-  isActive: row.is_active == null ? true : asBoolean(row.is_active),
-});
+const mapPermissionOverrides = (value: unknown): EmployeePermissionOverrides | undefined => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const row = value as Row;
+  const grants = Array.isArray(row.grants) ? row.grants.map(String) : [];
+  const denies = Array.isArray(row.denies) ? row.denies.map(String) : [];
+  if (grants.length === 0 && denies.length === 0) return undefined;
+  return {
+    grants: grants as EmployeePermission[],
+    denies: denies as EmployeePermission[],
+  };
+};
+
+export const mapEmployee = (row: Row): Employee => {
+  const overrides = mapPermissionOverrides(row.permission_overrides);
+  return {
+    id: asString(row.id),
+    name: asString(row.name),
+    role: asString(row.role) as EmployeeRole,
+    isActive: row.is_active == null ? true : asBoolean(row.is_active),
+    ...(overrides ? { permissionOverrides: overrides } : {}),
+  };
+};
 
 export const mapSettings = (row: Row): StoreSettings => ({
   storeId: asString(row.store_id),
@@ -211,9 +231,20 @@ export const mapOrderDetail = (
     ...mapOrderSummary(orderRow),
     paidAt: asNullableString(orderRow.paid_at),
     payment: mapOrderPayment(paymentRow),
+    voidedAt: asNullableString(orderRow.voided_at),
+    voidedByEmployeeId: asNullableString(orderRow.voided_by_employee_id),
+    voidReasonCode: asNullableString(orderRow.void_reason_code) as VoidReasonCode | null,
+    voidReasonNote: asNullableString(orderRow.void_reason_note),
     items: itemRows.map((itemRow) => mapOrderItem(itemRow, optionsByItem.get(asString(itemRow.id)) ?? [])),
   };
 };
+
+export const mapVoidOrderResult = (row: Row): VoidOrderResult => ({
+  orderId: asString(row.orderId),
+  status: "void",
+  lockVersion: asNumber(row.lockVersion),
+  voidedAt: asString(row.voidedAt),
+});
 
 const mapPrintLine = (line: Row): PrintLine => ({
   name: asString(line.name),
@@ -301,4 +332,6 @@ export const emptyCoreReport = (businessDate: string): CoreReport => ({
   averageTicket: 0,
   topItemName: "-",
   hourlyRevenue: [],
+  voidCount: 0,
+  voidAmount: 0,
 });

@@ -7,13 +7,21 @@ import type {
   OrderSummaryPage,
   SubmitOrderChangesInput,
   SubmitOrderChangesResult,
+  VoidOrderInput,
+  VoidOrderResult,
 } from "@/domain";
 import { requireData, throwIfError } from "./errors";
-import { mapOrderDetail, mapOrderSummary, mapSubmitOrderChangesResult, type Row } from "./mappers";
+import {
+  mapOrderDetail,
+  mapOrderSummary,
+  mapSubmitOrderChangesResult,
+  mapVoidOrderResult,
+  type Row,
+} from "./mappers";
 import type { SupabaseAnyClient } from "./repoShared";
 
 const orderFields =
-  "id,table_id,order_type,order_no,business_date,status,total,lock_version,paid_at";
+  "id,table_id,order_type,order_no,business_date,status,total,lock_version,paid_at,voided_at,voided_by_employee_id,void_reason_code,void_reason_note";
 const orderItemFields = "id,menu_item_id,item_name,quantity,unit_price,note,status,sort_order";
 const orderItemOptionFields = "id,order_item_id,option_value_id,option_name,price_delta,quantity";
 const paymentFields = "id,employee_id,method,amount,received_amount,change_amount,paid_at";
@@ -63,7 +71,7 @@ export class SupabaseOrderRepo implements IOrderRepo {
     }
 
     let paymentRow: Row | null = null;
-    if (order.status === "paid") {
+    if (order.paid_at != null) {
       const { data: payment, error: paymentError } = await this.client
         .from("payments")
         .select(paymentFields)
@@ -145,5 +153,16 @@ export class SupabaseOrderRepo implements IOrderRepo {
       items: ((data ?? []) as Row[]).map(mapOrderSummary),
       total: count ?? 0,
     };
+  }
+
+  async voidOrder(input: VoidOrderInput): Promise<VoidOrderResult> {
+    const { data, error } = await this.client.rpc("void_order", {
+      p_order_id: input.orderId,
+      p_employee_id: input.employeeId,
+      p_expected_lock_version: input.expectedVersion,
+      p_reason_code: input.reasonCode,
+      p_reason_note: input.reasonNote,
+    });
+    return mapVoidOrderResult(requireData<Row>(data as Row | null, error));
   }
 }

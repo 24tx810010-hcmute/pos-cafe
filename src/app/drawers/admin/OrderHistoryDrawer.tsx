@@ -1,13 +1,18 @@
+import { Button } from "@mui/material";
 import clsx from "clsx";
 import { CalendarDays, ChevronDown, RefreshCw, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { useFloorPlanQuery, useOrderDetailQuery, useOrderHistoryQuery } from "@/features/pos";
+import { hasPermission } from "@/core/guards";
+import { formatVndShort } from "@/core/money";
+import type { VoidReasonCode } from "@/domain";
+import { useFloorPlanQuery, useOrderDetailQuery, useOrderHistoryQuery, useVoidOrderMutation } from "@/features/pos";
 import { useAdminEmployeesQuery, useStoreSettingsQuery } from "@/features/admin";
 import { useAppStore } from "../../useAppStore";
 import {
   DEFAULT_TIMEZONE,
   PAY_METHOD_LABEL,
+  VOID_REASON_OPTIONS,
   businessDateInTimezone,
   businessRangeFor,
   formatBusinessDate,
@@ -17,7 +22,9 @@ import {
   type HistoryOrderTypeFilter,
   type HistoryStatusFilter,
 } from "@/features/pos/historyHelpers";
+import { toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
+import { PortalPopup } from "../../components/PortalPopup";
 import { receiptFromOrderDetail } from "../../components/ReceiptPreview";
 import { OrderHistoryDetailPane } from "./OrderHistoryDetailPane";
 import { OrderHistoryListPane } from "./OrderHistoryListPane";
@@ -47,9 +54,11 @@ const orderTypeOptions: Array<{ key: HistoryOrderTypeFilter; label: string }> = 
 export function OrderHistoryDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const openReceiptPreview = useAppStore((state) => state.openReceiptPreview);
+  const currentEmployee = useAppStore((state) => state.currentEmployee);
   const settingsQuery = useStoreSettingsQuery();
   const employeesQuery = useAdminEmployeesQuery();
   const floorQuery = useFloorPlanQuery();
+  const voidMutation = useVoidOrderMutation();
   const [dateRange, setDateRange] = useState<HistoryDateRange>("today");
   const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<HistoryStatusFilter>("all");
@@ -57,6 +66,11 @@ export function OrderHistoryDrawer() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [voidConfirmOpen, setVoidConfirmOpen] = useState(false);
+  const [voidReasonCode, setVoidReasonCode] = useState<VoidReasonCode>("wrong_order");
+  const [voidReasonNote, setVoidReasonNote] = useState("");
+
+  const canVoid = hasPermission(currentEmployee, "order.voidPaid");
 
   const timezone = settingsQuery.data?.timezone ?? DEFAULT_TIMEZONE;
   const today = businessDateInTimezone(new Date(), timezone);
@@ -119,6 +133,19 @@ export function OrderHistoryDrawer() {
         year: "numeric",
       }).format(new Date(selectedDetail.paidAt))
     : "Chưa ghi nhận";
+  const voidedByLabel = selectedDetail?.voidedByEmployeeId
+    ? employeeNames.get(selectedDetail.voidedByEmployeeId) ?? selectedDetail.voidedByEmployeeId
+    : "Không rõ";
+  const voidedTimeLabel = selectedDetail?.voidedAt
+    ? new Intl.DateTimeFormat("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(new Date(selectedDetail.voidedAt))
+    : "Không rõ";
+  const voidNoteRequired = voidReasonCode === "other" && !voidReasonNote.trim();
 
   const resetList = () => {
     setPage(1);
@@ -173,6 +200,34 @@ export function OrderHistoryDrawer() {
     setOrderTypeFilter("all");
     setSearch("");
     resetList();
+  };
+
+  const openVoidConfirm = () => {
+    setVoidReasonCode("wrong_order");
+    setVoidReasonNote("");
+    setVoidConfirmOpen(true);
+  };
+
+  const confirmVoid = () => {
+    if (!currentEmployee || !selectedDetail) return;
+    voidMutation.mutate(
+      {
+        actor: currentEmployee,
+        order: selectedDetail,
+        reasonCode: voidReasonCode,
+        reasonNote: voidReasonNote,
+      },
+      {
+        onSuccess: () => {
+          toast.success(`Đã hủy đơn #${selectedDetail.orderNo}`);
+          setVoidConfirmOpen(false);
+        },
+        onError: (error) => {
+          toast.error(toToastError(error));
+          void detailQuery.refetch();
+        },
+      },
+    );
   };
 
   const dateRangeLabel = `${formatBusinessDate(selectedRange.fromDate)} - ${formatBusinessDate(selectedRange.toDate)}`;
@@ -354,12 +409,76 @@ export function OrderHistoryDrawer() {
             cashierLabel={cashierLabel}
             paymentMethodLabel={paymentMethodLabel}
             paidTimeLabel={paidTimeLabel}
+            canVoid={canVoid}
+            voidedByLabel={voidedByLabel}
+            voidedTimeLabel={voidedTimeLabel}
             onReprint={reprintReceipt}
             onCopyOrderNo={copyOrderNo}
             onRetry={() => void detailQuery.refetch()}
+            onVoid={openVoidConfirm}
           />
         </div>
       </div>
+
+      {voidConfirmOpen && selected && (
+        <PortalPopup
+          testId="history-void-popup"
+          placement="Centered"
+          viewport="workspace"
+          overlayClassName="bg-slate-900/50"
+          onOutsideClick={() => setVoidConfirmOpen(false)}
+        >
+          <div className="grid w-[min(420px,92vw)] gap-3 rounded-pos bg-pos-surface p-6 shadow-[0_20px_60px_rgb(0_0_0_/_25%)] max-[760px]:p-4">
+            <h3 className="m-0 text-lg font-black text-pos-ink">Hủy đơn #{selected.orderNo}</h3>
+            <p className="m-0 rounded-[8px] border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-sm font-semibold text-[#991b1b]">
+              Đơn {formatVndShort(selectedDetail?.total ?? selected.total)} sẽ bị loại khỏi doanh thu ngày {selected.createdAt}. Thao tác không thể hoàn tác.
+            </p>
+
+            <label className="grid gap-1 text-xs font-bold text-pos-muted">
+              Lý do hủy
+              <select
+                data-testid="history-void-reason"
+                value={voidReasonCode}
+                onChange={(event) => setVoidReasonCode(event.target.value as VoidReasonCode)}
+                className="h-10 rounded-[8px] border border-pos-line bg-white px-2 text-sm font-bold text-pos-ink outline-none focus:border-pos-primary"
+              >
+                {VOID_REASON_OPTIONS.map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-1 text-xs font-bold text-pos-muted">
+              Ghi chú lý do
+              <textarea
+                data-testid="history-void-note"
+                value={voidReasonNote}
+                onChange={(event) => setVoidReasonNote(event.target.value)}
+                rows={2}
+                placeholder={voidReasonCode === "other" ? "Bắt buộc khi chọn \"Lý do khác\"" : "Không bắt buộc"}
+                className="resize-none rounded-[8px] border border-pos-line bg-white px-2 py-1.5 text-sm font-semibold text-pos-ink outline-none focus:border-pos-primary"
+              />
+            </label>
+
+            <div className="flex flex-wrap justify-end gap-2.5 [&_.MuiButton-root]:min-w-24">
+              <Button variant="outlined" onClick={() => setVoidConfirmOpen(false)}>
+                Đóng
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                data-testid="history-void-confirm"
+                disabled={voidMutation.isPending || voidNoteRequired}
+                onClick={confirmVoid}
+              >
+                Xác nhận hủy đơn
+              </Button>
+            </div>
+          </div>
+        </PortalPopup>
+      )}
     </PortalDrawer>
   );
 }

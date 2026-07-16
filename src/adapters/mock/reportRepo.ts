@@ -7,6 +7,10 @@ export class MockReportRepo implements IReportRepo {
 
   async getCoreReport(filter: ReportFilter): Promise<CoreReport> {
     const paidOrders = this.state.orders.filter((order) => order.status === "paid" && order.businessDate === filter.businessDate);
+    // Đơn paid-rồi-hủy (paidAt not null): loại khỏi doanh thu, gom vào tổng hợp đơn hủy.
+    const voidedPaidOrders = this.state.orders.filter(
+      (order) => order.status === "void" && order.paidAt != null && order.businessDate === filter.businessDate,
+    );
     const revenue = paidOrders.reduce((sum, order) => sum + order.total, 0);
     const hourlyRevenue = new Map<string, number>();
     const topItems = new Map<string, number>();
@@ -30,6 +34,8 @@ export class MockReportRepo implements IReportRepo {
       hourlyRevenue: [...hourlyRevenue.entries()]
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([label, value]) => ({ label, revenue: value })),
+      voidCount: voidedPaidOrders.length,
+      voidAmount: voidedPaidOrders.reduce((sum, order) => sum + order.total, 0),
     };
   }
 }
