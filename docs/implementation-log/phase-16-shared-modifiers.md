@@ -8,7 +8,8 @@
 
 ## Branch/Commit
 
-- Branch code: `main` (chưa commit tại thời điểm ghi log — cập nhật hash sau khi commit).
+- Code commit: `a85e606` (`feat(menu): shared modifiers with order picker and quantity`).
+- Docs commit: `95c31e7`.
 
 ## Bối cảnh / khảo sát
 
@@ -47,7 +48,7 @@
 - `npx tsc -b` + `npm run build`: passed.
 - `npm test`: 192/192 passed (thêm `modifier.test.ts`, `ModifierPickerPopup.test.tsx`; cập nhật test cũ).
 - `npm run smoke` (desktop): flow chính + test mới "ordering an item with modifiers opens the picker" passed.
-- **Chưa chạy** trên Supabase thật: migration 007/008 cần áp lên project demo (wipe + đổi schema) rồi pair store + seed lại; `npm run smoke:supabase` để lại cho lần có `.env`.
+- Tại checkpoint phase 16 chưa chạy Supabase thật. Trạng thái này đã được supersede: chuỗi migration 007/008 đã có trên cloud trước các validation phase 18/19 (009→011), và các E2E Supabase sau đó đã pass.
 
 ## Known Gaps/Risks
 

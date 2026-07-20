@@ -95,10 +95,22 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 
 - Hai trục quyền độc lập trong `core/guards.ts`:
   - **Module** (`canAccessModule`/`requireModuleAccess`): thấy/mở được màn nào — theo role.
-  - **Hành động** (`hasPermission`/`requirePermission`): được thực hiện thao tác nào (vd `order.voidPaid`). Mặc định suy từ role qua `defaultRolePermissions`, ghi đè per-employee bằng `Employee.permissionOverrides` (`grants`/`denies`). Quyền hiệu lực = (default ∪ grants) − denies.
+  - **Hành động** (`hasPermission`/`requirePermission`): được thực hiện thao tác nào. Mặc định suy từ role qua `defaultRolePermissions`, ghi đè per-employee bằng `Employee.permissionOverrides` (`grants`/`denies`). Quyền hiệu lực = (default ∪ grants) − denies.
 - `admin`: toàn bộ POS/admin. `cashier`: floor/order/payment/order history. `kitchen`: kitchen seam.
-- Các action quan trọng gọi feature flow có guard (`requirePermission`/`requireAdminActor`), không chỉ dựa vào disabled button; RPC nhạy cảm (vd `void_order`) guardrail lại quyền ở DB nhưng đó chỉ là phòng thủ/audit — **quyền theo nhân viên là app-layer, không phải DB-secured** (spoof được với session hợp lệ). RLS chỉ cô lập dữ liệu theo store.
-- Seam phân quyền theo hành động (data `permission_overrides` + hàm check + consumer đầu tiên là hủy đơn đã thanh toán) đã có sẵn; UI chỉnh quyền per-employee là phase phân quyền sau.
+- Catalog đang enforce thật gồm 5 quyền:
+
+  | Permission | Admin mặc định | Cashier mặc định | Kitchen mặc định | Consumer |
+  | --- | --- | --- | --- | --- |
+  | `order.create` | Có | Có | Không | Tạo đơn mới |
+  | `order.update` | Có | Có | Không | Sửa đơn đang mở còn món |
+  | `order.voidOpen` | Có | Có | Không | Đưa đơn đang mở về 0 món/hủy đơn |
+  | `payment.take` | Có | Có | Không | Full payment và instant-pay split |
+  | `order.voidPaid` | Có | Không | Không | Hủy đơn đã thanh toán từ Lịch sử |
+
+- Employees Drawer cho admin chỉnh checkbox theo **quyền hiệu lực**. Save chỉ lưu diff so với default role; diff rỗng xóa override (`null`). Đổi role trong form reset quyền về default role mới; không cho hạ role hoặc khóa admin active cuối.
+- UI Order/Payment disable action và giải thích khi thiếu quyền, nhưng feature flow mới là chốt client thật. Migration 012 guardrail lại `submit_order_changes`, `pay_order`, `pay_order_items`; `void_order` tiếp tục guard quyền từ migration 011.
+- `currentEmployee` là snapshot memory-only tại lúc đăng nhập. Admin đổi quyền thì thiết bị nhân viên cần khóa/đăng nhập lại để UI nhận quyền mới; RPC đọc override live nên có thể từ chối mutation ngay sau khi thu hồi.
+- Default role → permission lặp ở TypeScript và SQL helper. `core/guards.ts` là source of truth; test E2E deny-permission dùng để phát hiện drift. Guard RPC vẫn chỉ là phòng thủ/audit — **quyền theo nhân viên là app-layer, không phải DB-secured** (employee id spoof được với session store hợp lệ). RLS chỉ cô lập dữ liệu theo store.
 
 ## Print
 

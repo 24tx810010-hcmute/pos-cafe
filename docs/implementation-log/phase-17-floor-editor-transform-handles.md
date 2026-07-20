@@ -7,7 +7,8 @@
 
 ## Branch/Commit
 
-- Branch code: `main` (chưa commit tại thời điểm ghi log - cập nhật hash sau khi commit).
+- Code commit: `acd638e` (`feat(floor): drag-to-resize/rotate handles in floor editor`).
+- Docs commit: `62b5ad8`.
 
 ## Đã implement
 

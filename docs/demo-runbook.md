@@ -15,8 +15,11 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 9. Nhập tiền khách đưa cho phần còn lại, kiểm tra trạng thái thiếu/đủ tiền, hoàn tất thanh toán.
 10. Xem receipt preview, quay lại floor thấy bàn trống.
 11. Mở report/history: 2 đơn độc lập từ cùng một bàn, số đơn tăng theo thứ tự thanh toán.
-12. Demo admin: employees, menu editor, floor editor, settings.
-13. Demo clear dữ liệu mẫu khi không còn order mở; nếu còn order mở thì giải thích trạng thái blocked.
+12. **Demo hủy đơn đã thanh toán:** đăng nhập admin, chọn một đơn paid trong Lịch sử, bấm `Hủy đơn`, chọn lý do (nếu chọn `Lý do khác` phải nhập ghi chú), xác nhận badge `Đã hủy`, người/thời điểm/lý do hủy và nút in lại bị khóa.
+13. Mở Report: xác nhận đơn vừa hủy bị loại khỏi doanh thu/số đơn paid, đồng thời `Đơn đã huỷ` và `Tiền hủy` tăng đúng để đối soát.
+14. **Demo phân quyền per-employee:** admin mở Nhân viên → Thu ngân 1 → bỏ `Thanh toán đơn` → lưu → khóa phiên → đăng nhập lại Thu ngân 1. Xác nhận vẫn tạo/sửa đơn được nhưng action thanh toán bị disable và có lý do; đăng nhập lại admin để khôi phục quyền nếu cần.
+15. Demo admin: menu editor, floor editor, settings.
+16. Demo clear dữ liệu mẫu khi không còn order mở; nếu còn order mở thì giải thích trạng thái blocked.
 
 ## Checklist Trước Demo
 
@@ -24,6 +27,8 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 - App build/deploy mới nhất mở được.
 - Store demo có dữ liệu seed đủ: nhân viên, menu, option, floor areas, bàn, decor.
 - Có ít nhất một order thanh toán thành công để report/history không trống nếu cần.
+- Dùng admin (hoặc nhân viên có grant `order.voidPaid`) nếu demo hủy đơn đã thanh toán.
+- Nếu demo phân quyền trên cloud, bảo đảm migration 012 đã được apply; thay đổi quyền client có hiệu lực sau khi khóa/đăng nhập lại.
 - Màn hình trình chiếu ở landscape, đủ rộng.
 - Chuẩn bị 4G/hotspot vì phase này online-only.
 - Không mở các màn optional/future như kitchen/QR nếu chưa muốn giải thích scope.
@@ -32,6 +37,8 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 
 - **Realtime cross-device (phase 15): ĐÃ kiểm chứng** qua `npm run smoke:supabase` (phase 18): 2 browser cùng store thật, máy A tạo đơn → máy B thấy bàn đang phục vụ ≤30s; máy B thanh toán → máy A thấy bàn trống. Phần self-heal khi ngắt/nối mạng vẫn chỉ kiểm được thủ công (ngắt mạng máy B rồi nối lại → sau `SUBSCRIBED` phải tự resync ngay). Xem [implementation-log/phase-15-realtime-hardening.md](implementation-log/phase-15-realtime-hardening.md).
 - **Instant pay tách đơn (phase 18): ĐÃ kiểm chứng** qua E2E trên cloud đã áp migration 009+010 (tách dòng, số bill theo thứ tự trả, lịch sử 2 đơn độc lập).
+- **Hủy đơn đã thanh toán (phase 19): ĐÃ kiểm chứng** trên cloud đã áp migration 011: admin tạo/thanh toán/hủy đơn qua UI, popup đóng, audit hiện và badge chuyển `Đã hủy`; fix refetch `lock_version` trước khi gọi RPC đã chạy ổn định. Ngày 2026-07-19 chạy lại targeted E2E 1/1 pass.
+- **Phân quyền per-employee (phase 20): ĐÃ kiểm chứng cloud** sau khi áp migration 012. E2E admin deny `payment.take` → cashier đăng nhập lại vẫn tạo đơn được, UI khóa thanh toán; gọi thẳng payment RPC trả `FORBIDDEN`. Full `smoke:supabase` 5/5 pass ngày 2026-07-19.
 
 ## Luận Điểm Nên Nói Khi Bảo Vệ
 
@@ -45,6 +52,9 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 ## Rủi Ro Demo & Cách Xử Lý
 
 - **Report trống:** tạo một order live rồi thanh toán trước khi mở report.
+- **Report về 0 sau hủy:** đây là behavior đúng nếu đơn paid duy nhất vừa bị hủy; kiểm tra thêm `Đơn đã huỷ`/`Tiền hủy` ở rail trái.
+- **Không thấy nút Hủy đơn:** kiểm tra đang chọn đơn `Đã thanh toán` và nhân viên hiện tại có quyền `order.voidPaid` (mặc định admin).
+- **Quyền vừa sửa nhưng UI chưa đổi:** khóa phiên và đăng nhập lại nhân viên; client giữ snapshot quyền tại login. Nếu RPC vẫn cho mutation đã bị deny, kiểm tra migration 012 đã apply và map default SQL chưa drift so với `core/guards.ts`.
 - **Mất mạng:** dùng hotspot; nói rõ online-only là tradeoff phase này.
 - **Supabase pause:** wake project trước demo.
 - **Clear demo bị blocked:** đây là behavior đúng vì còn order mở; đóng/thanh toán order trước.

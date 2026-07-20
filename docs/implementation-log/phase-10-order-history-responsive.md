@@ -18,7 +18,7 @@
 - Danh sách đơn dùng phân trang theo contract `listOrderHistory({ fromDate, toDate, page, pageSize, status, orderType, search, tableIds })`.
 - Date/status/type/search được áp dụng trước pagination trong repository để `total`, empty state và số trang khớp bộ lọc.
 - Order History chỉ đọc các đơn đã kết thúc (`paid`, `void`); đơn `open` thuộc màn Bàn/Mang đi và không xuất hiện trong lịch sử.
-- Right nav hiển thị chi tiết đơn dạng receipt: item snapshot, option/note, quantity, table/order type, status, paid time, customer fallback và cashier.
+- Right nav hiển thị chi tiết đơn dạng receipt: item snapshot, option/note, quantity, table/order type, status, paid time, customer fallback và nhân viên thực hiện thanh toán.
 - Payment summary cố định cuối right nav theo thứ tự `Khách đưa`, `Tiền thừa`, `Tổng tiền`.
 - Nút thao tác `In lại hóa đơn`, `Sao chép mã đơn`, `Tải lại chi tiết` đặt ở header của right nav.
 - Domain thêm `OrderPaymentSnapshot`; `OrderDetail.payment` là nullable snapshot.
@@ -32,7 +32,7 @@
 - Chọn phân trang thay vì infinite scroll vì Order History có date/status/type/search và selected detail. Pagination dễ reset selection, dễ test, ổn định memory/payload, phù hợp với contract hiện có.
 - Lọc bỏ order `open` và áp dụng status/type/search ở tầng repository thay vì chỉ ẩn ở UI, để `total`, phân trang và trạng thái empty/list luôn đúng với dữ liệu đã kết thúc.
 - Không mở rộng `listOrderHistory` để join payment trong danh sách; payment detail chỉ fetch khi chọn đơn, tránh làm nặng list.
-- `Khách hàng` và `Người thanh toán` vẫn fallback `Khách lẻ` vì domain chưa có customer entity/customer payer field.
+- `Khách hàng` vẫn fallback `Khách lẻ` vì domain chưa có customer entity. Ô `Nhân viên thanh toán` dùng `payments.employee_id` qua `OrderPaymentSnapshot.employeeId`; bỏ ô `Thu ngân` trùng nghĩa và không dùng `Khách lẻ` làm tên nhân viên.
 - `In lại hóa đơn` hiện là placeholder toast vì chưa có persisted receipt template/render snapshot riêng cho reprint.
 
 ## Verification
@@ -48,4 +48,4 @@
 
 - `npm run smoke` trong lần kiểm tra này: 18 passed, 13 skipped, 4 failed ở flow admin mock modules trước khi chạm Order History. Failure nằm tại việc test tìm nút `Huỷ` trong Menu Editor dirty cancel, cần xử lý riêng nếu muốn smoke full xanh.
 - Search theo tên bàn dùng `tableIds` được map từ floor plan hiện tại; nếu sau này cần search full-text theo customer/payer thì cần mở rộng domain riêng.
-- Customer/payer thật cần domain riêng nếu sau này muốn phân biệt khách hàng, người thanh toán và cashier.
+- Customer/payer thật vẫn cần domain riêng nếu sau này muốn lưu người khách thực tế đưa tiền; `Nhân viên thanh toán` hiện là nhân viên POS thực hiện giao dịch.

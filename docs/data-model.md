@@ -29,8 +29,10 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 - Store Key gồm store number và secret để ghép máy vào store.
 - Tạo store mới mặc định blank (store/settings + 1 admin), `seed_status=seeded`; chỉ seed dữ liệu mẫu khi `CreateStoreInput.seedDemo=true` (checkbox lúc tạo) hoặc khi admin bấm khởi tạo demo trong Cài đặt. Địa chỉ từ form được lưu vào `store_settings.address`.
 - Seed demo upsert theo `id`/`seed_key` và clear `deleted_at`/`deleted_by_employee_id` trên các bảng editor (cashier dùng `is_active`) nên idempotent với `clear_demo_data`.
-- Employee role dùng cho app-layer permission trong phase này.
-- `employees.permission_overrides` (migration 011) là seam **quyền theo hành động** tách khỏi quyền vào module: shape `{"grants": [...], "denies": [...]}` với các permission như `order.voidPaid`. Quyền hiệu lực = (default theo role ∪ grants) − denies (denies luôn thắng). Mặc định `null` (mọi người theo role). Đây là app-layer guardrail; check trong RPC chỉ để phòng thủ/audit, **không** phải DB-secured — vẫn spoof được với session hợp lệ. UI chỉnh sửa per-employee sẽ làm ở phase phân quyền sau.
+- Employee role quyết định default permission và module navigation; override từng nhân viên chỉ thay đổi quyền hành động, không mở thêm module trên nav.
+- `employees.permission_overrides` (migration 011) là **quyền theo hành động** tách khỏi quyền vào module: shape `{"grants": [...], "denies": [...]}`. Quyền hiệu lực = (default theo role ∪ grants) − denies (denies luôn thắng). Mặc định `null` (mọi người theo role). Từ phase 20, Employees Drawer chỉnh checkbox quyền hiệu lực và persist diff tối thiểu; `undefined` trong update DTO nghĩa là không đụng field, `null` nghĩa là xóa override.
+- Catalog runtime hiện có đúng 5 mã được enforce: `order.create`, `order.update`, `order.voidOpen`, `payment.take`, `order.voidPaid`. Mapper Supabase lọc bỏ mã ngoài catalog.
+- Permission vẫn là app-layer authorization; RPC check chỉ để phòng thủ/audit, **không** phải DB-secured — employee id vẫn spoof được với session store hợp lệ.
 - `store_settings.qr_info` là seam schema cho QR/bank sau này; drawer Payment Settings hiện là preview/local UI, chưa persist field này qua `settingsRepo`.
 
 ## Nhóm Menu
@@ -92,9 +94,10 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 
 ## RPC Chính
 
-- `submit_order_changes`: tạo/cập nhật order mở, snapshot giá/tên/options, cập nhật table occupied/empty, in ticket khi có order mở.
-- `pay_order`: tạo payment, set order paid, set table empty, trả payload receipt.
-- `pay_order_items`: instant pay tách đơn — validate từng dòng + tính tiền phía server, swap `order_no` (đơn tách kế thừa số, đơn gốc nhận số mới), move/tách dòng sang đơn mới, tạo payment và set đơn mới `paid` ngay, tính lại tổng + bump `lock_version` đơn gốc. Từ chối selection phủ 100% đơn (client phải dùng `pay_order`). Trả về thông tin đơn tách (`orderId/orderNo/total/receipt`) + đơn gốc (`sourceOrderId/sourceOrderNo/sourceTotal/sourceLockVersion`).
+- `has_employee_permission` (migration 012): helper SQL áp default theo role + grants/denies. Bảng default bị lặp với TypeScript `core/guards.ts` (TypeScript là source of truth), nên E2E deny-permission phải được chạy sau khi apply migration để phát hiện drift.
+- `submit_order_changes`: tạo/cập nhật order mở, snapshot giá/tên/options, cập nhật table occupied/empty, in ticket khi có order mở. Migration 012 giữ nguyên chữ ký và yêu cầu lần lượt `order.create`, `order.update` hoặc `order.voidOpen` theo nhánh mutation.
+- `pay_order`: tạo payment, set order paid, set table empty, trả payload receipt; migration 012 giữ nguyên chữ ký và yêu cầu `payment.take`.
+- `pay_order_items`: instant pay tách đơn — validate từng dòng + tính tiền phía server, swap `order_no` (đơn tách kế thừa số, đơn gốc nhận số mới), move/tách dòng sang đơn mới, tạo payment và set đơn mới `paid` ngay, tính lại tổng + bump `lock_version` đơn gốc. Từ chối selection phủ 100% đơn (client phải dùng `pay_order`). Trả về thông tin đơn tách (`orderId/orderNo/total/receipt`) + đơn gốc (`sourceOrderId/sourceOrderNo/sourceTotal/sourceLockVersion`). Migration 012 giữ nguyên chữ ký và yêu cầu `payment.take`.
 - `void_order` (migration 011, thay stub reserved cũ): hủy một đơn **đã thanh toán**. Tham số `(p_order_id, p_employee_id, p_expected_lock_version, p_reason_code, p_reason_note)`. Check quyền `order.voidPaid` (role admin hoặc grant override, denies thắng), validate `reason_code` (5 giá trị; `other` bắt buộc có note), khóa đơn `for update`, chỉ nhận `status='paid'` + đúng `lock_version` (sai → `ORDER_VERSION_CONFLICT`), rồi set `void` + metadata hủy + bump version. Không đụng total/order_no/paid_at/payment/bàn.
 - `verify_employee_pin` (migration 011): trả thêm cột `permission_overrides` để client dựng quyền của nhân viên đang đăng nhập.
 - `clear_demo_data`: admin-only, block nếu còn open orders, xóa mềm dữ liệu seed và giữ admin.
@@ -112,8 +115,9 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 ## Menu Image Storage
 
 - Bucket Supabase Storage: `menu-item-images`.
+- Migration `005_menu_item_images_storage.sql` tạo/cập nhật bucket public, giới hạn 5MB, MIME JPG/PNG/WebP và policy public-read/store-scoped write; migration `006_menu_item_image_asset_key.sql` bổ sung cột asset key cho database hiện hữu.
 - `menu_items.image_asset_key` lưu asset key theo dạng `menu-item-images/{store_id}/menu-items/{menu_item_id}/{uuid}.{ext}`.
 - Bucket public để POS render ảnh nhanh; upload/update/delete bị giới hạn bằng Storage RLS theo thư mục `auth.uid()`.
 - File hỗ trợ JPG, PNG, WebP, tối đa 5MB; UI chặn file lớn hơn giới hạn này trước khi upload.
 - Detail preview trong Menu Editor giữ ảnh không crop để nhân viên kiểm tra file đã chọn; card món trong Menu Editor và Order Drawer dùng `object-cover` để lấp đầy khung card.
-- Database hiện hữu cần migration bổ sung `menu_items.image_asset_key`; schema mới đã có cột này trong bảng `menu_items`.
+- Database hiện hữu phải áp cả migration 005 (bucket/policy) và 006 (cột `menu_items.image_asset_key`); schema mới đã có cột này trong bảng `menu_items`.

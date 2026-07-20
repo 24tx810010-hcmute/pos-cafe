@@ -16,4 +16,4 @@ Folder này chỉ giữ chỉ mục Markdown cho screenshot/UI baseline. Nhánh 
 
 - Không commit ảnh/prototype vào nhánh `docs`; branch này chỉ giữ `.md`.
 - Nếu cần giữ ảnh cũ, lưu ngoài nhánh docs hoặc trong artefact báo cáo riêng.
-- Khi UI core thay đổi đáng kể, chụp lại floor, order, payment và takeaway trước.
+- Khi UI core thay đổi đáng kể, chụp lại floor, order, payment và takeaway trước; với scope hiện tại cần giữ thêm baseline cho modifier picker, transform handles, instant pay và flow hủy đơn paid/report sau hủy.

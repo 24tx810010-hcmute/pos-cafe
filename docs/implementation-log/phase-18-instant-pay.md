@@ -8,8 +8,10 @@
 
 ## Branch/Commit
 
-- Branch code: `main` (chưa commit tại thời điểm ghi log — cập nhật hash sau khi commit).
-- Migrations: `009_partial_payment.sql` (mô hình bản đầu, đã áp lên cloud) → **`010_split_payment.sql`** (mô hình chốt, dọn toàn bộ 009; cần áp sau 009).
+- Code commit chính: `484c181` (`feat(payment): instant pay splits selected items into an independent paid order`).
+- Follow-up kiến trúc: `3f7d2e4` (move `reportHelpers` sang `features/admin`, bỏ `posQueryKeys` shim).
+- Docs commit: `06cbbaa`.
+- Migrations: `009_partial_payment.sql` (mô hình bản đầu) → **`010_split_payment.sql`** (mô hình chốt, dọn toàn bộ 009). Cả hai đã được áp theo thứ tự trên cloud demo trước validation phase 18.
 
 ## Lịch sử quyết định (pivot giữa phase)
 
@@ -35,7 +37,7 @@
 - `orderFlow.ts`: `buildPayableLines`, `fullSelection`, `clampSelection`, `selectionAmount`, `isFullSelection`; `payOrderItemsAndPrint` trả union `{mode:"full"}|{mode:"split"}` — full → `pay_order`, partial → `pay_order_items`.
 
 ### UI
-- `PaymentSummaryPane`: danh sách chọn món (`Chọn tất cả` mặc định + checkbox dòng + chip `n/tổng` + nút `+` xoay vòng), summary có `Thanh toán lần này`.
+- `PaymentSummaryPane`: danh sách chọn món (`Chọn tất cả` mặc định + checkbox dòng khởi tạo 1 sản phẩm + chip `n/tổng` + nút `+` xoay vòng), summary có `Thanh toán lần này`.
 - `PaymentDrawer`: partial success → toast `Đã tách và thanh toán đơn #N (X). Bàn còn Y.`, drawer mở tiếp, selection reset về `Chọn tất cả`; header tự đổi sang số mới của đơn gốc sau refetch. Selection clamp theo lock_version khi máy khác sửa đơn.
 - Giỏ hàng/Lịch sử: không đổi so với trước phase (đơn gốc và đơn tách đều là đơn thường).
 
@@ -49,10 +51,10 @@
 - Flow: rẽ nhánh full/split; draft đơn gốc hoạt động như đơn thường.
 - Component `instantPay.test.tsx`: select-all → payOrder + đóng drawer; partial → payOrderItems (có `newOrderId`) + drawer mở + selection reset.
 - Đã verify trực quan trên mock: bill 1 mang #24, đơn gốc thành #30, bill 2 mang #30; lịch sử 2 đơn độc lập.
-- Supabase E2E có scenario split (kèm assert số bill #1 → #2) — **cần áp `010_split_payment.sql` lên cloud trước khi chạy**.
+- Supabase E2E scenario split đã pass trên cloud sau migration 010, gồm assert số bill #1 → #2.
 
 ## Lưu ý vận hành
 
-- **Phải áp `010_split_payment.sql`** (sau 009) lên Supabase: đổi chữ ký RPC `pay_order_items`, drop view/cột 009. Mock mode đầy đủ tính năng không cần migration.
+- Cloud demo hiện tại đã áp migration 010. Với môi trường Supabase mới/chưa cập nhật, phải áp 010 sau 009 để đổi chữ ký RPC `pay_order_items` và drop view/cột của mô hình cũ; mock mode không cần migration.
 - Realtime không cần đổi: đơn tách insert vào `orders` (đã publish), đơn gốc bump `lock_version`.
 - Muốn biết cả phiên bàn tiêu bao nhiêu phải cộng nhiều đơn — hệ quả chủ đích của "hai đơn không liên quan".

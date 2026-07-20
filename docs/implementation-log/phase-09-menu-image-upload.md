@@ -7,6 +7,8 @@ Redesign Menu Editor để màn quản lý menu rõ hơn cho demo, đồng thờ
 ## Branch/Commit Liên Quan
 
 - Branch code: `feature/menu-editor-image-upload`.
+- Code commit: `522b5f3` (`feat(menu): add item image upload`), merge vào `main` tại `fe91e1d`.
+- Docs commit: `d5d26d6`.
 - Ngày ghi nhận: 2026-06-22.
 
 ## Feature Đã Implement
@@ -25,9 +27,9 @@ Redesign Menu Editor để màn quản lý menu rõ hơn cho demo, đồng thờ
 ## Quyết Định Kỹ Thuật
 
 - Thêm `IMenuImagePort` vào `AppPorts` để giữ UI/feature không phụ thuộc trực tiếp Supabase.
-- Supabase adapter dùng bucket public `menu-item-images`; object path theo `{store_id}/menu-items/{menu_item_id}/{uuid}.{ext}`.
+- Migration `005_menu_item_images_storage.sql` tạo/cập nhật bucket public `menu-item-images`, giới hạn 5MB + JPG/PNG/WebP và các Storage RLS policy; Supabase adapter dùng object path `{store_id}/menu-items/{menu_item_id}/{uuid}.{ext}`.
 - Storage RLS cho upload/update/delete giới hạn theo folder đầu tiên bằng `auth.uid()`.
-- Bảng `menu_items` có cột `image_asset_key`; migration `006_menu_item_image_asset_key.sql` bổ sung cột này bằng `add column if not exists` cho database đã tạo trước khi feature ảnh được thêm.
+- Migration `006_menu_item_image_asset_key.sql` bổ sung `menu_items.image_asset_key` bằng `add column if not exists` cho database đã tạo trước khi feature ảnh được thêm.
 - Save flow upload ảnh trước, sau đó lưu changeset; nếu save DB lỗi thì cleanup ảnh mới best-effort.
 - Client validate MIME/size trước khi tạo preview; Supabase adapter validate lại trước khi upload.
 - Card ảnh dùng `object-cover` để giao diện catalog gọn hơn; đây là trade-off chấp nhận crop nhẹ trong card, còn preview chi tiết vẫn hiển thị ảnh nguyên vẹn.

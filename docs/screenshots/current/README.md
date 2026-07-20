@@ -37,3 +37,9 @@ Bộ screenshot current UI gần nhất từng được chụp ngày 2026-06-20 
 - `24-clear-demo-dialog-blocked.png`
 - `25-kitchen-queue-drawer.png`
 - `26-payment-settings-qr-drawer.png`
+- `27-modifier-picker.png`
+- `28-floor-editor-transform-handles.png`
+- `29-payment-instant-pay-selection.png`
+- `30-order-history-void-confirm.png`
+- `31-order-history-voided-detail.png`
+- `32-report-void-summary.png`

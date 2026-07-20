@@ -95,13 +95,13 @@ File này là technical decision record rút gọn. Mỗi quyết định nêu r
 ## 9. Vitest + Playwright
 
 - **Quyết định:** dùng Vitest cho unit/component/feature tests và Playwright cho smoke E2E.
-- **Dùng cho:** core logic, adapters, drawer behavior, demo flow, Supabase realtime smoke.
+- **Dùng cho:** core logic, adapters, permission/transaction flows, drawer behavior, demo flow, Supabase realtime và nghiệp vụ cloud smoke.
 - **Vì sao chọn:** nhanh trong local, hợp Vite, Playwright kiểm chứng flow người dùng thật.
 - **Không chọn:** chỉ manual test hoặc chỉ unit test.
 - **Đánh đổi:** E2E tốn thời gian hơn unit test và cần data/test mode ổn định.
 - **Giảm rủi ro:** tách `npm run test`, `npm run smoke`, `npm run smoke:supabase`.
 - **Liên quan tới tiểu luận:** có bằng chứng kiểm thử từ logic tới flow demo.
-- **Validation gần nhất (phase 18, working tree chưa commit):** `npm test` pass 42 files/211 tests; `npm run build` (tsc strict) pass; `npm run smoke` (mock, 5 viewport) 26 pass; **`npm run smoke:supabase` 3/3 pass** trên cloud đã áp migration 009+010 — gồm full-pay + history/report, **instant pay tách đơn** (kèm assert số bill theo thứ tự trả), và realtime cross-device 2 browser (phase 15 coi như đã kiểm chứng trên Supabase thật).
+- **Validation gần nhất (2026-07-20, `main@de35d10`):** `npm test` pass 46 files/243 tests; `npm run build` (tsc strict) pass, còn chunk-size warning đã biết; `npm run smoke` (mock, 5 viewport) 27 pass/18 skipped; `npm run smoke:supabase` 5/5 pass, gồm permission editor + direct RPC deny, hủy đơn paid, instant pay và realtime cross-device.
 
 ## 10. Browser Print Preview
 

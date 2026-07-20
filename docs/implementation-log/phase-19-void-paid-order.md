@@ -8,8 +8,9 @@
 
 ## Branch/Commit
 
-- Branch code: `main` (cập nhật hash sau khi commit).
-- Migration: **`011_void_paid_order.sql`** (áp sau 010; cần áp lên cloud thủ công trước khi test supabase/demo live).
+- Code commits: `ee86eb3` (feature hủy đơn paid + permission seam) và `532bbb9` (refetch `lock_version` tươi trước khi hủy).
+- Docs commits: `fcae2be`, `623df59`.
+- Migration: **`011_void_paid_order.sql`** (áp sau 010), đã áp trên cloud demo ngày 2026-07-16 trước khi chạy E2E.
 
 ## Quyết định thiết kế
 
@@ -70,8 +71,16 @@ mà mock không lộ:
 - Bổ sung E2E `tests/supabase`: admin tạo store → thanh toán → hủy đơn (chọn lý do) → assert
   popup đóng, khối "Người hủy" hiện, badge chuyển "Đã hủy". Chạy lặp 3× đều pass.
 
+## Revalidation 2026-07-19
+
+- `npm test`: 45 files, 231/231 tests pass.
+- `npm run build`: pass; còn Vite chunk-size warning đã biết.
+- `npm run smoke`: 26 pass/14 skipped theo điều kiện viewport, không có failure.
+- Targeted `smoke:supabase` cho hủy đơn paid: 1/1 pass.
+- Full UI mock: thanh toán rồi hủy đơn 125.000đ với `Lý do khác`; nút xác nhận bị khóa khi thiếu ghi chú, sau hủy badge/audit đúng và in lại bị disable. Report cập nhật `Doanh thu=0`, `Số đơn paid=0`, `Đơn đã huỷ=1`, `Tiền hủy=125.000đ`; browser console không có warning/error.
+
 ## Lưu ý vận hành
 
-- **Phải áp `011_void_paid_order.sql`** lên Supabase (sau 010): thêm cột orders/employees, drop+tạo lại `verify_employee_pin` và `void_order`. Mock mode đủ tính năng, không cần migration.
+- Cloud demo hiện tại đã áp migration 011. Với môi trường Supabase mới/chưa cập nhật, phải áp 011 sau 010 để thêm cột orders/employees và drop+tạo lại `verify_employee_pin`/`void_order`; mock mode không cần migration.
 - Realtime không cần đổi: void bump `orders` (đã publish) → các máy khác invalidate open orders + report + order detail.
-- Chưa làm (phase phân quyền sau): UI chỉnh `permission_overrides` per-employee trong EmployeesDrawer; gắn `requirePermission` vào các flow còn lại (tạo đơn/thanh toán); RPC guardrail đọc overrides cho các RPC cũ.
+- Tại thời điểm kết thúc phase 19, UI chỉnh `permission_overrides`, guard các flow tạo đơn/thanh toán và RPC guardrail vẫn chưa làm. Các gap này đã được hoàn tất và verify cloud ở [phase 20](phase-20-employee-permissions.md).

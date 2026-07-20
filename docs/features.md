@@ -16,7 +16,20 @@
 - `cashier`: dùng floor, order, payment, order history.
 - `kitchen`: role được chừa sẵn cho kitchen queue; không phải feature bắt buộc của phase này.
 - UI disable/guard module không có quyền; core guard vẫn kiểm tra ở action quan trọng.
-- Có 2 trục quyền độc lập trong `core/guards.ts`: **module** (`canAccessModule` — thấy gì trên nav) và **hành động** (`hasPermission`/`requirePermission` — được làm gì, vd `order.voidPaid`). Quyền hành động mặc định suy từ role, có thể ghi đè per-employee qua `Employee.permissionOverrides` (grants/denies) — nên hai nhân viên cùng role vẫn có thể khác quyền. Seam đã có (data + hàm check + consumer đầu tiên là hủy đơn); UI chỉnh quyền per-employee làm ở phase phân quyền sau.
+- Có 2 trục quyền độc lập trong `core/guards.ts`: **module** (`canAccessModule` — thấy gì trên nav) và **hành động** (`hasPermission`/`requirePermission` — được làm gì). Quyền hành động mặc định suy từ role, có thể ghi đè per-employee qua `Employee.permissionOverrides` (grants/denies) — nên hai nhân viên cùng role vẫn có thể khác quyền.
+- 5 quyền runtime đang được enforce:
+
+  | Quyền | Admin | Cashier | Kitchen |
+  | --- | --- | --- | --- |
+  | `order.create` | Có | Có | Không |
+  | `order.update` | Có | Có | Không |
+  | `order.voidOpen` | Có | Có | Không |
+  | `payment.take` | Có | Có | Không |
+  | `order.voidPaid` | Có | Không | Không |
+
+- Employees Drawer cho admin tick/bỏ quyền hiệu lực từng người. Đổi role reset checkbox về default role; lưu quyền đúng default sẽ xóa override. Client nhận quyền mới sau khi khóa/đăng nhập lại, còn RPC đọc quyền live.
+- Flow tạo/sửa/hủy đơn mở, full/split payment và hủy đơn paid đều gọi `requirePermission`; Order/Payment Drawer disable nút sớm khi thiếu quyền; migration 012 guardrail lại ba RPC order/payment chính.
+- **Catalog production, chưa phải quyền runtime:** chuyển/gộp bàn; refund; `discount.apply`; `price.override`; `drawer.open`; mở/chốt ca và kiểm két (`shift.*`). Các mã này chỉ là hướng mở rộng, chưa nằm trong `EmployeePermission` và không xuất hiện trong editor vì chưa có tính năng đứng sau. Quản trị menu/sơ đồ/nhân viên/cài đặt/report hiện vẫn theo module + role, chưa chỉnh per-employee.
 
 ## POS Floor
 
@@ -46,7 +59,7 @@
 - Header hiển thị thu ngân đang đăng nhập, vị trí/order type và số lượng món; khách hàng hiện fallback là `Khách lẻ` vì `OrderDetail` chưa có customer field.
 - Khu phương thức thanh toán dùng danh sách có thể mở rộng; hiện chỉ bật `Tiền mặt`, các phương thức thẻ/chuyển khoản/QR hiển thị disabled để tránh hiểu nhầm là đã xử lý thật.
 - Khu nhập tiền đặt input `Tiền khách đưa` phía trên keypad custom, có quick cash buttons và hỗ trợ nhập số thủ công; input tự điền theo tổng phần đang chọn.
-- **Chọn món để thanh toán** (pane phải): checkbox `Chọn tất cả` **mặc định bật** (= trả nhanh cả bàn, một chạm như cũ). Bỏ chọn thì tick từng dòng (tick = chọn cả dòng) và chỉnh số lượng bằng chip `đã chọn/tổng` + nút `+` xoay vòng (chạm trần quay về 1). Chỉnh bất kỳ dòng nào dưới mức tối đa → `Chọn tất cả` tự tắt; chọn đủ 100% → tự bật lại.
+- **Chọn món để thanh toán** (pane phải): checkbox `Chọn tất cả` **mặc định bật** (= trả nhanh cả bàn, một chạm như cũ). Bỏ chọn rồi tick một dòng sẽ chọn **1 sản phẩm** của dòng đó; chỉnh số lượng bằng chip `đã chọn/tổng` + nút `+` xoay vòng (chạm trần quay về 1). Chỉnh bất kỳ dòng nào dưới mức tối đa → `Chọn tất cả` tự tắt; chọn đủ 100% → tự bật lại.
 - Summary: `Khách đưa`, `Tiền thối`/`Còn thiếu`, `Tổng đơn`, dòng nổi bật `Thanh toán lần này`, checkbox `In hóa đơn sau khi thanh toán` mặc định bật và nút hoàn tất.
 - Chặn hoàn tất khi tiền nhận chưa đủ **so với phần đang chọn**, hoặc khi chưa chọn món nào.
 - Flow tự rẽ nhánh (`payOrderItemsAndPrint`): chọn đủ 100% → RPC `pay_order` (đơn paid, bàn trống, đóng drawer); chọn một phần → RPC `pay_order_items` **tách đơn**: món được chọn thành đơn mới paid ngay (bill riêng, vào report/lịch sử ngay), đơn gốc còn lại trên bàn với phần chưa trả; drawer mở tiếp, toast `Đã tách và thanh toán đơn #N (X). Bàn còn Y.`, selection reset về `Chọn tất cả` phần còn lại.
@@ -74,7 +87,7 @@
 - Bộ lọc ngày là một nút `Filter date`, mở popup chọn `Hôm nay`, `7 ngày`, `Tháng này` hoặc khoảng ngày tùy chọn.
 - Danh sách đơn dùng phân trang để giữ payload ổn định; date/status/type/search được áp dụng ở repository trước khi cắt trang.
 - Layout chính là 2 cột: cột trái hiển thị thông tin nhanh của đơn, cột phải hiển thị chi tiết dạng receipt.
-- Cột phải hiển thị item snapshot/options/note/quantity, khách hàng fallback `Khách lẻ`, người thanh toán fallback `Khách lẻ`, thu ngân từ payment employee, phương thức thanh toán, paid time.
+- Cột phải hiển thị item snapshot/options/note/quantity, khách hàng fallback `Khách lẻ`, **nhân viên thanh toán** được map từ `payment.employeeId`, phương thức thanh toán và paid time. Không hiển thị thêm ô `Thu ngân` trùng dữ liệu.
 - Summary thanh toán cố định cuối cột phải theo thứ tự `Khách đưa`, `Tiền thừa`, `Tổng tiền`; `Tổng tiền` nổi bật hơn.
 - `OrderDetail` đọc payment snapshot để lịch sử hiển thị đúng `receivedAmount` và `changeAmount`, không tính tạm ở UI.
 - Nút `In lại hóa đơn` dựng lại bill từ order detail đã lưu và mở popup hoá đơn (dùng chung `ReceiptDocument`); đơn chưa có payment thì báo không in được. Đơn `void` không in lại được (nút bị disable).
@@ -87,7 +100,8 @@
 - Tạo nhân viên.
 - Sửa tên/role/trạng thái.
 - Reset PIN.
-- Bảo vệ rule còn ít nhất một admin hoạt động.
+- Chỉnh checkbox quyền thao tác theo từng nhân viên đã tồn tại; persist grants/denies tối thiểu so với role mặc định.
+- Bảo vệ rule còn ít nhất một admin hoạt động, kể cả khi hạ role admin cuối; cảnh báo khi admin sửa quyền chính mình.
 
 ## Menu Editor
 
