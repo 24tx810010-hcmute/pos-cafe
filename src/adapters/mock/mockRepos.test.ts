@@ -35,6 +35,24 @@ describe("mock repositories", () => {
     await expect(ports.employee.resetPin("missing", "0000")).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
+  it("sets, preserves, and clears employee permission overrides", async () => {
+    const ports = createMockPorts(createSeededMockState());
+
+    await expect(
+      ports.employee.updateEmployee({
+        id: "emp-cashier-1",
+        permissionOverrides: { grants: ["order.voidPaid"], denies: ["payment.take"] },
+      }),
+    ).resolves.toMatchObject({
+      permissionOverrides: { grants: ["order.voidPaid"], denies: ["payment.take"] },
+    });
+    await expect(ports.employee.updateEmployee({ id: "emp-cashier-1", name: "Thu ngân mới" })).resolves.toMatchObject({
+      permissionOverrides: { grants: ["order.voidPaid"], denies: ["payment.take"] },
+    });
+    const cleared = await ports.employee.updateEmployee({ id: "emp-cashier-1", permissionOverrides: null });
+    expect(cleared.permissionOverrides).toBeUndefined();
+  });
+
   it("submits open order changes with expected lock version and rejects stale version", async () => {
     const ports = createMockPorts(createSeededMockState());
     const order = await ports.order.getOrder("ord-b02");

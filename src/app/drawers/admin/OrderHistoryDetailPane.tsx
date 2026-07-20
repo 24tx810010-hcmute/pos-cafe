@@ -115,12 +115,13 @@ export function OrderHistoryDetailPane({
                 <strong className="block truncate text-[13px] text-pos-ink max-[760px]:text-xs">Khách lẻ</strong>
               </div>
               <div className="min-w-0 rounded-[8px] border border-pos-line bg-pos-surface2 px-2 py-1.5">
-                <span className="block truncate font-bold text-pos-muted">Người thanh toán</span>
-                <strong className="block truncate text-[13px] text-pos-ink max-[760px]:text-xs">Khách lẻ</strong>
-              </div>
-              <div className="min-w-0 rounded-[8px] border border-pos-line bg-pos-surface2 px-2 py-1.5">
-                <span className="block truncate font-bold text-pos-muted">Thu ngân</span>
-                <strong className="block truncate text-[13px] text-pos-ink max-[760px]:text-xs">{cashierLabel}</strong>
+                <span className="block truncate font-bold text-pos-muted">Nhân viên thanh toán</span>
+                <strong
+                  data-testid="history-payment-employee"
+                  className="block truncate text-[13px] text-pos-ink max-[760px]:text-xs"
+                >
+                  {cashierLabel}
+                </strong>
               </div>
               <div className="min-w-0 rounded-[8px] border border-pos-line bg-pos-surface2 px-2 py-1.5">
                 <span className="block truncate font-bold text-pos-muted">Phương thức</span>

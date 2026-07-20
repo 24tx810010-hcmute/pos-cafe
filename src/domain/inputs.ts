@@ -1,4 +1,5 @@
 import type {
+  EmployeePermissionOverrides,
   OrderType,
   PaymentMethod,
   SeedStatus,
@@ -32,6 +33,8 @@ export type EmployeeInput = {
 export type EmployeeUpdate = Partial<Omit<EmployeeInput, "id" | "pin">> & {
   id: string;
   isActive?: boolean;
+  /** undefined = không đụng; null = xóa override để quay về default theo role. */
+  permissionOverrides?: EmployeePermissionOverrides | null;
 };
 
 export type SubmitOrderChangesInput = {

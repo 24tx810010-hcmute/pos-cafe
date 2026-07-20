@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createMockPorts, createSeededMockState } from "@/adapters/mock";
 import { mockMenuCatalog } from "@/adapters/mock/mockData";
-import type { OrderDetail, SubmitOrderDraftItem } from "@/domain";
+import type { Employee, OrderDetail, SubmitOrderDraftItem } from "@/domain";
 import {
   addDraftMenuItem,
   adjustDraftQuantity,
@@ -20,6 +20,8 @@ import {
   selectionAmount,
   submitOrderAndPrint,
 } from "./orderFlow";
+
+const adminActor: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true };
 
 const getMockOrder = async (): Promise<OrderDetail> => {
   const ports = createMockPorts(createSeededMockState());
@@ -133,7 +135,7 @@ describe("orderFlow", () => {
 
     const result = await submitOrderAndPrint(ports, {
       context: { orderId: null, tableId: "tbl-b01", orderType: "dine_in" },
-      employeeId: "emp-admin",
+      actor: adminActor,
       expectedVersion: null,
       items: [{ id: "draft-1", menuItemId: "mi-latte", quantity: 1, note: null, options: [] }],
     });
@@ -151,7 +153,7 @@ describe("orderFlow", () => {
     await expect(
       payOrderAndPrint(ports, {
         order,
-        employeeId: "emp-admin",
+        actor: adminActor,
         receivedAmount: order.total - 1,
         paymentId: "pay-low",
       }),
@@ -166,7 +168,7 @@ describe("orderFlow", () => {
 
     const result = await payOrderAndPrint(ports, {
       order,
-      employeeId: "emp-admin",
+      actor: adminActor,
       receivedAmount: order.total + 5000,
       paymentId: "pay-ok",
     });
@@ -183,7 +185,7 @@ describe("orderFlow", () => {
 
     const result = await payOrderAndPrint(ports, {
       order,
-      employeeId: "emp-admin",
+      actor: adminActor,
       receivedAmount: order.total,
       paymentId: "pay-no-print",
       printReceipt: false,
@@ -191,6 +193,121 @@ describe("orderFlow", () => {
 
     expect(result.status).toBe("paid");
     expect(printSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("orderFlow action permissions", () => {
+  it("requires the permission for the exact new, update, and void-open branch", async () => {
+    const ports = createMockPorts(createSeededMockState());
+    const submitSpy = vi.spyOn(ports.order, "submitOrderChanges");
+    const existing = await ports.order.getOrder("ord-b02");
+    const cashierDeniedCreate: Employee = {
+      id: "emp-cashier-create-denied",
+      name: "Thu ngân",
+      role: "cashier",
+      isActive: true,
+      permissionOverrides: { grants: [], denies: ["order.create"] },
+    };
+
+    await expect(
+      submitOrderAndPrint(ports, {
+        context: { orderId: null, tableId: "tbl-b01", orderType: "dine_in" },
+        actor: cashierDeniedCreate,
+        expectedVersion: null,
+        items: [{ id: "draft-new", menuItemId: "mi-latte", quantity: 1, note: null, options: [] }],
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    const cashierDeniedUpdate: Employee = {
+      ...cashierDeniedCreate,
+      id: "emp-cashier-update-denied",
+      permissionOverrides: { grants: [], denies: ["order.update"] },
+    };
+    await expect(
+      submitOrderAndPrint(ports, {
+        context: {
+          orderId: existing.id,
+          tableId: existing.tableId,
+          orderType: existing.orderType,
+        },
+        actor: cashierDeniedUpdate,
+        expectedVersion: existing.lockVersion,
+        items: orderDetailToDraft(existing),
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    const cashierDeniedVoidOpen: Employee = {
+      ...cashierDeniedCreate,
+      id: "emp-cashier-void-denied",
+      permissionOverrides: { grants: [], denies: ["order.voidOpen"] },
+    };
+    await expect(
+      submitOrderAndPrint(ports, {
+        context: {
+          orderId: existing.id,
+          tableId: existing.tableId,
+          orderType: existing.orderType,
+        },
+        actor: cashierDeniedVoidOpen,
+        expectedVersion: existing.lockVersion,
+        items: [],
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    expect(submitSpy).not.toHaveBeenCalled();
+  });
+
+  it("allows a kitchen employee granted order.create without granting other order rights", async () => {
+    const ports = createMockPorts(createSeededMockState());
+    const kitchenWithCreate: Employee = {
+      id: "emp-kitchen-create",
+      name: "Bếp tạo đơn",
+      role: "kitchen",
+      isActive: true,
+      permissionOverrides: { grants: ["order.create"], denies: [] },
+    };
+
+    await expect(
+      submitOrderAndPrint(ports, {
+        context: { orderId: null, tableId: "tbl-b01", orderType: "dine_in" },
+        actor: kitchenWithCreate,
+        expectedVersion: null,
+        items: [{ id: "draft-new", menuItemId: "mi-latte", quantity: 1, note: null, options: [] }],
+      }),
+    ).resolves.toMatchObject({ status: "open" });
+  });
+
+  it("blocks both full and split payments before either payment port is called", async () => {
+    const ports = createMockPorts(createSeededMockState());
+    const order = await ports.order.getOrder("ord-b02");
+    const paySpy = vi.spyOn(ports.payment, "payOrder");
+    const payItemsSpy = vi.spyOn(ports.payment, "payOrderItems");
+    const cashierDeniedPayment: Employee = {
+      id: "emp-cashier-payment-denied",
+      name: "Thu ngân",
+      role: "cashier",
+      isActive: true,
+      permissionOverrides: { grants: [], denies: ["payment.take"] },
+    };
+
+    await expect(
+      payOrderAndPrint(ports, {
+        order,
+        actor: cashierDeniedPayment,
+        receivedAmount: order.total,
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      payOrderItemsAndPrint(ports, {
+        order,
+        actor: cashierDeniedPayment,
+        receivedAmount: 29000,
+        selection: { "oi-b02-1": 1 },
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    expect(paySpy).not.toHaveBeenCalled();
+    expect(payItemsSpy).not.toHaveBeenCalled();
   });
 });
 
@@ -233,7 +350,7 @@ describe("instant pay selection", () => {
 
     const result = await payOrderItemsAndPrint(ports, {
       order,
-      employeeId: "emp-admin",
+      actor: adminActor,
       receivedAmount: 61000,
       selection: { "oi-b02-1": 1, "oi-b02-2": 1 },
       paymentId: "pay-part",
@@ -262,7 +379,7 @@ describe("instant pay selection", () => {
 
     const result = await payOrderItemsAndPrint(ports, {
       order,
-      employeeId: "emp-admin",
+      actor: adminActor,
       receivedAmount: 125000,
       selection: fullSelection(buildPayableLines(order)),
       paymentId: "pay-full",
@@ -278,12 +395,12 @@ describe("instant pay selection", () => {
     const payItemsSpy = vi.spyOn(ports.payment, "payOrderItems");
 
     await expect(
-      payOrderItemsAndPrint(ports, { order, employeeId: "emp-admin", receivedAmount: 99000, selection: {} }),
+      payOrderItemsAndPrint(ports, { order, actor: adminActor, receivedAmount: 99000, selection: {} }),
     ).rejects.toMatchObject({ code: "INVALID_ORDER_ITEMS" });
     await expect(
       payOrderItemsAndPrint(ports, {
         order,
-        employeeId: "emp-admin",
+        actor: adminActor,
         receivedAmount: 28000,
         selection: { "oi-b02-1": 1 },
       }),
@@ -296,7 +413,7 @@ describe("instant pay selection", () => {
     const before = await ports.order.getOrder("ord-b02");
     await payOrderItemsAndPrint(ports, {
       order: before,
-      employeeId: "emp-admin",
+      actor: adminActor,
       receivedAmount: 61000,
       selection: { "oi-b02-1": 1, "oi-b02-2": 1 },
       printReceipt: false,

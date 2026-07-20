@@ -42,16 +42,30 @@ const asNullableString = (value: unknown): string | null => (value == null ? nul
 const asNumber = (value: unknown): number => Number(value ?? 0);
 const asBoolean = (value: unknown): boolean => Boolean(value);
 
+const employeePermissionCatalog = new Set<EmployeePermission>([
+  "order.create",
+  "order.update",
+  "order.voidOpen",
+  "payment.take",
+  "order.voidPaid",
+]);
+
+const mapPermissionList = (value: unknown): EmployeePermission[] =>
+  Array.isArray(value)
+    ? value
+        .map(String)
+        .filter((permission): permission is EmployeePermission =>
+          employeePermissionCatalog.has(permission as EmployeePermission),
+        )
+    : [];
+
 const mapPermissionOverrides = (value: unknown): EmployeePermissionOverrides | undefined => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
   const row = value as Row;
-  const grants = Array.isArray(row.grants) ? row.grants.map(String) : [];
-  const denies = Array.isArray(row.denies) ? row.denies.map(String) : [];
+  const grants = mapPermissionList(row.grants);
+  const denies = mapPermissionList(row.denies);
   if (grants.length === 0 && denies.length === 0) return undefined;
-  return {
-    grants: grants as EmployeePermission[],
-    denies: denies as EmployeePermission[],
-  };
+  return { grants, denies };
 };
 
 export const mapEmployee = (row: Row): Employee => {

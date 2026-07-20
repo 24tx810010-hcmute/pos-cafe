@@ -38,7 +38,11 @@ export class MockEmployeeRepo implements IEmployeeRepo {
       throw new AppError("NOT_FOUND", "Không tìm thấy nhân viên.");
     }
 
-    Object.assign(employee, input);
+    const { permissionOverrides, ...updates } = input;
+    Object.assign(employee, updates);
+    if (permissionOverrides !== undefined) {
+      employee.permissionOverrides = permissionOverrides ?? undefined;
+    }
     return clone(employee);
   }
 

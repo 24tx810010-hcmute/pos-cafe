@@ -127,6 +127,9 @@ describe("Report and history drawers", () => {
 
     await user.click(await screen.findByTestId("history-row-ord-paid-1"));
 
+    expect(await screen.findByTestId("history-payment-employee")).toHaveTextContent("Thu ngân 1");
+    expect(screen.getByText("Nhân viên thanh toán")).toBeInTheDocument();
+    expect(screen.queryByText("Người thanh toán")).not.toBeInTheDocument();
     const paymentSummary = await screen.findByTestId("history-payment-summary");
     const labels = within(paymentSummary).getAllByTestId("history-payment-label").map((label) => label.textContent);
 

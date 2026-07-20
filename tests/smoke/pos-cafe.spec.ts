@@ -279,6 +279,39 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   expect(page.url()).toBe(initialUrl);
 });
 
+test("employee permission editor gates payment after re-login", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "desktop-only permission workflow");
+  await page.goto("/");
+  await loginAsAdmin(page);
+
+  await page.getByTestId("nav-employees").click();
+  await expect(page.getByTestId("employees-drawer")).toBeVisible();
+  await page.getByTestId("employee-row-emp-cashier-1").click();
+
+  const paymentPermission = page.getByTestId("employee-permission-payment.take");
+  await expect(paymentPermission).toBeChecked();
+  await paymentPermission.uncheck();
+  await page.getByTestId("save-employee-button").click();
+  await expect(page.getByText("Đã lưu nhân viên", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("save-employee-button")).toBeEnabled();
+
+  await closeCleanDrawer(page, "employees-drawer");
+  await page.getByTestId("nav-lock").click();
+  await expect(page.getByTestId("passcode-screen")).toBeVisible();
+  await page.getByTestId("employee-emp-cashier-1").click();
+  for (const digit of ["1", "1", "1", "1", "1", "1"]) {
+    await page.getByTestId(`pin-${digit}`).click();
+  }
+  await page.getByTestId("unlock-button").click();
+  await expect(page.getByTestId("floor-view")).toBeVisible();
+
+  await page.getByTestId("table-tbl-b02").click();
+  await expect(page.getByTestId("order-drawer")).toBeVisible();
+  const paymentAction = page.getByTestId("submit-order-button-footer");
+  await expect(paymentAction).toBeDisabled();
+  await expect(paymentAction).toHaveAttribute("title", "Không có quyền thanh toán");
+});
+
 test("payment drawer exposes complete action for occupied table", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "portrait", "landscape-only flow");
   await page.goto("/");

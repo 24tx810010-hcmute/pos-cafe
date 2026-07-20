@@ -115,6 +115,67 @@ test("Supabase UI E2E creates a store, pays an order, and shows history/report",
   test.info().annotations.push({ type: "store-key", description: storeKey });
 });
 
+test("Supabase enforces per-employee payment permission in UI and RPC", async ({ page }) => {
+  const storeKey = await createStoreThroughUi(page);
+  await unlockAsAdmin(page);
+
+  await page.getByTestId("nav-employees").click();
+  const employeesDrawer = page.getByTestId("employees-drawer");
+  await expect(employeesDrawer).toBeVisible();
+  const cashierRow = employeesDrawer.locator('[data-testid^="employee-row-"]').filter({ hasText: "Thu ngân" }).first();
+  await cashierRow.click();
+  const rowTestId = await cashierRow.getAttribute("data-testid");
+  const cashierId = rowTestId?.replace("employee-row-", "");
+  expect(cashierId).toBeTruthy();
+
+  const paymentPermission = page.getByTestId("employee-permission-payment.take");
+  await expect(paymentPermission).toBeChecked();
+  await paymentPermission.uncheck();
+  await page.getByTestId("save-employee-button").click();
+  await expect(page.getByText("Đã lưu nhân viên", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("save-employee-button")).toBeEnabled();
+
+  await employeesDrawer.locator("header").getByRole("button", { name: "Đóng" }).click();
+  await page.getByTestId("nav-lock").click();
+  await expect(page.getByTestId("passcode-screen")).toBeVisible();
+  await page.getByTestId(`employee-${cashierId}`).click();
+  for (const digit of "111111") await page.getByTestId(`pin-${digit}`).click();
+  await page.getByTestId("unlock-button").click();
+  await expect(page.getByTestId("floor-view")).toBeVisible();
+
+  // order.create vẫn là default cashier: tạo đơn thành công chứng minh deny chỉ tác động payment.take.
+  await createOpenOrderOnFirstTable(page);
+  await openOrderTables(page).first().click();
+  const paymentAction = page.getByTestId("submit-order-button-footer");
+  await expect(paymentAction).toBeDisabled();
+  await expect(paymentAction).toHaveAttribute("title", "Không có quyền thanh toán");
+
+  // Bỏ qua disabled UI và gọi port/RPC trực tiếp: migration 012 phải đọc override live và trả FORBIDDEN.
+  const rpcDenial = await page.evaluate(async (employeeId) => {
+    const { createAppPortsFromViteEnv } = await import("/src/app/runtimePorts.ts");
+    const ports = createAppPortsFromViteEnv();
+    const openOrder = (await ports.order.listOpenOrders())[0];
+    const detail = await ports.order.getOrder(openOrder.id);
+    try {
+      await ports.payment.payOrder({
+        paymentId: crypto.randomUUID(),
+        orderId: detail.id,
+        employeeId,
+        method: "cash",
+        expectedVersion: detail.lockVersion,
+        receivedAmount: detail.total,
+      });
+      return { code: null, message: null };
+    } catch (error) {
+      const appError = error as { code?: string; message?: string };
+      return { code: appError.code ?? null, message: appError.message ?? null };
+    }
+  }, cashierId!);
+
+  expect(rpcDenial.code).toBe("FORBIDDEN");
+  test.info().annotations.push({ type: "store-key", description: storeKey });
+});
+
 test("Supabase admin voids a paid order and it leaves the paid revenue", async ({ page }) => {
   const storeKey = await createStoreThroughUi(page);
   await unlockAsAdmin(page);
@@ -157,8 +218,6 @@ test("Supabase instant pay splits selected items into an independent paid order"
   // Bỏ "Chọn tất cả", chọn 1/2 món đầu -> tách đơn thanh toán riêng.
   await page.getByTestId("pay-select-all").uncheck();
   await page.getByTestId("pay-item-checkbox").first().check();
-  await expect(page.getByTestId("pay-item-quantity").first()).toHaveText("2/2");
-  await page.getByTestId("pay-item-plus").first().click();
   await expect(page.getByTestId("pay-item-quantity").first()).toHaveText("1/2");
   await expect(page.getByTestId("pay-button-footer")).toBeEnabled();
   await page.getByTestId("pay-button-footer").click();

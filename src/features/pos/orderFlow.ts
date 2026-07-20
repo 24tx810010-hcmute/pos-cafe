@@ -2,6 +2,7 @@ import { AppError } from "@/core/appError";
 import { requirePermission } from "@/core/guards";
 import type {
   Employee,
+  EmployeePermission,
   MenuCatalog,
   MenuItem,
   OptionGroup,
@@ -39,17 +40,25 @@ export type OrderPrimaryAction = "submit" | "payment" | "closed";
 
 export type SubmitOrderFlowInput = {
   context: OrderFlowContext;
-  employeeId: string;
+  actor: Employee;
   expectedVersion: number | null;
   items: SubmitOrderDraftItem[];
 };
 
 export type PayOrderFlowInput = {
   order: OrderDetail;
-  employeeId: string;
+  actor: Employee;
   receivedAmount: number;
   paymentId?: string;
   printReceipt?: boolean;
+};
+
+export const getSubmitOrderPermission = (
+  context: Pick<OrderFlowContext, "orderId">,
+  items: SubmitOrderDraftItem[],
+): EmployeePermission => {
+  if (context.orderId == null) return "order.create";
+  return items.some((item) => item.quantity > 0) ? "order.update" : "order.voidOpen";
 };
 
 const createClientId = (): string => crypto.randomUUID();
@@ -267,11 +276,13 @@ export const submitOrderAndPrint = async (
   ports: AppPorts,
   input: SubmitOrderFlowInput,
 ): Promise<SubmitOrderChangesResult> => {
+  requirePermission(input.actor, getSubmitOrderPermission(input.context, input.items));
+
   const result = await ports.order.submitOrderChanges({
     orderId: input.context.orderId,
     tableId: input.context.tableId,
     orderType: input.context.orderType,
-    employeeId: input.employeeId,
+    employeeId: input.actor.id,
     expectedVersion: input.expectedVersion,
     items: input.items,
   });
@@ -287,6 +298,8 @@ export const payOrderAndPrint = async (
   ports: AppPorts,
   input: PayOrderFlowInput,
 ): Promise<PayOrderResult> => {
+  requirePermission(input.actor, "payment.take");
+
   if (input.receivedAmount < input.order.total) {
     throw new AppError("PAYMENT_AMOUNT_TOO_LOW", "Tiền khách đưa nhỏ hơn tổng tiền.");
   }
@@ -294,7 +307,7 @@ export const payOrderAndPrint = async (
   const result = await ports.payment.payOrder({
     paymentId: input.paymentId ?? createClientId(),
     orderId: input.order.id,
-    employeeId: input.employeeId,
+    employeeId: input.actor.id,
     method: "cash",
     expectedVersion: input.order.lockVersion,
     receivedAmount: input.receivedAmount,
@@ -357,7 +370,7 @@ export const isFullSelection = (lines: PayableLine[], selection: PaymentSelectio
 
 export type PayOrderItemsFlowInput = {
   order: OrderDetail;
-  employeeId: string;
+  actor: Employee;
   receivedAmount: number;
   selection: PaymentSelection;
   paymentId?: string;
@@ -377,6 +390,8 @@ export const payOrderItemsAndPrint = async (
   ports: AppPorts,
   input: PayOrderItemsFlowInput,
 ): Promise<PayOrderItemsFlowResult> => {
+  requirePermission(input.actor, "payment.take");
+
   const lines = buildPayableLines(input.order);
   const selection = clampSelection(lines, input.selection);
   const amount = selectionAmount(lines, selection);
@@ -388,7 +403,7 @@ export const payOrderItemsAndPrint = async (
   if (isFullSelection(lines, selection)) {
     const result = await payOrderAndPrint(ports, {
       order: input.order,
-      employeeId: input.employeeId,
+      actor: input.actor,
       receivedAmount: input.receivedAmount,
       paymentId: input.paymentId,
       printReceipt: input.printReceipt,
@@ -410,7 +425,7 @@ export const payOrderItemsAndPrint = async (
     paymentId: input.paymentId ?? createClientId(),
     orderId: input.order.id,
     newOrderId: createClientId(),
-    employeeId: input.employeeId,
+    employeeId: input.actor.id,
     method: "cash",
     expectedVersion: input.order.lockVersion,
     receivedAmount: input.receivedAmount,

@@ -17,6 +17,7 @@ export type VoidReasonCode =
 export type EmployeePermission =
   | "order.create"
   | "order.update"
+  | "order.voidOpen"
   | "payment.take"
   | "order.voidPaid";
 

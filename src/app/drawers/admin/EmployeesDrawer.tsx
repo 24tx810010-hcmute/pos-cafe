@@ -13,9 +13,11 @@ import {
 } from "@/features/admin";
 import {
   EMPTY_EMPLOYEE_FORM,
+  effectivePermissions,
   getEmployeeFormErrors,
   isEmployeeFormDirty,
   isLastActiveAdmin,
+  permissionsToOverrides,
   type EmployeeDrawerForm,
   type EmployeeFormErrors,
 } from "@/features/admin/employeeDrawerFlow";
@@ -89,7 +91,16 @@ function EmployeesDrawer() {
       setTimeout(() => nameInputRef.current?.focus(), 0);
     } else if (target) {
       const rec = employees.find((e) => e.id === target);
-      if (rec) setForm({ name: rec.name, role: rec.role, isActive: rec.isActive, newPin: "", confirmPin: "" });
+      if (rec) {
+        setForm({
+          name: rec.name,
+          role: rec.role,
+          isActive: rec.isActive,
+          permissions: effectivePermissions(rec),
+          newPin: "",
+          confirmPin: "",
+        });
+      }
     } else {
       setForm(EMPTY_EMPLOYEE_FORM);
     }
@@ -177,7 +188,11 @@ function EmployeesDrawer() {
       toast.error("Không thể tạm khoá tài khoản đang đăng nhập.");
       return;
     }
-    if (selectedRecord && !form.isActive && isFinalActiveAdmin(selectedRecord)) {
+    if (
+      selectedRecord &&
+      isFinalActiveAdmin(selectedRecord) &&
+      (!form.isActive || form.role !== "admin")
+    ) {
       toast.error("Cần giữ ít nhất một quản lý đang hoạt động.");
       return;
     }
@@ -201,6 +216,7 @@ function EmployeesDrawer() {
           name: finalEmployee.name,
           role: finalEmployee.role,
           isActive: finalEmployee.isActive,
+          permissions: effectivePermissions(finalEmployee),
           newPin: "",
           confirmPin: "",
         });
@@ -213,6 +229,7 @@ function EmployeesDrawer() {
             name: form.name.trim(),
             role: form.role,
             isActive: form.isActive,
+            permissionOverrides: permissionsToOverrides(form.role, form.permissions),
           },
         });
         if (shouldResetPin) {
@@ -222,6 +239,7 @@ function EmployeesDrawer() {
           name: updated.name,
           role: updated.role,
           isActive: updated.isActive,
+          permissions: effectivePermissions(updated),
           newPin: "",
           confirmPin: "",
         });

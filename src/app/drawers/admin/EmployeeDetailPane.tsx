@@ -3,14 +3,11 @@ import { Button, TextField } from "@mui/material";
 import { Save } from "lucide-react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { Employee, EmployeeRole } from "@/domain";
-
-interface EmpForm {
-  name: string;
-  role: EmployeeRole;
-  isActive: boolean;
-  newPin: string;
-  confirmPin: string;
-}
+import {
+  PERMISSION_OPTIONS,
+  defaultPermissionsForRole,
+  type EmployeeDrawerForm,
+} from "@/features/admin/employeeDrawerFlow";
 
 type EmployeeRecord = Employee & {
   lastUnlock: string | null;
@@ -20,8 +17,8 @@ interface EmployeeDetailPaneProps {
   selectedId: string | "new" | null;
   selectedRecord: EmployeeRecord | null;
   currentEmployeeId: string | undefined;
-  form: EmpForm;
-  setForm: Dispatch<SetStateAction<EmpForm>>;
+  form: EmployeeDrawerForm;
+  setForm: Dispatch<SetStateAction<EmployeeDrawerForm>>;
   errors: { name?: string; pin?: string };
   setErrors: Dispatch<SetStateAction<{ name?: string; pin?: string }>>;
   roleOptions: Array<{ role: EmployeeRole; label: string }>;
@@ -82,7 +79,14 @@ export function EmployeeDetailPane({
                         ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
                         : "border-pos-line bg-pos-surface text-pos-ink",
                     )}
-                    onClick={() => setForm((f) => ({ ...f, role }))}
+                    data-testid={`employee-role-${role}`}
+                    onClick={() =>
+                      setForm((f) => ({
+                        ...f,
+                        role,
+                        permissions: defaultPermissionsForRole(role),
+                      }))
+                    }
                   >
                     {label}
                   </button>
@@ -135,6 +139,49 @@ export function EmployeeDetailPane({
                 </div>
               );
             })()}
+
+            {selectedRecord && (
+              <fieldset className="grid gap-2.5 border-t border-dashed border-pos-line pt-3">
+                <legend className="mb-1 text-xs font-extrabold text-pos-muted">Quyền thao tác</legend>
+                <p className="m-0 text-[11.5px] text-pos-muted">
+                  Mặc định theo vai trò; tick/bỏ để cấp/thu hồi riêng cho nhân viên này.
+                </p>
+                {PERMISSION_OPTIONS.map(({ code, label, description }) => (
+                  <label
+                    key={code}
+                    className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 rounded-[7px] border border-pos-line px-2.5 py-2"
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 accent-pos-primary"
+                      data-testid={`employee-permission-${code}`}
+                      checked={form.permissions.includes(code)}
+                      disabled={isSaving}
+                      onChange={(event) => {
+                        const next = new Set(form.permissions);
+                        if (event.target.checked) next.add(code);
+                        else next.delete(code);
+                        setForm((current) => ({
+                          ...current,
+                          permissions: PERMISSION_OPTIONS.filter((option) => next.has(option.code)).map(
+                            (option) => option.code,
+                          ),
+                        }));
+                      }}
+                    />
+                    <span className="grid gap-0.5">
+                      <span className="text-[13px] font-bold text-pos-ink">{label}</span>
+                      <span className="text-[11.5px] text-pos-muted">{description}</span>
+                    </span>
+                  </label>
+                ))}
+                {currentEmployeeId === selectedRecord.id && (
+                  <p className="m-0 rounded-[7px] bg-amber-50 px-2.5 py-2 text-[11.5px] text-amber-800" data-testid="employee-self-permission-warning">
+                    Bạn đang sửa quyền của chính mình. Quyền trên thiết bị này được cập nhật sau khi đăng nhập lại.
+                  </p>
+                )}
+              </fieldset>
+            )}
 
             <div className="grid gap-2.5 border-t border-dashed border-pos-line pt-3">
               <div className="text-xs font-extrabold text-pos-muted">{selectedId === "new" ? "Đặt PIN" : "Đặt lại PIN"}</div>

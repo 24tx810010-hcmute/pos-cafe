@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMockPorts, createSeededMockState } from "@/adapters/mock";
 import type { Employee } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
@@ -119,5 +119,65 @@ describe("EmployeesDrawer", () => {
     await expect(ports.employee.verifyPin("emp-cashier-1", "111111")).rejects.toMatchObject({
       code: "INVALID_PIN",
     });
+  });
+
+  it("edits effective permissions and clears redundant overrides", async () => {
+    const user = userEvent.setup();
+    const { state } = renderEmployeesDrawer();
+
+    await user.click(await screen.findByTestId("employee-row-emp-cashier-1"));
+    const paymentPermission = screen.getByTestId("employee-permission-payment.take");
+    expect(paymentPermission).toBeChecked();
+    expect(screen.getByTestId("employee-permission-order.voidPaid")).not.toBeChecked();
+
+    await user.click(paymentPermission);
+    await user.click(screen.getByTestId("save-employee-button"));
+    await waitFor(() => {
+      expect(state.employees.find((employee) => employee.id === "emp-cashier-1")?.permissionOverrides).toEqual({
+        grants: [],
+        denies: ["payment.take"],
+      });
+    });
+
+    await waitFor(() => expect(screen.getByTestId("save-employee-button")).toBeEnabled());
+    await user.click(screen.getByTestId("employee-permission-payment.take"));
+    await user.click(screen.getByTestId("save-employee-button"));
+    await waitFor(() => {
+      expect(state.employees.find((employee) => employee.id === "emp-cashier-1")?.permissionOverrides).toBeUndefined();
+    });
+  });
+
+  it("resets permission checkboxes to the selected role defaults", async () => {
+    const user = userEvent.setup();
+    renderEmployeesDrawer();
+
+    await user.click(await screen.findByTestId("employee-row-emp-cashier-1"));
+    await user.click(screen.getByTestId("employee-permission-payment.take"));
+    expect(screen.getByTestId("employee-permission-order.create")).toBeChecked();
+
+    await user.click(screen.getByTestId("employee-role-kitchen"));
+    for (const code of ["order.create", "order.update", "order.voidOpen", "payment.take", "order.voidPaid"]) {
+      expect(screen.getByTestId(`employee-permission-${code}`)).not.toBeChecked();
+    }
+
+    await user.click(screen.getByTestId("employee-role-admin"));
+    for (const code of ["order.create", "order.update", "order.voidOpen", "payment.take", "order.voidPaid"]) {
+      expect(screen.getByTestId(`employee-permission-${code}`)).toBeChecked();
+    }
+  });
+
+  it("warns on self-edit and blocks demoting the final active admin", async () => {
+    const user = userEvent.setup();
+    const { ports, state } = renderEmployeesDrawer();
+    const updateSpy = vi.spyOn(ports.employee, "updateEmployee");
+
+    await user.click(await screen.findByTestId("employee-row-emp-admin"));
+    expect(screen.getByTestId("employee-self-permission-warning")).toBeInTheDocument();
+
+    await user.click(screen.getByTestId("employee-role-cashier"));
+    await user.click(screen.getByTestId("save-employee-button"));
+
+    await waitFor(() => expect(state.employees.find((employee) => employee.id === "emp-admin")?.role).toBe("admin"));
+    expect(updateSpy).not.toHaveBeenCalled();
   });
 });

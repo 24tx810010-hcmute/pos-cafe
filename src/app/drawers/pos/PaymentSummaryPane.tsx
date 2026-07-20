@@ -25,6 +25,7 @@ interface PaymentSummaryPaneProps {
   printReceipt: boolean;
   paymentDisabled: boolean;
   paymentButtonLabel: string;
+  paymentButtonTitle?: string;
   isError: boolean;
   onToggleSelectAll: (checked: boolean) => void;
   onToggleLine: (orderItemId: string) => void;
@@ -49,6 +50,7 @@ export function PaymentSummaryPane({
   printReceipt,
   paymentDisabled,
   paymentButtonLabel,
+  paymentButtonTitle,
   isError,
   onToggleSelectAll,
   onToggleLine,
@@ -241,6 +243,7 @@ export function PaymentSummaryPane({
           size="large"
           data-testid="pay-button-footer"
           disabled={paymentDisabled}
+          title={paymentButtonTitle}
           onClick={onPay}
           className={clsx(
             "!mt-3 !min-h-[46px] !rounded-pos !font-extrabold max-[900px]:!mt-2 max-[900px]:!min-h-[38px]",

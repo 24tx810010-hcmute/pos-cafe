@@ -15,7 +15,7 @@ const admin: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", is
 const vnd = (amount: number) => formatVnd(amount).replace(/ /g, " ");
 
 // Mở thẳng drawer thanh toán của ord-b02: Cà phê sữa ×2 (29k) + Bạc xỉu (32k) + Croissant (35k) = 125k.
-const renderPaymentDrawer = () => {
+const renderPaymentDrawer = (employee: Employee = admin) => {
   const state = createSeededMockState();
   state.session = { storeId: "store-demo-001", storeNo: 1 };
   const ports = createMockPorts(state);
@@ -28,7 +28,7 @@ const renderPaymentDrawer = () => {
 
   useAppStore.setState({
     screen: "passcode",
-    currentEmployee: admin,
+    currentEmployee: employee,
     activeAreaId: null,
     activeCategoryId: null,
     drawer: "payment",
@@ -98,8 +98,11 @@ describe("Instant pay selection UI", () => {
     expect(screen.getByTestId("pay-button")).toBeDisabled();
     expect(screen.getByTestId("payment-amount-due-value")).toHaveTextContent(vnd(0));
 
-    // Tick dòng Cà phê sữa -> chọn cả dòng (2/2); nút "+" xoay vòng về 1.
+    // Tick dòng Cà phê sữa -> mặc định chọn 1; nút "+" tăng dần và xoay vòng khi chạm trần.
     await user.click(screen.getAllByTestId("pay-item-checkbox")[0]);
+    expect(screen.getAllByTestId("pay-item-quantity")[0]).toHaveTextContent("1/2");
+    expect(screen.getByTestId("payment-amount-due-value")).toHaveTextContent(vnd(29000));
+    await user.click(screen.getAllByTestId("pay-item-plus")[0]);
     expect(screen.getAllByTestId("pay-item-quantity")[0]).toHaveTextContent("2/2");
     await user.click(screen.getAllByTestId("pay-item-plus")[0]);
     expect(screen.getAllByTestId("pay-item-quantity")[0]).toHaveTextContent("1/2");
@@ -127,5 +130,22 @@ describe("Instant pay selection UI", () => {
       items: [expect.objectContaining({ orderItemId: "oi-b02-1", quantity: 1 })],
     });
     expect(payItemsSpy.mock.calls[0][0].newOrderId).toBeTruthy();
+  });
+
+  it("soft-gates both payment actions when the employee lacks payment.take", async () => {
+    renderPaymentDrawer({
+      id: "emp-cashier-1",
+      name: "Thu ngân",
+      role: "cashier",
+      isActive: true,
+      permissionOverrides: { grants: [], denies: ["payment.take"] },
+    });
+
+    await screen.findByText("Thanh toán · Đơn #24");
+    for (const testId of ["pay-button", "pay-button-footer"]) {
+      const button = screen.getByTestId(testId);
+      await waitFor(() => expect(button).toBeDisabled());
+      expect(button).toHaveAttribute("title", "Không có quyền thanh toán");
+    }
   });
 });

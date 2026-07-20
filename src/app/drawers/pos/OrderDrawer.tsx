@@ -3,6 +3,8 @@ import clsx from "clsx";
 import { Button } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { hasPermission } from "@/core/guards";
+import type { EmployeePermission } from "@/domain";
 import {
   adjustDraftQuantity,
   buildCartLines,
@@ -10,6 +12,7 @@ import {
   diffAddedPrintLines,
   getItemModifierGroups,
   getOrderPrimaryAction,
+  getSubmitOrderPermission,
   isDraftChangedFromOrder,
   orderDetailToDraft,
   useOrderModifierPicker,
@@ -74,6 +77,16 @@ export function OrderDrawer() {
   const isDirty = draftItems.length > 0;
   const draftChanged = isDraftChangedFromOrder(orderDetail, draftItems);
   const primaryAction = getOrderPrimaryAction(orderDetail, draftItems);
+  const requiredPermission: EmployeePermission = primaryAction === "payment"
+    ? "payment.take" : getSubmitOrderPermission(context ?? { orderId: null }, draftItems);
+  const permissionDenied = primaryAction !== "closed" && !hasPermission(currentEmployee, requiredPermission);
+  const permissionTitle = permissionDenied ? ({
+    "order.create": "Không có quyền tạo đơn",
+    "order.update": "Không có quyền sửa đơn",
+    "order.voidOpen": "Không có quyền hủy đơn",
+    "payment.take": "Không có quyền thanh toán",
+    "order.voidPaid": "Không có quyền hủy đơn đã thanh toán",
+  } satisfies Record<EmployeePermission, string>)[requiredPermission] : undefined;
   const submitDisabled =
     submitMutation.isPending || menuQuery.isError || orderQuery.isError || (!!context?.orderId && orderQuery.isLoading);
   const primaryDisabled =
@@ -82,6 +95,7 @@ export function OrderDrawer() {
       : primaryAction === "payment"
         ? !orderDetail || submitMutation.isPending
         : submitDisabled;
+  const primaryDisabledWithPermission = primaryDisabled || permissionDenied;
   const primaryActionLabel = submitMutation.isPending
     ? "Đang gửi..."
     : primaryAction === "closed"
@@ -127,7 +141,7 @@ export function OrderDrawer() {
     submitMutation.mutate(
       {
         context,
-        employeeId: currentEmployee.id,
+        actor: currentEmployee,
         expectedVersion: orderDetail?.lockVersion ?? null,
         items: draftItems,
       },
@@ -226,7 +240,8 @@ export function OrderDrawer() {
           <Button
             variant="contained"
             data-testid="submit-order-button"
-            disabled={primaryDisabled}
+            disabled={primaryDisabledWithPermission}
+            title={permissionTitle}
             onClick={runPrimaryAction}
           >
             {primaryActionLabel}
@@ -280,8 +295,9 @@ export function OrderDrawer() {
             noteOpenId={noteOpenId}
             total={total}
             showPaymentHint={!!orderDetail && draftChanged && primaryAction !== "closed"}
-            primaryDisabled={primaryDisabled}
+            primaryDisabled={primaryDisabledWithPermission}
             primaryActionLabel={primaryActionLabel}
+            primaryActionTitle={permissionTitle}
             onAdjustQuantity={adjustQuantity}
             onToggleNote={(lineId) => setNoteOpenId(noteOpenId === lineId ? null : lineId)}
             onUpdateNote={updateNote}

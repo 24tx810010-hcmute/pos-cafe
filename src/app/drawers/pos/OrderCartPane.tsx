@@ -13,6 +13,7 @@ type OrderCartPaneProps = {
   showPaymentHint: boolean;
   primaryDisabled: boolean;
   primaryActionLabel: string;
+  primaryActionTitle?: string;
   onAdjustQuantity: (lineId: string, delta: number) => void;
   onToggleNote: (lineId: string) => void;
   onUpdateNote: (lineId: string, note: string) => void;
@@ -27,6 +28,7 @@ export function OrderCartPane({
   showPaymentHint,
   primaryDisabled,
   primaryActionLabel,
+  primaryActionTitle,
   onAdjustQuantity,
   onToggleNote,
   onUpdateNote,
@@ -111,6 +113,7 @@ export function OrderCartPane({
           fullWidth
           data-testid="submit-order-button-footer"
           disabled={primaryDisabled}
+          title={primaryActionTitle}
           onClick={onPrimaryAction}
         >
           {primaryActionLabel}

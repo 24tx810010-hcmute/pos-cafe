@@ -64,6 +64,7 @@ export class SupabaseEmployeeRepo implements IEmployeeRepo {
           name: input.name,
           role: input.role,
           is_active: input.isActive,
+          permission_overrides: input.permissionOverrides,
         }),
       )
       .eq("id", input.id)

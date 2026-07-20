@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { Button } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { hasPermission } from "@/core/guards";
 import { formatVnd } from "@/core/money";
 import type { PaymentSelection } from "@/features/pos";
 import {
@@ -74,8 +75,16 @@ export function PaymentDrawer() {
   const orderClosed = !!order && order.status !== "open";
   const orderItemCount = order?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
   const nothingSelected = !!order && !orderClosed && amountDue <= 0;
+  const paymentPermissionDenied = !hasPermission(currentEmployee, "payment.take");
+  const paymentPermissionTitle = paymentPermissionDenied ? "Không có quyền thanh toán" : undefined;
   const paymentDisabled =
-    !order || orderClosed || orderQuery.isError || insufficient || nothingSelected || payMutation.isPending;
+    !order ||
+    orderClosed ||
+    orderQuery.isError ||
+    insufficient ||
+    nothingSelected ||
+    paymentPermissionDenied ||
+    payMutation.isPending;
   const paymentButtonLabel = orderClosed
     ? order.status === "paid"
       ? "Đơn đã thanh toán"
@@ -146,7 +155,7 @@ export function PaymentDrawer() {
         return next;
       }
       const line = payableLines.find((candidate) => candidate.orderItemId === orderItemId);
-      if (line) next[orderItemId] = line.quantity;
+      if (line) next[orderItemId] = 1;
       return next;
     });
   };
@@ -171,7 +180,7 @@ export function PaymentDrawer() {
     }
 
     payMutation.mutate(
-      { order, employeeId: currentEmployee.id, receivedAmount, selection, printReceipt },
+      { order, actor: currentEmployee, receivedAmount, selection, printReceipt },
       {
         onSuccess: (result) => {
           // In bill từ payload trả về ngay trong mutation (không chờ refetch).
@@ -224,6 +233,7 @@ export function PaymentDrawer() {
             variant="contained"
             data-testid="pay-button"
             disabled={paymentDisabled}
+            title={paymentPermissionTitle}
             onClick={payOrder}
             color={insufficient ? "error" : "primary"}
             className={clsx(
@@ -279,6 +289,7 @@ export function PaymentDrawer() {
               printReceipt={printReceipt}
               paymentDisabled={paymentDisabled}
               paymentButtonLabel={paymentButtonLabel}
+              paymentButtonTitle={paymentPermissionTitle}
               isError={orderQuery.isError}
               onToggleSelectAll={toggleSelectAll}
               onToggleLine={toggleLine}

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { canAccessModule, hasPermission, requireModuleAccess, requirePermission } from "./guards";
+import {
+  canAccessModule,
+  defaultRolePermissions,
+  hasPermission,
+  requireModuleAccess,
+  requirePermission,
+} from "./guards";
 import { AppError } from "./appError";
 import type { Employee } from "@/domain";
 
@@ -25,11 +31,16 @@ describe("module guards", () => {
 });
 
 describe("action permissions", () => {
-  it("gives admin order.voidPaid by default and denies cashier/kitchen", () => {
-    const kitchen: Employee = { id: "k", name: "Bếp", role: "kitchen", isActive: true };
-    expect(hasPermission(admin, "order.voidPaid")).toBe(true);
+  it("uses the production default matrix for all enforced permissions", () => {
+    expect(defaultRolePermissions).toEqual({
+      admin: ["order.create", "order.update", "order.voidOpen", "payment.take", "order.voidPaid"],
+      cashier: ["order.create", "order.update", "order.voidOpen", "payment.take"],
+      kitchen: [],
+    });
+
+    expect(hasPermission(admin, "order.voidOpen")).toBe(true);
+    expect(hasPermission(cashier, "order.voidOpen")).toBe(true);
     expect(hasPermission(cashier, "order.voidPaid")).toBe(false);
-    expect(hasPermission(kitchen, "order.voidPaid")).toBe(false);
   });
 
   it("grants a cashier order.voidPaid via overrides (same role, different rights)", () => {

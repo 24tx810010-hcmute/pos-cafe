@@ -48,9 +48,9 @@ export const requireModuleAccess = (employee: Employee | null, module: AppModule
 
 // Quyền theo hành động (permission), độc lập với quyền vào module ở trên:
 // module = thấy gì trên nav; permission = được làm gì. Hai trục bổ trợ nhau.
-const defaultRolePermissions: Record<EmployeeRole, EmployeePermission[]> = {
-  admin: ["order.create", "order.update", "payment.take", "order.voidPaid"],
-  cashier: ["order.create", "order.update", "payment.take"],
+export const defaultRolePermissions: Record<EmployeeRole, EmployeePermission[]> = {
+  admin: ["order.create", "order.update", "order.voidOpen", "payment.take", "order.voidPaid"],
+  cashier: ["order.create", "order.update", "order.voidOpen", "payment.take"],
   kitchen: [],
 };
 

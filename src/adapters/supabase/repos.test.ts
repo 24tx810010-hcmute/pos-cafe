@@ -93,6 +93,23 @@ const createEmployeeQueryClient = () => {
   return { client, select, eq, order };
 };
 
+const createEmployeeUpdateClient = () => {
+  const row = {
+    id: "emp-cashier-1",
+    name: "Thu ngân",
+    role: "cashier",
+    is_active: true,
+    permission_overrides: null,
+  };
+  const single = vi.fn(async () => ({ data: row, error: null }));
+  const select = vi.fn(() => ({ single }));
+  const eq = vi.fn(() => ({ select }));
+  const update = vi.fn(() => ({ eq }));
+  const client = { from: vi.fn(() => ({ update })) };
+
+  return { client, update, eq, select, single };
+};
+
 const createOrderHistoryQueryClient = () => {
   const chain = {
     select: vi.fn(() => chain),
@@ -126,6 +143,25 @@ describe("Supabase adapter ports", () => {
     await ports.employee.listActiveEmployees();
     expect(eq).toHaveBeenCalledWith("is_active", true);
     expect(order).toHaveBeenCalledWith("name");
+  });
+
+  it("persists employee permission overrides while preserving undefined/null semantics", async () => {
+    const { client, update } = createEmployeeUpdateClient();
+    const ports = createSupabasePorts(client as never);
+
+    await ports.employee.updateEmployee({ id: "emp-cashier-1", name: "Thu ngân mới" });
+    expect(update).toHaveBeenLastCalledWith({ name: "Thu ngân mới" });
+
+    await ports.employee.updateEmployee({
+      id: "emp-cashier-1",
+      permissionOverrides: { grants: ["order.voidPaid"], denies: ["payment.take"] },
+    });
+    expect(update).toHaveBeenLastCalledWith({
+      permission_overrides: { grants: ["order.voidPaid"], denies: ["payment.take"] },
+    });
+
+    await ports.employee.updateEmployee({ id: "emp-cashier-1", permissionOverrides: null });
+    expect(update).toHaveBeenLastCalledWith({ permission_overrides: null });
   });
 
   it("maps submitOrderChanges camelCase input to submit_order_changes RPC params", async () => {
@@ -308,6 +344,16 @@ describe("Supabase adapter ports", () => {
       mapEmployee({ id: "e3", name: "C", role: "cashier", is_active: true, permission_overrides: "oops" })
         .permissionOverrides,
     ).toBeUndefined();
+
+    expect(
+      mapEmployee({
+        id: "e4",
+        name: "D",
+        role: "cashier",
+        is_active: true,
+        permission_overrides: { grants: ["future.permission", "order.create"], denies: ["bogus"] },
+      }).permissionOverrides,
+    ).toEqual({ grants: ["order.create"], denies: [] });
   });
 
   it("maps order detail payment snapshots from payment rows", () => {
