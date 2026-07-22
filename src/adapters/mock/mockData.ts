@@ -118,10 +118,19 @@ export const mockFloorPlan: FloorPlan = {
     { id: "tbl-l06", areaId: "area-first", name: "L06", posX: 760, posY: 500, width: 126, height: 84, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 6, status: "empty" },
   ],
   decorItems: [
-    { id: "decor-counter", areaId: "area-ground", kind: "counter", label: "Quầy", assetKey: "counter_01", posX: 48, posY: 48, width: 210, height: 72, rotation: 0, zIndex: 1, isLocked: true },
-    { id: "decor-door", areaId: "area-ground", kind: "door", label: "Cửa", assetKey: "door_01", posX: 1480, posY: 88, width: 52, height: 190, rotation: 0, zIndex: 1, isLocked: true },
-    { id: "decor-plant", areaId: "area-ground", kind: "plant", label: "Cây", assetKey: "plant_01", posX: 300, posY: 760, width: 120, height: 52, rotation: 0, zIndex: 1, isLocked: false },
-    { id: "decor-wall", areaId: "area-first", kind: "wall", label: "Tường", assetKey: "wall_01", posX: 90, posY: 80, width: 310, height: 34, rotation: 0, zIndex: 1, isLocked: true },
+    { id: "decor-wall-ground", areaId: "area-ground", kind: "wall", label: "Tường gạch", assetKey: "/floor-assets/walls/img-color-cell3.webp", posX: 800, posY: 40, width: 1500, height: 36, rotation: 0, zIndex: 0, isLocked: true },
+    { id: "decor-counter", areaId: "area-ground", kind: "image", label: "Quầy pha chế", assetKey: "/floor-assets/decor/deco-fixtures-03.png", posX: 1370, posY: 330, width: 220, height: 160, rotation: 0, zIndex: 1, isLocked: true },
+    { id: "decor-door", areaId: "area-ground", kind: "image", label: "Lối vào", assetKey: "/floor-assets/decor/deco-other-15.png", posX: 1480, posY: 88, width: 110, height: 70, rotation: 0, zIndex: 1, isLocked: true },
+    { id: "decor-plant", areaId: "area-ground", kind: "plant", label: "Cây lá xanh", assetKey: "/floor-assets/decor/deco-tree-05.png", posX: 300, posY: 760, width: 120, height: 120, rotation: 0, zIndex: 1, isLocked: false },
+    { id: "decor-seat-ground", areaId: "area-ground", kind: "image", label: "Ghế thư giãn", assetKey: "/floor-assets/decor/deco-seat-08.png", posX: 560, posY: 760, width: 100, height: 130, rotation: 0, zIndex: 1, isLocked: false },
+    { id: "decor-reception-ground", areaId: "area-ground", kind: "image", label: "Quầy đón khách", assetKey: "/floor-assets/decor/deco-other-10.png", posX: 850, posY: 760, width: 210, height: 70, rotation: 0, zIndex: 1, isLocked: true },
+    { id: "decor-game-ground", areaId: "area-ground", kind: "image", label: "Bàn bi-a", assetKey: "/floor-assets/decor/deco-other-01.png", posX: 1280, posY: 760, width: 210, height: 130, rotation: 0, zIndex: 1, isLocked: false },
+    { id: "decor-wall", areaId: "area-first", kind: "wall", label: "Tường bê tông", assetKey: "/floor-assets/walls/img-color-cell7.webp", posX: 800, posY: 40, width: 1500, height: 36, rotation: 0, zIndex: 0, isLocked: true },
+    { id: "decor-plant-first", areaId: "area-first", kind: "plant", label: "Bụi hoa", assetKey: "/floor-assets/decor/deco-tree-20.png", posX: 180, posY: 760, width: 120, height: 120, rotation: 0, zIndex: 1, isLocked: false },
+    { id: "decor-seat-first", areaId: "area-first", kind: "image", label: "Sofa", assetKey: "/floor-assets/decor/deco-seat-21.png", posX: 520, posY: 760, width: 180, height: 110, rotation: 0, zIndex: 1, isLocked: false },
+    { id: "decor-bar-first", areaId: "area-first", kind: "image", label: "Quầy bar", assetKey: "/floor-assets/decor/deco-fixtures-18.png", posX: 1030, posY: 740, width: 240, height: 150, rotation: 0, zIndex: 1, isLocked: true },
+    { id: "decor-game-first", areaId: "area-first", kind: "image", label: "Bàn bi-a", assetKey: "/floor-assets/decor/deco-other-02.png", posX: 1370, posY: 500, width: 220, height: 130, rotation: 0, zIndex: 1, isLocked: false },
+    { id: "decor-entry-first", areaId: "area-first", kind: "image", label: "Lối cầu thang", assetKey: "/floor-assets/decor/deco-other-15.png", posX: 1480, posY: 110, width: 110, height: 70, rotation: 180, zIndex: 1, isLocked: true },
   ],
 };
 

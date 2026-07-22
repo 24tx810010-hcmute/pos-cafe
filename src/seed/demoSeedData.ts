@@ -1,8 +1,8 @@
 import type { FloorPlan, MenuCatalog } from "@/domain";
 
 // Bộ dữ liệu mẫu (tuỳ chọn) khi tạo store có tick "Khởi tạo dữ liệu mẫu",
-// hoặc khi bấm "Khởi tạo dữ liệu mẫu" trong Cài đặt. Cố tình giữ gọn:
-// vài category/món, 1 khu vực + vài bàn, 1 nhóm tuỳ chọn đơn giản.
+// hoặc khi bấm "Khởi tạo dữ liệu mẫu" trong Cài đặt. Giữ menu/floor gọn
+// nhưng có đủ bàn và decor ảnh để demo luồng bán hàng + Floor Editor.
 export const demoMenuCatalog: MenuCatalog = {
   categories: [
     { id: "cat-coffee", name: "Cà phê", sortOrder: 1 },
@@ -44,7 +44,15 @@ export const demoFloorPlan: FloorPlan = {
     { id: "tbl-b03", areaId: "area-ground", name: "B03", posX: 750, posY: 190, width: 126, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 3, status: "empty" },
     { id: "tbl-b04", areaId: "area-ground", name: "B04", posX: 1040, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 4, status: "empty" },
   ],
-  decorItems: [],
+  decorItems: [
+    { id: "decor-wall-ground", areaId: "area-ground", kind: "wall", label: "Tường gạch", assetKey: "/floor-assets/walls/img-color-cell3.webp", posX: 800, posY: 40, width: 1500, height: 36, rotation: 0, zIndex: 0, isLocked: true },
+    { id: "decor-counter", areaId: "area-ground", kind: "image", label: "Quầy pha chế", assetKey: "/floor-assets/decor/deco-fixtures-03.png", posX: 1370, posY: 300, width: 220, height: 160, rotation: 0, zIndex: 1, isLocked: true },
+    { id: "decor-door", areaId: "area-ground", kind: "image", label: "Lối vào", assetKey: "/floor-assets/decor/deco-other-15.png", posX: 1480, posY: 88, width: 110, height: 70, rotation: 0, zIndex: 1, isLocked: true },
+    { id: "decor-plant", areaId: "area-ground", kind: "plant", label: "Cây lá xanh", assetKey: "/floor-assets/decor/deco-tree-05.png", posX: 220, posY: 700, width: 120, height: 120, rotation: 0, zIndex: 1, isLocked: false },
+    { id: "decor-seat-ground", areaId: "area-ground", kind: "image", label: "Ghế thư giãn", assetKey: "/floor-assets/decor/deco-seat-08.png", posX: 500, posY: 620, width: 100, height: 130, rotation: 0, zIndex: 1, isLocked: false },
+    { id: "decor-reception-ground", areaId: "area-ground", kind: "image", label: "Quầy đón khách", assetKey: "/floor-assets/decor/deco-other-10.png", posX: 800, posY: 720, width: 210, height: 70, rotation: 0, zIndex: 1, isLocked: true },
+    { id: "decor-game-ground", areaId: "area-ground", kind: "image", label: "Bàn bi-a", assetKey: "/floor-assets/decor/deco-other-01.png", posX: 1200, posY: 650, width: 210, height: 130, rotation: 0, zIndex: 1, isLocked: false },
+  ],
 };
 
 // Nhân viên thu ngân mẫu (PIN demo) đi kèm bộ dữ liệu mẫu.

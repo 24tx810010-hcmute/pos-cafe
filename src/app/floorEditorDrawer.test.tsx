@@ -83,6 +83,70 @@ afterEach(() => {
 });
 
 describe("FloorEditorDrawer", () => {
+  it("adds wall textures and decoration images from the complete asset picker", async () => {
+    const user = userEvent.setup();
+    const { saveSpy, state } = renderFloorEditor();
+
+    await user.click(await screen.findByTestId("add-wall-asset"));
+    expect(screen.getByTestId("floor-decor-asset-picker")).toBeVisible();
+    expect(screen.getAllByTestId(/^decor-asset-wall-/)).toHaveLength(9);
+    await user.click(screen.getByTestId("decor-asset-wall-02"));
+    await user.click(screen.getByTestId("confirm-decor-asset"));
+
+    await user.click(screen.getByTestId("add-decor-asset"));
+    await user.click(screen.getByTestId("decor-group-seat"));
+    expect(screen.getAllByTestId(/^decor-asset-seat-/)).toHaveLength(29);
+    await user.click(screen.getByTestId("decor-asset-seat-29"));
+    await user.click(screen.getByTestId("confirm-decor-asset"));
+
+    expect(
+      screen.getAllByRole("img", { name: "Ghế 29" }).some(
+        (image) => image.getAttribute("src") === "/floor-assets/decor/deco-seat-29.png",
+      ),
+    ).toBe(true);
+    await user.click(screen.getByTestId("save-floor-button"));
+
+    await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
+    const created = saveSpy.mock.calls[0][0].decorItems.created;
+    expect(created).toHaveLength(2);
+    expect(created[0]).toMatchObject({
+      areaId: state.floorPlan.areas[0].id,
+      kind: "wall",
+      label: "Tường 02",
+      assetKey: "/floor-assets/walls/img-color-cell1.webp",
+      width: 300,
+      height: 36,
+    });
+    expect(created[1]).toMatchObject({
+      areaId: state.floorPlan.areas[0].id,
+      kind: "image",
+      label: "Ghế 29",
+      assetKey: "/floor-assets/decor/deco-seat-29.png",
+      width: 120,
+      height: 120,
+    });
+  });
+
+  it("replaces an existing decor image with another catalog asset", async () => {
+    const user = userEvent.setup();
+    const { saveSpy } = renderFloorEditor();
+
+    await user.click(await screen.findByTestId("fe-decor-decor-plant"));
+    await user.click(screen.getByTestId("change-decor-asset"));
+    await user.click(screen.getByTestId("decor-asset-tree-03"));
+    await user.click(screen.getByTestId("confirm-decor-asset"));
+    await user.click(screen.getByTestId("save-floor-button"));
+
+    await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
+    expect(saveSpy.mock.calls[0][0].decorItems.updated).toEqual([
+      {
+        id: "decor-plant",
+        label: "Cây 03",
+        assetKey: "/floor-assets/decor/deco-tree-03.png",
+      },
+    ]);
+  });
+
   it("saves new tables through floor changesets without table status", async () => {
     const user = userEvent.setup();
     const { saveSpy, state } = renderFloorEditor();
@@ -227,8 +291,8 @@ describe("FloorEditorDrawer", () => {
     await user.click(await screen.findByTestId("fe-decor-decor-plant"));
 
     const resizeHandle = screen.getByTestId("fe-object-resize-handle-decor-plant");
-    firePointer(resizeHandle, "pointerdown", { x: 360, y: 786 });
-    firePointer(resizeHandle, "pointermove", { x: 380, y: 820 });
+    firePointer(resizeHandle, "pointerdown", { x: 360, y: 820 });
+    firePointer(resizeHandle, "pointermove", { x: 380, y: 840 });
     firePointer(resizeHandle, "pointerup");
 
     const rotateHandle = screen.getByTestId("fe-object-rotate-handle-decor-plant");
@@ -241,7 +305,7 @@ describe("FloorEditorDrawer", () => {
     await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
     const changes = saveSpy.mock.calls[0][0];
 
-    expect(changes.decorItems.updated).toEqual([{ id: "decor-plant", width: 160, height: 120, rotation: 90 }]);
+    expect(changes.decorItems.updated).toEqual([{ id: "decor-plant", width: 160, height: 160, rotation: 90 }]);
   });
 
   it("renders table geometry as logical pixels inside the scaled stage", async () => {

@@ -1,19 +1,16 @@
 import clsx from "clsx";
-import { Magnet, Plus } from "lucide-react";
+import { ImagePlus, Magnet, Plus, PanelsTopLeft } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
-import type { DecorKind, TableShape } from "@/domain";
-import {
-  DECOR_LABEL,
-  DECOR_LIBRARY,
-  SHAPE_LABEL,
-} from "@/features/admin/floorEditorDraft";
+import type { TableShape } from "@/domain";
+import { SHAPE_LABEL } from "@/features/admin/floorEditorDraft";
 
 interface FloorEditorToolbarProps {
   areaDeleted?: boolean;
   snap: boolean;
   setSnap: Dispatch<SetStateAction<boolean>>;
   addTable: (shape: TableShape) => void;
-  addDecor: (kind: DecorKind) => void;
+  onAddWall: () => void;
+  onAddDecoration: () => void;
 }
 
 export function FloorEditorToolbar({
@@ -21,7 +18,8 @@ export function FloorEditorToolbar({
   snap,
   setSnap,
   addTable,
-  addDecor,
+  onAddWall,
+  onAddDecoration,
 }: FloorEditorToolbarProps) {
   return (
     <div className="flex flex-wrap items-center gap-2 overflow-x-auto overflow-y-hidden px-0.5 pb-1 pt-px [scrollbar-width:thin]">
@@ -42,16 +40,22 @@ export function FloorEditorToolbar({
       <span className="mx-0.5 min-h-[26px] w-px self-stretch bg-pos-line" aria-hidden="true" />
       <div className="inline-flex flex-none items-center gap-1.5">
         <span className="text-xs font-extrabold text-pos-muted">Trang trí</span>
-        {DECOR_LIBRARY.map((kind) => (
-          <button
-            key={kind}
-            className="inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border border-pos-line bg-pos-surface2 px-2.5 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40"
-            onClick={() => addDecor(kind)}
-            disabled={areaDeleted}
-          >
-            <Plus size={12} /> {DECOR_LABEL[kind]}
-          </button>
-        ))}
+        <button
+          className="inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border border-pos-line bg-pos-surface2 px-2.5 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40"
+          data-testid="add-wall-asset"
+          onClick={onAddWall}
+          disabled={areaDeleted}
+        >
+          <PanelsTopLeft size={13} /> Tường
+        </button>
+        <button
+          className="inline-flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-[6px] border border-pos-line bg-pos-surface2 px-2.5 text-xs font-bold text-pos-ink transition-[border-color,color] hover:border-pos-primary hover:text-pos-primary disabled:cursor-not-allowed disabled:opacity-40"
+          data-testid="add-decor-asset"
+          onClick={onAddDecoration}
+          disabled={areaDeleted}
+        >
+          <ImagePlus size={13} /> Ảnh trang trí
+        </button>
       </div>
       <span className="mx-0.5 min-h-[26px] w-px self-stretch bg-pos-line" aria-hidden="true" />
       <div className="inline-flex flex-none items-center gap-1.5">

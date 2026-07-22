@@ -321,6 +321,34 @@ test("floor toolbar actions stay fully inside the floor workspace", async ({ pag
   }
 });
 
+test("sample floor shows varied image decor across both areas", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "desktop-only sample decor check");
+  await page.goto("/");
+  await loginAsAdmin(page);
+
+  const floorStage = page.getByTestId("floor-stage");
+  for (const assetPath of [
+    "/floor-assets/walls/img-color-cell3.webp",
+    "/floor-assets/decor/deco-fixtures-03.png",
+    "/floor-assets/decor/deco-tree-05.png",
+    "/floor-assets/decor/deco-seat-08.png",
+    "/floor-assets/decor/deco-other-01.png",
+  ]) {
+    await expect(floorStage.locator(`img[src="${assetPath}"]`)).toBeVisible();
+  }
+
+  await page.getByTestId("floor-view").getByRole("button", { name: "Lầu 1", exact: true }).click();
+  for (const assetPath of [
+    "/floor-assets/walls/img-color-cell7.webp",
+    "/floor-assets/decor/deco-tree-20.png",
+    "/floor-assets/decor/deco-seat-21.png",
+    "/floor-assets/decor/deco-fixtures-18.png",
+    "/floor-assets/decor/deco-other-02.png",
+  ]) {
+    await expect(floorStage.locator(`img[src="${assetPath}"]`)).toBeVisible();
+  }
+});
+
 test("round tables stay visually circular in the editor and POS floor", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "desktop-only round table workflow");
   await page.goto("/");
@@ -342,6 +370,41 @@ test("round tables stay visually circular in the editor and POS floor", async ({
   const posTable = page.getByTestId("floor-stage").getByRole("button", { name: /B09/ });
   await expect(posTable).toBeVisible();
   await expectVisuallyRound(posTable);
+});
+
+test("wall textures and decoration images persist from editor to POS floor", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "desktop-only decor workflow");
+  await page.goto("/");
+  await loginAsAdmin(page);
+
+  await page.getByTestId("nav-floor-editor").click();
+  await expect(page.getByTestId("floor-editor")).toBeVisible();
+
+  await page.getByTestId("add-wall-asset").click();
+  await expect(page.getByTestId("floor-decor-asset-picker")).toBeVisible();
+  await expect(page.getByTestId("decor-asset-wall-09")).toBeVisible();
+  await page.getByTestId("decor-asset-wall-04").click();
+  await page.getByTestId("confirm-decor-asset").click();
+  await expect(page.getByTestId("floor-decor-asset-picker")).toBeHidden();
+
+  await page.getByTestId("add-decor-asset").click();
+  await page.getByTestId("decor-group-fixtures").click();
+  await expect(page.getByTestId("decor-asset-fixtures-30")).toBeVisible();
+  await page.getByTestId("decor-asset-fixtures-30").click();
+  await page.getByTestId("confirm-decor-asset").click();
+
+  const editorStage = page.getByTestId("floor-editor-stage");
+  await expect(editorStage.getByRole("img", { name: "Tường 04" })).toBeVisible();
+  await expect(editorStage.getByRole("img", { name: "Thiết bị 30" })).toBeVisible();
+
+  await page.getByTestId("save-floor-button").click();
+  await expect(page.getByTestId("floor-dirty-badge")).toBeHidden();
+  await page.getByTestId("floor-editor").locator("header").getByRole("button", { name: "Huỷ" }).click();
+  await expect(page.getByTestId("floor-editor")).toBeHidden();
+
+  const posStage = page.getByTestId("floor-stage");
+  await expect(posStage.getByRole("img", { name: "Tường 04" })).toBeVisible();
+  await expect(posStage.getByRole("img", { name: "Thiết bị 30" })).toBeVisible();
 });
 
 test("employee permission editor gates payment after re-login", async ({ page }, testInfo) => {

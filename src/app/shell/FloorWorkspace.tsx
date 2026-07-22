@@ -10,6 +10,8 @@ import { toToastError } from "../appErrors";
 import { getLabelBoost, getObjectBoost, stageStyle } from "../floorStage";
 import { ScaledFloorStage } from "../components/ScaledFloorStage";
 import clsx from "clsx";
+import { FloorDecorVisual } from "../components/FloorDecorVisual";
+import { getFloorDecorAsset } from "../floorDecorAssets";
 
 type TableFilter = "all" | "empty" | "occupied";
 
@@ -165,24 +167,30 @@ export function FloorWorkspace() {
 
                   return (
                     <>
-                {decorItems.map((decor) => (
-                  <div
-                    className={clsx(
-                      "absolute grid place-items-center rounded-pos border border-dashed text-center text-xs font-black",
-                      decorToneClass(decor.kind),
-                    )}
-                    data-testid={`decor-${decor.id}`}
-                    key={decor.id}
-                    style={{ ...stageStyle(decor.posX, decor.posY, decor.width, decor.height), ...nodeTransform(decor.rotation) }}
-                  >
-                    <span
-                      data-floor-label="name"
-                      style={{ transform: `scale(${decorLabelBoost})`, transformOrigin: "center" }}
+                {decorItems.map((decor) => {
+                  const visualAsset = getFloorDecorAsset(decor.assetKey);
+                  return (
+                    <div
+                      className={clsx(
+                        "absolute grid place-items-center text-center text-xs font-black",
+                        visualAsset
+                          ? "overflow-hidden rounded-pos border border-transparent bg-transparent"
+                          : clsx("rounded-pos border border-dashed", decorToneClass(decor.kind)),
+                      )}
+                      data-testid={`decor-${decor.id}`}
+                      key={decor.id}
+                      style={{ ...stageStyle(decor.posX, decor.posY, decor.width, decor.height), ...nodeTransform(decor.rotation) }}
                     >
-                      {decor.label ?? decor.assetKey}
-                    </span>
-                  </div>
-                ))}
+                      <FloorDecorVisual
+                        assetKey={decor.assetKey}
+                        kind={decor.kind}
+                        label={decor.label}
+                        fallbackLabel={decor.assetKey}
+                        labelBoost={decorLabelBoost}
+                      />
+                    </div>
+                  );
+                })}
                 {filteredTables.map((table) => {
                   const openOrderSummary = orders.find((o) => o.tableId === table.id);
                   const occupied = isOccupied(table.id);

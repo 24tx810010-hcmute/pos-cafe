@@ -1,17 +1,16 @@
 import clsx from "clsx";
 import { Button, TextField } from "@mui/material";
-import { ChevronRight, Lock, RotateCcw, Trash2, Unlock } from "lucide-react";
+import { ChevronRight, ImagePlus, Lock, RotateCcw, Trash2, Unlock } from "lucide-react";
 import type { TableShape } from "@/domain";
 import { toInt } from "@/features/admin/draftUtils";
 import {
-  DECOR_LABEL,
-  DECOR_LIBRARY,
   SHAPE_LABEL,
   tableDefaultSize,
   type DraftArea,
   type DraftDecor,
   type DraftTable,
 } from "@/features/admin/floorEditorDraft";
+import { getFloorDecorAsset, type FloorDecorAssetPickerMode } from "../../floorDecorAssets";
 
 type PatchDraft<T> = (id: string, patch: Partial<T>) => void;
 
@@ -28,6 +27,7 @@ interface FloorEditorInspectorPaneProps {
   toggleDeleteTable: (id: string) => void;
   patchDecor: PatchDraft<DraftDecor>;
   toggleDeleteDecor: (id: string) => void;
+  onChooseDecorAsset: (id: string, mode: FloorDecorAssetPickerMode) => void;
 }
 
 export function FloorEditorInspectorPane({
@@ -43,7 +43,10 @@ export function FloorEditorInspectorPane({
   toggleDeleteTable,
   patchDecor,
   toggleDeleteDecor,
+  onChooseDecorAsset,
 }: FloorEditorInspectorPaneProps) {
+  const selectedDecorAsset = getFloorDecorAsset(selectedDecor?.assetKey);
+
   return (
     <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface max-[980px]:min-h-[220px]" data-testid="floor-editor-inspector">
       <div className="flex min-h-11 items-center justify-between gap-2.5 border-b border-pos-line bg-[#fbfcfd] px-3 py-2.5 font-black max-[980px]:min-h-9 max-[980px]:px-2 max-[980px]:py-[7px] max-[980px]:text-xs">{selectedTable ? "Chi tiết bàn" : selectedDecor ? "Chi tiết trang trí" : "Chi tiết khu"}</div>
@@ -124,23 +127,28 @@ export function FloorEditorInspectorPane({
         ) : selectedDecor ? (
           <>
             <div className="grid gap-1.5">
-              <span className="text-xs font-extrabold text-pos-muted">Loại</span>
-              <div className="flex flex-wrap gap-1.5">
-                {DECOR_LIBRARY.map((kind) => (
-                  <button
-                    key={kind}
-                    className={clsx(
-                      "min-w-[84px] flex-[1_1_0] cursor-pointer rounded-[7px] border px-2.5 py-2 text-[13px] font-bold transition-[border-color,background,color] hover:border-pos-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pos-line",
-                      selectedDecor.kind === kind
-                        ? "border-pos-primaryLine bg-pos-primarySoft text-pos-primary"
-                        : "border-pos-line bg-pos-surface text-pos-ink",
-                    )}
-                    onClick={() => patchDecor(selectedDecor.id, { kind })}
-                  >
-                    {DECOR_LABEL[kind]}
-                  </button>
-                ))}
+              <span className="text-xs font-extrabold text-pos-muted">Mẫu hiển thị</span>
+              <div className="grid min-h-24 place-items-center overflow-hidden rounded-[8px] border border-pos-line bg-pos-bg p-2">
+                {selectedDecorAsset ? (
+                  <img
+                    alt={selectedDecor.label ?? selectedDecorAsset.label}
+                    className={selectedDecor.kind === "wall" ? "h-24 w-full rounded-[5px] object-cover" : "h-24 w-full object-contain"}
+                    src={selectedDecorAsset.assetKey}
+                  />
+                ) : (
+                  <span className="text-center text-xs font-bold text-pos-muted">
+                    Mẫu cũ · {selectedDecor.label ?? selectedDecor.assetKey}
+                  </span>
+                )}
               </div>
+              <Button
+                variant="outlined"
+                startIcon={<ImagePlus size={15} />}
+                data-testid="change-decor-asset"
+                onClick={() => onChooseDecorAsset(selectedDecor.id, selectedDecor.kind === "wall" ? "wall" : "decor")}
+              >
+                {selectedDecor.kind === "wall" ? "Đổi mẫu tường" : "Đổi ảnh trang trí"}
+              </Button>
             </div>
             <TextField label="Nhãn" value={selectedDecor.label ?? ""} onChange={(e) => patchDecor(selectedDecor.id, { label: e.target.value })} size="small" fullWidth />
             <button

@@ -1,9 +1,9 @@
 import clsx from "clsx";
-import { AlertTriangle, LayoutGrid, Lock, Plus, Save } from "lucide-react";
+import { AlertTriangle, LayoutGrid, Plus, Save } from "lucide-react";
 import { Button } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import type { DecorKind, FloorPlan, TableShape } from "@/domain";
+import type { FloorPlan, TableShape } from "@/domain";
 import {
   useAdminFloorPlanQuery,
   useSaveFloorPlanMutation,
@@ -13,9 +13,7 @@ import { useAppStore } from "../../useAppStore";
 import { toToastError } from "../../appErrors";
 import { nextDraftId, nextSort } from "@/features/admin/draftUtils";
 import {
-  DECOR_LABEL,
   buildFloorPlanChangesFromDrafts,
-  decorDefaultSize,
   tableDefaultSize,
   type DraftArea,
   type DraftTable,
@@ -29,24 +27,12 @@ import { ScaledFloorStage } from "../../components/ScaledFloorStage";
 import { FloorEditorInspectorPane } from "./FloorEditorInspectorPane";
 import { FloorEditorToolbar } from "./FloorEditorToolbar";
 import { useFloorObjectTransforms } from "./floorObjectTransforms";
-
-const decorToneClass = (kind: DecorKind) => {
-  switch (kind) {
-    case "counter":
-      return "border-[#94a3b8] bg-[#e2e8f0] text-[#475569]";
-    case "decor":
-    case "image":
-      return "border-[#c4b5fd] bg-[#ede9fe] text-[#6d28d9]";
-    case "door":
-      return "border-[#fde047] bg-[#fef9c3] text-[#713f12]";
-    case "plant":
-      return "border-[#86efac] bg-[#dcfce7] text-[#166534]";
-    case "wall":
-      return "border-[#cbd5e1] bg-[#f1f5f9] text-[#64748b]";
-    default:
-      return "border-[#cbd5e1] bg-[#e2e8f0] text-[#475569]";
-  }
-};
+import {
+  type FloorDecorAsset,
+  type FloorDecorAssetPickerMode,
+} from "../../floorDecorAssets";
+import { FloorDecorAssetPicker } from "./FloorDecorAssetPicker";
+import { FloorEditorDecorNode } from "./FloorEditorDecorNode";
 
 export function FloorEditorDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
@@ -64,6 +50,10 @@ export function FloorEditorDrawer() {
   const [selected, setSelected] = useState<FloorSelection>(null);
   const [dirty, setDirty] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [assetPicker, setAssetPicker] = useState<{
+    mode: FloorDecorAssetPickerMode;
+    targetId?: string;
+  } | null>(null);
   // Geometry/asset fields are secondary to name/seats/shape, so keep them folded
   // away under an "Nâng cao" section until the admin needs precise control.
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -153,22 +143,35 @@ export function FloorEditorDrawer() {
   };
 
   // --- Decor ops ---
-  const addDecor = (kind: DecorKind) => {
+  const patchDecor = (id: string, patch: Partial<DraftDecor>) => {
+    setDecor((list) => list.map((d) => (d.id === id ? { ...d, ...patch } : d)));
+    touch();
+  };
+  const applyDecorAsset = (asset: FloorDecorAsset) => {
+    if (assetPicker?.targetId) {
+      patchDecor(assetPicker.targetId, {
+        kind: asset.kind,
+        label: asset.label,
+        assetKey: asset.assetKey,
+      });
+      setAssetPicker(null);
+      return;
+    }
     if (!areaId) return;
     if (areas.find((area) => area.id === areaId)?.deleted) return;
     const id = nextDraftId("dec");
-    const size = decorDefaultSize(kind);
     setDecor((list) => [
       ...list,
       {
         id,
         areaId,
-        kind,
-        label: DECOR_LABEL[kind],
-        assetKey: `${kind}_default`,
+        kind: asset.kind,
+        label: asset.label,
+        assetKey: asset.assetKey,
         posX: logicalStage.width / 2,
         posY: logicalStage.height / 2,
-        ...size,
+        width: asset.width,
+        height: asset.height,
         rotation: 0,
         zIndex: 1,
         isLocked: false,
@@ -176,10 +179,7 @@ export function FloorEditorDrawer() {
       },
     ]);
     setSelected({ type: "decor", id });
-    touch();
-  };
-  const patchDecor = (id: string, patch: Partial<DraftDecor>) => {
-    setDecor((list) => list.map((d) => (d.id === id ? { ...d, ...patch } : d)));
+    setAssetPicker(null);
     touch();
   };
   const toggleDeleteDecor = (id: string) => {
@@ -308,7 +308,8 @@ export function FloorEditorDrawer() {
               snap={snap}
               setSnap={setSnap}
               addTable={addTable}
-              addDecor={addDecor}
+              onAddWall={() => setAssetPicker({ mode: "wall" })}
+              onAddDecoration={() => setAssetPicker({ mode: "decor" })}
             />
 
             <div className="grid h-full min-h-0 min-w-0 grid-cols-[minmax(340px,1fr)_minmax(290px,350px)] gap-2.5 max-[980px]:grid-cols-1 max-[980px]:grid-rows-[minmax(220px,1fr)_auto] max-[980px]:overflow-auto">
@@ -331,29 +332,16 @@ export function FloorEditorDrawer() {
                       return (
                         <>
                     {[...areaDecor].sort((a, b) => a.zIndex - b.zIndex).map((d) => (
-                      <div
+                      <FloorEditorDecorNode
                         key={d.id}
-                        className={clsx(
-                          "absolute grid cursor-grab place-items-center rounded-pos border border-dashed text-center text-xs font-black",
-                          decorToneClass(d.kind),
-                          selected?.type === "decor" && selected.id === d.id && "!z-50 outline outline-2 outline-offset-2 outline-pos-primary",
-                          d.deleted && "opacity-40",
-                          d.isLocked && "cursor-not-allowed",
-                        )}
+                        item={d}
+                        isSelected={selected?.type === "decor" && selected.id === d.id}
+                        labelBoost={decorLabelBoost}
                         style={{ ...nodeStyle(d), zIndex: d.zIndex }}
-                        data-testid={`fe-decor-${d.id}`}
                         onPointerDown={(e) => onNodePointerDown(e, "decor", d)}
                         onPointerMove={onNodePointerMove}
                         onPointerUp={onNodePointerUp}
-                      >
-                        <span
-                          data-floor-label="name"
-                          style={{ transform: `scale(${decorLabelBoost})`, transformOrigin: "center" }}
-                        >
-                          {d.label ?? DECOR_LABEL[d.kind]}
-                        </span>
-                        {d.isLocked && <Lock size={11} className="absolute right-0.5 top-0.5" />}
-                      </div>
+                      />
                     ))}
                     {areaTables.map((t) => (
                       <div
@@ -414,11 +402,21 @@ export function FloorEditorDrawer() {
                 toggleDeleteTable={toggleDeleteTable}
                 patchDecor={patchDecor}
                 toggleDeleteDecor={toggleDeleteDecor}
+                onChooseDecorAsset={(id, mode) => setAssetPicker({ mode, targetId: id })}
               />
             </div>
           </>
         )}
       </div>
+
+      {assetPicker && (
+        <FloorDecorAssetPicker
+          mode={assetPicker.mode}
+          initialAssetKey={assetPicker.targetId ? decor.find((item) => item.id === assetPicker.targetId)?.assetKey : null}
+          onClose={() => setAssetPicker(null)}
+          onSelect={applyDecorAsset}
+        />
+      )}
 
       {confirmCancel && (
         <PortalPopup placement="Centered" viewport="workspace" overlayClassName="bg-slate-900/50" onOutsideClick={() => setConfirmCancel(false)}>
