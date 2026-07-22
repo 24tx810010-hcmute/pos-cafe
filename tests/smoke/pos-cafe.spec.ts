@@ -293,6 +293,34 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   expect(page.url()).toBe(initialUrl);
 });
 
+test("floor toolbar actions stay fully inside the floor workspace", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "portrait", "landscape-only floor toolbar");
+  await page.goto("/");
+  await loginAsAdmin(page);
+
+  const floorView = page.getByTestId("floor-view");
+  const floorBox = await floorView.boundingBox();
+  if (!floorBox) throw new Error("Missing floor workspace geometry");
+
+  const actions = [
+    page.getByTestId("floor-refresh-button"),
+    floorView.getByRole("button", { name: "Tất cả", exact: true }),
+    floorView.getByRole("button", { name: "Trống", exact: true }),
+    floorView.getByRole("button", { name: "Đang phục vụ", exact: true }),
+  ];
+
+  for (const action of actions) {
+    await expect(action).toBeVisible();
+    const actionBox = await action.boundingBox();
+    if (!actionBox) throw new Error("Missing floor toolbar action geometry");
+    const actionName = (await action.textContent())?.trim() ?? "<unknown>";
+    expect(actionBox.x).toBeGreaterThanOrEqual(floorBox.x - 1);
+    expect(actionBox.x + actionBox.width, `${actionName} should stay inside the floor workspace`).toBeLessThanOrEqual(
+      floorBox.x + floorBox.width + 1,
+    );
+  }
+});
+
 test("round tables stay visually circular in the editor and POS floor", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "desktop-only round table workflow");
   await page.goto("/");

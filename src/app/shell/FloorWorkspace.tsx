@@ -92,9 +92,9 @@ export function FloorWorkspace() {
   return (
     <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)_200px] gap-2.5 overflow-hidden p-3.5 max-[1024px]:grid-cols-[minmax(0,1fr)_160px] max-[980px]:p-2 max-[740px]:grid-cols-1">
         {/* Main region: floor canvas */}
-        <section className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface" data-testid="floor-view">
-          <div className="flex min-h-12 items-center overflow-x-auto border-b border-pos-line">
-            <div className="flex min-h-12 flex-1 items-center gap-2 overflow-x-auto px-3 py-1.5">
+        <section className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface" data-testid="floor-view">
+          <div className="flex min-h-12 min-w-0 items-center overflow-x-auto border-b border-pos-line">
+            <div className="flex min-h-12 min-w-0 flex-1 items-center gap-2 overflow-x-auto px-3 py-1.5">
               {floorPlan?.areas.map((area) => (
                 <button
                   className={clsx(
