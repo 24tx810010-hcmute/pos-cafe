@@ -361,9 +361,9 @@ export function FloorEditorDrawer() {
                         role="button"
                         tabIndex={0}
                         className={clsx(
-                          "absolute grid cursor-grab place-items-center rounded-pos border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)] active:cursor-grabbing [&_small]:mt-[3px] [&_small]:block [&_small]:text-[10px] [&_small]:font-bold [&_small]:text-pos-muted",
+                          "absolute grid cursor-grab place-items-center border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)] active:cursor-grabbing [&_small]:mt-[3px] [&_small]:block [&_small]:text-[10px] [&_small]:font-bold [&_small]:text-pos-muted",
                           t.status === "occupied" ? "border-[#f97316] bg-[#fff7ed]" : "border-[#86efac] bg-[#f0fdf4]",
-                          t.shape === "round" && "rounded-full",
+                          t.shape === "round" ? "rounded-full" : "rounded-pos",
                           selected?.type === "table" && selected.id === t.id && "!z-50 outline outline-2 outline-offset-2 outline-pos-primary",
                           t.deleted && "opacity-40",
                         )}

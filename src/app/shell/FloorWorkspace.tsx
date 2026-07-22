@@ -190,9 +190,9 @@ export function FloorWorkspace() {
                   return (
                     <button
                       className={clsx(
-                        "absolute grid place-items-center rounded-pos border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)]",
+                        "absolute grid place-items-center border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)]",
                         occupied ? "border-[#f97316] bg-[#fff7ed]" : "border-[#86efac] bg-[#f0fdf4]",
-                        isRound && "rounded-full",
+                        isRound ? "rounded-full" : "rounded-pos",
                       )}
                       data-testid={`table-${table.id}`}
                       key={table.id}

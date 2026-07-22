@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 
 async function loginAsAdmin(page: Page) {
   // Wait for the app to finish first render (avoids racing Vite's initial compile).
@@ -65,6 +65,20 @@ async function expectReadableFloorLabel(page: Page, nodeTestId: string, label: "
   }
 
   expect(labelBox.height).toBeGreaterThanOrEqual(minHeight);
+}
+
+async function expectVisuallyRound(locator: Locator) {
+  const geometry = await locator.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      borderRadius: Number.parseFloat(getComputedStyle(element).borderTopLeftRadius),
+      height: rect.height,
+      width: rect.width,
+    };
+  });
+
+  expect(Math.abs(geometry.width - geometry.height)).toBeLessThanOrEqual(1);
+  expect(geometry.borderRadius).toBeGreaterThanOrEqual(Math.min(geometry.width, geometry.height) / 2);
 }
 
 async function waitForTransientOverlays(page: Page) {
@@ -277,6 +291,29 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await page.getByTestId("open-clear-demo").click();
   await expect(page.getByTestId("clear-demo-dialog")).toBeVisible();
   expect(page.url()).toBe(initialUrl);
+});
+
+test("round tables stay visually circular in the editor and POS floor", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "desktop-only round table workflow");
+  await page.goto("/");
+  await loginAsAdmin(page);
+
+  await page.getByTestId("nav-floor-editor").click();
+  await expect(page.getByTestId("floor-editor")).toBeVisible();
+  await page.getByTestId("add-table-round").click();
+
+  const editorTable = page.getByTestId("floor-editor-stage").getByRole("button", { name: /B09/ });
+  await expect(editorTable).toBeVisible();
+  await expectVisuallyRound(editorTable);
+
+  await page.getByTestId("save-floor-button").click();
+  await expect(page.getByTestId("floor-dirty-badge")).toBeHidden();
+  await page.getByTestId("floor-editor").locator("header").getByRole("button", { name: "Huỷ" }).click();
+  await expect(page.getByTestId("floor-editor")).toBeHidden();
+
+  const posTable = page.getByTestId("floor-stage").getByRole("button", { name: /B09/ });
+  await expect(posTable).toBeVisible();
+  await expectVisuallyRound(posTable);
 });
 
 test("employee permission editor gates payment after re-login", async ({ page }, testInfo) => {
