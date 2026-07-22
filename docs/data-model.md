@@ -62,6 +62,8 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 - Floor editor chỉ chỉnh layout, không ghi đè `table.status`.
 - `table.status` do order/payment flow cập nhật.
 - Decor không nhận order và không xuất hiện trong nghiệp vụ bàn.
+- `floor_decor_items.asset_key` lưu đường dẫn asset built-in của ứng dụng. Catalog hiện có 9 texture tường và 131 PNG trang trí; thay catalog không cần đổi schema.
+- Asset key legacy/không còn trong catalog vẫn được client render bằng placeholder nhãn/màu, tránh làm hỏng floor plan cũ.
 
 ## Nhóm Order
 

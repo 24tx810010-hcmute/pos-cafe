@@ -38,6 +38,12 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 - 5 quyền runtime được enforce ở feature flow; Order/Payment UI có soft gate và migration 012 guardrail ba RPC `submit_order_changes`, `pay_order`, `pay_order_items`.
 - Client nhận permission mới khi đăng nhập lại; server guardrail đọc override live. Migration 012 đã apply và Supabase E2E 5/5 pass ngày 2026-07-19.
 
+## Scope Update 2026-07-22
+
+- Decor built-in đầy đủ được đưa vào Floor Editor: 9 texture tường và 131 ảnh chia nhóm Cây/Ghế/Thiết bị/Khác.
+- Admin chọn hoặc đổi mẫu trong popup; Floor Editor và POS Floor cùng render ảnh từ `asset_key` đã lưu. Không đổi schema/database migration.
+- Đây là catalog đóng gói cùng ứng dụng, không phải upload ảnh decor của người dùng; upload/custom asset vẫn thuộc mở rộng sau phase.
+
 ## Làm Nếu Kịp
 
 - Order history filter nâng cao.

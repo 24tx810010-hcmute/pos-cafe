@@ -121,7 +121,10 @@
 
 - Quản lý khu/tầng.
 - Tạo/sửa/xóa mềm bàn.
-- Tạo/sửa/xóa mềm decor cơ bản: tường, cây, quầy, cửa, decor/image asset.
+- Tạo/sửa/xóa mềm decor; thư viện built-in gồm 9 texture tường và 131 ảnh trang trí (57 cây, 29 ghế, 30 thiết bị, 15 ảnh khác).
+- Toolbar mở popup chọn mẫu tường hoặc ảnh trang trí theo nhóm; inspector cho đổi mẫu của decor đã có. Ảnh render bằng `object-cover` với tường và `object-contain` với decor.
+- `assetKey` cũ không khớp catalog vẫn hiển thị placeholder nhãn/màu để dữ liệu seed hoặc dữ liệu đã lưu trước đây không bị ảnh hỏng.
+- Floor mẫu mock dùng 13 decor ảnh trên hai khu; bộ seed Supabase gọn dùng 7 decor ảnh, phủ đủ texture tường và bốn nhóm Cây/Ghế/Thiết bị/Khác.
 - Khi chọn một object trên sơ đồ (bàn hoặc decor), hiện 2 handle kéo trực tiếp để xoay và resize; handle luôn nằm ngang bên dưới object, không xoay theo object, và ẩn với object đã xoá hoặc decor đang khoá.
 - Lưu layout không ghi đè `table.status`.
 

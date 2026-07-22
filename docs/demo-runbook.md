@@ -25,7 +25,7 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 
 - Supabase project còn active, không bị pause.
 - App build/deploy mới nhất mở được.
-- Store demo có dữ liệu seed đủ: nhân viên, menu, option, floor areas, bàn, decor.
+- Store demo có dữ liệu seed đủ: nhân viên, menu, option, floor areas, bàn và 7 decor ảnh built-in đa dạng (tường, cây, ghế, quầy/thiết bị, ảnh khác).
 - Có ít nhất một order thanh toán thành công để report/history không trống nếu cần.
 - Dùng admin (hoặc nhân viên có grant `order.voidPaid`) nếu demo hủy đơn đã thanh toán.
 - Nếu demo phân quyền trên cloud, bảo đảm migration 012 đã được apply; thay đổi quyền client có hiệu lực sau khi khóa/đăng nhập lại.
