@@ -29,6 +29,7 @@ describe("LeftNav", () => {
     expect(screen.getByRole("navigation", { name: "POS modules" })).toBeInTheDocument();
     expect(screen.getByText("Vận hành")).toBeInTheDocument();
     expect(screen.getByText("Quản trị")).toBeInTheDocument();
+    expect(screen.queryByTestId("nav-kitchen")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Mang đi" }));
 

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   canAccessModule,
   defaultRolePermissions,
+  enabledEmployeeRoles,
   hasPermission,
+  isEmployeeRoleEnabledInUi,
   requireModuleAccess,
   requirePermission,
 } from "./guards";
@@ -13,6 +15,13 @@ const admin: Employee = { id: "admin", name: "Admin", role: "admin", isActive: t
 const cashier: Employee = { id: "cashier", name: "Cashier", role: "cashier", isActive: true };
 
 describe("module guards", () => {
+  it("only exposes production-ready employee roles in the current UI", () => {
+    expect(enabledEmployeeRoles).toEqual(["admin", "cashier"]);
+    expect(isEmployeeRoleEnabledInUi("admin")).toBe(true);
+    expect(isEmployeeRoleEnabledInUi("cashier")).toBe(true);
+    expect(isEmployeeRoleEnabledInUi("kitchen")).toBe(false);
+  });
+
   it("allows admin to access editor and report modules", () => {
     expect(canAccessModule(admin, "menuEditor")).toBe(true);
     expect(canAccessModule(admin, "floorEditor")).toBe(true);

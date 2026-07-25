@@ -134,6 +134,14 @@ describe("demo copy polish", () => {
     expect(await screen.findByText(/Sai định dạng/)).toBeInTheDocument();
   });
 
+  it("keeps the future kitchen role out of the employee PIN screen", async () => {
+    renderApp({ screen: "passcode", currentEmployee: null });
+
+    expect(await screen.findByTestId("employee-emp-admin")).toBeInTheDocument();
+    expect(screen.getByTestId("employee-emp-cashier-1")).toBeInTheDocument();
+    expect(screen.queryByTestId("employee-emp-kitchen")).not.toBeInTheDocument();
+  });
+
   it("keeps order UI free of database and draft wording", async () => {
     const { container } = renderApp({
       drawer: "order",
@@ -145,10 +153,10 @@ describe("demo copy polish", () => {
   });
 
   it("keeps admin drawers free of implementation copy", async () => {
-    for (const drawer of ["menuEditor", "floorEditor", "report", "kitchen", "paymentSettings"] as const) {
+    for (const drawer of ["menuEditor", "floorEditor", "report", "paymentSettings"] as const) {
       cleanup();
       const { container } = renderApp({ drawer });
-      expect(await screen.findByTestId(drawer === "report" ? "report" : drawer === "menuEditor" ? "menu-editor" : drawer === "floorEditor" ? "floor-editor" : drawer === "kitchen" ? "kitchen-drawer" : "payment-settings-drawer")).toBeInTheDocument();
+      expect(await screen.findByTestId(drawer === "report" ? "report" : drawer === "menuEditor" ? "menu-editor" : drawer === "floorEditor" ? "floor-editor" : "payment-settings-drawer")).toBeInTheDocument();
       expectNoImplementationCopy(container);
     }
   });
@@ -168,16 +176,16 @@ describe("demo copy polish", () => {
 
 describe("drawer overlays", () => {
   it("closes the active drawer when the overlay is clicked", async () => {
-    renderApp({ drawer: "kitchen" });
+    renderApp({ drawer: "paymentSettings" });
 
-    const drawer = await screen.findByTestId("kitchen-drawer");
+    const drawer = await screen.findByTestId("payment-settings-drawer");
     const overlay = drawer.parentElement;
     expect(overlay).not.toBeNull();
 
     fireEvent.click(overlay!);
 
     await waitFor(() => {
-      expect(screen.queryByTestId("kitchen-drawer")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("payment-settings-drawer")).not.toBeInTheDocument();
     });
     expect(useAppStore.getState().drawer).toBeNull();
   });

@@ -1,6 +1,7 @@
 import { Button } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { isEmployeeRoleEnabledInUi } from "@/core/guards";
 import { useActiveEmployeesQuery, useStoreSessionQuery, useUnpairStoreMutation, useVerifyEmployeeMutation } from "@/features/session";
 import { useAppStore } from "../useAppStore";
 import { toToastError } from "../appErrors";
@@ -10,6 +11,10 @@ export function PasscodeScreen() {
   const setCurrentEmployee = useAppStore((state) => state.setCurrentEmployee);
   const storeSessionQuery = useStoreSessionQuery();
   const employeesQuery = useActiveEmployeesQuery();
+  const visibleEmployees = useMemo(
+    () => (employeesQuery.data ?? []).filter((employee) => isEmployeeRoleEnabledInUi(employee.role)),
+    [employeesQuery.data],
+  );
   const verifyMutation = useVerifyEmployeeMutation();
   const unpairMutation = useUnpairStoreMutation();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
@@ -24,10 +29,11 @@ export function PasscodeScreen() {
   const timeStr = now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
   useEffect(() => {
-    if (!selectedEmployeeId && employeesQuery.data?.length) {
-      setSelectedEmployeeId(employeesQuery.data[0].id);
+    const selectedEmployeeIsVisible = visibleEmployees.some((employee) => employee.id === selectedEmployeeId);
+    if ((!selectedEmployeeId || !selectedEmployeeIsVisible) && visibleEmployees.length) {
+      setSelectedEmployeeId(visibleEmployees[0].id);
     }
-  }, [employeesQuery.data, selectedEmployeeId]);
+  }, [selectedEmployeeId, visibleEmployees]);
 
   const verifyPin = () => {
     verifyMutation.mutate(
@@ -117,11 +123,11 @@ export function PasscodeScreen() {
           <div className="min-h-0 flex-1 overflow-y-auto pr-0.5 max-[700px]:max-h-[150px] max-[700px]:flex-none">
             {employeesQuery.isLoading ? (
               <div className="rounded-pos border border-dashed border-pos-line p-4 text-center text-sm text-pos-muted">Đang tải danh sách nhân viên...</div>
-            ) : !employeesQuery.data?.length ? (
+            ) : visibleEmployees.length === 0 ? (
               <div className="rounded-pos border border-dashed border-pos-line p-4 text-center text-sm text-pos-muted">Chưa có nhân viên active.</div>
             ) : (
               <div className="grid grid-cols-2 content-start gap-[clamp(8px,1vw,18px)] [grid-auto-rows:min-content] xl:grid-cols-3">
-                {employeesQuery.data.map((employee) => (
+                {visibleEmployees.map((employee) => (
                   <button
                     key={employee.id}
                     className={clsx(

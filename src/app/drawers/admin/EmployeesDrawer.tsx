@@ -1,10 +1,13 @@
-import clsx from "clsx";
-import { ShieldAlert, UserPlus } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import { Button } from "@mui/material";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import type { Employee, EmployeeRole } from "@/domain";
-import { canAccessModule } from "@/core/guards";
+import {
+  canAccessModule,
+  enabledEmployeeRoles,
+  isEmployeeRoleEnabledInUi,
+} from "@/core/guards";
 import {
   useAdminEmployeesQuery,
   useCreateEmployeeMutation,
@@ -26,16 +29,11 @@ import { toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { PortalPopup } from "../../components/PortalPopup";
 import { EmployeeDetailPane } from "./EmployeeDetailPane";
-import { EmployeeListPane } from "./EmployeeListPane";
+import { EmployeeListPane, type EmployeeListFilter } from "./EmployeeListPane";
 
-type EmpFilter = "all" | EmployeeRole | "inactive";
-
-type EmployeeRecord = Employee & {
-  lastUnlock: string | null;
-};
+type EmpFilter = EmployeeListFilter;
 
 const EMP_ROLE_LABEL: Record<EmployeeRole, string> = { admin: "Quản lý", cashier: "Thu ngân", kitchen: "Bếp" };
-const EMP_ROLE_ORDER: EmployeeRole[] = ["admin", "cashier", "kitchen"];
 
 let clientIdSeq = 0;
 const createClientId = (): string => {
@@ -45,11 +43,6 @@ const createClientId = (): string => {
   return `00000000-0000-4000-8000-${suffix}`;
 };
 const createEmployeeId = createClientId;
-
-const toEmployeeRecord = (employee: Employee): EmployeeRecord => ({
-  ...employee,
-  lastUnlock: null,
-});
 
 function EmployeesDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
@@ -65,10 +58,10 @@ function EmployeesDrawer() {
   const [form, setForm] = useState<EmployeeDrawerForm>(EMPTY_EMPLOYEE_FORM);
   const [errors, setErrors] = useState<EmployeeFormErrors>({});
   const [discardTarget, setDiscardTarget] = useState<{ target: string | "new" | null } | null>(null);
-  const [pinResetTarget, setPinResetTarget] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const employees = useMemo(
-    () => (employeesQuery.data ?? []).map(toEmployeeRecord),
+    () => (employeesQuery.data ?? [])
+      .filter((employee) => isEmployeeRoleEnabledInUi(employee.role)),
     [employeesQuery.data],
   );
   const isSaving =
@@ -115,6 +108,11 @@ function EmployeesDrawer() {
     applySelect(target);
   };
 
+  useEffect(() => {
+    if (selectedId !== null || employees.length === 0) return;
+    applySelect(employees[0].id);
+  }, [employees, selectedId]);
+
   const filtered = employees.filter((e) => {
     if (filter === "all") return true;
     if (filter === "inactive") return !e.isActive;
@@ -132,7 +130,6 @@ function EmployeesDrawer() {
     { key: "all", label: "Tất cả" },
     { key: "admin", label: "Quản lý" },
     { key: "cashier", label: "Thu ngân" },
-    { key: "kitchen", label: "Bếp" },
     { key: "inactive", label: "Tạm khoá" },
   ];
   const employeeStatusText = employeesQuery.isLoading
@@ -140,40 +137,9 @@ function EmployeesDrawer() {
     : employeesQuery.isError
     ? "Lỗi tải nhân viên"
     : `${employees.length} nhân viên · online`;
-  const pinResetEmployee = pinResetTarget ? employees.find((e) => e.id === pinResetTarget) : null;
   const activeAdminCount = employees.filter((e) => e.role === "admin" && e.isActive).length;
-  const isFinalActiveAdmin = (employee: Pick<EmployeeRecord, "role" | "isActive">) =>
+  const isFinalActiveAdmin = (employee: Pick<Employee, "role" | "isActive">) =>
     isLastActiveAdmin(employee, activeAdminCount);
-
-  const toggleActive = (id: string) => {
-    const target = employees.find((e) => e.id === id);
-    if (!target) return;
-    if (isSaving) return;
-    if (isDirty) {
-      toast.error("Lưu hoặc bỏ thay đổi hiện tại trước khi đổi trạng thái.");
-      return;
-    }
-    const nextActive = !target.isActive;
-    if (!nextActive && currentEmployee?.id === id) {
-      toast.error("Không thể tạm khoá tài khoản đang đăng nhập.");
-      return;
-    }
-    if (!nextActive && isFinalActiveAdmin(target)) {
-      toast.error("Cần giữ ít nhất một quản lý đang hoạt động.");
-      return;
-    }
-
-    updateEmployeeMutation.mutate(
-      { employee: { id, isActive: nextActive } },
-      {
-        onSuccess: (updated) => {
-          if (selectedId === id) setForm((f) => ({ ...f, isActive: updated.isActive }));
-          toast.success(nextActive ? "Đã mở khoá nhân viên" : "Đã tạm khoá nhân viên");
-        },
-        onError: (error) => toast.error(toToastError(error)),
-      },
-    );
-  };
 
   const validate = (): boolean => {
     const next = getEmployeeFormErrors(form, selectedId === "new");
@@ -271,74 +237,48 @@ function EmployeesDrawer() {
   }
 
   return (
-    <PortalDrawer testId="employees-drawer" onOutsideClick={closeDrawer}>
-      <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-pos-line bg-white/95 px-[18px] py-3 max-[980px]:min-h-[50px] max-[980px]:gap-x-2.5 max-[980px]:gap-y-2 max-[980px]:px-2.5 max-[980px]:py-2">
-        <div className="min-w-0 flex-[1_1_240px] grid gap-1 [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-normal [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-normal [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-normal [&_p]:mb-0 [&_p]:mt-1 [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-xs [&_p]:text-pos-muted max-sm:[&_h1]:text-[17px] max-sm:[&_h2]:text-[15px] max-sm:[&_h3]:text-[15px] [&_h2]:overflow-hidden [&_h2]:text-ellipsis [&_h2]:whitespace-nowrap [&_h3]:overflow-hidden [&_h3]:text-ellipsis [&_h3]:whitespace-nowrap">
-          <h2>Quản lý nhân viên</h2>
-          <p><span className="mr-1 inline-block h-[7px] w-[7px] align-middle rounded-full bg-[#22c55e]" />{employeeStatusText}</p>
-        </div>
-        <div className="flex min-w-0 flex-[0_1_auto] flex-wrap items-center justify-end gap-2.5 [&>*]:shrink-0 [&_.MuiButton-root]:min-h-9 [&_.MuiButton-root]:whitespace-nowrap max-sm:w-full max-sm:justify-start max-sm:[&_.MuiButton-root]:flex-[1_1_128px] max-[980px]:gap-2 max-[980px]:[&_.MuiButton-root]:min-h-[34px]">
-          <Button
-            variant="contained"
-            startIcon={<UserPlus size={16} />}
-            data-testid="add-employee-button"
-            onClick={() => requestSelect("new")}
-            disabled={isSaving}
-          >
-            Thêm nhân viên
-          </Button>
-          <Button variant="outlined" onClick={closeDrawer}>Đóng</Button>
-        </div>
-      </header>
+    <PortalDrawer
+      testId="employees-drawer"
+      onOutsideClick={closeDrawer}
+      panelClassName="grid-rows-[minmax(0,1fr)]"
+    >
+      <div
+        className="grid min-h-0 grid-cols-[clamp(132px,26%,286px)_minmax(0,1fr)] overflow-hidden bg-pos-surface"
+        data-testid="employees-split-layout"
+      >
+        <EmployeeListPane
+          employees={filtered}
+          totalCount={employees.length}
+          selectedId={selectedId}
+          isLoading={employeesQuery.isLoading}
+          isError={employeesQuery.isError}
+          error={employeesQuery.error}
+          isSaving={isSaving}
+          statusText={employeeStatusText}
+          filter={filter}
+          filterOptions={filterChips}
+          countForFilter={countFor}
+          roleLabel={EMP_ROLE_LABEL}
+          onFilterChange={setFilter}
+          onSelect={requestSelect}
+          onAdd={() => requestSelect("new")}
+          onClose={closeDrawer}
+        />
 
-      <div className="min-h-0 overflow-auto bg-pos-bg p-3 max-[980px]:p-2 grid grid-rows-[auto_minmax(0,1fr)] gap-2 overflow-hidden">
-        <div className="flex flex-wrap items-center gap-2 overflow-x-auto overflow-y-hidden px-0.5 pb-0.5 pt-px [scrollbar-width:thin]">
-          {filterChips.map((fc) => (
-            <button
-              key={fc.key}
-              className={clsx(
-                "cursor-pointer whitespace-nowrap rounded-full border px-3 py-[3px] text-xs font-bold",
-                filter === fc.key
-                  ? "border-pos-primary bg-pos-primary text-white"
-                  : "border-pos-line bg-pos-surface text-pos-muted",
-              )}
-              onClick={() => setFilter(fc.key)}
-            >
-              {fc.label}
-              <span className="rounded-[10px] bg-pos-surface2 px-1.5 py-px text-[11px] font-semibold text-pos-muted">{countFor(fc.key)}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(300px,360px)] gap-2.5 max-[980px]:min-w-[650px]">
-          <EmployeeListPane
-            employees={filtered}
-            selectedId={selectedId}
-            isLoading={employeesQuery.isLoading}
-            isError={employeesQuery.isError}
-            error={employeesQuery.error}
-            isSaving={isSaving}
-            roleLabel={EMP_ROLE_LABEL}
-            onSelect={requestSelect}
-            onResetPin={setPinResetTarget}
-            onToggleActive={toggleActive}
-          />
-
-          <EmployeeDetailPane
-            selectedId={selectedId}
-            selectedRecord={selectedRecord}
-            currentEmployeeId={currentEmployee?.id}
-            form={form}
-            setForm={setForm}
-            errors={errors}
-            setErrors={setErrors}
-            roleOptions={EMP_ROLE_ORDER.map((role) => ({ role, label: EMP_ROLE_LABEL[role] }))}
-            nameInputRef={nameInputRef}
-            isSaving={isSaving}
-            isLastActiveAdmin={isFinalActiveAdmin}
-            onSave={() => void handleSave()}
-          />
-        </div>
+        <EmployeeDetailPane
+          selectedId={selectedId}
+          selectedRecord={selectedRecord}
+          currentEmployeeId={currentEmployee?.id}
+          form={form}
+          setForm={setForm}
+          errors={errors}
+          setErrors={setErrors}
+          roleOptions={enabledEmployeeRoles.map((role) => ({ role, label: EMP_ROLE_LABEL[role] }))}
+          nameInputRef={nameInputRef}
+          isSaving={isSaving}
+          isLastActiveAdmin={isFinalActiveAdmin}
+          onSave={() => void handleSave()}
+        />
       </div>
 
       {discardTarget && (
@@ -364,30 +304,6 @@ function EmployeesDrawer() {
         </PortalPopup>
       )}
 
-      {pinResetTarget && (
-        <PortalPopup placement="Centered" viewport="workspace" overlayClassName="bg-slate-900/50" onOutsideClick={() => setPinResetTarget(null)}>
-          <div className="grid w-[min(360px,90vw)] gap-3 rounded-pos bg-pos-surface p-6 shadow-[0_20px_60px_rgb(0_0_0_/_25%)] [&_h3]:m-0 [&_p]:m-0 [&_p]:text-sm [&_p]:text-pos-muted" onClick={(e) => e.stopPropagation()}>
-            <h3>Đặt lại PIN</h3>
-            <p>
-              Mở form chi tiết của {pinResetEmployee?.name ?? "nhân viên"} rồi nhập PIN mới. PIN chỉ được lưu khi bấm Lưu nhân viên.
-            </p>
-            <div className="flex flex-wrap justify-end gap-2.5 [&_.MuiButton-root]:min-w-24">
-              <Button variant="outlined" onClick={() => setPinResetTarget(null)}>Huỷ</Button>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  const target = pinResetTarget;
-                  setPinResetTarget(null);
-                  requestSelect(target);
-                  toast.success("Nhập PIN mới trong form chi tiết rồi bấm Lưu.");
-                }}
-              >
-                Mở form
-              </Button>
-            </div>
-          </div>
-        </PortalPopup>
-      )}
     </PortalDrawer>
   );
 }

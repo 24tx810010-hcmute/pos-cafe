@@ -1,4 +1,4 @@
-import { BarChart3, ChefHat, ClipboardList, Coffee, LayoutDashboard, LayoutGrid, Lock, QrCode, ReceiptText, Settings, Users } from "lucide-react";
+import { BarChart3, ClipboardList, Coffee, LayoutDashboard, LayoutGrid, Lock, QrCode, ReceiptText, Settings, Users } from "lucide-react";
 import toast from "react-hot-toast";
 import { canAccessModule, type AppModule } from "@/core/guards";
 import type { DrawerModule } from "../useAppStore";
@@ -102,14 +102,6 @@ export function LeftNav() {
             onClick={() => guardedOpen("report", "report")}
             disabled={!canAccess("report")}
             testId="nav-report"
-          />
-          <RailButton
-            active={drawer === "kitchen"}
-            icon={<ChefHat size={18} />}
-            label="Bếp"
-            onClick={() => guardedOpen("kitchen", "kitchen")}
-            disabled={!canAccess("kitchen")}
-            testId="nav-kitchen"
           />
           <RailButton
             active={drawer === "paymentSettings"}

@@ -3,7 +3,6 @@ import { useAppStore, type DrawerModule } from "../useAppStore";
 import { EmployeesStubDrawer } from "../drawers/admin/EmployeesDrawer";
 import { FloorEditorDrawer } from "../drawers/admin/FloorEditorDrawer";
 import { GeneralSettingsDrawer } from "../drawers/admin/GeneralSettingsDrawer";
-import { KitchenQueueDrawer } from "../drawers/admin/KitchenQueueDrawer";
 import { MenuEditorDrawer } from "../drawers/admin/MenuEditorDrawer";
 import { OrderHistoryDrawer } from "../drawers/admin/OrderHistoryDrawer";
 import { PaymentSettingsDrawer } from "../drawers/admin/PaymentSettingsDrawer";
@@ -25,7 +24,6 @@ const DRAWER_REGISTRY: Record<NonNullable<DrawerModule>, ComponentType> = {
   orderHistory: OrderHistoryDrawer,
   employees: EmployeesStubDrawer,
   settings: GeneralSettingsDrawer,
-  kitchen: KitchenQueueDrawer,
   paymentSettings: PaymentSettingsDrawer,
 };
 

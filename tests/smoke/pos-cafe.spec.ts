@@ -267,11 +267,31 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await page.getByTestId("nav-employees").click();
   await expect(page.getByTestId("employees-drawer")).toBeVisible();
   await expect(page.getByTestId("add-employee-button")).toBeVisible();
+  await expect(page.getByTestId("employee-row-emp-admin")).toHaveClass(/bg-pos-primary/);
+
+  const employeeSplitGeometry = await page.getByTestId("employees-split-layout").evaluate((split) => {
+    const list = split.querySelector('[data-testid="employee-list-pane"]');
+    const detail = split.querySelector('[data-testid="employee-detail-pane"]');
+    if (!(list instanceof HTMLElement) || !(detail instanceof HTMLElement)) return null;
+    const splitBox = split.getBoundingClientRect();
+    const listBox = list.getBoundingClientRect();
+    const detailBox = detail.getBoundingClientRect();
+    return {
+      splitWidth: splitBox.width,
+      listRight: listBox.right,
+      listWidth: listBox.width,
+      detailLeft: detailBox.left,
+      detailWidth: detailBox.width,
+    };
+  });
+  if (!employeeSplitGeometry) throw new Error("Missing employee split-pane geometry");
+  expect(employeeSplitGeometry.listRight).toBeLessThanOrEqual(employeeSplitGeometry.detailLeft + 1);
+  expect(employeeSplitGeometry.detailWidth).toBeGreaterThan(employeeSplitGeometry.listWidth);
+  expect(employeeSplitGeometry.splitWidth).toBeLessThanOrEqual((page.viewportSize()?.width ?? 0) + 1);
+
   await closeCleanDrawer(page, "employees-drawer");
 
-  await page.getByTestId("nav-kitchen").click();
-  await expect(page.getByTestId("kitchen-drawer")).toBeVisible();
-  await closeCleanDrawer(page, "kitchen-drawer");
+  await expect(page.getByTestId("nav-kitchen")).toHaveCount(0);
 
   await page.getByTestId("nav-payment-settings").click();
   const payDrawer = page.getByTestId("payment-settings-drawer");

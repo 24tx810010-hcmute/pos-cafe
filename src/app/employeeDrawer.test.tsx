@@ -61,6 +61,29 @@ afterEach(() => {
 });
 
 describe("EmployeesDrawer", () => {
+  it("keeps the employee directory and editor in a primary-accent split layout", async () => {
+    const user = userEvent.setup();
+    renderEmployeesDrawer();
+
+    const splitLayout = await screen.findByTestId("employees-split-layout");
+    const cashierRow = await screen.findByTestId("employee-row-emp-cashier-1");
+
+    expect(splitLayout).toHaveClass(
+      "grid-cols-[clamp(132px,26%,286px)_minmax(0,1fr)]",
+    );
+    expect(screen.getByTestId("employee-list-pane")).toBeInTheDocument();
+    expect(screen.getByTestId("employee-detail-pane")).toBeInTheDocument();
+    expect(screen.queryByText(/Mở khoá:/i)).not.toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("employee-detail-header")).getByTestId(
+        "save-employee-button",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(cashierRow);
+    expect(cashierRow).toHaveClass("bg-pos-primary", "text-white");
+  });
+
   it("creates employees through admin mutations and stores the new PIN", async () => {
     const user = userEvent.setup();
     const { ports, state } = renderEmployeesDrawer();
@@ -83,7 +106,9 @@ describe("EmployeesDrawer", () => {
     await expect(ports.employee.verifyPin(created?.id ?? "", "333333")).resolves.toMatchObject({
       name: "Nhân viên mới",
     });
-    expect(await screen.findByText("Nhân viên mới")).toBeInTheDocument();
+    expect(await screen.findByTestId(`employee-row-${created?.id}`)).toHaveTextContent(
+      "Nhân viên mới",
+    );
   });
 
   it("deactivates employees through admin mutations without hiding them from admin list", async () => {
@@ -91,7 +116,7 @@ describe("EmployeesDrawer", () => {
     const { state } = renderEmployeesDrawer();
 
     await user.click(await screen.findByTestId("employee-row-emp-cashier-1"));
-    await user.click(screen.getByTestId("employee-inactive-button"));
+    await user.click(screen.getByTestId("employee-active-toggle"));
     await user.click(screen.getByTestId("save-employee-button"));
 
     await waitFor(() => {
@@ -154,13 +179,10 @@ describe("EmployeesDrawer", () => {
     await user.click(await screen.findByTestId("employee-row-emp-cashier-1"));
     await user.click(screen.getByTestId("employee-permission-payment.take"));
     expect(screen.getByTestId("employee-permission-order.create")).toBeChecked();
+    expect(screen.queryByRole("option", { name: "Bếp" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("employee-row-emp-kitchen")).not.toBeInTheDocument();
 
-    await user.click(screen.getByTestId("employee-role-kitchen"));
-    for (const code of ["order.create", "order.update", "order.voidOpen", "payment.take", "order.voidPaid"]) {
-      expect(screen.getByTestId(`employee-permission-${code}`)).not.toBeChecked();
-    }
-
-    await user.click(screen.getByTestId("employee-role-admin"));
+    await user.selectOptions(screen.getByTestId("employee-role-select"), "admin");
     for (const code of ["order.create", "order.update", "order.voidOpen", "payment.take", "order.voidPaid"]) {
       expect(screen.getByTestId(`employee-permission-${code}`)).toBeChecked();
     }
@@ -174,7 +196,7 @@ describe("EmployeesDrawer", () => {
     await user.click(await screen.findByTestId("employee-row-emp-admin"));
     expect(screen.getByTestId("employee-self-permission-warning")).toBeInTheDocument();
 
-    await user.click(screen.getByTestId("employee-role-cashier"));
+    await user.selectOptions(screen.getByTestId("employee-role-select"), "cashier");
     await user.click(screen.getByTestId("save-employee-button"));
 
     await waitFor(() => expect(state.employees.find((employee) => employee.id === "emp-admin")?.role).toBe("admin"));

@@ -1,6 +1,15 @@
 import { AppError } from "./appError";
 import type { Employee, EmployeePermission, EmployeeRole } from "@/domain";
 
+export type EnabledEmployeeRole = Exclude<EmployeeRole, "kitchen">;
+
+// Kitchen is reserved in the domain/database for a future production queue.
+// Until that feature exists, only these roles are exposed by the application UI.
+export const enabledEmployeeRoles: readonly EnabledEmployeeRole[] = ["admin", "cashier"];
+
+export const isEmployeeRoleEnabledInUi = (role: EmployeeRole): role is EnabledEmployeeRole =>
+  enabledEmployeeRoles.includes(role as EnabledEmployeeRole);
+
 export type AppModule =
   | "floor"
   | "order"
