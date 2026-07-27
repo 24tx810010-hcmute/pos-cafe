@@ -120,6 +120,7 @@ const tableRows = (
     store_id: storeId,
     area_id: areaIds[table.areaId],
     name: table.name,
+    background_asset_key: table.backgroundAssetKey,
     pos_x: table.posX,
     pos_y: table.posY,
     width: table.width,

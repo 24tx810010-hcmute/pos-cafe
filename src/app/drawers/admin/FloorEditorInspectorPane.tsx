@@ -11,6 +11,7 @@ import {
   type DraftTable,
 } from "@/features/admin/floorEditorDraft";
 import { getFloorDecorAsset, type FloorDecorAssetPickerMode } from "../../floorDecorAssets";
+import { getFloorTableBackgroundAsset } from "../../floorTableBackgroundAssets";
 
 type PatchDraft<T> = (id: string, patch: Partial<T>) => void;
 
@@ -25,6 +26,7 @@ interface FloorEditorInspectorPaneProps {
   toggleDeleteArea: (id: string) => void;
   patchTable: PatchDraft<DraftTable>;
   toggleDeleteTable: (id: string) => void;
+  onChooseTableBackground: (id: string) => void;
   patchDecor: PatchDraft<DraftDecor>;
   toggleDeleteDecor: (id: string) => void;
   onChooseDecorAsset: (id: string, mode: FloorDecorAssetPickerMode) => void;
@@ -41,11 +43,13 @@ export function FloorEditorInspectorPane({
   toggleDeleteArea,
   patchTable,
   toggleDeleteTable,
+  onChooseTableBackground,
   patchDecor,
   toggleDeleteDecor,
   onChooseDecorAsset,
 }: FloorEditorInspectorPaneProps) {
   const selectedDecorAsset = getFloorDecorAsset(selectedDecor?.assetKey);
+  const selectedTableBackground = getFloorTableBackgroundAsset(selectedTable?.backgroundAssetKey);
 
   return (
     <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface max-[980px]:min-h-[220px]" data-testid="floor-editor-inspector">
@@ -73,6 +77,30 @@ export function FloorEditorInspectorPane({
                   </button>
                 ))}
               </div>
+            </div>
+            <div className="grid gap-1.5">
+              <span className="text-xs font-extrabold text-pos-muted">Nền bàn</span>
+              <div className="grid min-h-20 place-items-center overflow-hidden rounded-[8px] border border-pos-line bg-white p-2">
+                {selectedTableBackground ? (
+                  <img
+                    alt={selectedTableBackground.label}
+                    className="h-20 w-full rounded-[5px] object-cover"
+                    src={selectedTableBackground.assetKey!}
+                  />
+                ) : (
+                  <span className="text-center text-xs font-bold text-pos-muted">
+                    Trắng mặc định
+                  </span>
+                )}
+              </div>
+              <Button
+                variant="outlined"
+                startIcon={<ImagePlus size={15} />}
+                data-testid="change-table-background"
+                onClick={() => onChooseTableBackground(selectedTable.id)}
+              >
+                Chọn nền bàn
+              </Button>
             </div>
             <div className="grid gap-1.5">
               <span className="text-xs font-extrabold text-pos-muted">Khu vực</span>

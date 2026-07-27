@@ -315,6 +315,7 @@ describe("mock repositories", () => {
             id: "tbl-r01",
             areaId: "area-rooftop",
             name: "R01",
+            backgroundAssetKey: null,
             posX: 120,
             posY: 160,
             width: 120,

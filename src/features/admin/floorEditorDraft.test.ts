@@ -9,6 +9,7 @@ const baseFloorPlan: FloorPlan = {
       id: "tbl-1",
       areaId: "area-1",
       name: "B01",
+      backgroundAssetKey: null,
       posX: 100,
       posY: 120,
       width: 80,
@@ -50,5 +51,51 @@ describe("buildFloorPlanChangesFromDrafts", () => {
 
     expect(changes.tables.updated).toEqual([{ id: "tbl-1", posX: 140, seats: 4 }]);
     expect(changes.decorItems.deleted).toEqual([{ id: "dec-1", deletedByEmployeeId: "emp-1" }]);
+  });
+
+  it("tracks selecting and clearing a table background", () => {
+    const selectedChanges = buildFloorPlanChangesFromDrafts({
+      base: baseFloorPlan,
+      areas: baseFloorPlan.areas,
+      tables: [
+        {
+          ...baseFloorPlan.tables[0],
+          backgroundAssetKey: "/floor-assets/tables/table-bg-04.png",
+        },
+      ],
+      decor: baseFloorPlan.decorItems,
+      actorId: "emp-1",
+    });
+
+    expect(selectedChanges.tables.updated).toEqual([
+      {
+        id: "tbl-1",
+        backgroundAssetKey: "/floor-assets/tables/table-bg-04.png",
+      },
+    ]);
+
+    const planWithBackground: FloorPlan = {
+      ...baseFloorPlan,
+      tables: [
+        {
+          ...baseFloorPlan.tables[0],
+          backgroundAssetKey: "/floor-assets/tables/table-bg-04.png",
+        },
+      ],
+    };
+    const clearedChanges = buildFloorPlanChangesFromDrafts({
+      base: planWithBackground,
+      areas: planWithBackground.areas,
+      tables: [{ ...planWithBackground.tables[0], backgroundAssetKey: null }],
+      decor: planWithBackground.decorItems,
+      actorId: "emp-1",
+    });
+
+    expect(clearedChanges.tables.updated).toEqual([
+      {
+        id: "tbl-1",
+        backgroundAssetKey: null,
+      },
+    ]);
   });
 });

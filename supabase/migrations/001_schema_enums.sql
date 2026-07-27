@@ -142,6 +142,7 @@ create table public.tables (
   store_id uuid not null references public.stores (id) on delete cascade,
   area_id uuid not null,
   name text not null,
+  background_asset_key text,
   pos_x integer not null,
   pos_y integer not null,
   width integer not null check (width > 0),

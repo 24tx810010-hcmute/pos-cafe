@@ -55,6 +55,16 @@ afterEach(() => {
 });
 
 describe("FloorWorkspace", () => {
+  it("renders the selected table background while keeping the status border", async () => {
+    renderWorkspace((state) => {
+      state.floorPlan.tables[0].backgroundAssetKey = "/floor-assets/tables/table-bg-11.png";
+    });
+
+    const table = await screen.findByTestId("table-tbl-b01");
+    expect(table.getAttribute("style")).toContain('/floor-assets/tables/table-bg-11.png');
+    expect(table).toHaveClass("border-[#86efac]");
+  });
+
   it("renders catalog decoration images on the POS floor", async () => {
     renderWorkspace((state) => {
       state.floorPlan.decorItems.push({

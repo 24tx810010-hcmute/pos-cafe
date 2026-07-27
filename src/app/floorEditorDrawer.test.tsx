@@ -147,6 +147,34 @@ describe("FloorEditorDrawer", () => {
     ]);
   });
 
+  it("selects one of 11 table backgrounds and persists the asset key", async () => {
+    const user = userEvent.setup();
+    const { saveSpy } = renderFloorEditor();
+
+    await user.click(await screen.findByTestId("fe-table-tbl-b01"));
+    await user.click(screen.getByTestId("change-table-background"));
+
+    expect(screen.getByTestId("floor-table-background-picker")).toBeVisible();
+    expect(screen.getAllByTestId(/^table-background-asset-/)).toHaveLength(12);
+    expect(screen.getByTestId("table-background-asset-default")).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(screen.getByTestId("table-background-asset-table-bg-11"));
+    await user.click(screen.getByTestId("confirm-table-background"));
+
+    expect(screen.getByTestId("fe-table-tbl-b01").getAttribute("style")).toContain(
+      '/floor-assets/tables/table-bg-11.png',
+    );
+    await user.click(screen.getByTestId("save-floor-button"));
+
+    await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
+    expect(saveSpy.mock.calls[0][0].tables.updated).toEqual([
+      {
+        id: "tbl-b01",
+        backgroundAssetKey: "/floor-assets/tables/table-bg-11.png",
+      },
+    ]);
+  });
+
   it("saves new tables through floor changesets without table status", async () => {
     const user = userEvent.setup();
     const { saveSpy, state } = renderFloorEditor();
@@ -164,6 +192,7 @@ describe("FloorEditorDrawer", () => {
       posX: 800,
       posY: 450,
       shape: "round",
+      backgroundAssetKey: null,
     });
     expect(changes.tables.created[0].id).toMatch(/^[0-9a-f-]{36}$/i);
     expect(changes.tables.created[0]).not.toHaveProperty("status");
@@ -313,11 +342,14 @@ describe("FloorEditorDrawer", () => {
 
     const table = await screen.findByTestId("fe-table-tbl-b01");
     const style = table.getAttribute("style") ?? "";
+    const label = table.querySelector("[data-floor-label='name']");
 
     expect(style).toContain("left: 260px");
     expect(style).toContain("top: 190px");
     expect(style).toContain("width: 120px");
     expect(style).toContain("height: 76px");
+    expect(table.querySelector("small")).toBeNull();
+    expect(label?.parentElement).not.toHaveClass("bg-white/85", "shadow-sm");
   });
 
   it("omits manual zoom controls because the stage auto-fits its container", async () => {

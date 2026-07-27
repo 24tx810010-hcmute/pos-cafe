@@ -73,6 +73,7 @@ export type TableCreate = {
   id: string;
   areaId: string;
   name: string;
+  backgroundAssetKey: string | null;
   posX: number;
   posY: number;
   width: number;

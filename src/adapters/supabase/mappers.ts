@@ -151,6 +151,7 @@ export const mapFloorTable = (row: Row): FloorTable => ({
   id: asString(row.id),
   areaId: asString(row.area_id),
   name: asString(row.name),
+  backgroundAssetKey: asNullableString(row.background_asset_key),
   posX: asNumber(row.pos_x),
   posY: asNumber(row.pos_y),
   width: asNumber(row.width),

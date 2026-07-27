@@ -392,7 +392,7 @@ test("round tables stay visually circular in the editor and POS floor", async ({
   await expectVisuallyRound(posTable);
 });
 
-test("wall textures and decoration images persist from editor to POS floor", async ({ page }, testInfo) => {
+test("wall, decor and table backgrounds persist from editor to POS floor", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "desktop-only decor workflow");
   await page.goto("/");
   await loginAsAdmin(page);
@@ -417,6 +417,16 @@ test("wall textures and decoration images persist from editor to POS floor", asy
   await expect(editorStage.getByRole("img", { name: "Tường 04" })).toBeVisible();
   await expect(editorStage.getByRole("img", { name: "Thiết bị 30" })).toBeVisible();
 
+  await page.getByTestId("fe-table-tbl-b01").click();
+  await page.getByTestId("change-table-background").click();
+  await expect(page.getByTestId("floor-table-background-picker")).toBeVisible();
+  await expect(page.getByTestId("table-background-asset-default")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("table-background-asset-table-bg-11")).toBeVisible();
+  await page.getByTestId("table-background-asset-table-bg-11").click();
+  await page.getByTestId("confirm-table-background").click();
+  await expect(page.getByTestId("floor-table-background-picker")).toBeHidden();
+  await expect(page.getByTestId("fe-table-tbl-b01")).toHaveCSS("background-image", /table-bg-11\.png/);
+
   await page.getByTestId("save-floor-button").click();
   await expect(page.getByTestId("floor-dirty-badge")).toBeHidden();
   await page.getByTestId("floor-editor").locator("header").getByRole("button", { name: "Huỷ" }).click();
@@ -425,6 +435,7 @@ test("wall textures and decoration images persist from editor to POS floor", asy
   const posStage = page.getByTestId("floor-stage");
   await expect(posStage.getByRole("img", { name: "Tường 04" })).toBeVisible();
   await expect(posStage.getByRole("img", { name: "Thiết bị 30" })).toBeVisible();
+  await expect(page.getByTestId("table-tbl-b01")).toHaveCSS("background-image", /table-bg-11\.png/);
 });
 
 test("employee permission editor gates payment after re-login", async ({ page }, testInfo) => {

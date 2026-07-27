@@ -12,6 +12,7 @@ export interface DraftTable {
   id: string;
   areaId: string;
   name: string;
+  backgroundAssetKey: string | null;
   posX: number;
   posY: number;
   width: number;
@@ -111,6 +112,7 @@ export function buildFloorPlanChangesFromDrafts(input: {
           id: table.id,
           areaId: table.areaId,
           name,
+          backgroundAssetKey: table.backgroundAssetKey,
           posX: table.posX,
           posY: table.posY,
           width: table.width,
@@ -131,6 +133,7 @@ export function buildFloorPlanChangesFromDrafts(input: {
     const update: FloorPlanChanges["tables"]["updated"][number] = { id: table.id };
     if (table.areaId !== original.areaId) update.areaId = table.areaId;
     if (name !== original.name) update.name = name;
+    if (table.backgroundAssetKey !== original.backgroundAssetKey) update.backgroundAssetKey = table.backgroundAssetKey;
     if (table.posX !== original.posX) update.posX = table.posX;
     if (table.posY !== original.posY) update.posY = table.posY;
     if (table.width !== original.width) update.width = table.width;

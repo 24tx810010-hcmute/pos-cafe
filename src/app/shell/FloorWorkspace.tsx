@@ -12,6 +12,7 @@ import { ScaledFloorStage } from "../components/ScaledFloorStage";
 import clsx from "clsx";
 import { FloorDecorVisual } from "../components/FloorDecorVisual";
 import { getFloorDecorAsset } from "../floorDecorAssets";
+import { getFloorTableBackgroundAsset } from "../floorTableBackgroundAssets";
 
 type TableFilter = "all" | "empty" | "occupied";
 
@@ -195,20 +196,25 @@ export function FloorWorkspace() {
                   const openOrderSummary = orders.find((o) => o.tableId === table.id);
                   const occupied = isOccupied(table.id);
                   const isRound = table.shape === "round";
+                  const tableBackground = getFloorTableBackgroundAsset(table.backgroundAssetKey);
                   return (
                     <button
                       className={clsx(
-                        "absolute grid place-items-center border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)]",
-                        occupied ? "border-[#f97316] bg-[#fff7ed]" : "border-[#86efac] bg-[#f0fdf4]",
+                        "absolute grid place-items-center overflow-hidden border-2 bg-white bg-cover bg-center text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)]",
+                        occupied ? "border-[#f97316]" : "border-[#86efac]",
                         isRound ? "rounded-full" : "rounded-pos",
                       )}
                       data-testid={`table-${table.id}`}
                       key={table.id}
-                      style={{ ...stageStyle(table.posX, table.posY, table.width, table.height), ...nodeTransform(table.rotation, tableBoost) }}
+                      style={{
+                        ...stageStyle(table.posX, table.posY, table.width, table.height),
+                        ...nodeTransform(table.rotation, tableBoost),
+                        backgroundImage: tableBackground ? `url("${tableBackground.assetKey}")` : undefined,
+                      }}
                       onClick={() => void openTableOrder(table, openOrderSummary)}
                     >
                       <span
-                        className="grid place-items-center gap-0.5 leading-none"
+                        className="grid place-items-center gap-0.5 rounded-[6px] bg-white/85 px-2 py-1 leading-none shadow-sm"
                         style={{ transform: `scale(${tableLabelBoost})`, transformOrigin: "center" }}
                       >
                         <strong data-floor-label="name" className="block text-[13px] font-extrabold leading-none">

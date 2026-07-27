@@ -33,6 +33,11 @@ import {
 } from "../../floorDecorAssets";
 import { FloorDecorAssetPicker } from "./FloorDecorAssetPicker";
 import { FloorEditorDecorNode } from "./FloorEditorDecorNode";
+import {
+  type FloorTableBackgroundAsset,
+} from "../../floorTableBackgroundAssets";
+import { FloorTableBackgroundPicker } from "./FloorTableBackgroundPicker";
+import { FloorEditorTableNode } from "./FloorEditorTableNode";
 
 export function FloorEditorDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
@@ -54,6 +59,7 @@ export function FloorEditorDrawer() {
     mode: FloorDecorAssetPickerMode;
     targetId?: string;
   } | null>(null);
+  const [tableBackgroundTargetId, setTableBackgroundTargetId] = useState<string | null>(null);
   // Geometry/asset fields are secondary to name/seats/shape, so keep them folded
   // away under an "Nâng cao" section until the admin needs precise control.
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -119,6 +125,7 @@ export function FloorEditorDrawer() {
         id,
         areaId,
         name: `B${String(n).padStart(2, "0")}`,
+        backgroundAssetKey: null,
         posX: logicalStage.width / 2,
         posY: logicalStage.height / 2,
         ...size,
@@ -140,6 +147,11 @@ export function FloorEditorDrawer() {
   const toggleDeleteTable = (id: string) => {
     setTables((list) => list.map((t) => (t.id === id ? { ...t, deleted: !t.deleted } : t)));
     touch();
+  };
+  const applyTableBackground = (asset: FloorTableBackgroundAsset) => {
+    if (!tableBackgroundTargetId) return;
+    patchTable(tableBackgroundTargetId, { backgroundAssetKey: asset.assetKey });
+    setTableBackgroundTargetId(null);
   };
 
   // --- Decor ops ---
@@ -344,31 +356,16 @@ export function FloorEditorDrawer() {
                       />
                     ))}
                     {areaTables.map((t) => (
-                      <div
+                      <FloorEditorTableNode
                         key={t.id}
-                        role="button"
-                        tabIndex={0}
-                        className={clsx(
-                          "absolute grid cursor-grab place-items-center border-2 text-center font-black shadow-[0_8px_18px_rgb(15_23_42_/_10%)] active:cursor-grabbing [&_small]:mt-[3px] [&_small]:block [&_small]:text-[10px] [&_small]:font-bold [&_small]:text-pos-muted",
-                          t.status === "occupied" ? "border-[#f97316] bg-[#fff7ed]" : "border-[#86efac] bg-[#f0fdf4]",
-                          t.shape === "round" ? "rounded-full" : "rounded-pos",
-                          selected?.type === "table" && selected.id === t.id && "!z-50 outline outline-2 outline-offset-2 outline-pos-primary",
-                          t.deleted && "opacity-40",
-                        )}
+                        item={t}
+                        isSelected={selected?.type === "table" && selected.id === t.id}
+                        labelBoost={tableLabelBoost}
                         style={nodeStyle(t, tableBoost)}
-                        data-testid={`fe-table-${t.id}`}
                         onPointerDown={(e) => onNodePointerDown(e, "table", t)}
                         onPointerMove={onNodePointerMove}
                         onPointerUp={onNodePointerUp}
-                      >
-                        <span
-                          className="grid place-items-center leading-none"
-                          style={{ transform: `scale(${tableLabelBoost})`, transformOrigin: "center" }}
-                        >
-                          <span data-floor-label="name">{t.name}</span>
-                          <small>{t.seats} chỗ</small>
-                        </span>
-                      </div>
+                      />
                     ))}
                     {areaDecor.map((d) => renderTransformHandles("decor", d))}
                     {areaTables.map((t) => renderTransformHandles("table", t))}
@@ -400,6 +397,7 @@ export function FloorEditorDrawer() {
                 toggleDeleteArea={toggleDeleteArea}
                 patchTable={patchTable}
                 toggleDeleteTable={toggleDeleteTable}
+                onChooseTableBackground={setTableBackgroundTargetId}
                 patchDecor={patchDecor}
                 toggleDeleteDecor={toggleDeleteDecor}
                 onChooseDecorAsset={(id, mode) => setAssetPicker({ mode, targetId: id })}
@@ -415,6 +413,14 @@ export function FloorEditorDrawer() {
           initialAssetKey={assetPicker.targetId ? decor.find((item) => item.id === assetPicker.targetId)?.assetKey : null}
           onClose={() => setAssetPicker(null)}
           onSelect={applyDecorAsset}
+        />
+      )}
+
+      {tableBackgroundTargetId && (
+        <FloorTableBackgroundPicker
+          initialAssetKey={tables.find((table) => table.id === tableBackgroundTargetId)?.backgroundAssetKey}
+          onClose={() => setTableBackgroundTargetId(null)}
+          onSelect={applyTableBackground}
         />
       )}
 

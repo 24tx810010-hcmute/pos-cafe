@@ -13,7 +13,7 @@ export class SupabaseFloorPlanRepo implements IFloorPlanRepo {
       this.client.from("floor_areas").select("id,name,sort_order").is("deleted_at", null).order("sort_order"),
       this.client
         .from("tables")
-        .select("id,area_id,name,pos_x,pos_y,width,height,shape,rotation,seats,sort_order,status")
+        .select("id,area_id,name,background_asset_key,pos_x,pos_y,width,height,shape,rotation,seats,sort_order,status")
         .is("deleted_at", null)
         .order("sort_order"),
       this.client
@@ -51,6 +51,7 @@ export class SupabaseFloorPlanRepo implements IFloorPlanRepo {
         store_id: storeId,
         area_id: table.areaId,
         name: table.name,
+        background_asset_key: table.backgroundAssetKey,
         pos_x: table.posX,
         pos_y: table.posY,
         width: table.width,
@@ -91,6 +92,7 @@ export class SupabaseFloorPlanRepo implements IFloorPlanRepo {
       await updateRow(this.client, "tables", table.id, {
         area_id: table.areaId,
         name: table.name,
+        background_asset_key: table.backgroundAssetKey,
         pos_x: table.posX,
         pos_y: table.posY,
         width: table.width,

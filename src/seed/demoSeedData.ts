@@ -39,10 +39,10 @@ export const demoFloorPlan: FloorPlan = {
     { id: "area-ground", name: "Tầng trệt", sortOrder: 1 },
   ],
   tables: [
-    { id: "tbl-b01", areaId: "area-ground", name: "B01", posX: 260, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 1, status: "empty" },
-    { id: "tbl-b02", areaId: "area-ground", name: "B02", posX: 500, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 2, status: "empty" },
-    { id: "tbl-b03", areaId: "area-ground", name: "B03", posX: 750, posY: 190, width: 126, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 3, status: "empty" },
-    { id: "tbl-b04", areaId: "area-ground", name: "B04", posX: 1040, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 4, status: "empty" },
+    { id: "tbl-b01", areaId: "area-ground", name: "B01", backgroundAssetKey: null, posX: 260, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 1, status: "empty" },
+    { id: "tbl-b02", areaId: "area-ground", name: "B02", backgroundAssetKey: null, posX: 500, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 2, status: "empty" },
+    { id: "tbl-b03", areaId: "area-ground", name: "B03", backgroundAssetKey: null, posX: 750, posY: 190, width: 126, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 3, status: "empty" },
+    { id: "tbl-b04", areaId: "area-ground", name: "B04", backgroundAssetKey: null, posX: 1040, posY: 190, width: 120, height: 76, shape: "rectangle", rotation: 0, seats: 4, sortOrder: 4, status: "empty" },
   ],
   decorItems: [
     { id: "decor-wall-ground", areaId: "area-ground", kind: "wall", label: "Tường gạch", assetKey: "/floor-assets/walls/img-color-cell3.webp", posX: 800, posY: 40, width: 1500, height: 36, rotation: 0, zIndex: 0, isLocked: true },
