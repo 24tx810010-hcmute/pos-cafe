@@ -59,6 +59,14 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 - Mutation invalidates/refetches query liên quan thay vì patch cache thủ công.
 - Loading/error/empty states được xử lý ở drawer/screen.
 
+## Floor Asset Catalog
+
+- Decor và nền bàn là static asset đóng gói trong `public/floor-assets`, không dùng Storage bucket hoặc upload runtime.
+- `floorDecorAssets` quản lý 9 texture tường + 131 ảnh decor; `floorTableBackgroundAssets` quản lý 11 ảnh nền bàn và option trắng mặc định.
+- Database chỉ lưu public path: `floor_decor_items.asset_key` bắt buộc, còn `tables.background_asset_key` nullable (`null` = trắng). Floor Editor và POS dùng cùng resolver để tránh lệch cách render.
+- Chọn nullable path thay vì thêm enum/color column vì catalog có thể đổi mà không cần sửa type/database constraint. Upload/custom asset không được chọn trong phase này để tránh mở thêm storage lifecycle, validation và quyền ghi.
+- Ảnh nền chỉ là presentation; `tables.status`, shape, geometry và seats giữ contract cũ. Border trạng thái được render độc lập để ảnh nền không làm mất tín hiệu bàn trống/đang phục vụ.
+
 ## RPC & Transaction Boundary
 
 - Business-critical mutations đi qua RPC để DB quyết định transaction:

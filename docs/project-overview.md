@@ -24,7 +24,7 @@ Phase tiểu luận ưu tiên demo end-to-end:
 2. Đăng nhập nhân viên bằng PIN.
 3. Vận hành floor/table, order dine-in và takeaway.
 4. Thanh toán tiền mặt và in/preview hóa đơn — cả bàn một chạm, hoặc instant pay tách món thành đơn riêng cho từng khách.
-5. Quản lý nhân viên thuộc hai role hiện hành `admin`/`cashier` và quyền thao tác per-employee; menu có option/topping; sơ đồ bàn có khu/tầng/decor.
+5. Quản lý nhân viên thuộc hai role hiện hành `admin`/`cashier` và quyền thao tác per-employee; menu có option/topping; sơ đồ bàn có khu/tầng/decor và nền bàn tùy chọn.
 6. Xem lịch sử đơn; hủy đơn đã thanh toán theo quyền hành động, lý do và audit; theo dõi doanh thu, số đơn hủy và tiền hủy trong báo cáo.
 7. Cài đặt thông tin quán và reset dữ liệu mẫu có kiểm soát.
 
@@ -42,6 +42,6 @@ Phase tiểu luận ưu tiên demo end-to-end:
 - Nhánh `docs` là nhánh tài liệu độc lập, chỉ giữ file `.md` để đọc nhanh; không merge vào `main` và không chứa source app/binary artifact.
 - Core flow đã chạy end-to-end với mock và Supabase: tạo/ghép store, PIN, floor/order/payment, instant pay, history/report, hủy đơn đã thanh toán và admin modules.
 - Kiến trúc hiện có boundary guard bằng TypeScript import scanner, ports/adapters rõ layer, split Supabase/mock adapters, device print port no-op + receipt preview UI, portal popup/drawer primitives và quyền theo hành động per-employee (`permission_overrides`, `hasPermission`/`requirePermission`) đã enforce ở 5 action runtime.
-- UI đã qua pass Tailwind-first; `LeftNav` là rail chính, còn drawer hiện mặc định full-screen, click overlay để đóng và slide-in theo placement. Floor stage scale-to-fit và catalog có 9 texture tường + 131 ảnh decor.
-- Validation sau kitchen scope fix ngày 2026-07-22: 252/252 unit/component/feature tests pass, production build pass, mock Playwright smoke 34 pass/31 skipped; Supabase E2E gần nhất 5/5 pass từ phase 20.
+- UI đã qua pass Tailwind-first; `LeftNav` là rail chính, còn drawer hiện mặc định full-screen, click overlay để đóng và slide-in theo placement. Floor stage scale-to-fit; catalog có 9 texture tường + 131 ảnh decor và nền trắng + 11 ảnh nền bàn.
+- Validation phase 23 ngày 2026-07-27: 257/257 unit/component/feature tests pass, production build pass, mock Playwright smoke 34 pass/31 skipped; migration 013 đã apply và PostgREST verify HTTP 200. Supabase permission E2E gần nhất 5/5 pass từ phase 20.
 - Giới hạn đồng bộ đã biết: realtime adapter chưa subscribe `menu_item_option_groups`, nên thay đổi chỉ gắn/bỏ modifier khỏi món cần refresh/reconnect ở thiết bị khác.

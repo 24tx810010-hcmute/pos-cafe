@@ -37,6 +37,7 @@
 - Xem sơ đồ bàn theo khu/tầng.
 - Lọc bàn theo trạng thái.
 - Xem bàn trống/đang phục vụ, order number và tổng tiền khi có order mở.
+- Render nền bàn từ catalog built-in khi bàn đã chọn mẫu; bàn không có `backgroundAssetKey` dùng nền trắng. Viền xanh/cam tiếp tục biểu diễn trạng thái bàn.
 - Mở order tại bàn.
 - Refresh floor/open orders từ toolbar sơ đồ khi cần.
 
@@ -122,6 +123,8 @@
 
 - Quản lý khu/tầng.
 - Tạo/sửa/xóa mềm bàn.
+- Inspector bàn cho chọn giữa nền trắng mặc định và 11 ảnh nền built-in lấy từ thư viện nội bộ `evo-edit-room`; bàn mới luôn khởi tạo nền trắng.
+- Nền bàn được preview ngay trên canvas và lưu theo bàn. Trên canvas editor chỉ hiện tên bàn trực tiếp trên nền, không hiện số chỗ và không bọc nhãn bằng nền trắng; trường số chỗ vẫn được giữ trong inspector/data model cho nghiệp vụ.
 - Tạo/sửa/xóa mềm decor; thư viện built-in gồm 9 texture tường và 131 ảnh trang trí (57 cây, 29 ghế, 30 thiết bị, 15 ảnh khác).
 - Toolbar mở popup chọn mẫu tường hoặc ảnh trang trí theo nhóm; inspector cho đổi mẫu của decor đã có. Ảnh render bằng `object-cover` với tường và `object-contain` với decor.
 - `assetKey` cũ không khớp catalog vẫn hiển thị placeholder nhãn/màu để dữ liệu seed hoặc dữ liệu đã lưu trước đây không bị ảnh hỏng.

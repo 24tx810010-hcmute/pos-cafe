@@ -55,13 +55,15 @@ Data model dùng PostgreSQL/Supabase với **15 bảng nghiệp vụ chính**, t
 ## Nhóm Floor
 
 - `floor_areas`: khu/tầng.
-- `tables`: bàn, vị trí, kích thước, shape, seats, status.
+- `tables`: bàn, vị trí, kích thước, shape, seats, status và `background_asset_key` nullable.
 - `floor_decor_items`: decor trên sơ đồ, asset key, vị trí, z-index, lock.
 
 Ý nghĩa:
 
 - Floor editor chỉ chỉnh layout, không ghi đè `table.status`.
 - `table.status` do order/payment flow cập nhật.
+- `tables.background_asset_key` lưu public path của một trong 11 ảnh nền bàn built-in. `null` là contract nền trắng mặc định cho bàn cũ và bàn mới; migration 013 thêm cột này cho database hiện hữu.
+- Catalog/resolver chỉ render key thuộc bộ asset đóng gói; key lạ hoặc thiếu fallback về nền trắng. Trạng thái bàn vẫn thể hiện bằng border, không được mã hóa vào ảnh nền.
 - Decor không nhận order và không xuất hiện trong nghiệp vụ bàn.
 - `floor_decor_items.asset_key` lưu đường dẫn asset built-in của ứng dụng. Catalog hiện có 9 texture tường và 131 PNG trang trí; thay catalog không cần đổi schema.
 - Asset key legacy/không còn trong catalog vẫn được client render bằng placeholder nhãn/màu, tránh làm hỏng floor plan cũ.

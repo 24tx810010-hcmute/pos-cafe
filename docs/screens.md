@@ -54,9 +54,9 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 
 - **Purpose:** xem trạng thái bàn, mở order tại bàn và theo dõi order đang mở.
 - **User:** cashier/admin.
-- **Minimum data:** floor areas, tables, decor, open orders.
+- **Minimum data:** floor areas, tables (gồm background asset key nullable), catalog nền bàn, decor, open orders.
 - **Primary actions:** đổi khu, lọc bàn, refresh inline trong toolbar sơ đồ, mở order bàn.
-- **Important states:** floor loading/error/empty, no open orders, occupied/empty tables.
+- **Important states:** floor loading/error/empty, no open orders, occupied/empty tables, bàn nền trắng mặc định hoặc có ảnh nền; status border vẫn phải đọc được trên mọi nền.
 
 ## 8. Order Drawer
 
@@ -116,9 +116,9 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 
 - **Purpose:** quản lý khu/tầng, bàn và decor trên sơ đồ.
 - **User:** admin.
-- **Minimum data:** floor areas, tables, decor items, catalog 9 texture tường + 131 ảnh trang trí, selected object, changeset dirty state.
-- **Primary actions:** add area/table; mở popup chọn mẫu tường hoặc ảnh theo nhóm Cây/Ghế/Thiết bị/Khác; đổi mẫu trong inspector; kéo để di chuyển; dùng handle dưới object để resize/xoay; chỉnh layout; delete soft, save, discard/confirm close.
-- **Important states:** loading, empty floor, popup chưa chọn mẫu, dirty new table/decor, dirty confirm, object locked không cho transform trực tiếp, snap grid bật/tắt, asset key legacy dùng placeholder, save error.
+- **Minimum data:** floor areas, tables, decor items, catalog nền trắng + 11 ảnh nền bàn, catalog 9 texture tường + 131 ảnh trang trí, selected object, changeset dirty state.
+- **Primary actions:** add area/table; chọn/đổi nền bàn trong inspector; mở popup chọn mẫu tường hoặc ảnh theo nhóm Cây/Ghế/Thiết bị/Khác; đổi mẫu decor; kéo để di chuyển; dùng handle dưới object để resize/xoay; chỉnh layout; delete soft, save, discard/confirm close.
+- **Important states:** loading, empty floor, bàn mới nền trắng, popup nền bàn với lựa chọn hiện tại, popup decor chưa chọn mẫu, dirty new table/decor, dirty confirm, object locked không cho transform trực tiếp, snap grid bật/tắt, asset key decor legacy dùng placeholder, save error.
 
 ## 15. Report Drawer
 

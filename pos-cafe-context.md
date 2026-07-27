@@ -1,7 +1,7 @@
 # Context: POS Quán Cà Phê (đa thiết bị, online-only) — TLCN
 
-> **Cập nhật 2026-07-22 sau audit code/docs và chốt kitchen là future-only.** Tóm tắt nhanh cho mỗi session.
-> **App truth hiện tại:** baseline `main@7a00fd0`; catalog decor phase 21 đã push; UI hiện tại chỉ mở role Quản lý/Thu ngân, còn kitchen giữ seam code/schema cho tương lai.
+> **Cập nhật 2026-07-27 sau phase 23 catalog nền bàn.** Tóm tắt nhanh cho mỗi session.
+> **App truth hiện tại:** `main@3d9b64a`; migration 013 đã apply/verify; UI hiện tại chỉ mở role Quản lý/Thu ngân, còn kitchen giữ seam code/schema cho tương lai.
 > **Docs branch:** nhánh `docs` độc lập, chỉ giữ Markdown knowledge base; không merge vào `main`.
 > **Spec đầy đủ (archive):** [docs/archive/superpowers/specs/2026-06-09-pos-cafe-design.md](docs/archive/superpowers/specs/2026-06-09-pos-cafe-design.md)
 > **Architecture summary:** [docs/architecture.md](docs/architecture.md)
@@ -13,13 +13,13 @@
 - **Đề tài:** Quản lý order quán cà phê **đa thiết bị đồng bộ song song**, phân quyền vai trò. Không phải bài toán quản lý chuỗi đa chi nhánh. TLCN, < 1 tháng, 2h/ngày, 0đ. **AI lập trình chính**.
 - **Flagship:** Menu Editor + Floor-Plan Editor (sơ đồ bàn trực quan).
 
-## Trạng thái hiện tại (2026-07-22)
+## Trạng thái hiện tại (2026-07-27)
 
-- **Main đã đối chiếu:** `main@7a00fd0`; phase 21 catalog decor đã commit/push. Phase 20 phân quyền và migration 012 đã commit/apply trước đó.
+- **Main đã đối chiếu:** `main@3d9b64a`; phase 23 nền bàn đã commit, migration 013 đã apply/verify. Phase 22 chốt kitchen future-only nằm trong `main@1b0098b`.
 - **Docs mới nhất:** nhánh `docs` là knowledge base độc lập, chỉ lưu `.md`; không chứa source code, package/config, HTML prototype, screenshot binary hoặc file tạm.
-- **Đã xong trong code:** DB/RPC foundation, Supabase/mock adapters, Store/Auth/Seed, POS order/payment, admin, realtime, UI binding/hardening, instant pay, hủy đơn paid, report audit, editor quyền per-employee và catalog 9 texture tường + 131 ảnh decor cho Floor Editor/POS.
+- **Đã xong trong code:** DB/RPC foundation, Supabase/mock adapters, Store/Auth/Seed, POS order/payment, admin, realtime, UI binding/hardening, instant pay, hủy đơn paid, report audit, editor quyền per-employee, catalog 9 texture tường + 131 ảnh decor và catalog nền trắng + 11 ảnh nền bàn cho Floor Editor/POS.
 - **Role hiện hành:** UI chỉ cho `admin` và `cashier`. `kitchen` còn trong enum/schema/core để mở rộng sau nhưng đã ẩn khỏi nav, drawer registry, màn PIN và form tạo/sửa nhân viên; kitchen queue chưa phải tính năng hiện tại.
-- **Validation local mới nhất:** `npm test -- --maxWorkers=1` pass 48 files/252 tests, `npm run build` pass với Vite chunk-size warning đã biết, `npm run smoke` pass 34/31 theo điều kiện viewport; smoke xác nhận kitchen nav không còn xuất hiện.
+- **Validation local mới nhất:** `npm test` pass 49 files/257 tests, `npm run build` pass với Vite chunk-size warning đã biết, `npm run smoke` pass 34/31 theo điều kiện viewport; Playwright desktop xác nhận nền bàn persist từ Floor Editor sang POS.
 - **Backlog kỹ thuật còn lại:** kitchen queue backend thật khi có yêu cầu dữ liệu bếp, bundle/code-splitting để xử lý chunk-size warning, exit animation khi đóng drawer/popup nếu cần polish, screenshot artefact riêng cho tiểu luận nếu cần hình minh họa.
 
 ## Quyết định đã chốt
@@ -42,10 +42,10 @@
 | Licensing | Conceptual/app-layer: `stores.is_active=false` → khóa. Muốn khóa thật ở DB thì RLS/RPC phải check `stores.is_active`; MVP chưa claim DB-level license enforcement. Không billing thật |
 
 ## Data model (15 bảng chính)
-`stores` · `employees`(passcode+role+permission overrides) · `store_settings` · `categories` · `menu_items`(upload ảnh qua Storage, lưu `image_asset_key`) · `option_groups` · `option_values` · `menu_item_option_groups` · `floor_areas` · `tables`(area,x,y,layout,status) · `floor_decor_items`(area,asset_key/layout,không order/status) · `orders`(`lock_version`) · `payments` · `order_items` · `order_item_options`. Giá **snapshot** lúc order.
+`stores` · `employees`(passcode+role+permission overrides) · `store_settings` · `categories` · `menu_items`(upload ảnh qua Storage, lưu `image_asset_key`) · `option_groups` · `option_values` · `menu_item_option_groups` · `floor_areas` · `tables`(area,x,y,layout,status,nullable `background_asset_key`) · `floor_decor_items`(area,asset_key/layout,không order/status) · `orders`(`lock_version`) · `payments` · `order_items` · `order_item_options`. Giá **snapshot** lúc order.
 
 ## Editor save/realtime
-Menu và floor plan **không lưu JSON blob nguyên cục**. Menu lưu theo bảng quan hệ (`categories/menu_items/option_groups/option_values/menu_item_option_groups`) và có option/topping dùng chung nhiều-nhiều. Floor plan lưu `floor_areas` + từng bàn là row `tables` + `floor_decor_items`; decor chỉ render, **không có status/không nhận order**. Decor dùng catalog built-in 9 texture tường + 131 ảnh, DB chỉ lưu public path trong `asset_key`; key legacy fallback placeholder và user chưa upload/custom decor. UI sửa local, bấm **Save** mới ghi changeset `created/updated/deleted`; deleted là tombstone. Realtime chỉ là tín hiệu invalidation/refetch, không patch cache; link `menu_item_option_groups` hiện là ngoại lệ chưa được adapter subscribe. Floor-plan save không ghi đè `tables.status`.
+Menu và floor plan **không lưu JSON blob nguyên cục**. Menu lưu theo bảng quan hệ (`categories/menu_items/option_groups/option_values/menu_item_option_groups`) và có option/topping dùng chung nhiều-nhiều. Floor plan lưu `floor_areas` + từng bàn là row `tables` + `floor_decor_items`; decor chỉ render, **không có status/không nhận order**. Decor dùng catalog built-in 9 texture tường + 131 ảnh. Bàn có catalog 11 ảnh nền; `tables.background_asset_key=null` là nền trắng mặc định. DB chỉ lưu public path; resolver decor fallback placeholder, resolver nền bàn fallback trắng. UI sửa local, bấm **Save** mới ghi changeset `created/updated/deleted`; deleted là tombstone. Realtime chỉ là tín hiệu invalidation/refetch, không patch cache; link `menu_item_option_groups` hiện là ngoại lệ chưa được adapter subscribe. Floor-plan save không ghi đè `tables.status`.
 
 ## Navigation
 MVP dùng **một URL duy nhất** (`/` hoặc `/app`). Mọi màn hình render theo internal state: pairing/create-store/passcode/posFloor/order/payment/adminMenu/adminFloorPlan/employees/report/orderHistory/settings. Browser Back/Forward **không phải workflow nghiệp vụ**; mutation chỉ qua nút rõ ràng như Save/Pay/Void/Clear demo. Current employee giữ memory-only: refresh an toàn là chưa pair → pairing, đã pair → passcode. Editor dirty state phải confirm nội bộ khi chuyển màn.

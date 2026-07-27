@@ -45,6 +45,13 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 - Đây là catalog đóng gói cùng ứng dụng, không phải upload ảnh decor của người dùng; upload/custom asset vẫn thuộc mở rộng sau phase.
 - Sau audit code/docs, role/module kitchen được chốt là future-only: bỏ khỏi nav, drawer registry, màn PIN và form nhân viên; giữ enum/schema/component scaffold để phát triển sau.
 
+## Scope Update 2026-07-27
+
+- Floor Editor có thêm catalog 11 ảnh nền bàn built-in và lựa chọn nền trắng mặc định; bàn mới và dữ liệu cũ dùng trắng khi `background_asset_key` là `null`.
+- Admin chọn/đổi nền từ inspector; lựa chọn persist qua changeset và hiển thị đồng nhất trên Floor Editor/POS. Status bàn tiếp tục dùng border xanh/cam.
+- Migration 013 thêm `tables.background_asset_key`; đã được apply và xác minh PostgREST đọc được cột cùng full floor-plan select.
+- Đây là catalog đóng gói, không phải upload nền bàn. Upload/custom table background tiếp tục nằm ngoài scope.
+
 ## Làm Nếu Kịp
 
 - Order history filter nâng cao.
