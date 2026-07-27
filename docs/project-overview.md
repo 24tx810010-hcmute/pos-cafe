@@ -13,7 +13,7 @@ POS Cafe là web app POS cho quán cà phê nhỏ, tập trung vào vận hành 
 
 - **Thu ngân:** mở bàn, tạo/sửa đơn, thanh toán, xem lịch sử đơn.
 - **Quản lý:** toàn quyền POS và admin: nhân viên, menu, sơ đồ, báo cáo, hủy đơn đã thanh toán, cài đặt, bảo trì dữ liệu mẫu.
-- **Bếp:** role được chừa sẵn; kitchen queue thật là mở rộng sau phase tiểu luận.
+- **Bếp:** chưa phải người dùng hiện hành. Enum/schema và UI scaffold được giữ làm seam tương lai, nhưng role/module kitchen đã ẩn khỏi nav, màn PIN và quản lý nhân viên.
 - **Pre-login user:** ghép cửa hàng, tạo cửa hàng mới, nhập mã PIN nhân viên.
 
 ## Phạm Vi Hiện Tại
@@ -24,7 +24,7 @@ Phase tiểu luận ưu tiên demo end-to-end:
 2. Đăng nhập nhân viên bằng PIN.
 3. Vận hành floor/table, order dine-in và takeaway.
 4. Thanh toán tiền mặt và in/preview hóa đơn — cả bàn một chạm, hoặc instant pay tách món thành đơn riêng cho từng khách.
-5. Quản lý nhân viên và quyền thao tác per-employee; menu có option/topping; sơ đồ bàn có khu/tầng/decor.
+5. Quản lý nhân viên thuộc hai role hiện hành `admin`/`cashier` và quyền thao tác per-employee; menu có option/topping; sơ đồ bàn có khu/tầng/decor.
 6. Xem lịch sử đơn; hủy đơn đã thanh toán theo quyền hành động, lý do và audit; theo dõi doanh thu, số đơn hủy và tiền hủy trong báo cáo.
 7. Cài đặt thông tin quán và reset dữ liệu mẫu có kiểm soát.
 
@@ -38,9 +38,10 @@ Phase tiểu luận ưu tiên demo end-to-end:
 
 ## Trạng Thái Gần Nhất
 
-- App truth được đối chiếu ngày 2026-07-20 từ `main` commit `de35d10`; migration 012 đã áp cloud.
+- App truth được đối chiếu ngày 2026-07-22 từ baseline `main@7a00fd0`; migration 012 đã áp cloud. Kitchen đã được chốt future-only và loại khỏi các entry point UI hiện hành.
 - Nhánh `docs` là nhánh tài liệu độc lập, chỉ giữ file `.md` để đọc nhanh; không merge vào `main` và không chứa source app/binary artifact.
 - Core flow đã chạy end-to-end với mock và Supabase: tạo/ghép store, PIN, floor/order/payment, instant pay, history/report, hủy đơn đã thanh toán và admin modules.
-- Kiến trúc hiện có boundary guard bằng TypeScript import scanner, ports/adapters rõ layer, split Supabase/mock adapters, browser print adapter, portal popup/drawer primitives và quyền theo hành động per-employee (`permission_overrides`, `hasPermission`/`requirePermission`) đã enforce ở 5 action runtime.
-- UI đã qua pass Tailwind-first/two-column drawer; `LeftNav` là left rail chính của app shell, drawer dùng overlay chung trong workspace sau rail, click overlay để đóng và slide-in animation theo placement.
-- Validation phase 20 ngày 2026-07-19: 243/243 unit/component/feature tests pass, production build pass, mock Playwright smoke 27 pass/18 skipped theo viewport và Supabase E2E 5/5 pass, gồm direct RPC `FORBIDDEN` cho cashier bị deny `payment.take`.
+- Kiến trúc hiện có boundary guard bằng TypeScript import scanner, ports/adapters rõ layer, split Supabase/mock adapters, device print port no-op + receipt preview UI, portal popup/drawer primitives và quyền theo hành động per-employee (`permission_overrides`, `hasPermission`/`requirePermission`) đã enforce ở 5 action runtime.
+- UI đã qua pass Tailwind-first; `LeftNav` là rail chính, còn drawer hiện mặc định full-screen, click overlay để đóng và slide-in theo placement. Floor stage scale-to-fit và catalog có 9 texture tường + 131 ảnh decor.
+- Validation sau kitchen scope fix ngày 2026-07-22: 252/252 unit/component/feature tests pass, production build pass, mock Playwright smoke 34 pass/31 skipped; Supabase E2E gần nhất 5/5 pass từ phase 20.
+- Giới hạn đồng bộ đã biết: realtime adapter chưa subscribe `menu_item_option_groups`, nên thay đổi chỉ gắn/bỏ modifier khỏi món cần refresh/reconnect ở thiết bị khác.

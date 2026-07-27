@@ -21,6 +21,7 @@ File này là technical decision record rút gọn. Mỗi quyết định nêu r
 - **Đánh đổi:** không có routing/server rendering built-in; API/backend phải do Supabase đảm nhiệm.
 - **Giảm rủi ro:** app là single URL POS nên không cần SSR; navigation dùng Zustand/internal state.
 - **Liên quan tới tiểu luận:** chứng minh ưu tiên đúng bài toán POS realtime nội bộ thay vì dùng framework nặng hơn scope.
+- **Form hiện tại:** controlled state + validation thủ công. `react-hook-form`, `@hookform/resolvers` và `zod` có trong dependency nhưng chưa được import trong `src`, nên không tính là công nghệ đã áp dụng trong báo cáo hiện trạng.
 
 ## 2. Supabase
 
@@ -101,12 +102,12 @@ File này là technical decision record rút gọn. Mỗi quyết định nêu r
 - **Đánh đổi:** E2E tốn thời gian hơn unit test và cần data/test mode ổn định.
 - **Giảm rủi ro:** tách `npm run test`, `npm run smoke`, `npm run smoke:supabase`.
 - **Liên quan tới tiểu luận:** có bằng chứng kiểm thử từ logic tới flow demo.
-- **Validation gần nhất (2026-07-20, `main@de35d10`):** `npm test` pass 46 files/243 tests; `npm run build` (tsc strict) pass, còn chunk-size warning đã biết; `npm run smoke` (mock, 5 viewport) 27 pass/18 skipped; `npm run smoke:supabase` 5/5 pass, gồm permission editor + direct RPC deny, hủy đơn paid, instant pay và realtime cross-device.
+- **Validation gần nhất (2026-07-22, baseline `main@7a00fd0` + kitchen UI scope fix):** `npm test -- --maxWorkers=1` pass 48 files/252 tests; `npm run build` (tsc strict) pass, còn chunk-size warning đã biết; mock Playwright smoke 34 pass/31 skipped; `npm run smoke:supabase` gần nhất 5/5 ở phase 20.
 
 ## 10. Browser Print Preview
 
-- **Quyết định:** `IPrintPort` render HTML/template preview cho phiếu tạm và hóa đơn.
-- **Dùng cho:** order ticket và final receipt.
+- **Quyết định:** popup/iframe UI render preview cho phiếu tạm và hóa đơn; `BrowserPrintPort` hiện no-op và chỉ giữ seam cho adapter thiết bị tương lai.
+- **Dùng cho:** order ticket và final receipt trong `ReceiptPreview`.
 - **Vì sao chọn:** đủ demo, không phụ thuộc driver/máy in, chạy được trên web deployment.
 - **Không chọn:** native printer, USB, ESC/POS, service in local.
 - **Đánh đổi:** không phải tích hợp máy in POS thật.

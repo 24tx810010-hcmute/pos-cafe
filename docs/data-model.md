@@ -1,6 +1,6 @@
 # Data Model
 
-Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenant: hầu hết bảng nghiệp vụ có `store_id`, UUID primary key, `created_at`, `updated_at`, và một số bảng editor có `deleted_at` để xóa mềm.
+Data model dùng PostgreSQL/Supabase với **15 bảng nghiệp vụ chính**, thiết kế theo store-scoped multi-tenant: hầu hết bảng nghiệp vụ có `store_id`, UUID primary key, `created_at`, `updated_at`, và một số bảng editor có `deleted_at` để xóa mềm.
 
 ## Enum Chính
 
@@ -30,6 +30,7 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 - Tạo store mới mặc định blank (store/settings + 1 admin), `seed_status=seeded`; chỉ seed dữ liệu mẫu khi `CreateStoreInput.seedDemo=true` (checkbox lúc tạo) hoặc khi admin bấm khởi tạo demo trong Cài đặt. Địa chỉ từ form được lưu vào `store_settings.address`.
 - Seed demo upsert theo `id`/`seed_key` và clear `deleted_at`/`deleted_by_employee_id` trên các bảng editor (cashier dùng `is_active`) nên idempotent với `clear_demo_data`.
 - Employee role quyết định default permission và module navigation; override từng nhân viên chỉ thay đổi quyền hành động, không mở thêm module trên nav.
+- UI hiện hành chỉ hỗ trợ `admin` và `cashier`. Giá trị `kitchen` vẫn tồn tại trong enum/database/core như seam tương lai, nhưng bị lọc khỏi màn PIN, Employees Drawer và app navigation.
 - `employees.permission_overrides` (migration 011) là **quyền theo hành động** tách khỏi quyền vào module: shape `{"grants": [...], "denies": [...]}`. Quyền hiệu lực = (default theo role ∪ grants) − denies (denies luôn thắng). Mặc định `null` (mọi người theo role). Từ phase 20, Employees Drawer chỉnh checkbox quyền hiệu lực và persist diff tối thiểu; `undefined` trong update DTO nghĩa là không đụng field, `null` nghĩa là xóa override.
 - Catalog runtime hiện có đúng 5 mã được enforce: `order.create`, `order.update`, `order.voidOpen`, `payment.take`, `order.voidPaid`. Mapper Supabase lọc bỏ mã ngoài catalog.
 - Permission vẫn là app-layer authorization; RPC check chỉ để phòng thủ/audit, **không** phải DB-secured — employee id vẫn spoof được với session store hợp lệ.
@@ -106,7 +107,7 @@ Data model dùng PostgreSQL/Supabase, thiết kế theo store-scoped multi-tenan
 
 ## Domain Types Trong App
 
-- `MenuCatalog`: categories, menuItems, optionGroups, optionValues.
+- `MenuCatalog`: categories, menuItems, optionGroups, optionValues, menuItemOptionGroups.
 - `FloorPlan`: areas, tables, decorItems.
 - `OrderSummary`/`OrderDetail`: order state, total, table/order type, snapshot items; `OrderDetail.payment` giữ payment snapshot nullable cho đơn đã thanh toán; `OrderDetail` còn có metadata hủy (`voidedAt`, `voidedByEmployeeId`, `voidReasonCode`, `voidReasonNote`).
 - `VoidOrderInput`/`VoidOrderResult`: hủy đơn đã thanh toán (`reasonCode: VoidReasonCode`, `reasonNote`, `expectedVersion`). `EmployeePermission`/`EmployeePermissionOverrides`: seam quyền theo hành động trên `Employee.permissionOverrides`.

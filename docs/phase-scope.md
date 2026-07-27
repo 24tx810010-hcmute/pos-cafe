@@ -7,7 +7,7 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 | Nhóm | Tính năng |
 | --- | --- |
 | Vào hệ thống | Landing, ghép Store Key, tạo store mới, seed dữ liệu mẫu, hiển thị Store Key/Admin PIN một lần, nhập PIN nhân viên |
-| Quyền | Role `admin`, `cashier`, `kitchen`; quyền vào module tách khỏi quyền theo hành động; editor override per-employee (`grants`/`denies`); enforce `order.create`, `order.update`, `order.voidOpen`, `payment.take`, `order.voidPaid` ở flow/UI và RPC guardrail |
+| Quyền | Role hiện hành `admin`, `cashier`; quyền vào module tách khỏi quyền theo hành động; editor override per-employee (`grants`/`denies`); enforce `order.create`, `order.update`, `order.voidOpen`, `payment.take`, `order.voidPaid` ở flow/UI và RPC guardrail. `kitchen` chỉ là enum/schema seam tương lai, ẩn khỏi UI |
 | POS core | Floor view, mở bàn, tạo/sửa order dine-in, tạo/sửa takeaway, trạng thái bàn trống/đang phục vụ |
 | Order | Chọn món, option/topping, ghi chú, cập nhật order mở; hủy order mở bằng cách xóa hết item; người có quyền `order.voidPaid` hủy đơn đã thanh toán từ Lịch sử với lý do, ghi chú và audit |
 | Payment | Thanh toán tiền mặt, nhập tiền khách đưa, tính tiền thối, hoàn tất order, set bàn trống, bill/receipt preview; instant pay: chọn món/số lượng tách thành đơn độc lập thanh toán ngay (bill trả trước mang số nhỏ hơn) |
@@ -43,6 +43,7 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 - Decor built-in đầy đủ được đưa vào Floor Editor: 9 texture tường và 131 ảnh chia nhóm Cây/Ghế/Thiết bị/Khác.
 - Admin chọn hoặc đổi mẫu trong popup; Floor Editor và POS Floor cùng render ảnh từ `asset_key` đã lưu. Không đổi schema/database migration.
 - Đây là catalog đóng gói cùng ứng dụng, không phải upload ảnh decor của người dùng; upload/custom asset vẫn thuộc mở rộng sau phase.
+- Sau audit code/docs, role/module kitchen được chốt là future-only: bỏ khỏi nav, drawer registry, màn PIN và form nhân viên; giữ enum/schema/component scaffold để phát triển sau.
 
 ## Làm Nếu Kịp
 
@@ -54,7 +55,7 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 ## Mở Rộng Sau Phase Này
 
 - Gộp/chuyển bàn.
-- Kitchen queue thật nối backend và trạng thái order item.
+- Role/module kitchen và kitchen queue thật nối backend, trạng thái order item.
 - QR/bank/e-wallet payment thật.
 - Discount/voucher UI.
 - Upload ảnh decor.

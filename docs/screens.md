@@ -22,14 +22,14 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 
 - **Purpose:** tạo store mới và nhận Store Key/Admin PIN ban đầu.
 - **User:** chủ quán/quản lý.
-- **Minimum data:** tên quán tùy chọn; kết quả gồm Store Key, Admin PIN, seed status.
+- **Minimum data:** tên quán bắt buộc, địa chỉ tùy chọn; kết quả gồm Store Key, Admin PIN, seed status.
 - **Primary actions:** tạo store, retry seed nếu cần, tiếp tục vào passcode.
 - **Important states:** creating, seed failed, success credential display.
 
 ## 4. Passcode
 
 - **Purpose:** chọn nhân viên và nhập PIN để vào app shell.
-- **User:** admin, cashier, kitchen.
+- **User:** admin, cashier. Employee role `kitchen` được giữ trong schema cho tương lai nhưng bị lọc khỏi màn này.
 - **Minimum data:** danh sách active employees, selected employee, PIN input.
 - **Primary actions:** chọn nhân viên, nhập PIN, xóa PIN, unlock.
 - **Important states:** loading employees, wrong PIN, inactive employee, seed pending/failed.
@@ -44,7 +44,7 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 
 ## 6. App Shell / Left Rail
 
-- **Purpose:** giữ context nhân viên/role, module navigation theo nhóm và lock session.
+- **Purpose:** giữ context nhân viên/role hiện hành (`admin`/`cashier`), module navigation theo nhóm và lock session.
 - **User:** logged-in user.
 - **Minimum data:** current employee, role, permission map, active drawer.
 - **Primary actions:** mở module, khóa phiên nhân viên.
@@ -99,9 +99,9 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 
 - **Purpose:** quản lý nhân viên, PIN và quyền thao tác theo từng người.
 - **User:** admin.
-- **Minimum data:** employee list, selected employee, role/status, permission overrides/effective permissions, PIN form khi tạo/reset.
+- **Minimum data:** employee list đã lọc role hiện hành, selected employee, role/status, permission overrides/effective permissions, PIN form khi tạo/reset.
 - **Primary actions:** add employee, edit role/name/status, reset PIN; với nhân viên đã tồn tại, tick/bỏ quyền hiệu lực và save.
-- **Permission contract:** đổi role reset checkbox về default role mới; diff so với default được lưu thành grants/denies, diff rỗng xóa override. Sửa quyền chính mình có cảnh báo cần đăng nhập lại.
+- **Permission contract:** UI chỉ cho chọn `admin` hoặc `cashier`; đổi role reset checkbox về default role mới; diff so với default được lưu thành grants/denies, diff rỗng xóa override. Sửa quyền chính mình có cảnh báo cần đăng nhập lại.
 - **Important states:** loading, validation error, save error, không thể deactivate hoặc hạ role admin active cuối.
 
 ## 13. Menu Editor Drawer
@@ -144,14 +144,11 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 - **Primary actions:** kiểm tra điều kiện, confirm clear, cancel.
 - **Important states:** loading, blocked by open orders, error, confirm ready, success.
 
-## 18. Kitchen Queue Drawer
+## 18. Kitchen Queue (Future-only, không đăng ký trong app)
 
-- **Purpose:** minh họa seam cho bếp, xem ticket và mark done cục bộ.
-- **User:** kitchen/admin.
-- **Minimum data:** ticket sample/local state, selected ticket, station filter.
-- **Primary actions:** chọn ticket, mark done/undo local.
-- **Important states:** empty/done local state.
-- **Scope note:** chưa phải kitchen queue backend thật trong phase tiểu luận.
+- `KitchenQueueDrawer` còn là component scaffold với queue rỗng; không nằm trong `DrawerModule`/`DRAWER_REGISTRY` và không có nút nav.
+- Role `kitchen` bị ẩn khỏi màn PIN và Employees Drawer; người dùng hiện tại không thể tạo/chọn role này qua UI.
+- Chỉ đưa trở lại screens hiện hành khi đã có backend queue, trạng thái item và flow vận hành được kiểm chứng.
 
 ## 19. Payment Settings / QR Drawer
 
@@ -164,7 +161,7 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 
 ## Drawer/Popup Contract
 
-- Drawer render qua shared portal layer trong workspace viewport sau `LeftNav`, không che left rail.
+- Drawer render qua shared portal layer với full-screen viewport mặc định, che cả `LeftNav`.
 - Confirm popup dùng overlay full-screen; click overlay vẫn theo callback được truyền vào.
 - Overlay click đóng drawer theo callback của từng drawer.
 - Drawer có slide-in khi mở; exit animation hiện là polish optional/backlog.

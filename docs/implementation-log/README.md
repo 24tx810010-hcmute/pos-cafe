@@ -40,6 +40,7 @@ Folder này ghi nhật ký implement theo phase. Mục tiêu là track nhanh nh�
 - [phase-19-void-paid-order.md](phase-19-void-paid-order.md): hủy đơn đã thanh toán từ Lịch sử với quyền `order.voidPaid`, lý do/audit, optimistic lock; đơn void bị loại khỏi doanh thu nhưng giữ payment để đối soát, Report có `voidCount`/`voidAmount` (migration 011).
 - [phase-20-employee-permissions.md](phase-20-employee-permissions.md): editor quyền hiệu lực theo từng nhân viên; enforce 5 quyền tạo/sửa/hủy đơn mở, thanh toán và hủy đơn paid ở flow/UI/RPC guardrail (migration 012).
 - [phase-21-floor-decor-assets.md](phase-21-floor-decor-assets.md): đưa catalog 9 texture tường + 131 ảnh trang trí vào Floor Editor/POS, có popup chọn/đổi mẫu và fallback cho asset key legacy.
+- [phase-22-kitchen-future-scope-doc-sync.md](phase-22-kitchen-future-scope-doc-sync.md): ẩn kitchen khỏi mọi entry point UI, giữ seam schema/code cho tương lai và đồng bộ root docs với main hiện tại.
 
 ## Template Duy Trì
 

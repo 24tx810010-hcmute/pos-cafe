@@ -51,7 +51,7 @@ Các màn còn lại dùng để hiểu pre-login, admin drawer, settings và op
 ## Điều Không Cần Làm Trong Redesign Ảnh
 
 - Không thiết kế QR/e-wallet processing như đã hoàn chỉnh.
-- Không thiết kế kitchen queue như tính năng production bắt buộc.
+- Không đưa kitchen role/queue vào navigation hoặc màn nhân viên hiện hành; đây là future-only scaffold, chưa có backend.
 - Không thêm discount/voucher nếu không có yêu cầu mới.
 - Không đổi data model hoặc flow transaction.
 - Không che mất thông tin POS quan trọng bằng hero/illustration lớn.

@@ -38,4 +38,5 @@ Folder này là knowledge base hiện tại của dự án POS Cafe. Mục tiêu
 - Khi scope thay đổi, cập nhật `phase-scope.md` trước.
 - Khi thêm/mở rộng màn hình, cập nhật `features.md`, `screens.md` và ghi chú screenshot; binary screenshot nên lưu ngoài nhánh `docs` nếu cần làm artefact báo cáo.
 - Khi hoàn tất một phase/slice lớn, cập nhật `implementation-log/`.
+- Khi một scaffold bị chốt future-only, root docs phải nói rõ entry point nào đã ẩn và không liệt kê nó như màn hình hiện hành.
 - Không đưa tài liệu làm việc tạm vào root docs; đưa vào `archive/` nếu cần giữ lại lịch sử.

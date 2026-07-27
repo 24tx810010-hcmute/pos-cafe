@@ -12,14 +12,14 @@
 
 ## Role & Permission
 
-- `admin`: dùng toàn bộ POS và admin modules.
+- `admin`: dùng toàn bộ POS và admin modules hiện hành.
 - `cashier`: dùng floor, order, payment, order history.
-- `kitchen`: role được chừa sẵn cho kitchen queue; không phải feature bắt buộc của phase này.
+- `kitchen`: chỉ còn enum/schema/core scaffold cho tương lai; không xuất hiện trong nav, drawer registry, màn PIN hoặc form tạo/sửa nhân viên hiện tại.
 - UI disable/guard module không có quyền; core guard vẫn kiểm tra ở action quan trọng.
 - Có 2 trục quyền độc lập trong `core/guards.ts`: **module** (`canAccessModule` — thấy gì trên nav) và **hành động** (`hasPermission`/`requirePermission` — được làm gì). Quyền hành động mặc định suy từ role, có thể ghi đè per-employee qua `Employee.permissionOverrides` (grants/denies) — nên hai nhân viên cùng role vẫn có thể khác quyền.
 - 5 quyền runtime đang được enforce:
 
-  | Quyền | Admin | Cashier | Kitchen |
+  | Quyền | Admin | Cashier | Kitchen (future seam) |
   | --- | --- | --- | --- |
   | `order.create` | Có | Có | Không |
   | `order.update` | Có | Có | Không |
@@ -28,6 +28,7 @@
   | `order.voidPaid` | Có | Không | Không |
 
 - Employees Drawer cho admin tick/bỏ quyền hiệu lực từng người. Đổi role reset checkbox về default role; lưu quyền đúng default sẽ xóa override. Client nhận quyền mới sau khi khóa/đăng nhập lại, còn RPC đọc quyền live.
+- UI quản lý nhân viên hiện chỉ cho chọn `admin` hoặc `cashier`; row `kitchen` cũ trong database được ẩn khỏi danh sách cho đến khi feature bếp được triển khai.
 - Flow tạo/sửa/hủy đơn mở, full/split payment và hủy đơn paid đều gọi `requirePermission`; Order/Payment Drawer disable nút sớm khi thiếu quyền; migration 012 guardrail lại ba RPC order/payment chính.
 - **Catalog production, chưa phải quyền runtime:** chuyển/gộp bàn; refund; `discount.apply`; `price.override`; `drawer.open`; mở/chốt ca và kiểm két (`shift.*`). Các mã này chỉ là hướng mở rộng, chưa nằm trong `EmployeePermission` và không xuất hiện trong editor vì chưa có tính năng đứng sau. Quản trị menu/sơ đồ/nhân viên/cài đặt/report hiện vẫn theo module + role, chưa chỉnh per-employee.
 
@@ -150,7 +151,7 @@
 
 ## Optional/Future UI
 
-- Kitchen drawer là seam UI-only, hiện hàng chờ rỗng (đã bỏ vé bếp hardcode); sẽ nối với đơn thật ở giai đoạn sau.
+- Kitchen queue/role là future-only. Component scaffold và enum/schema còn trong code để tham khảo, nhưng không được đăng ký trong app shell và không có entry point người dùng.
 - Payment settings/QR hiện là preview UI local, chưa persist qua `settingsRepo` và chưa phải QR payment processing thật.
 
 ## Shared UI Behavior
@@ -158,4 +159,4 @@
 - Popup/modal dùng `PortalPopup`; drawer dùng `PortalDrawer`.
 - Popup/modal dùng overlay full-screen để modal xác nhận che toàn bộ app shell khi cần.
 - Drawer có overlay mờ `rgba(0,0,0,0.2)`, click overlay để đóng và slide-in theo placement khi mở.
-- Drawer mặc định dùng workspace viewport sau `LeftNav` để không che left rail.
+- Drawer mặc định dùng full-screen viewport và che cả `LeftNav`; popup xác nhận cũng full-screen khi cần chặn toàn app.

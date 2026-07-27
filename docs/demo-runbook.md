@@ -31,7 +31,7 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 - Nếu demo phân quyền trên cloud, bảo đảm migration 012 đã được apply; thay đổi quyền client có hiệu lực sau khi khóa/đăng nhập lại.
 - Màn hình trình chiếu ở landscape, đủ rộng.
 - Chuẩn bị 4G/hotspot vì phase này online-only.
-- Không mở các màn optional/future như kitchen/QR nếu chưa muốn giải thích scope.
+- Kitchen không còn entry point trong UI hiện hành. Nếu được hỏi, giải thích enum/schema/component scaffold được giữ cho tương lai nhưng queue backend và role vận hành chưa triển khai. Payment Settings/QR vẫn là preview optional.
 
 ## Kiểm Chứng Trên Supabase
 
@@ -59,3 +59,4 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 - **Supabase pause:** wake project trước demo.
 - **Clear demo bị blocked:** đây là behavior đúng vì còn order mở; đóng/thanh toán order trước.
 - **UI overlay/drawer:** drawer đã có portal overlay, click outside để đóng và slide-in khi mở; exit animation là polish optional/backlog.
+- **Vercel hiện dữ liệu mẫu dù không tạo store cloud:** kiểm tra đủ `VITE_DATA_MODE=supabase`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`; runtime thiếu cấu hình sẽ fallback mock seeded.

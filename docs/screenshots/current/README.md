@@ -35,7 +35,6 @@ Bộ screenshot current UI gần nhất từng được chụp ngày 2026-06-20 
 - `22-report-drawer.png`
 - `23-general-settings-drawer.png`
 - `24-clear-demo-dialog-blocked.png`
-- `25-kitchen-queue-drawer.png`
 - `26-payment-settings-qr-drawer.png`
 - `27-modifier-picker.png`
 - `28-floor-editor-transform-handles.png`
@@ -43,3 +42,5 @@ Bộ screenshot current UI gần nhất từng được chụp ngày 2026-06-20 
 - `30-order-history-void-confirm.png`
 - `31-order-history-voided-detail.png`
 - `32-report-void-summary.png`
+
+`25-kitchen-queue-drawer.png` không còn thuộc bộ màn current: kitchen đã được chốt future-only và không có entry point trong app. Chỉ giữ tên cũ trong archive nếu cần truy vết thiết kế.

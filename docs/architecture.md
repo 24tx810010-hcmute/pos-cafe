@@ -50,7 +50,7 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 
 - App dùng một URL.
 - Pre-login screen state: `landing`, `storePairing`, `createStore`, `passcode`.
-- Logged-in shell dùng `LeftNav` left rail và drawer state: `order`, `payment`, `takeaway`, `menuEditor`, `floorEditor`, `report`, `orderHistory`, `employees`, `settings`, `kitchen`, `paymentSettings`. Mỗi key map tới đúng một drawer qua `DRAWER_REGISTRY` (Record có type ràng buộc) trong `AppShell`.
+- Logged-in shell dùng `LeftNav` left rail và drawer state: `order`, `payment`, `takeaway`, `menuEditor`, `floorEditor`, `report`, `orderHistory`, `employees`, `settings`, `paymentSettings`. Mỗi key map tới đúng một drawer qua `DRAWER_REGISTRY` (Record có type ràng buộc) trong `AppShell`. `KitchenQueueDrawer` là future scaffold, không đăng ký trong registry hiện tại.
 - Zustand giữ UI state như current employee, active area/category, drawer context, payment order id và draft items.
 
 ## Server State
@@ -65,6 +65,7 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
   - `submit_order_changes`
   - `pay_order`
   - `pay_order_items` (instant pay: TÁCH các món được chọn ra một đơn mới độc lập và thanh toán đơn đó ngay trong cùng transaction)
+  - `void_order` (hủy đơn đã thanh toán, giữ payment/audit và optimistic lock)
   - `clear_demo_data`
 - RPC đảm bảo lock/version, order number, snapshot giá/tên/options, status order/table và payment consistency. Mỗi lần tách đơn cũng bump `lock_version` của đơn gốc nên các máy khác nhận tín hiệu như mọi mutation khác.
 
@@ -87,6 +88,7 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 - Realtime nằm trong `IRealtimePort`/feature integration để giữ transport tập trung.
 - **Quyết định (phase tiểu luận, online-only): KHÔNG optimistic update / KHÔNG patch cache.** Ưu tiên độ chính xác giữa các máy (server là nguồn sự thật) hơn là cảm giác "tức thì" trên máy đang thao tác. Optimistic guessing dễ gây lệch trạng thái đa thiết bị và phá đường đọc đơn nhất — vốn cũng là seam cho offline-first sau này (đổi nguồn đọc sang bản sao local + outbox mà không phải gỡ cache-patch). Đánh đổi chấp nhận: một nhịp refetch nền trên máy đang thao tác.
 - **Phủ tín hiệu:** publication gồm `orders, payments, tables` + bảng menu/floor. `order_items` cố ý KHÔNG publish vì `submit_order_changes` luôn bump `orders.lock_version` → một event trên `orders` đã đủ (tránh double-refetch). `orders/payments/tables` → invalidate open orders + floor + report; order detail (`["orders","detail",id]`) nằm dưới prefix `["orders"]` nên cũng được refetch theo.
+- **Giới hạn hiện tại:** migration 008 đã publish `menu_item_option_groups`, nhưng `SupabaseRealtimePort` chưa subscribe bảng nối này. Thao tác chỉ gắn/bỏ một modifier group khỏi món sẽ không tự invalidate menu trên máy khác; cần refresh/reconnect. Các thay đổi category/item/group/value vẫn realtime như bình thường.
 - **Tự lành khi rớt kết nối:** `channel.subscribe` lắng trạng thái; mỗi lần `SUBSCRIBED` (lần đầu và mỗi lần auto-reconnect resubscribe) sẽ resync toàn bộ (open orders + floor + report + menu) ngay, không chờ poll.
 - **SLA hội tụ:** floor plan / open orders / order detail còn poll `refetchInterval` 5s làm lưới an toàn — cam kết mọi máy đồng bộ trong **≤5s** kể cả khi realtime gián đoạn.
 - **Xung đột ghi:** optimistic locking bằng `lock_version`; ghi sau nhận `ORDER_VERSION_CONFLICT` → UI refetch lại sự thật và báo "đơn đã đổi trên thiết bị khác" (`uiError` → action `reloadOrder`).
@@ -96,10 +98,10 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 - Hai trục quyền độc lập trong `core/guards.ts`:
   - **Module** (`canAccessModule`/`requireModuleAccess`): thấy/mở được màn nào — theo role.
   - **Hành động** (`hasPermission`/`requirePermission`): được thực hiện thao tác nào. Mặc định suy từ role qua `defaultRolePermissions`, ghi đè per-employee bằng `Employee.permissionOverrides` (`grants`/`denies`). Quyền hiệu lực = (default ∪ grants) − denies.
-- `admin`: toàn bộ POS/admin. `cashier`: floor/order/payment/order history. `kitchen`: kitchen seam.
+- `admin`: toàn bộ POS/admin hiện hành. `cashier`: floor/order/payment/order history. `kitchen`: enum/schema/core seam tương lai, không phải role UI hiện hành.
 - Catalog đang enforce thật gồm 5 quyền:
 
-  | Permission | Admin mặc định | Cashier mặc định | Kitchen mặc định | Consumer |
+  | Permission | Admin mặc định | Cashier mặc định | Kitchen (future seam) | Consumer |
   | --- | --- | --- | --- | --- |
   | `order.create` | Có | Có | Không | Tạo đơn mới |
   | `order.update` | Có | Có | Không | Sửa đơn đang mở còn món |
@@ -108,21 +110,22 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
   | `order.voidPaid` | Có | Không | Không | Hủy đơn đã thanh toán từ Lịch sử |
 
 - Employees Drawer cho admin chỉnh checkbox theo **quyền hiệu lực**. Save chỉ lưu diff so với default role; diff rỗng xóa override (`null`). Đổi role trong form reset quyền về default role mới; không cho hạ role hoặc khóa admin active cuối.
+- UI chỉ liệt kê/tạo/sửa role `admin` và `cashier`. Employee `kitchen` cũ bị lọc khỏi Employees Drawer và Passcode; nav/registry không có kitchen module.
 - UI Order/Payment disable action và giải thích khi thiếu quyền, nhưng feature flow mới là chốt client thật. Migration 012 guardrail lại `submit_order_changes`, `pay_order`, `pay_order_items`; `void_order` tiếp tục guard quyền từ migration 011.
 - `currentEmployee` là snapshot memory-only tại lúc đăng nhập. Admin đổi quyền thì thiết bị nhân viên cần khóa/đăng nhập lại để UI nhận quyền mới; RPC đọc override live nên có thể từ chối mutation ngay sau khi thu hồi.
 - Default role → permission lặp ở TypeScript và SQL helper. `core/guards.ts` là source of truth; test E2E deny-permission dùng để phát hiện drift. Guard RPC vẫn chỉ là phòng thủ/audit — **quyền theo nhân viên là app-layer, không phải DB-secured** (employee id spoof được với session store hợp lệ). RLS chỉ cô lập dữ liệu theo store.
 
 ## Print
 
-- `IPrintPort` gồm `renderOrderTicket` và `renderReceipt`.
-- Phase này dùng browser HTML print preview qua browser print adapter, tách khỏi Supabase adapter.
+- `IPrintPort` gồm `renderOrderTicket` và `renderReceipt`, nhưng `BrowserPrintPort` hiện chủ ý no-op để giữ seam thiết bị.
+- Preview phiếu/hóa đơn và browser print được xử lý ở lớp UI `ReceiptPreview`: popup in-app + iframe ẩn gọi `window.print()` cô lập nội dung.
 - Không tích hợp native printer/ESC/POS trong phase tiểu luận.
 
 ## UI Overlay Primitives
 
 - Popup/modal dùng `PortalPopup`; drawer dùng `PortalDrawer`; cả hai tự dùng `createPortal` nội bộ.
 - `PortalPopup` overlay là full-screen để confirm/modal chặn tương tác toàn bộ app khi đang mở.
-- Drawer mặc định có workspace viewport sau `LeftNav` để không che left rail: desktop offset 176px, compact offset 68px, overlay `rgba(0,0,0,0.2)`, click overlay gọi close handler và slide-in animation theo placement.
+- Drawer mặc định dùng full-screen viewport (`inset-0`) và che `LeftNav`; workspace viewport 176px/68px vẫn là option của primitive nhưng các drawer production hiện không truyền option này. Overlay `rgba(0,0,0,0.2)`, click overlay gọi close handler và có slide-in animation theo placement.
 - Exit animation chưa làm trong pass hiện tại; drawer unmount theo app state.
 
 ## Testing
