@@ -6,7 +6,7 @@ Nối UI với logic/adapters thật, kiểm chứng Supabase mode, realtime inv
 
 ## Branch/Commit Liên Quan
 
-- Current app truth gần nhất: `origin/main` commit `4bf9764`.
+- Baseline tại checkpoint tổng hợp phase: `origin/main@4bf9764` (không phải current truth hiện nay).
 - Archive note chính: `docs/archive/superpowers/specs/2026-06-12-pos-cafe-integration-checklist.md`.
 - Archive phase status: `docs/archive/superpowers/specs/2026-06-11-pos-cafe-parallel-task-phases.md`.
 

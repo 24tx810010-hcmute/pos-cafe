@@ -2,6 +2,38 @@
 
 Data model dùng PostgreSQL/Supabase với **15 bảng nghiệp vụ chính**, thiết kế theo store-scoped multi-tenant: hầu hết bảng nghiệp vụ có `store_id`, UUID primary key, `created_at`, `updated_at`, và một số bảng editor có `deleted_at` để xóa mềm.
 
+## ERD Rút Gọn
+
+```mermaid
+erDiagram
+    stores ||--o| store_settings : "có cấu hình"
+    stores ||--o{ employees : "có nhân viên"
+    stores ||--o{ categories : "có danh mục"
+    categories ||--o{ menu_items : "phân loại món"
+    menu_items ||--o{ menu_item_option_groups : "gắn nhóm chọn"
+    option_groups ||--o{ menu_item_option_groups : "được nhiều món dùng"
+    option_groups ||--o{ option_values : "có giá trị"
+    stores ||--o{ floor_areas : "có khu"
+    floor_areas ||--o{ tables : "chứa bàn"
+    floor_areas ||--o{ floor_decor_items : "chứa decor"
+    stores ||--o{ orders : "có đơn"
+    employees ||--o{ orders : "tạo đơn"
+    tables o|--o{ orders : "nhận đơn tại bàn"
+    orders ||--o{ order_items : "snapshot món"
+    order_items ||--o{ order_item_options : "snapshot modifier"
+    orders ||--o{ payments : "ghi thanh toán"
+```
+
+## Quan Hệ Và Ràng Buộc Chính
+
+- Mỗi bảng nghiệp vụ con mang `store_id`; RLS dùng store Auth user để cô lập tenant.
+- `store_settings.store_id` là PK/FK nên mỗi store có tối đa một settings row; create-store flow luôn tạo row này, nhưng schema riêng lẻ vẫn cho phép store có 0 settings.
+- `menu_items.category_id` thuộc cùng store; modifier dùng bảng nối nhiều-nhiều `menu_item_option_groups`.
+- `tables` và `floor_decor_items` thuộc một `floor_area`; order dine-in có `table_id`, takeaway để `null`.
+- `order_items`/`order_item_options` là snapshot để lịch sử không đổi khi menu sửa sau này.
+- `order_no` unique theo `(store_id, business_date, order_no)`; `lock_version` bảo vệ update cạnh tranh.
+- App/RPC hiện tạo tối đa một payment cho một order paid, nhưng schema **không có unique constraint** trên `payments.order_id`; đây là invariant nghiệp vụ, không phải ràng buộc DB tuyệt đối.
+
 ## Enum Chính
 
 | Enum | Giá trị | Dùng cho |
@@ -31,7 +63,7 @@ Data model dùng PostgreSQL/Supabase với **15 bảng nghiệp vụ chính**, t
 - Seed demo upsert theo `id`/`seed_key` và clear `deleted_at`/`deleted_by_employee_id` trên các bảng editor (cashier dùng `is_active`) nên idempotent với `clear_demo_data`.
 - Employee role quyết định default permission và module navigation; override từng nhân viên chỉ thay đổi quyền hành động, không mở thêm module trên nav.
 - UI hiện hành chỉ hỗ trợ `admin` và `cashier`. Giá trị `kitchen` vẫn tồn tại trong enum/database/core như seam tương lai, nhưng bị lọc khỏi màn PIN, Employees Drawer và app navigation.
-- `employees.permission_overrides` (migration 011) là **quyền theo hành động** tách khỏi quyền vào module: shape `{"grants": [...], "denies": [...]}`. Quyền hiệu lực = (default theo role ∪ grants) − denies (denies luôn thắng). Mặc định `null` (mọi người theo role). Từ phase 20, Employees Drawer chỉnh checkbox quyền hiệu lực và persist diff tối thiểu; `undefined` trong update DTO nghĩa là không đụng field, `null` nghĩa là xóa override.
+- `employees.permission_overrides` (migration 011) là **quyền theo hành động** tách khỏi quyền vào module: shape `{"grants": [...], "denies": [...]}`. Quyền hiệu lực = (default theo role ∪ grants) − denies (denies luôn thắng). Mặc định `null` (mọi người theo role). Từ phase 20, Employees Drawer chỉnh switch quyền hiệu lực và persist diff tối thiểu; `undefined` trong update DTO nghĩa là không đụng field, `null` nghĩa là xóa override.
 - Catalog runtime hiện có đúng 5 mã được enforce: `order.create`, `order.update`, `order.voidOpen`, `payment.take`, `order.voidPaid`. Mapper Supabase lọc bỏ mã ngoài catalog.
 - Permission vẫn là app-layer authorization; RPC check chỉ để phòng thủ/audit, **không** phải DB-secured — employee id vẫn spoof được với session store hợp lệ.
 - `store_settings.qr_info` là seam schema cho QR/bank sau này; drawer Payment Settings hiện là preview/local UI, chưa persist field này qua `settingsRepo`.
@@ -84,7 +116,7 @@ Data model dùng PostgreSQL/Supabase với **15 bảng nghiệp vụ chính**, t
 
 ## Nhóm Payment & Report
 
-- `payments`: payment theo order, employee, method, amount, received amount, change amount, paid_at. Mỗi đơn có đúng một payment khi `paid`.
+- `payments`: payment theo order, employee, method, amount, received amount, change amount, paid_at. Flow RPC hiện hành tạo một payment cho mỗi đơn paid; schema vẫn cho phép nhiều row cùng `order_id` nếu bị ghi ngoài flow.
 - Report không có bảng riêng trong MVP; report query tính từ order/payment đã thanh toán.
 
 Ý nghĩa:
@@ -106,6 +138,26 @@ Data model dùng PostgreSQL/Supabase với **15 bảng nghiệp vụ chính**, t
 - `void_order` (migration 011, thay stub reserved cũ): hủy một đơn **đã thanh toán**. Tham số `(p_order_id, p_employee_id, p_expected_lock_version, p_reason_code, p_reason_note)`. Check quyền `order.voidPaid` (role admin hoặc grant override, denies thắng), validate `reason_code` (5 giá trị; `other` bắt buộc có note), khóa đơn `for update`, chỉ nhận `status='paid'` + đúng `lock_version` (sai → `ORDER_VERSION_CONFLICT`), rồi set `void` + metadata hủy + bump version. Không đụng total/order_no/paid_at/payment/bàn.
 - `verify_employee_pin` (migration 011): trả thêm cột `permission_overrides` để client dựng quyền của nhân viên đang đăng nhập.
 - `clear_demo_data`: admin-only, block nếu còn open orders, xóa mềm dữ liệu seed và giữ admin.
+
+## Migration Ledger
+
+| Migration | Vai trò | Ghi chú báo cáo/vận hành |
+| --- | --- | --- |
+| 001 | Schema + enum nền, 14 bảng ban đầu | Schema tạo mới đã được backfill một số cột từ phase sau |
+| 002 | Index, trigger `updated_at`, RLS | RLS cô lập theo store Auth user |
+| 003 | RPC nền | PIN, submit/pay/clear demo và stub ban đầu |
+| 004 | Realtime publication | Publish các bảng sync chính |
+| 005 | Storage ảnh món | Bucket/policy public-read, store-scoped write |
+| 006 | `menu_items.image_asset_key` | Tương thích DB hiện hữu |
+| 007 | Wipe dữ liệu toàn bộ | **Destructive:** `truncate stores cascade`; chỉ dùng khi chủ động reset demo/dev và đã chấp nhận mất dữ liệu |
+| 008 | Shared modifier rework | Thêm bảng nối thứ 15 và quantity modifier; đi sau reset/rework |
+| 009 | Partial payment bản đầu | Transitional; thêm artifact partial-cùng-đơn |
+| 010 | Split-order instant pay | Bản chốt; gỡ/rework artifact của 009 |
+| 011 | Void paid + permission seam | Metadata hủy, `permission_overrides`, `void_order` |
+| 012 | Action permission guardrails | Guard ba RPC order/payment và helper quyền |
+| 013 | Nền bàn nullable | `tables.background_asset_key` |
+
+Đối với database mới/trống, bootstrap đúng thứ tự 001–013. Với database đã có dữ liệu, kiểm tra migration history và chỉ apply forward migration chưa có; **không replay 007** vì đây là bước lịch sử phá hủy dữ liệu, không phải đường upgrade an toàn. Migration 009 không phải mô hình cuối và được 010 supersede.
 
 ## Domain Types Trong App
 

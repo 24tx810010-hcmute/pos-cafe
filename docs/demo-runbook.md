@@ -29,6 +29,7 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 - Có ít nhất một order thanh toán thành công để report/history không trống nếu cần.
 - Dùng admin (hoặc nhân viên có grant `order.voidPaid`) nếu demo hủy đơn đã thanh toán.
 - Nếu demo phân quyền trên cloud, bảo đảm migration 012 đã được apply; thay đổi quyền client có hiệu lực sau khi khóa/đăng nhập lại.
+- Nếu demo nền bàn, bảo đảm migration 013 đã được apply và floor-plan select đọc được `background_asset_key`.
 - Màn hình trình chiếu ở landscape, đủ rộng.
 - Chuẩn bị 4G/hotspot vì phase này online-only.
 - Kitchen không còn entry point trong UI hiện hành. Nếu được hỏi, giải thích enum/schema/component scaffold được giữ cho tương lai nhưng queue backend và role vận hành chưa triển khai. Payment Settings/QR vẫn là preview optional.
@@ -39,6 +40,7 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 - **Instant pay tách đơn (phase 18): ĐÃ kiểm chứng** qua E2E trên cloud đã áp migration 009+010 (tách dòng, số bill theo thứ tự trả, lịch sử 2 đơn độc lập).
 - **Hủy đơn đã thanh toán (phase 19): ĐÃ kiểm chứng** trên cloud đã áp migration 011: admin tạo/thanh toán/hủy đơn qua UI, popup đóng, audit hiện và badge chuyển `Đã hủy`; fix refetch `lock_version` trước khi gọi RPC đã chạy ổn định. Ngày 2026-07-19 chạy lại targeted E2E 1/1 pass.
 - **Phân quyền per-employee (phase 20): ĐÃ kiểm chứng cloud** sau khi áp migration 012. E2E admin deny `payment.take` → cashier đăng nhập lại vẫn tạo đơn được, UI khóa thanh toán; gọi thẳng payment RPC trả `FORBIDDEN`. Full `smoke:supabase` 5/5 pass ngày 2026-07-19.
+- **Baseline local hiện hành:** xem [testing.md](testing.md). Không gộp 257 local tests với 5 cloud E2E thành một con số.
 
 ## Luận Điểm Nên Nói Khi Bảo Vệ
 
@@ -48,6 +50,7 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 - Realtime được dùng để invalidate/refetch, giảm rủi ro patch cache thủ công.
 - Ports/adapters giúp app không khóa cứng vào Supabase và dễ test/mock.
 - Offline-first, native printer, QR payment thật và kitchen queue thật là mở rộng sau, đã có seam trong schema/architecture.
+- RLS hiện cô lập store, không phải employee-level DB identity; đây là giới hạn đã biết, không nên trình bày quá mức.
 
 ## Rủi Ro Demo & Cách Xử Lý
 

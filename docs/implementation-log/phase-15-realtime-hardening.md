@@ -3,7 +3,7 @@
 ## Mục tiêu
 
 - Ưu tiên độ chính xác dữ liệu giữa các máy mà không làm chậm sync; chốt **online-only + refetch-only** (không optimistic update, không patch cache).
-- Giữ sync nhanh khi realtime gián đoạn (tự lành thay vì chờ poll), và ghi rõ SLA hội tụ.
+- Giữ sync nhanh khi realtime gián đoạn (tự lành thay vì chờ poll), và ghi rõ mục tiêu hội tụ danh nghĩa.
 - Chừa đường cho offline-first ở phase sau (không phá đường đọc đơn nhất).
 
 ## Branch/Commit
@@ -28,13 +28,13 @@
 
 - **Refetch-only, không optimistic/không patch cache** (xem `architecture.md` mục Realtime). Ưu tiên chính xác đa thiết bị; đánh đổi là một nhịp refetch nền trên máy đang thao tác. Đây cũng là lựa chọn offline-friendly (đường đọc đơn nhất → sau này thay bằng bản sao local + outbox).
 - Tự lành dựa trên `SUBSCRIBED` thay vì bắt từng `CHANNEL_ERROR`/`TIMED_OUT`: supabase-js tự rejoin và bắn lại `SUBSCRIBED`, nên đây là điểm chốt chắc chắn để resync.
-- Giữ poll 5s làm SLA hội tụ ≤5s khi realtime rớt.
+- Giữ poll 5s làm lưới an toàn/mục tiêu hội tụ danh nghĩa; không coi đây là SLA cứng vì browser/network có thể làm trễ hơn.
 
 ## Verification
 
 - `npx tsc -b`: passed.
 - `npm test`: 182/182 passed (thêm 2 test realtime self-heal).
-- **Chưa kiểm chứng cross-device trực tiếp**: realtime chỉ chạy trên Supabase (mock realtime là no-op; mỗi tab mock có state riêng). Cần chạy `npm run smoke:supabase` / mở 2 thiết bị trên cùng store thật để xác nhận self-heal + latency. Để lại cho lần chạy có `.env` Supabase.
+- **Tại checkpoint phase 15 chưa kiểm chứng cross-device trực tiếp**: realtime chỉ chạy trên Supabase (mock realtime là no-op; mỗi tab mock có state riêng). Các phase sau đã kiểm chứng flow hai browser bình thường; self-heal sau ngắt/nối mạng vẫn cần diễn tập thủ công và chưa có latency benchmark.
 
 ## Known Gaps/Risks
 
@@ -44,5 +44,5 @@
 
 ## Liên quan
 
-- [../architecture.md](../architecture.md) — Realtime (ADR refetch-only, coverage, self-heal, SLA, conflict).
+- [../architecture.md](../architecture.md) — Realtime (ADR refetch-only, coverage, self-heal, mục tiêu hội tụ, conflict).
 - [../tech-stack.md](../tech-stack.md) — quyết định Realtime Invalidate/Refetch & online-only.

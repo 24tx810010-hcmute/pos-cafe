@@ -1,6 +1,6 @@
 # Phase Scope
 
-File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính năng bắt buộc, tính năng làm nếu kịp và hướng mở rộng sau này.
+File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính năng bắt buộc, phần hoàn thiện tùy chọn và hướng mở rộng sau này.
 
 ## Phase Tiểu Luận Bắt Buộc
 
@@ -11,7 +11,7 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 | POS core | Floor view, mở bàn, tạo/sửa order dine-in, tạo/sửa takeaway, trạng thái bàn trống/đang phục vụ |
 | Order | Chọn món, option/topping, ghi chú, cập nhật order mở; hủy order mở bằng cách xóa hết item; người có quyền `order.voidPaid` hủy đơn đã thanh toán từ Lịch sử với lý do, ghi chú và audit |
 | Payment | Thanh toán tiền mặt, nhập tiền khách đưa, tính tiền thối, hoàn tất order, set bàn trống, bill/receipt preview; instant pay: chọn món/số lượng tách thành đơn độc lập thanh toán ngay (bill trả trước mang số nhỏ hơn) |
-| Admin | Quản lý nhân viên, menu editor có option/topping và upload ảnh món, floor editor có khu/tầng/decor cơ bản |
+| Admin | Quản lý nhân viên và quyền, menu editor có option/topping + upload ảnh món, floor editor có khu/tầng/bàn/decor, transform trực tiếp và catalog asset |
 | Report | Doanh thu theo ngày, số đơn đã thanh toán, trung bình đơn, top món, biểu đồ giờ; số đơn và tổng tiền của đơn paid-rồi-hủy |
 | Settings | Tên quán, địa chỉ, footer hóa đơn, timezone, clear dữ liệu mẫu có block khi còn order mở |
 | Demo hardening | Loading/error/empty/blocked states cho flow quan trọng, smoke test cho demo |
@@ -45,6 +45,13 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 - Đây là catalog đóng gói cùng ứng dụng, không phải upload ảnh decor của người dùng; upload/custom asset vẫn thuộc mở rộng sau phase.
 - Sau audit code/docs, role/module kitchen được chốt là future-only: bỏ khỏi nav, drawer registry, màn PIN và form nhân viên; giữ enum/schema/component scaffold để phát triển sau.
 
+## Scope Update 2026-07-25
+
+- Employees Drawer được redesign thành layout hai pane: danh bạ/filter ở trái và hồ sơ/quyền/PIN ở phải.
+- Bộ lọc hiện hành gồm Tất cả, Quản lý, Thu ngân và Tạm khoá, có count; chọn nhân viên đầu tiên tự động khi tải xong.
+- Trạng thái đăng nhập, role, quyền và reset PIN được chỉnh trong cùng form; có dirty confirm khi đổi lựa chọn.
+- Không cho tự tạm khóa tài khoản đang đăng nhập hoặc tạm khóa/hạ role quản lý active cuối. Không có migration mới.
+
 ## Scope Update 2026-07-27
 
 - Floor Editor có thêm catalog 11 ảnh nền bàn built-in và lựa chọn nền trắng mặc định; bàn mới và dữ liệu cũ dùng trắng khi `background_asset_key` là `null`.
@@ -52,28 +59,38 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 - Migration 013 thêm `tables.background_asset_key`; đã được apply và xác minh PostgREST đọc được cột cùng full floor-plan select.
 - Đây là catalog đóng gói, không phải upload nền bàn. Upload/custom table background tiếp tục nằm ngoài scope.
 
-## Làm Nếu Kịp
+## Scope Update 2026-07-30
 
-- Order history filter nâng cao.
-- Tinh chỉnh editor nâng cao để demo dễ hiểu hơn.
-- Report mở rộng về UI/visual insight.
-- UI polish sâu cho POS core.
+- Root docs được audit lại theo `main@3d9b64a` và chuẩn hóa thành source material cho báo cáo.
+- Order history filter, report master/detail và các catalog floor đã là **implemented**, không còn nằm trong nhóm “làm nếu kịp”.
+- Bổ sung traceability yêu cầu, baseline kiểm thử, giới hạn và hướng phát triển; tách rõ bằng chứng local, cloud và deployment readiness.
+
+## Phần Hoàn Thiện Tùy Chọn
+
+- Exit animation khi đóng drawer/popup và visual polish bổ sung.
+- Tìm kiếm/favorite/tối ưu asset cho Floor Editor.
+- Code splitting/lazy-load để xử lý chunk-size warning.
+- Bổ sung insight/report nâng cao ngoài các metric hiện có.
+- Refresh screenshot/diagram artefact cho báo cáo ở nơi lưu binary riêng.
 
 ## Mở Rộng Sau Phase Này
 
-- Gộp/chuyển bàn.
-- Role/module kitchen và kitchen queue thật nối backend, trạng thái order item.
-- QR/bank/e-wallet payment thật.
-- Discount/voucher UI.
-- Upload ảnh decor.
-- Offline-first/local database.
-- Native printer, driver, USB, ESC/POS hoặc service in thật.
-- Quản lý kho nguyên liệu, loyalty, ca/chấm công.
-- Super-admin nhiều quán/chuỗi chi nhánh.
-- Custom role, audit log đổi quyền, module permission per-employee và các quyền tương lai như refund/discount/price override/mở két/ca làm việc.
+| Hướng mở rộng | Lý do hoãn | Hướng triển khai dự kiến |
+| --- | --- | --- |
+| Gộp/chuyển bàn | Cần quy tắc merge order, conflict và audit mới | Thiết kế RPC transaction riêng và lịch sử thao tác |
+| Kitchen queue/role bếp thật | Chưa có queue backend và item workflow | Persist ticket/item status, màn bếp và realtime riêng |
+| QR/bank/e-wallet | Cần provider/callback/đối soát ngoài | Payment provider abstraction và transaction ledger |
+| Discount/voucher/refund | Làm rộng pricing, permission và report | Bổ sung policy tính giá, audit và report adjustment |
+| Upload decor/nền bàn | Cần storage lifecycle và quyền ghi | Tái dùng pattern upload ảnh món, thêm tối ưu asset |
+| Offline-first/local database | Tăng lớn độ phức tạp sync/conflict | Thêm local adapter, outbox và conflict policy |
+| Native printer/ESC/POS | Phụ thuộc driver/phần cứng | Service/adapter in cục bộ sau `IPrintPort` |
+| Kho, loyalty, ca/chấm công | Ngoài core flow POS hiện tại | Mỗi nhóm cần domain và module độc lập |
+| Super-admin/chuỗi chi nhánh | MVP hiện cô lập từng store, chưa có aggregate UI | Tenant hierarchy và quyền cấp tổ chức |
+| Custom role/quyền mở rộng | Catalog runtime mới có 5 action | Role editor, module permission và audit log |
 
 ## Ghi Chú Quan Trọng
 
 - Một số màn optional có thể đang tồn tại dưới dạng UI scaffold để chứng minh seam, nhưng không được tính là thiếu nếu chưa có logic thật trong phase tiểu luận.
 - Schema có chừa field/enum cho mở rộng sau như `payment_method`, `discount_type`, `order_item_status`, nhưng UI phase này chỉ cần phần đã khóa ở mục bắt buộc.
 - Khi bảo vệ, nên nói rõ: dự án ưu tiên vận hành cafe nhỏ, realtime online, dữ liệu quan hệ và demo end-to-end thay vì mở rộng quá rộng.
+- Xem [requirements.md](requirements.md) cho yêu cầu có mã và [limitations.md](limitations.md) cho giới hạn/hướng phát triển đầy đủ.

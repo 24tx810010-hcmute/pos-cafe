@@ -2,7 +2,7 @@
 
 ## Folder Này Chứa Gì
 
-Bộ screenshot current UI gần nhất từng được chụp ngày 2026-06-20 để dùng cho audit/redesign. Ảnh binary đã được loại khỏi nhánh `docs` để nhánh này chỉ còn `.md`.
+Bộ screenshot gần nhất từng được chụp ngày 2026-06-20 để dùng cho audit/redesign. Ảnh binary đã được loại khỏi nhánh `docs` để nhánh này chỉ còn `.md`. Bộ cũ này **không đại diện đầy đủ** cho baseline `main@3d9b64a`; trước khi viết báo cáo cần chụp mới và ghi commit/ngày trong artefact ngoài nhánh docs.
 
 ## Khi Nào Nên Đọc
 
@@ -26,6 +26,8 @@ Bộ screenshot current UI gần nhất từng được chụp ngày 2026-06-20 
 - `13-takeaway-drawer.png`
 - `14-order-history-drawer.png`
 - `15-employees-drawer.png`
+- `15b-employees-drawer-permissions.png`
+- `15c-employees-drawer-inactive-filter.png`
 - `16-menu-editor-drawer.png`
 - `17-menu-editor-dirty-new-item.png`
 - `18-menu-editor-dirty-confirm.png`

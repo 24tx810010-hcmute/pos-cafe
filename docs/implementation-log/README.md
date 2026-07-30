@@ -4,6 +4,12 @@
 
 Folder này ghi nhật ký implement theo phase. Mục tiêu là track nhanh nhánh/commit/tính năng/test/gap mà không phải đọc code hoặc lần lại toàn bộ lịch sử Git trước.
 
+## Baseline Hiện Hành
+
+- Current truth được audit ngày **2026-07-30** theo `main@3d9b64a`.
+- Phase log là evidence lịch sử tại checkpoint. Test failure, TODO hoặc giới hạn trong phase cũ có thể đã được phase sau supersede; dùng root docs và [../testing.md](../testing.md) để kết luận trạng thái hiện tại.
+- Không đổi chữ “pass/fail” lịch sử thành current truth. Khi cần làm rõ, thêm ghi chú “đã được phase sau supersede”.
+
 ## Khi Nào Nên Đọc
 
 - Khi cần biết phase nào đã xong, phase nào còn gap.
@@ -33,15 +39,16 @@ Folder này ghi nhật ký implement theo phase. Mục tiêu là track nhanh nh�
 - [phase-12-report-redesign.md](phase-12-report-redesign.md): Report redesign sang dashboard master/detail (rail trái doanh thu + nav, pane phải chi tiết), look Tremor dựng bằng Tailwind/Recharts.
 - [phase-13-receipt-print-popup.md](phase-13-receipt-print-popup.md): giả lập in đơn bằng popup (phiếu tạm tính + hoá đơn, template 80mm dùng chung), in lại từ Lịch sử; UI-only, giữ seam IPrintPort.
 - [phase-14-kitchen-ticket-optimistic-print.md](phase-14-kitchen-ticket-optimistic-print.md): "Gửi đơn" in phiếu gửi bếp các món mới thêm (diff theo nội dung), bỏ window.open, in từ dữ liệu local + invalidate fire-and-forget.
-- [phase-15-realtime-hardening.md](phase-15-realtime-hardening.md): chốt accuracy-first online-only/refetch-only (ADR), realtime tự lành khi reconnect (resync on SUBSCRIBED), SLA hội tụ ≤5s.
+- [phase-15-realtime-hardening.md](phase-15-realtime-hardening.md): chốt accuracy-first online-only/refetch-only (ADR), realtime tự lành khi reconnect và polling 5s làm lưới an toàn, không phải SLA cứng.
 - [phase-16-shared-modifiers.md](phase-16-shared-modifiers.md): modifier (size/topping) dùng chung nhiều-nhiều + popup chọn ở màn order + số lượng modifier; bảng nối `menu_item_option_groups`, `order_item_options.quantity`, migration wipe + rework.
 - [phase-17-floor-editor-transform-handles.md](phase-17-floor-editor-transform-handles.md): Floor Editor thêm handle kéo trực tiếp để resize/xoay object đang chọn (bàn + decor); handle nằm ngang dưới object, không xoay theo object, giữ changeset layout hiện có.
 - [phase-18-instant-pay.md](phase-18-instant-pay.md): instant pay — chọn món/số lượng để TÁCH thành đơn mới độc lập và thanh toán ngay (`Chọn tất cả` mặc định = trả cả bàn); bill trả trước mang số nhỏ hơn (đơn tách kế thừa order_no, đơn gốc nhận số mới); RPC `pay_order_items` (migration 010, thay mô hình partial-cùng-đơn của 009).
 - [phase-19-void-paid-order.md](phase-19-void-paid-order.md): hủy đơn đã thanh toán từ Lịch sử với quyền `order.voidPaid`, lý do/audit, optimistic lock; đơn void bị loại khỏi doanh thu nhưng giữ payment để đối soát, Report có `voidCount`/`voidAmount` (migration 011).
 - [phase-20-employee-permissions.md](phase-20-employee-permissions.md): editor quyền hiệu lực theo từng nhân viên; enforce 5 quyền tạo/sửa/hủy đơn mở, thanh toán và hủy đơn paid ở flow/UI/RPC guardrail (migration 012).
 - [phase-21-floor-decor-assets.md](phase-21-floor-decor-assets.md): đưa catalog 9 texture tường + 131 ảnh trang trí vào Floor Editor/POS, có popup chọn/đổi mẫu và fallback cho asset key legacy.
-- [phase-22-kitchen-future-scope-doc-sync.md](phase-22-kitchen-future-scope-doc-sync.md): ẩn kitchen khỏi mọi entry point UI, giữ seam schema/code cho tương lai và đồng bộ root docs với main hiện tại.
+- [phase-22-kitchen-future-scope-doc-sync.md](phase-22-kitchen-future-scope-doc-sync.md): redesign Employees Drawer hai pane, ẩn kitchen khỏi mọi entry point UI và giữ seam schema/code cho tương lai.
 - [phase-23-table-background-assets.md](phase-23-table-background-assets.md): thêm 11 nền bàn built-in + nền trắng mặc định, persist bằng `tables.background_asset_key` (migration 013) và render đồng nhất trong Floor Editor/POS.
+- [phase-24-report-readiness-sync.md](phase-24-report-readiness-sync.md): audit `main@3d9b64a`, sửa stale/overclaim và chuẩn hóa requirements/testing/limitations/source map cho báo cáo.
 
 ## Template Duy Trì
 

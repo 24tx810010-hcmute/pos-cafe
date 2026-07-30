@@ -98,7 +98,7 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 - **Phủ tín hiệu:** publication gồm `orders, payments, tables` + bảng menu/floor. `order_items` cố ý KHÔNG publish vì `submit_order_changes` luôn bump `orders.lock_version` → một event trên `orders` đã đủ (tránh double-refetch). `orders/payments/tables` → invalidate open orders + floor + report; order detail (`["orders","detail",id]`) nằm dưới prefix `["orders"]` nên cũng được refetch theo.
 - **Giới hạn hiện tại:** migration 008 đã publish `menu_item_option_groups`, nhưng `SupabaseRealtimePort` chưa subscribe bảng nối này. Thao tác chỉ gắn/bỏ một modifier group khỏi món sẽ không tự invalidate menu trên máy khác; cần refresh/reconnect. Các thay đổi category/item/group/value vẫn realtime như bình thường.
 - **Tự lành khi rớt kết nối:** `channel.subscribe` lắng trạng thái; mỗi lần `SUBSCRIBED` (lần đầu và mỗi lần auto-reconnect resubscribe) sẽ resync toàn bộ (open orders + floor + report + menu) ngay, không chờ poll.
-- **SLA hội tụ:** floor plan / open orders / order detail còn poll `refetchInterval` 5s làm lưới an toàn — cam kết mọi máy đồng bộ trong **≤5s** kể cả khi realtime gián đoạn.
+- **Mục tiêu hội tụ danh nghĩa:** floor plan / open orders / order detail còn poll `refetchInterval` 5s làm lưới an toàn. Đây là khoảng polling khi app online/active, **không phải SLA cứng ≤5s** vì browser throttling, request và mạng có thể làm trễ hơn; E2E cloud quan sát trong timeout rộng hơn.
 - **Xung đột ghi:** optimistic locking bằng `lock_version`; ghi sau nhận `ORDER_VERSION_CONFLICT` → UI refetch lại sự thật và báo "đơn đã đổi trên thiết bị khác" (`uiError` → action `reloadOrder`).
 
 ## Permission
@@ -117,11 +117,12 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
   | `payment.take` | Có | Có | Không | Full payment và instant-pay split |
   | `order.voidPaid` | Có | Không | Không | Hủy đơn đã thanh toán từ Lịch sử |
 
-- Employees Drawer cho admin chỉnh checkbox theo **quyền hiệu lực**. Save chỉ lưu diff so với default role; diff rỗng xóa override (`null`). Đổi role trong form reset quyền về default role mới; không cho hạ role hoặc khóa admin active cuối.
+- Employees Drawer cho admin chỉnh switch theo **quyền hiệu lực**. Save chỉ lưu diff so với default role; diff rỗng xóa override (`null`). Đổi role trong form reset quyền về default role mới; không cho tự khóa tài khoản đang đăng nhập hoặc hạ role/khóa admin active cuối.
 - UI chỉ liệt kê/tạo/sửa role `admin` và `cashier`. Employee `kitchen` cũ bị lọc khỏi Employees Drawer và Passcode; nav/registry không có kitchen module.
 - UI Order/Payment disable action và giải thích khi thiếu quyền, nhưng feature flow mới là chốt client thật. Migration 012 guardrail lại `submit_order_changes`, `pay_order`, `pay_order_items`; `void_order` tiếp tục guard quyền từ migration 011.
-- `currentEmployee` là snapshot memory-only tại lúc đăng nhập. Admin đổi quyền thì thiết bị nhân viên cần khóa/đăng nhập lại để UI nhận quyền mới; RPC đọc override live nên có thể từ chối mutation ngay sau khi thu hồi.
-- Default role → permission lặp ở TypeScript và SQL helper. `core/guards.ts` là source of truth; test E2E deny-permission dùng để phát hiện drift. Guard RPC vẫn chỉ là phòng thủ/audit — **quyền theo nhân viên là app-layer, không phải DB-secured** (employee id spoof được với session store hợp lệ). RLS chỉ cô lập dữ liệu theo store.
+- `currentEmployee` là snapshot memory-only của cả role/quyền tại lúc đăng nhập. Admin đổi hồ sơ hiện hành thì thiết bị nhân viên cần khóa/đăng nhập lại để UI nhận đầy đủ snapshot mới; RPC đọc override live nên có thể từ chối mutation ngay sau khi thu hồi.
+- RLS hiện so `auth.uid()` với `store_id`: nó cô lập **giữa các store**, không tạo identity DB riêng cho từng nhân viên. PIN chỉ chọn actor ở tầng app; client có store session/token hợp lệ có thể giả `p_employee_id` hoặc ghi trực tiếp các bảng mà policy store-level cho phép.
+- Default role → permission lặp ở TypeScript và SQL helper. `core/guards.ts` là source of truth; E2E deny-permission phát hiện drift. Guard RPC là lớp phòng thủ/audit nghiệp vụ, **không phải security boundary chống client độc hại**. Muốn bảo mật per-employee thật cần signed/backend employee context và policy ghi chặt hơn.
 
 ## Print
 
@@ -141,3 +142,5 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 - Vitest kiểm tra core, adapters, feature flows, UI components và demo hardening.
 - Playwright smoke kiểm tra flow demo chính và khả năng mở module/drawer.
 - Supabase smoke riêng dùng config `playwright.supabase.config.ts` khi cần kiểm tra cloud/realtime.
+- `architectureBoundaries.test.ts` dùng TypeScript AST scanner để kiểm tra hướng import và ngăn Supabase/browser leak vào layer cấm.
+- Baseline local ngày 2026-07-30 đạt 49 files/257 tests và mock smoke 34 pass/31 skipped/0 failed; bằng chứng cloud có ngày chạy riêng. Ma trận và gap đầy đủ ở [testing.md](testing.md).

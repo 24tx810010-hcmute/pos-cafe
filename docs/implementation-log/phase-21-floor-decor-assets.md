@@ -8,7 +8,10 @@
 
 ## Trạng thái
 
-- Code commit: `7a00fd0` (`feat(floor): add decor asset catalog`).
+- Code commits:
+  - `17e17f3` (`fix(floor): render round tables circular`).
+  - `f31e37e` (`fix(floor): keep toolbar controls visible`).
+  - `7a00fd0` (`feat(floor): add decor asset catalog`).
 - Đã push lên `origin/main` ngày 2026-07-22.
 - Không có database migration.
 
@@ -22,12 +25,14 @@
   - 15 ảnh trang trí khác.
 - Catalog TypeScript sinh đường dẫn, nhãn, `DecorKind` và kích thước mặc định; có resolver dùng chung cho editor/POS.
 - Toolbar Floor Editor rút gọn thành hai entry rõ ràng: `Tường` và `Ảnh trang trí`.
+- Toolbar/POS floor giữ control trong workspace trên các viewport ngang nhỏ; regression smoke kiểm tra bounds.
 - Popup responsive:
   - Tường hiển thị grid 9 texture.
   - Trang trí có tab Cây/Ghế/Thiết bị/Khác và chỉ tải/render nhóm đang mở.
   - Cho chọn mẫu rồi xác nhận thêm mới hoặc áp dụng khi đổi mẫu.
 - Inspector hiển thị preview asset và action đổi mẫu.
 - Floor Editor và POS Floor render tường bằng cover, decor bằng contain; giữ transform, z-index, lock, resize/rotate hiện có.
+- Bàn `round` giữ hình tròn trực quan ở cả Floor Editor và POS thay vì méo theo geometry không vuông.
 - Asset key legacy không khớp catalog tiếp tục dùng placeholder nhãn/màu, không render ảnh lỗi.
 - Changeset vẫn lưu `kind`, `label`, `assetKey`, geometry và lock như trước; Supabase/mock adapter không đổi.
 

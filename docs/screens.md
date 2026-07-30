@@ -99,10 +99,11 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 
 - **Purpose:** quản lý nhân viên, PIN và quyền thao tác theo từng người.
 - **User:** admin.
+- **Layout:** hai pane responsive; pane trái là danh bạ/filter/count và action thêm nhân viên, pane phải là header hồ sơ + form thông tin/quyền/PIN + save.
 - **Minimum data:** employee list đã lọc role hiện hành, selected employee, role/status, permission overrides/effective permissions, PIN form khi tạo/reset.
-- **Primary actions:** add employee, edit role/name/status, reset PIN; với nhân viên đã tồn tại, tick/bỏ quyền hiệu lực và save.
+- **Primary actions:** lọc Tất cả/Quản lý/Thu ngân/Tạm khoá; add employee; edit role/name/trạng thái đăng nhập; reset PIN inline; bật/tắt quyền hiệu lực, trở về mặc định vai trò và save.
 - **Permission contract:** UI chỉ cho chọn `admin` hoặc `cashier`; đổi role reset checkbox về default role mới; diff so với default được lưu thành grants/denies, diff rỗng xóa override. Sửa quyền chính mình có cảnh báo cần đăng nhập lại.
-- **Important states:** loading, validation error, save error, không thể deactivate hoặc hạ role admin active cuối.
+- **Important states:** loading, error, empty list, filter không có kết quả, dirty confirm khi đổi selection, validation/save error, không thể tự tạm khoá tài khoản đang đăng nhập, không thể deactivate hoặc hạ role admin active cuối.
 
 ## 13. Menu Editor Drawer
 

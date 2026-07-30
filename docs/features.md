@@ -27,7 +27,7 @@
   | `payment.take` | Có | Có | Không |
   | `order.voidPaid` | Có | Không | Không |
 
-- Employees Drawer cho admin tick/bỏ quyền hiệu lực từng người. Đổi role reset checkbox về default role; lưu quyền đúng default sẽ xóa override. Client nhận quyền mới sau khi khóa/đăng nhập lại, còn RPC đọc quyền live.
+- Employees Drawer cho admin bật/tắt quyền hiệu lực từng người. Đổi role reset về default role; lưu quyền đúng default sẽ xóa override. Client giữ snapshot cả role/quyền của nhân viên hiện hành, nên thay đổi trên UI phản ánh đầy đủ sau khi khóa/đăng nhập lại; RPC đọc override live.
 - UI quản lý nhân viên hiện chỉ cho chọn `admin` hoặc `cashier`; row `kitchen` cũ trong database được ẩn khỏi danh sách cho đến khi feature bếp được triển khai.
 - Flow tạo/sửa/hủy đơn mở, full/split payment và hủy đơn paid đều gọi `requirePermission`; Order/Payment Drawer disable nút sớm khi thiếu quyền; migration 012 guardrail lại ba RPC order/payment chính.
 - **Catalog production, chưa phải quyền runtime:** chuyển/gộp bàn; refund; `discount.apply`; `price.override`; `drawer.open`; mở/chốt ca và kiểm két (`shift.*`). Các mã này chỉ là hướng mở rộng, chưa nằm trong `EmployeePermission` và không xuất hiện trong editor vì chưa có tính năng đứng sau. Quản trị menu/sơ đồ/nhân viên/cài đặt/report hiện vẫn theo module + role, chưa chỉnh per-employee.
@@ -98,12 +98,13 @@
 
 ## Employees
 
-- Xem nhân viên theo role/trạng thái.
+- Layout hai pane: danh bạ nhân viên ở trái, hồ sơ/chỉnh sửa ở phải; tự chọn nhân viên đầu tiên sau khi tải.
+- Lọc bằng chip có số lượng: Tất cả, Quản lý, Thu ngân, Tạm khoá. Employee inactive vẫn truy cập được qua danh sách/filter để mở lại.
 - Tạo nhân viên.
-- Sửa tên/role/trạng thái.
-- Reset PIN.
-- Chỉnh checkbox quyền thao tác theo từng nhân viên đã tồn tại; persist grants/denies tối thiểu so với role mặc định.
-- Bảo vệ rule còn ít nhất một admin hoạt động, kể cả khi hạ role admin cuối; cảnh báo khi admin sửa quyền chính mình.
+- Sửa tên/role/trạng thái đăng nhập trong cùng form; reset PIN inline khi cần.
+- Chỉnh quyền thao tác theo từng nhân viên đã tồn tại bằng switch; có action trở về mặc định vai trò và persist grants/denies tối thiểu.
+- Dirty confirm khi chuyển nhân viên/tạo mới trong lúc form chưa lưu.
+- Bảo vệ rule còn ít nhất một admin hoạt động, kể cả khi hạ role admin cuối; không cho tự tạm khoá tài khoản đang đăng nhập; cảnh báo khi admin sửa role/quyền chính mình vì client cần đăng nhập lại để nhận snapshot mới.
 
 ## Menu Editor
 

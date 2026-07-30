@@ -46,6 +46,6 @@
 
 ## Known Gaps/Risks
 
-- `npm run smoke` trong lần kiểm tra này: 18 passed, 13 skipped, 4 failed ở flow admin mock modules trước khi chạm Order History. Failure nằm tại việc test tìm nút `Huỷ` trong Menu Editor dirty cancel, cần xử lý riêng nếu muốn smoke full xanh.
+- `npm run smoke` tại checkpoint phase 10: 18 passed, 13 skipped, 4 failed ở flow admin mock modules trước khi chạm Order History. Failure nằm tại việc test tìm nút `Huỷ` trong Menu Editor dirty cancel. **Trạng thái lịch sử này đã được các phase sau supersede; baseline 2026-07-30 không còn failure mock smoke.**
 - Search theo tên bàn dùng `tableIds` được map từ floor plan hiện tại; nếu sau này cần search full-text theo customer/payer thì cần mở rộng domain riêng.
 - Customer/payer thật vẫn cần domain riêng nếu sau này muốn lưu người khách thực tế đưa tiền; `Nhân viên thanh toán` hiện là nhân viên POS thực hiện giao dịch.

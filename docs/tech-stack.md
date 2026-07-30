@@ -2,6 +2,19 @@
 
 File này là technical decision record rút gọn. Mỗi quyết định nêu rõ dùng gì, vì sao chọn, không chọn gì, đánh đổi và cách giảm rủi ro.
 
+## Baseline Phiên Bản 2026-07-30
+
+Phiên bản major dùng trong code/report nên ghi theo baseline `main@3d9b64a`; patch/minor chính xác nằm trong `package-lock.json`.
+
+| Nhóm | Phiên bản đang khóa cục bộ |
+| --- | --- |
+| Runtime/build | React 18.3, Vite 8.0, TypeScript 5.9 |
+| Data/state | Supabase JS 2.108, TanStack Query 5.101, Zustand 4.5 |
+| UI | MUI 5.18, Tailwind 3.4, Recharts 2.15, react-hot-toast 2.6, Lucide 0.468 |
+| Test | Vitest 4.1, Playwright 1.60, Testing Library React 15 |
+
+Vite 8 yêu cầu Node `^20.19.0 || >=22.12.0`; môi trường build/deploy phải thỏa engine này.
+
 ## Architectural Pattern: Hexagonal Architecture / Ports & Adapters
 
 - **Quyết định:** dùng Ports & Adapters, lấy cảm hứng từ Hexagonal Architecture.
@@ -36,7 +49,7 @@ File này là technical decision record rút gọn. Mỗi quyết định nêu r
 ## 3. PostgreSQL + RPC + RLS
 
 - **Quyết định:** nghiệp vụ quan trọng chạy qua Postgres tables/RPC/RLS.
-- **Dùng cho:** submit order, pay order, clear demo data, store-scoped data.
+- **Dùng cho:** xác minh PIN, submit order, full/split payment, hủy đơn paid, clear demo data, helper quyền và store-scoped data. RPC hiện hành chính gồm `verify_employee_pin`, `submit_order_changes`, `pay_order`, `pay_order_items`, `void_order`, `clear_demo_data`, `has_employee_permission`.
 - **Vì sao chọn:** order/payment cần transaction, lock version, snapshot giá/tên và consistency bàn/order/payment.
 - **Không chọn:** để client tự tính và ghi nhiều table rời rạc.
 - **Đánh đổi:** SQL/RPC phức tạp hơn CRUD client đơn giản.
@@ -102,7 +115,7 @@ File này là technical decision record rút gọn. Mỗi quyết định nêu r
 - **Đánh đổi:** E2E tốn thời gian hơn unit test và cần data/test mode ổn định.
 - **Giảm rủi ro:** tách `npm run test`, `npm run smoke`, `npm run smoke:supabase`.
 - **Liên quan tới tiểu luận:** có bằng chứng kiểm thử từ logic tới flow demo.
-- **Validation gần nhất (2026-07-22, baseline `main@7a00fd0` + kitchen UI scope fix):** `npm test -- --maxWorkers=1` pass 48 files/252 tests; `npm run build` (tsc strict) pass, còn chunk-size warning đã biết; mock Playwright smoke 34 pass/31 skipped; `npm run smoke:supabase` gần nhất 5/5 ở phase 20.
+- **Validation local gần nhất (2026-07-30, `main@3d9b64a`):** 49 files/257 tests pass, build pass, mock smoke 34 pass/31 skipped/0 failed. Cloud E2E có ngày chạy riêng; xem [testing.md](testing.md) để không trộn môi trường.
 
 ## 10. Browser Print Preview
 
@@ -133,3 +146,13 @@ File này là technical decision record rút gọn. Mỗi quyết định nêu r
 - **Đánh đổi:** chưa cover thanh toán điện tử thật.
 - **Giảm rủi ro:** schema có `payment_method` và `store_settings.qr_info` seam; Payment Settings/QR hiện là preview/local UI, chưa persist qua `settingsRepo` và không claim processing thật.
 - **Liên quan tới tiểu luận:** tập trung vào nghiệp vụ lõi và consistency thay vì tích hợp cổng thanh toán ngoài.
+
+## 13. Deployment & Runtime Mode
+
+- **Quyết định:** frontend build tĩnh bằng Vite và cấu hình deploy Vercel; backend dùng Supabase managed.
+- **Vercel contract:** `npm ci` → `npm run build` → publish `dist`; SPA rewrite mọi path về `index.html`.
+- **Runtime env:** `VITE_DATA_MODE=supabase`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+- **Fallback quan trọng:** khi không ép Supabase mode hoặc thiếu env, `runtimePorts` có thể dùng mock seeded. Vì vậy mở được deployment chưa đủ chứng minh đang nối cloud; phải kiểm tra mode/env và data thật.
+- **Backend prerequisite:** chỉ với database mới/trống, bootstrap migration 001–013 theo thứ tự rồi cấu hình Storage/realtime/Auth. Với database đã có dữ liệu, kiểm tra migration history và chỉ apply forward migration chưa có; **không replay migration 007** vì file này `truncate stores cascade` và không phải đường upgrade an toàn.
+- **Đánh đổi:** deploy nhanh và chi phí thấp, nhưng phụ thuộc trạng thái Supabase/Vercel và cấu hình env.
+- **Mức claim hiện tại:** repository **deployment-ready/configured**. Chỉ claim deployment live đã xác minh khi có URL, commit/version và ngày kiểm tra cụ thể.

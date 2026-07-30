@@ -6,7 +6,7 @@ Khóa boundary kiến trúc, tách adapter/repo theo concern, chuẩn hóa porta
 
 ## Branch/Commit Liên Quan
 
-- Current app truth gần nhất: `origin/main` commit `4bf9764` (`refactor(ui): simplify app shell`).
+- Baseline tại checkpoint phase: `origin/main@4bf9764` (`refactor(ui): simplify app shell`; không phải current truth hiện nay).
 - Các nhánh đã tích hợp vào `main`: `refactor-folder-architecture`, `refactor-portal-overlays`, `fix-drawer-overlay-close`.
 - Nhánh `docs` độc lập, chỉ lưu Markdown knowledge base.
 

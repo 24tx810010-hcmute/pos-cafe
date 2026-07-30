@@ -6,7 +6,7 @@ Rework thẩm mỹ và UX cho POS core: floor view, order drawer, payment drawer
 
 ## Branch/Commit Liên Quan
 
-- Current app truth gần nhất: `origin/main` commit `4bf9764`.
+- Baseline tại checkpoint phase: `origin/main@4bf9764` (không phải current truth hiện nay).
 - UI redesign context: `docs/ui-redesign-context.md`.
 - Snapshot cũ đã archive: `docs/archive/superpowers/ui-redesign-handoff/2026-06-20-main-flow-snapshot.md`.
 

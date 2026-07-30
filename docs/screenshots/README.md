@@ -16,4 +16,5 @@ Folder này chỉ giữ chỉ mục Markdown cho screenshot/UI baseline. Nhánh 
 
 - Không commit ảnh/prototype vào nhánh `docs`; branch này chỉ giữ `.md`.
 - Nếu cần giữ ảnh cũ, lưu ngoài nhánh docs hoặc trong artefact báo cáo riêng.
-- Khi UI core thay đổi đáng kể, chụp lại floor, order, payment và takeaway trước; với scope hiện tại cần giữ thêm baseline cho modifier picker, transform handles, instant pay và flow hủy đơn paid/report sau hủy. Không đưa kitchen vào bộ current cho đến khi feature được mở lại.
+- Khi UI core thay đổi đáng kể, chụp lại floor, order, payment và takeaway trước; với scope hiện tại cần giữ thêm baseline cho Employees Drawer hai pane, modifier picker, transform handles, instant pay và flow hủy đơn paid/report sau hủy. Không đưa kitchen vào bộ current cho đến khi feature được mở lại.
+- Screenshot dùng trong báo cáo phải ghi baseline commit/ngày và lưu ngoài nhánh `docs`; bộ 2026-06-20 không phải evidence UI cho `main@3d9b64a`.

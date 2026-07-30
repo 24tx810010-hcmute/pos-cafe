@@ -6,7 +6,7 @@ Triển khai các track sản phẩm chính sau foundation: POS order/payment, m
 
 ## Branch/Commit Liên Quan
 
-- Current app truth gần nhất: `origin/main` commit `4bf9764`.
+- Baseline tại checkpoint tổng hợp phase: `origin/main@4bf9764` (không phải current truth hiện nay).
 - Tài liệu gốc: `docs/archive/superpowers/specs/2026-06-11-pos-cafe-parallel-task-phases.md`.
 
 ## Feature Đã Implement
