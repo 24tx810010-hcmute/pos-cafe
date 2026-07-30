@@ -2,6 +2,8 @@
 
 Data model dùng PostgreSQL/Supabase với **15 bảng nghiệp vụ chính**, thiết kế theo store-scoped multi-tenant: hầu hết bảng nghiệp vụ có `store_id`, UUID primary key, `created_at`, `updated_at`, và một số bảng editor có `deleted_at` để xóa mềm.
 
+> **Quy tắc dùng cho báo cáo:** file này mô tả trạng thái dữ liệu cuối cùng. Tên migration, tên file SQL và symbol code chỉ là nguồn kiểm chứng nội bộ, không đưa vào báo cáo. Báo cáo tập trung vào ERD, bảng, trường, kiểu dữ liệu, PK/FK, quan hệ, constraint và quy tắc nghiệp vụ.
+
 ## ERD Rút Gọn
 
 ```mermaid
@@ -63,7 +65,7 @@ erDiagram
 - Seed demo upsert theo `id`/`seed_key` và clear `deleted_at`/`deleted_by_employee_id` trên các bảng editor (cashier dùng `is_active`) nên idempotent với `clear_demo_data`.
 - Employee role quyết định default permission và module navigation; override từng nhân viên chỉ thay đổi quyền hành động, không mở thêm module trên nav.
 - UI hiện hành chỉ hỗ trợ `admin` và `cashier`. Giá trị `kitchen` vẫn tồn tại trong enum/database/core như seam tương lai, nhưng bị lọc khỏi màn PIN, Employees Drawer và app navigation.
-- `employees.permission_overrides` (migration 011) là **quyền theo hành động** tách khỏi quyền vào module: shape `{"grants": [...], "denies": [...]}`. Quyền hiệu lực = (default theo role ∪ grants) − denies (denies luôn thắng). Mặc định `null` (mọi người theo role). Từ phase 20, Employees Drawer chỉnh switch quyền hiệu lực và persist diff tối thiểu; `undefined` trong update DTO nghĩa là không đụng field, `null` nghĩa là xóa override.
+- `employees.permission_overrides` là **quyền theo hành động** tách khỏi quyền vào module: shape `{"grants": [...], "denies": [...]}`. Quyền hiệu lực = (default theo role ∪ grants) − denies (denies luôn thắng). Mặc định `null` (mọi người theo role). Employees Drawer chỉnh switch quyền hiệu lực và persist diff tối thiểu; `undefined` trong update DTO nghĩa là không đụng field, `null` nghĩa là xóa override.
 - Catalog runtime hiện có đúng 5 mã được enforce: `order.create`, `order.update`, `order.voidOpen`, `payment.take`, `order.voidPaid`. Mapper Supabase lọc bỏ mã ngoài catalog.
 - Permission vẫn là app-layer authorization; RPC check chỉ để phòng thủ/audit, **không** phải DB-secured — employee id vẫn spoof được với session store hợp lệ.
 - `store_settings.qr_info` là seam schema cho QR/bank sau này; drawer Payment Settings hiện là preview/local UI, chưa persist field này qua `settingsRepo`.
@@ -94,7 +96,7 @@ erDiagram
 
 - Floor editor chỉ chỉnh layout, không ghi đè `table.status`.
 - `table.status` do order/payment flow cập nhật.
-- `tables.background_asset_key` lưu public path của một trong 11 ảnh nền bàn built-in. `null` là contract nền trắng mặc định cho bàn cũ và bàn mới; migration 013 thêm cột này cho database hiện hữu.
+- `tables.background_asset_key` lưu public path của một trong 11 ảnh nền bàn built-in. `null` là contract nền trắng mặc định cho bàn cũ và bàn mới.
 - Catalog/resolver chỉ render key thuộc bộ asset đóng gói; key lạ hoặc thiếu fallback về nền trắng. Trạng thái bàn vẫn thể hiện bằng border, không được mã hóa vào ảnh nền.
 - Decor không nhận order và không xuất hiện trong nghiệp vụ bàn.
 - `floor_decor_items.asset_key` lưu đường dẫn asset built-in của ứng dụng. Catalog hiện có 9 texture tường và 131 PNG trang trí; thay catalog không cần đổi schema.
@@ -102,7 +104,7 @@ erDiagram
 
 ## Nhóm Order
 
-- `orders`: order number theo business date, loại order, table nullable, subtotal/discount/total, status, employee, lock version, và metadata hủy (`voided_at`, `voided_by_employee_id`, `void_reason_code`, `void_reason_note` — migration 011).
+- `orders`: order number theo business date, loại order, table nullable, subtotal/discount/total, status, employee, lock version, và metadata hủy (`voided_at`, `voided_by_employee_id`, `void_reason_code`, `void_reason_note`).
 - `order_items`: snapshot item name, quantity, unit price, note, status.
 - `order_item_options`: snapshot option name, price delta và **`quantity`** (số lượng modifier; nhóm single luôn 1, nhóm multi cho >1).
 
@@ -122,7 +124,7 @@ erDiagram
 Ý nghĩa:
 
 - Phase này payment UI dùng cash-only.
-- **Instant pay (split-order, migration 010)**: thanh toán một phần = `pay_order_items` **tách các món được chọn ra một ĐƠN MỚI độc lập** (UUID client cấp) và pay đơn đó ngay trong cùng transaction. Hai đơn không liên kết gì nhau — chỉ chung `table_id` lúc thanh toán. Đơn gốc còn lại trên bàn là đơn `open` bình thường (sửa/void được); bàn chỉ trống khi đơn gốc được trả nốt (qua `pay_order`).
+- **Instant pay (split-order)**: thanh toán một phần = tách các món được chọn ra một **đơn mới độc lập** và thanh toán đơn đó ngay trong cùng transaction. Hai đơn không liên kết dữ liệu — chỉ chung bàn tại thời điểm thanh toán. Đơn gốc còn lại trên bàn là đơn mở bình thường; bàn chỉ trống khi phần còn lại được thanh toán.
 - **Quy tắc đánh số**: bill trả trước mang `order_no` nhỏ hơn — đơn tách kế thừa số của đơn gốc, đơn gốc nhận số mới (max+1 theo `business_date`). Bàn #12 trả 2 lần → bill #12, phần còn lại thành #13, bill #13.
 - Trả một phần số lượng của một dòng (vd 1 trong 2 Cà phê sữa) → tách dòng: dòng mới (UUID client cấp qua `splitItemId`) thuộc **đơn tách**; dòng gốc giảm quantity. Options của dòng tách là snapshot copy (id server cấp).
 - Report tính order `paid` theo `business_date` — **mỗi lần thu vào report NGAY** vì đơn tách paid tức thì (không có trạng thái "tiền đã thu nhưng chưa ghi nhận"). Không có bảng tổng hợp lưu sẵn nên khi một đơn chuyển `paid → void`, doanh thu ngày/tháng tự loại đơn đó ra (không cần bút toán điều chỉnh).
@@ -131,33 +133,15 @@ erDiagram
 
 ## RPC Chính
 
-- `has_employee_permission` (migration 012): helper SQL áp default theo role + grants/denies. Bảng default bị lặp với TypeScript `core/guards.ts` (TypeScript là source of truth), nên E2E deny-permission phải được chạy sau khi apply migration để phát hiện drift.
-- `submit_order_changes`: tạo/cập nhật order mở, snapshot giá/tên/options, cập nhật table occupied/empty, in ticket khi có order mở. Migration 012 giữ nguyên chữ ký và yêu cầu lần lượt `order.create`, `order.update` hoặc `order.voidOpen` theo nhánh mutation.
-- `pay_order`: tạo payment, set order paid, set table empty, trả payload receipt; migration 012 giữ nguyên chữ ký và yêu cầu `payment.take`.
-- `pay_order_items`: instant pay tách đơn — validate từng dòng + tính tiền phía server, swap `order_no` (đơn tách kế thừa số, đơn gốc nhận số mới), move/tách dòng sang đơn mới, tạo payment và set đơn mới `paid` ngay, tính lại tổng + bump `lock_version` đơn gốc. Từ chối selection phủ 100% đơn (client phải dùng `pay_order`). Trả về thông tin đơn tách (`orderId/orderNo/total/receipt`) + đơn gốc (`sourceOrderId/sourceOrderNo/sourceTotal/sourceLockVersion`). Migration 012 giữ nguyên chữ ký và yêu cầu `payment.take`.
-- `void_order` (migration 011, thay stub reserved cũ): hủy một đơn **đã thanh toán**. Tham số `(p_order_id, p_employee_id, p_expected_lock_version, p_reason_code, p_reason_note)`. Check quyền `order.voidPaid` (role admin hoặc grant override, denies thắng), validate `reason_code` (5 giá trị; `other` bắt buộc có note), khóa đơn `for update`, chỉ nhận `status='paid'` + đúng `lock_version` (sai → `ORDER_VERSION_CONFLICT`), rồi set `void` + metadata hủy + bump version. Không đụng total/order_no/paid_at/payment/bàn.
-- `verify_employee_pin` (migration 011): trả thêm cột `permission_overrides` để client dựng quyền của nhân viên đang đăng nhập.
+> Phần này là traceability kỹ thuật cho developer/AI triển khai. Khi viết báo cáo, phải chuyển thành mô tả transaction và quy tắc nghiệp vụ; không liệt kê tên hàm, chữ ký hoặc error code nội bộ.
+
+- `has_employee_permission`: helper SQL áp default theo role + grants/denies. Bảng default bị lặp với TypeScript source-of-truth, nên E2E deny-permission dùng để phát hiện drift.
+- `submit_order_changes`: tạo/cập nhật order mở, snapshot giá/tên/options, cập nhật table occupied/empty và yêu cầu quyền phù hợp theo nhánh tạo/sửa/hủy đơn mở.
+- `pay_order`: tạo payment, set order paid, set table empty, trả payload receipt và yêu cầu quyền thanh toán.
+- `pay_order_items`: instant pay tách đơn — validate từng dòng + tính tiền phía server, đổi số đơn theo thứ tự thanh toán, move/tách dòng sang đơn mới, tạo payment và set đơn mới paid ngay, tính lại tổng + bump `lock_version` đơn gốc.
+- `void_order`: hủy một đơn đã thanh toán; kiểm tra quyền/lý do/version, khóa đơn, ghi metadata hủy và giữ nguyên dữ liệu thanh toán để audit.
+- `verify_employee_pin`: xác minh PIN và trả dữ liệu cần để client dựng quyền của nhân viên đang đăng nhập.
 - `clear_demo_data`: admin-only, block nếu còn open orders, xóa mềm dữ liệu seed và giữ admin.
-
-## Migration Ledger
-
-| Migration | Vai trò | Ghi chú báo cáo/vận hành |
-| --- | --- | --- |
-| 001 | Schema + enum nền, 14 bảng ban đầu | Schema tạo mới đã được backfill một số cột từ phase sau |
-| 002 | Index, trigger `updated_at`, RLS | RLS cô lập theo store Auth user |
-| 003 | RPC nền | PIN, submit/pay/clear demo và stub ban đầu |
-| 004 | Realtime publication | Publish các bảng sync chính |
-| 005 | Storage ảnh món | Bucket/policy public-read, store-scoped write |
-| 006 | `menu_items.image_asset_key` | Tương thích DB hiện hữu |
-| 007 | Wipe dữ liệu toàn bộ | **Destructive:** `truncate stores cascade`; chỉ dùng khi chủ động reset demo/dev và đã chấp nhận mất dữ liệu |
-| 008 | Shared modifier rework | Thêm bảng nối thứ 15 và quantity modifier; đi sau reset/rework |
-| 009 | Partial payment bản đầu | Transitional; thêm artifact partial-cùng-đơn |
-| 010 | Split-order instant pay | Bản chốt; gỡ/rework artifact của 009 |
-| 011 | Void paid + permission seam | Metadata hủy, `permission_overrides`, `void_order` |
-| 012 | Action permission guardrails | Guard ba RPC order/payment và helper quyền |
-| 013 | Nền bàn nullable | `tables.background_asset_key` |
-
-Đối với database mới/trống, bootstrap đúng thứ tự 001–013. Với database đã có dữ liệu, kiểm tra migration history và chỉ apply forward migration chưa có; **không replay 007** vì đây là bước lịch sử phá hủy dữ liệu, không phải đường upgrade an toàn. Migration 009 không phải mô hình cuối và được 010 supersede.
 
 ## Domain Types Trong App
 
@@ -172,9 +156,9 @@ erDiagram
 ## Menu Image Storage
 
 - Bucket Supabase Storage: `menu-item-images`.
-- Migration `005_menu_item_images_storage.sql` tạo/cập nhật bucket public, giới hạn 5MB, MIME JPG/PNG/WebP và policy public-read/store-scoped write; migration `006_menu_item_image_asset_key.sql` bổ sung cột asset key cho database hiện hữu.
+- Supabase Storage dùng bucket public, giới hạn 5MB, MIME JPG/PNG/WebP và policy public-read/store-scoped write; database lưu asset key của ảnh món.
 - `menu_items.image_asset_key` lưu asset key theo dạng `menu-item-images/{store_id}/menu-items/{menu_item_id}/{uuid}.{ext}`.
 - Bucket public để POS render ảnh nhanh; upload/update/delete bị giới hạn bằng Storage RLS theo thư mục `auth.uid()`.
 - File hỗ trợ JPG, PNG, WebP, tối đa 5MB; UI chặn file lớn hơn giới hạn này trước khi upload.
 - Detail preview trong Menu Editor giữ ảnh không crop để nhân viên kiểm tra file đã chọn; card món trong Menu Editor và Order Drawer dùng `object-cover` để lấp đầy khung card.
-- Database hiện hữu phải áp cả migration 005 (bucket/policy) và 006 (cột `menu_items.image_asset_key`); schema mới đã có cột này trong bảng `menu_items`.
+- Mọi môi trường phải có đồng thời policy Storage phù hợp và cột `menu_items.image_asset_key`.

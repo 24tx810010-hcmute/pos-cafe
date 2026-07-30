@@ -2,6 +2,34 @@
 
 Nhánh `docs` là **nguồn dữ liệu để viết báo cáo**, không phải bản Word hoàn chỉnh. Baseline current-truth được audit ngày **2026-07-30** theo `main@3d9b64a`.
 
+## Quy Tắc Cứng Cho AI Tổng Hợp Báo Cáo
+
+Khi dùng nhánh này để viết báo cáo tiểu luận, AI **không được sao chép hoặc đưa trực tiếp artefact triển khai vào nội dung báo cáo**, gồm:
+
+- Source code hoặc code snippet.
+- Tên/đường dẫn file, folder và test file trong repository.
+- Tên class, function, hook, component hoặc biến nội bộ.
+- Commit hash, branch, pull request hoặc lịch sử Git.
+- Tên/số từng migration như `001`–`013`, nội dung SQL hoặc migration ledger.
+- Lệnh terminal, package config, environment variable hoặc chi tiết setup nội bộ.
+
+Các artefact trên chỉ được dùng nội bộ để:
+
+- Kiểm chứng một claim là đúng với code hiện hành.
+- Suy ra bảng, trường, kiểu dữ liệu, PK/FK, quan hệ và constraint cuối cùng.
+- Hiểu luồng nghiệp vụ, transaction, phân quyền, kiểm thử và giới hạn.
+- Hỗ trợ triển khai hoặc bảo trì dự án, không phải làm nội dung báo cáo.
+
+Khi chuyển thông tin sang báo cáo, AI phải diễn đạt ở mức **bài toán, yêu cầu, thiết kế, kiến trúc, mô hình dữ liệu, thuật toán/luồng nghiệp vụ và kết quả kiểm thử**. Dùng văn xuôi, bảng, ERD, flowchart hoặc pseudocode khái quát; không thay bằng code thật.
+
+Riêng chương cơ sở dữ liệu:
+
+- Trình bày trạng thái schema cuối cùng, không kể lịch sử từng migration.
+- Nêu bảng, trường quan trọng, kiểu dữ liệu, PK/FK, cardinality, constraint và quy tắc nghiệp vụ.
+- Có thể nói một câu rằng schema được quản lý bằng SQL migration có phiên bản; không liệt kê tên/số/file migration.
+
+Chỉ được đưa code/file/migration vào **phụ lục** khi người dùng yêu cầu rõ hoặc mẫu báo cáo bắt buộc. Trước khi làm vậy phải hỏi lại người dùng và chỉ trích phần tối thiểu cần thiết.
+
 ## Thứ Tự Tin Cậy
 
 1. Code, tests và SQL migrations trên `main`.
@@ -35,7 +63,7 @@ Nếu có mâu thuẫn, kiểm tra code/migration trước rồi cập nhật ro
 
 ## Các Claim An Toàn
 
-- Có thể claim app có 15 bảng nghiệp vụ ở final migration state, 13 migration file theo chuỗi 001–013 và RPC transaction cho order/payment.
+- Có thể claim app có 15 bảng nghiệp vụ ở trạng thái schema cuối cùng, schema được quản lý bằng migration có phiên bản và order/payment dùng transaction phía database; không liệt kê migration cụ thể trong báo cáo.
 - Có thể claim local baseline ngày 2026-07-30 đạt 257/257 test và 34 mock smoke pass; phải giữ riêng evidence cloud.
 - Có thể claim áp dụng Ports & Adapters theo hướng Hexagonal Architecture; không nên claim textbook hexagonal tuyệt đối.
 - Có thể claim RLS cô lập store; không claim employee PIN là DB identity hoặc quyền per-employee chống client độc hại.
@@ -56,5 +84,6 @@ Nếu có mâu thuẫn, kiểm tra code/migration trước rồi cập nhật ro
 - Chỉ đưa tính năng `Đã triển khai` từ [requirements.md](requirements.md).
 - Dẫn các tính năng hoãn sang chương hướng phát triển, không mô tả như chức năng hiện có.
 - Dùng [testing.md](testing.md) làm nguồn duy nhất cho số liệu baseline kiểm thử.
+- Chuyển evidence kỹ thuật thành mô tả thiết kế; không sao chép code, đường dẫn file, symbol, commit, migration hoặc lệnh terminal.
 - Chụp lại UI/diagram theo checklist và lưu trong artefact báo cáo riêng.
 - Rà lại deployment URL và cloud migration trước ngày nộp/bảo vệ.

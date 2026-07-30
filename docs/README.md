@@ -39,6 +39,13 @@ Folder này là knowledge base hiện tại của dự án POS Cafe và là ngu�
 
 Phase log cũ có thể chứa test/gap đúng tại thời điểm đó nhưng đã được phase sau supersede. Khi viết báo cáo, dùng [testing.md](testing.md) cho số liệu baseline hiện tại và [report-source-map.md](report-source-map.md) để tránh overclaim.
 
+## Quy Tắc Cho AI Viết Báo Cáo
+
+- Bắt buộc đọc và tuân theo [report-source-map.md](report-source-map.md), đặc biệt mục “Quy Tắc Cứng Cho AI Tổng Hợp Báo Cáo”.
+- Code, tên file/symbol, commit, migration, SQL và lệnh terminal chỉ dùng để kiểm chứng hoặc suy ra thiết kế; không đưa trực tiếp vào báo cáo.
+- Báo cáo phải trình bày thông tin đã tổng hợp ở mức yêu cầu, kiến trúc, dữ liệu, nghiệp vụ, kiểm thử và giới hạn.
+- Chỉ đưa artefact triển khai vào phụ lục khi người dùng yêu cầu rõ hoặc mẫu báo cáo bắt buộc.
+
 ## Khi Nào Nên Đọc
 
 - Đọc root docs trước khi làm feature, viết báo cáo, chuẩn bị demo hoặc giao việc cho agent khác.

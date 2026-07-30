@@ -9,6 +9,7 @@ Folder này ghi nhật ký implement theo phase. Mục tiêu là track nhanh nh�
 - Current truth được audit ngày **2026-07-30** theo `main@3d9b64a`.
 - Phase log là evidence lịch sử tại checkpoint. Test failure, TODO hoặc giới hạn trong phase cũ có thể đã được phase sau supersede; dùng root docs và [../testing.md](../testing.md) để kết luận trạng thái hiện tại.
 - Không đổi chữ “pass/fail” lịch sử thành current truth. Khi cần làm rõ, thêm ghi chú “đã được phase sau supersede”.
+- Tên file, symbol, commit, migration và lệnh trong phase log chỉ phục vụ truy vết kỹ thuật. AI viết báo cáo phải chuyển chúng thành mô tả mục tiêu, cách tiếp cận, quyết định và kết quả; không sao chép artefact triển khai vào nội dung chính.
 
 ## Khi Nào Nên Đọc
 
