@@ -1,6 +1,6 @@
 # Requirements & Traceability
 
-Tài liệu này chuyển phạm vi hiện hành thành yêu cầu có mã để dùng trong báo cáo tiểu luận và truy vết sang tính năng, thiết kế và kiểm thử. Baseline được đối chiếu ngày **2026-07-30** là `main@3d9b64a`.
+Tài liệu này chuyển phạm vi hiện hành thành yêu cầu có mã để dùng trong báo cáo tiểu luận và truy vết sang tính năng, thiết kế và kiểm thử. Baseline được đối chiếu ngày **2026-07-30** là `main@b7b7262`.
 
 > Cột **Bằng chứng chính** là traceability nội bộ cho AI/developer. Khi viết báo cáo, không sao chép tên code, file, symbol hoặc migration từ cột này; chỉ dùng chúng để kiểm chứng rồi diễn đạt lại yêu cầu và thiết kế ở mức hệ thống.
 

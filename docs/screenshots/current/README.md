@@ -2,7 +2,7 @@
 
 ## Folder Này Chứa Gì
 
-Bộ screenshot gần nhất từng được chụp ngày 2026-06-20 để dùng cho audit/redesign. Ảnh binary đã được loại khỏi nhánh `docs` để nhánh này chỉ còn `.md`. Bộ cũ này **không đại diện đầy đủ** cho baseline `main@3d9b64a`; trước khi viết báo cáo cần chụp mới và ghi commit/ngày trong artefact ngoài nhánh docs.
+Bộ screenshot gần nhất từng được chụp ngày 2026-06-20 để dùng cho audit/redesign. Ảnh binary đã được loại khỏi nhánh `docs` để nhánh này chỉ còn `.md`. Bộ cũ này **không đại diện đầy đủ** cho baseline `main@b7b7262`; trước khi viết báo cáo cần chụp mới và ghi commit/ngày trong artefact ngoài nhánh docs.
 
 ## Khi Nào Nên Đọc
 

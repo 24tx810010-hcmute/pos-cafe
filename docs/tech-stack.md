@@ -4,7 +4,7 @@ File này là technical decision record rút gọn. Mỗi quyết định nêu r
 
 ## Baseline Phiên Bản 2026-07-30
 
-Phiên bản major dùng trong code/report nên ghi theo baseline `main@3d9b64a`; patch/minor chính xác nằm trong `package-lock.json`.
+Phiên bản major dùng trong code/report nên ghi theo baseline `main@b7b7262`; patch/minor chính xác nằm trong `package-lock.json`.
 
 | Nhóm | Phiên bản đang khóa cục bộ |
 | --- | --- |
@@ -34,7 +34,7 @@ Vite 8 yêu cầu Node `^20.19.0 || >=22.12.0`; môi trường build/deploy ph�
 - **Đánh đổi:** không có routing/server rendering built-in; API/backend phải do Supabase đảm nhiệm.
 - **Giảm rủi ro:** app là single URL POS nên không cần SSR; navigation dùng Zustand/internal state.
 - **Liên quan tới tiểu luận:** chứng minh ưu tiên đúng bài toán POS realtime nội bộ thay vì dùng framework nặng hơn scope.
-- **Form hiện tại:** controlled state + validation thủ công. `react-hook-form`, `@hookform/resolvers` và `zod` có trong dependency nhưng chưa được import trong `src`, nên không tính là công nghệ đã áp dụng trong báo cáo hiện trạng.
+- **Form hiện tại:** controlled state + validation thủ công. `react-hook-form`, `@hookform/resolvers` và `zod` không được sử dụng nên đã bị gỡ khỏi dependency ở `main@b7b7262`; không liệt kê chúng như công nghệ của báo cáo hiện trạng.
 
 ## 2. Supabase
 
@@ -115,7 +115,7 @@ Vite 8 yêu cầu Node `^20.19.0 || >=22.12.0`; môi trường build/deploy ph�
 - **Đánh đổi:** E2E tốn thời gian hơn unit test và cần data/test mode ổn định.
 - **Giảm rủi ro:** tách `npm run test`, `npm run smoke`, `npm run smoke:supabase`.
 - **Liên quan tới tiểu luận:** có bằng chứng kiểm thử từ logic tới flow demo.
-- **Validation local gần nhất (2026-07-30, `main@3d9b64a`):** 49 files/257 tests pass, build pass, mock smoke 34 pass/31 skipped/0 failed. Cloud E2E có ngày chạy riêng; xem [testing.md](testing.md) để không trộn môi trường.
+- **Validation local gần nhất (2026-07-30, `main@b7b7262`):** 49 files/257 tests pass, build pass, mock smoke 34 pass/31 skipped/0 failed. Cloud E2E có ngày chạy riêng; xem [testing.md](testing.md) để không trộn môi trường.
 
 ## 10. Browser Print Preview
 

@@ -1,6 +1,6 @@
 # Thesis Report Source Map
 
-Nhánh `docs` là **nguồn dữ liệu để viết báo cáo**, không phải bản Word hoàn chỉnh. Baseline current-truth được audit ngày **2026-07-30** theo `main@3d9b64a`.
+Nhánh `docs` là **nguồn dữ liệu để viết báo cáo**, không phải bản Word hoàn chỉnh. Baseline current-truth được audit ngày **2026-07-30** theo `main@b7b7262`.
 
 ## Quy Tắc Cứng Cho AI Tổng Hợp Báo Cáo
 
@@ -73,7 +73,7 @@ Nếu có mâu thuẫn, kiểm tra code/migration trước rồi cập nhật ro
 ## Artefact Còn Cần Bổ Sung Ngoài Nhánh Docs
 
 - File Word theo mẫu của trường, trang bìa, thông tin sinh viên/giảng viên và quy định định dạng.
-- Screenshot mới từ `main@3d9b64a`, sơ đồ kiến trúc/ERD đã render và hình minh họa demo.
+- Screenshot mới từ `main@b7b7262`, sơ đồ kiến trúc/ERD đã render và hình minh họa demo.
 - URL deployment live, ngày kiểm tra, cấu hình môi trường đã che secret.
 - Tài liệu tham khảo học thuật/chính thức cho React, PostgreSQL, Supabase, realtime, RLS và kiến trúc.
 - Kết quả khảo sát người dùng hoặc benchmark nếu báo cáo yêu cầu; repository hiện chưa có dữ liệu này.

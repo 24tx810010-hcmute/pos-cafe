@@ -16,7 +16,7 @@ Tài liệu này gom bằng chứng kiểm thử hiện hành để dùng trong 
 
 ## Baseline Local Hiện Tại
 
-Kiểm tra trực tiếp ngày **2026-07-30** trên `main@3d9b64a`:
+Kiểm tra trực tiếp ngày **2026-07-30** trên `main@b7b7262`:
 
 | Lệnh | Kết quả |
 | --- | --- |

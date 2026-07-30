@@ -1,6 +1,6 @@
 # Limitations & Future Work
 
-Tài liệu này ghi các giới hạn đã biết của `main@3d9b64a`, lý do chưa triển khai và hướng mở rộng. Đây là nguồn cho chương hạn chế/hướng phát triển của báo cáo; không được biến seam hoặc UI preview thành tính năng hoàn chỉnh.
+Tài liệu này ghi các giới hạn đã biết của `main@b7b7262`, lý do chưa triển khai và hướng mở rộng. Đây là nguồn cho chương hạn chế/hướng phát triển của báo cáo; không được biến seam hoặc UI preview thành tính năng hoàn chỉnh.
 
 ## Bảo Mật Và Phân Quyền
 

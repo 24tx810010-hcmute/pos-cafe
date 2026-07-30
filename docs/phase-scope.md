@@ -61,7 +61,7 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 
 ## Scope Update 2026-07-30
 
-- Root docs được audit lại theo `main@3d9b64a` và chuẩn hóa thành source material cho báo cáo.
+- Root docs được audit lại theo `main@b7b7262` và chuẩn hóa thành source material cho báo cáo.
 - Order history filter, report master/detail và các catalog floor đã là **implemented**, không còn nằm trong nhóm “làm nếu kịp”.
 - Bổ sung traceability yêu cầu, baseline kiểm thử, giới hạn và hướng phát triển; tách rõ bằng chứng local, cloud và deployment readiness.
 

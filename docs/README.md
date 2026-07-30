@@ -1,6 +1,6 @@
 # POS Cafe Documentation
 
-Folder này là knowledge base hiện tại của dự án POS Cafe và là nguồn dữ liệu để viết báo cáo tiểu luận. Baseline current-truth gần nhất được audit ngày **2026-07-30** theo `main@3d9b64a`. Mục tiêu là đọc nhanh được bài toán, yêu cầu, scope, tính năng, data model, kiến trúc, công nghệ, kiểm thử, giới hạn, demo flow và nhật ký implement mà không phải mở code trước.
+Folder này là knowledge base hiện tại của dự án POS Cafe và là nguồn dữ liệu để viết báo cáo tiểu luận. Baseline current-truth gần nhất được audit ngày **2026-07-30** theo `main@b7b7262`. Mục tiêu là đọc nhanh được bài toán, yêu cầu, scope, tính năng, data model, kiến trúc, công nghệ, kiểm thử, giới hạn, demo flow và nhật ký implement mà không phải mở code trước.
 
 ## Đọc Nhanh Theo Nhu Cầu
 

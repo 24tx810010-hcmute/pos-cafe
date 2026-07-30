@@ -38,7 +38,7 @@ Phase tiểu luận ưu tiên demo end-to-end:
 
 ## Trạng Thái Gần Nhất
 
-- App truth được đối chiếu lại ngày **2026-07-30** từ baseline `main@3d9b64a`; chuỗi migration hiện hành là 001–013. Migration 013 đã được apply/verify trước lần audit. Kitchen đã được chốt future-only và loại khỏi các entry point UI hiện hành.
+- App truth được đối chiếu lại ngày **2026-07-30** từ baseline `main@b7b7262`; chuỗi migration hiện hành là 001–013. Migration 013 đã được apply/verify trước lần audit. Kitchen đã được chốt future-only và loại khỏi các entry point UI hiện hành.
 - Nhánh `docs` là nhánh tài liệu độc lập, chỉ giữ file `.md` để đọc nhanh; không merge vào `main` và không chứa source app/binary artifact.
 - Mock mode và local test cover core flow cùng các admin module. Cloud E2E gần nhất cover một tập 5 flow integration gồm tạo/pay/history/report, instant pay, hủy đơn paid, realtime và deny-permission; không suy rộng thành toàn bộ admin UI đã chạy E2E trên cloud.
 - Kiến trúc hiện có boundary guard bằng TypeScript import scanner, ports/adapters rõ layer, split Supabase/mock adapters, device print port no-op + receipt preview UI, portal popup/drawer primitives và quyền theo hành động per-employee (`permission_overrides`, `hasPermission`/`requirePermission`) đã enforce ở 5 action runtime.
