@@ -26,7 +26,7 @@ export type BusinessDateRange = {
 
 export type HistoryOrderRow = {
   id: string;
-  orderNo: number;
+  displayNo: number;
   createdAt: string;
   tableLabel: string;
   orderType: OrderSummary["orderType"];
@@ -104,9 +104,20 @@ export const tableLabelForOrder = (order: Pick<OrderSummary, "orderType" | "tabl
   return tables.get(order.tableId) ?? order.tableId;
 };
 
-export const historyRowFromOrder = (order: OrderSummary, tables: Map<string, string>): HistoryOrderRow => ({
+export const historyDisplayNo = (
+  total: number,
+  page: number,
+  pageSize: number,
+  index: number,
+): number => total - (page - 1) * pageSize - index;
+
+export const historyRowFromOrder = (
+  order: OrderSummary,
+  tables: Map<string, string>,
+  displayNo: number,
+): HistoryOrderRow => ({
   id: order.id,
-  orderNo: order.orderNo,
+  displayNo,
   createdAt: formatBusinessDate(order.businessDate),
   tableLabel: tableLabelForOrder(order, tables),
   orderType: order.orderType,

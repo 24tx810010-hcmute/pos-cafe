@@ -117,9 +117,14 @@ export class SupabaseOrderRepo implements IOrderRepo {
     let query = this.client
       .from("orders")
       .select(orderFields, { count: "exact" })
-      .in("status", filter.status ? [filter.status] : ["paid", "void"])
-      .gte("business_date", filter.fromDate)
-      .lte("business_date", filter.toDate);
+      .in("status", filter.status ? [filter.status] : ["paid", "void"]);
+
+    if (filter.fromDate) {
+      query = query.gte("business_date", filter.fromDate);
+    }
+    if (filter.toDate) {
+      query = query.lte("business_date", filter.toDate);
+    }
 
     if (filter.orderType) {
       query = query.eq("order_type", filter.orderType);

@@ -393,20 +393,22 @@ describe("Supabase adapter ports", () => {
     });
   });
 
-  it("limits Supabase order history to completed orders", async () => {
+  it("loads paginated completed order history without requiring a date range", async () => {
     const { client, chain } = createOrderHistoryQueryClient();
     const ports = createSupabasePorts(client as never);
 
     await ports.order.listOrderHistory({
-      fromDate: "2026-06-12",
-      toDate: "2026-06-12",
       page: 2,
-      pageSize: 8,
+      pageSize: 20,
     });
 
     expect(client.from).toHaveBeenCalledWith("orders");
     expect(chain.in).toHaveBeenCalledWith("status", ["paid", "void"]);
-    expect(chain.range).toHaveBeenCalledWith(8, 15);
+    expect(chain.gte).not.toHaveBeenCalled();
+    expect(chain.lte).not.toHaveBeenCalled();
+    expect(chain.order).toHaveBeenNthCalledWith(1, "business_date", { ascending: false });
+    expect(chain.order).toHaveBeenNthCalledWith(2, "order_no", { ascending: false });
+    expect(chain.range).toHaveBeenCalledWith(20, 39);
   });
 
   it("applies Supabase order history filters before pagination", async () => {

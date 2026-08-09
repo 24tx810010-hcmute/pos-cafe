@@ -143,7 +143,8 @@ export class MockOrderRepo implements IOrderRepo {
     const tableIds = new Set(filter.tableIds ?? []);
     const items = this.state.orders
       .filter((order) => order.status !== "open")
-      .filter((order) => order.businessDate >= filter.fromDate && order.businessDate <= filter.toDate)
+      .filter((order) => !filter.fromDate || order.businessDate >= filter.fromDate)
+      .filter((order) => !filter.toDate || order.businessDate <= filter.toDate)
       .filter((order) => !filter.status || order.status === filter.status)
       .filter((order) => !filter.orderType || order.orderType === filter.orderType)
       .filter((order) => {

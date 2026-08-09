@@ -112,6 +112,8 @@ describe("Order history — void paid order", () => {
     await waitFor(() => expect(voidButton).not.toBeDisabled());
     await user.click(voidButton);
 
+    expect(await screen.findByRole("heading", { name: "Hủy đơn #1" })).toBeInTheDocument();
+
     await user.selectOptions(await screen.findByTestId("history-void-reason"), "duplicate");
     await user.click(screen.getByTestId("history-void-confirm"));
 

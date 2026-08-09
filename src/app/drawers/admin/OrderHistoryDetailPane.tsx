@@ -20,7 +20,7 @@ interface OrderHistoryDetailPaneProps {
   voidedByLabel: string;
   voidedTimeLabel: string;
   onReprint: () => void;
-  onCopyOrderNo: () => void;
+  onCopyDisplayNo: () => void;
   onRetry: () => void;
   onVoid: () => void;
 }
@@ -39,7 +39,7 @@ export function OrderHistoryDetailPane({
   voidedByLabel,
   voidedTimeLabel,
   onReprint,
-  onCopyOrderNo,
+  onCopyDisplayNo,
   onRetry,
   onVoid,
 }: OrderHistoryDetailPaneProps) {
@@ -48,7 +48,7 @@ export function OrderHistoryDetailPane({
       <div className="flex min-h-[54px] items-center justify-between gap-2 border-b border-pos-line px-3 py-2 max-[760px]:min-h-[44px] max-[760px]:px-2">
         <div className="min-w-0">
           <h3 className="m-0 truncate text-[15px] font-black text-pos-ink max-[760px]:text-[13px]">
-            {selected ? `Chi tiết đơn #${selected.orderNo}` : "Chi tiết đơn"}
+            {selected ? `Chi tiết đơn #${selected.displayNo}` : "Chi tiết đơn"}
           </h3>
           <p className="m-0 mt-0.5 truncate text-[11px] font-semibold text-pos-muted max-[760px]:hidden">
             {selected ? `${selected.tableLabel} · ${selected.createdAt}` : "Chọn một đơn bên trái"}
@@ -58,7 +58,7 @@ export function OrderHistoryDetailPane({
           <IconButton disabled={!selected || selected.status === "void"} label="In lại hóa đơn" onClick={onReprint}>
             <Printer size={16} />
           </IconButton>
-          <IconButton disabled={!selected} label="Sao chép mã đơn" onClick={onCopyOrderNo}>
+          <IconButton disabled={!selected} label="Sao chép mã đơn" onClick={onCopyDisplayNo}>
             <Copy size={16} />
           </IconButton>
           <IconButton disabled={!selected} label="Tải lại chi tiết" onClick={onRetry}>
@@ -91,7 +91,7 @@ export function OrderHistoryDetailPane({
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-2">
                   <strong className="truncate text-[24px] font-black leading-tight text-pos-ink max-[760px]:text-[17px]">
-                    #{selected.orderNo}
+                    #{selected.displayNo}
                   </strong>
                   <span
                     className={clsx(

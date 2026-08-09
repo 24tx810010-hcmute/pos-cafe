@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { businessRangeFor } from "./historyHelpers";
+import { businessRangeFor, historyDisplayNo } from "./historyHelpers";
 
 describe("historyHelpers", () => {
   it("builds rolling and normalized custom business date ranges", () => {
@@ -11,5 +11,12 @@ describe("historyHelpers", () => {
       fromDate: "2026-06-18",
       toDate: "2026-06-20",
     });
+  });
+
+  it("numbers recent history from the filtered total across pages", () => {
+    expect(historyDisplayNo(45, 1, 20, 0)).toBe(45);
+    expect(historyDisplayNo(45, 1, 20, 19)).toBe(26);
+    expect(historyDisplayNo(45, 2, 20, 0)).toBe(25);
+    expect(historyDisplayNo(45, 2, 20, 19)).toBe(6);
   });
 });

@@ -7,8 +7,8 @@ export const posQueryKeys = {
   order: (orderId: string | null) => ["orders", "detail", orderId] as const,
   reportsRoot: ["report"] as const,
   orderHistory: (
-    fromDate: string,
-    toDate: string,
+    fromDate: string | undefined,
+    toDate: string | undefined,
     page: number,
     pageSize: number,
     status?: string,

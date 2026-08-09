@@ -83,7 +83,7 @@ export function OrderHistoryListPane({
               onClick={onClearFilters}
               className="min-h-9 rounded-[8px] border border-pos-line bg-white px-3 text-sm font-black text-pos-ink hover:border-pos-primary"
             >
-              Xem hôm nay
+              Xem gần đây
             </button>
           </div>
         ) : (
@@ -104,7 +104,7 @@ export function OrderHistoryListPane({
                 <div className="min-w-0">
                   <div className="flex min-w-0 items-center gap-2">
                     <strong className="truncate text-[18px] font-black text-pos-ink max-[760px]:text-[14px]">
-                      #{order.orderNo}
+                      #{order.displayNo}
                     </strong>
                     <span
                       className={clsx(

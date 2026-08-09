@@ -128,6 +128,35 @@ describe("mock repositories", () => {
     });
   });
 
+  it("paginates recent completed orders across business dates without overlap", async () => {
+    const state = createSeededMockState();
+    const baseOrder = state.orders.find((order) => order.id === "ord-paid-1")!;
+    state.orders = Array.from({ length: 45 }, (_, index) => {
+      const isMostRecentBusinessDate = index < 12;
+      return {
+        ...baseOrder,
+        id: `ord-history-${index + 1}`,
+        businessDate: isMostRecentBusinessDate ? "2026-06-14" : "2026-06-13",
+        orderNo: isMostRecentBusinessDate ? index + 1 : index - 11,
+        status: index === 0 ? "void" as const : "paid" as const,
+      };
+    });
+    const ports = createMockPorts(state);
+
+    const firstPage = await ports.order.listOrderHistory({ page: 1, pageSize: 20 });
+    const secondPage = await ports.order.listOrderHistory({ page: 2, pageSize: 20 });
+    const firstPageIds = firstPage.items.map((order) => order.id);
+    const secondPageIds = secondPage.items.map((order) => order.id);
+
+    expect(firstPage.total).toBe(45);
+    expect(firstPage.items).toHaveLength(20);
+    expect(secondPage.items).toHaveLength(20);
+    expect(firstPage.items[0]).toMatchObject({ businessDate: "2026-06-14", orderNo: 12 });
+    expect(firstPage.items.some((order) => order.businessDate === "2026-06-13")).toBe(true);
+    expect(firstPage.items.some((order) => order.status === "void")).toBe(true);
+    expect(firstPageIds.filter((id) => secondPageIds.includes(id))).toEqual([]);
+  });
+
   it("keeps newly paid mock orders visible in today's order history", async () => {
     const ports = createMockPorts(createSeededMockState());
     const order = await ports.order.getOrder("ord-b02");

@@ -1,6 +1,6 @@
 import { Button } from "@mui/material";
 import clsx from "clsx";
-import { CalendarDays, ChevronDown, RefreshCw, Search, X } from "lucide-react";
+import { CalendarDays, ChevronDown, RefreshCw, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { hasPermission } from "@/core/guards";
@@ -16,8 +16,10 @@ import {
   businessDateInTimezone,
   businessRangeFor,
   formatBusinessDate,
+  historyDisplayNo,
   historyRowFromOrder,
   tableNameMap,
+  type BusinessDateRange,
   type HistoryDateRange,
   type HistoryOrderTypeFilter,
   type HistoryStatusFilter,
@@ -30,9 +32,12 @@ import { OrderHistoryDetailPane } from "./OrderHistoryDetailPane";
 import { OrderHistoryListPane } from "./OrderHistoryListPane";
 import { IconButton } from "./orderHistoryShared";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 20;
 
-const dateRangeOptions: Array<{ key: HistoryDateRange; label: string }> = [
+type OrderHistoryRange = "recent" | HistoryDateRange;
+
+const dateRangeOptions: Array<{ key: OrderHistoryRange; label: string }> = [
+  { key: "recent", label: "Gần đây" },
   { key: "today", label: "Hôm nay" },
   { key: "7days", label: "7 ngày" },
   { key: "month", label: "Tháng này" },
@@ -59,11 +64,10 @@ export function OrderHistoryDrawer() {
   const employeesQuery = useAdminEmployeesQuery();
   const floorQuery = useFloorPlanQuery();
   const voidMutation = useVoidOrderMutation();
-  const [dateRange, setDateRange] = useState<HistoryDateRange>("today");
+  const [dateRange, setDateRange] = useState<OrderHistoryRange>("recent");
   const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<HistoryStatusFilter>("all");
   const [orderTypeFilter, setOrderTypeFilter] = useState<HistoryOrderTypeFilter>("all");
-  const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [voidConfirmOpen, setVoidConfirmOpen] = useState(false);
@@ -77,29 +81,18 @@ export function OrderHistoryDrawer() {
   const today = businessDateInTimezone(new Date(), timezone);
   const [customFrom, setCustomFrom] = useState(today);
   const [customTo, setCustomTo] = useState(today);
-  const selectedRange = useMemo(
-    () => businessRangeFor(dateRange, today, customFrom, customTo),
+  const selectedRange = useMemo<Partial<BusinessDateRange>>(
+    () => dateRange === "recent" ? {} : businessRangeFor(dateRange, today, customFrom, customTo),
     [customFrom, customTo, dateRange, today],
   );
 
   const tables = useMemo(() => tableNameMap(floorQuery.data), [floorQuery.data]);
-  const normalizedSearch = search.trim();
-  const matchedTableIds = useMemo(() => {
-    if (!normalizedSearch) return undefined;
-    const query = normalizedSearch.toLowerCase();
-    const ids = Array.from(tables.entries())
-      .filter(([, tableName]) => tableName.toLowerCase().includes(query))
-      .map(([tableId]) => tableId);
-    return ids.length > 0 ? ids : undefined;
-  }, [normalizedSearch, tables]);
   const historyQuery = useOrderHistoryQuery({
     ...selectedRange,
     page,
     pageSize: PAGE_SIZE,
     status: statusFilter === "all" ? undefined : statusFilter,
     orderType: orderTypeFilter === "all" ? undefined : orderTypeFilter,
-    search: normalizedSearch || undefined,
-    tableIds: matchedTableIds,
   });
   const detailQuery = useOrderDetailQuery(selectedId);
 
@@ -108,8 +101,12 @@ export function OrderHistoryDrawer() {
     [employeesQuery.data],
   );
   const historyRows = useMemo(
-    () => (historyQuery.data?.items ?? []).map((order) => historyRowFromOrder(order, tables)),
-    [historyQuery.data?.items, tables],
+    () => (historyQuery.data?.items ?? []).map((order, index) => historyRowFromOrder(
+      order,
+      tables,
+      historyDisplayNo(historyQuery.data?.total ?? 0, page, PAGE_SIZE, index),
+    )),
+    [historyQuery.data?.items, historyQuery.data?.total, page, tables],
   );
 
   const filtered = historyRows;
@@ -118,7 +115,7 @@ export function OrderHistoryDrawer() {
   const selected = historyRows.find((order) => order.id === selectedId) ?? null;
   const selectedDetail = detailQuery.data?.id === selectedId ? detailQuery.data : null;
   const selectedPayment = selectedDetail?.payment ?? null;
-  const selectedDateLabel = dateRangeOptions.find((option) => option.key === dateRange)?.label ?? "Hôm nay";
+  const selectedDateLabel = dateRangeOptions.find((option) => option.key === dateRange)?.label ?? "Gần đây";
   const cashierLabel = selectedPayment?.employeeId
     ? employeeNames.get(selectedPayment.employeeId) ?? selectedPayment.employeeId
     : "Chưa ghi nhận";
@@ -153,7 +150,7 @@ export function OrderHistoryDrawer() {
     setSelectedId(null);
   };
 
-  const selectDateRange = (range: HistoryDateRange) => {
+  const selectDateRange = (range: OrderHistoryRange) => {
     setDateRange(range);
     resetList();
     if (range !== "custom") {
@@ -172,11 +169,11 @@ export function OrderHistoryDrawer() {
     if (selectedId && filtered.some((order) => order.id === selectedId)) return;
     setSelectedId(filtered[0].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [historyQuery.data, statusFilter, orderTypeFilter, search]);
+  }, [historyQuery.data, statusFilter, orderTypeFilter]);
 
-  const copyOrderNo = () => {
+  const copyDisplayNo = () => {
     if (!selected) return;
-    const text = `#${selected.orderNo}`;
+    const text = `#${selected.displayNo}`;
     void navigator.clipboard?.writeText(text);
     toast.success(`Đã sao chép ${text}`);
   };
@@ -196,10 +193,9 @@ export function OrderHistoryDrawer() {
   };
 
   const clearFilters = () => {
-    setDateRange("today");
+    setDateRange("recent");
     setStatusFilter("all");
     setOrderTypeFilter("all");
-    setSearch("");
     resetList();
   };
 
@@ -210,7 +206,7 @@ export function OrderHistoryDrawer() {
   };
 
   const confirmVoid = async () => {
-    if (!currentEmployee || !selectedDetail || isVoiding) return;
+    if (!currentEmployee || !selected || !selectedDetail || isVoiding) return;
     setIsVoiding(true);
     // Lấy lock_version tươi ngay trước khi hủy: cache order detail có thể còn phiên bản
     // cũ (vd version lúc đơn còn mở, trước khi thanh toán) và gây conflict giả.
@@ -236,7 +232,7 @@ export function OrderHistoryDrawer() {
       },
       {
         onSuccess: () => {
-          toast.success(`Đã hủy đơn #${order.orderNo}`);
+          toast.success(`Đã hủy đơn #${selected.displayNo}`);
           setVoidConfirmOpen(false);
         },
         onError: (error) => {
@@ -250,7 +246,9 @@ export function OrderHistoryDrawer() {
     );
   };
 
-  const dateRangeLabel = `${formatBusinessDate(selectedRange.fromDate)} - ${formatBusinessDate(selectedRange.toDate)}`;
+  const dateRangeLabel = dateRange === "recent"
+    ? "Toàn bộ thời gian · mới nhất trước"
+    : `${formatBusinessDate(selectedRange.fromDate!)} - ${formatBusinessDate(selectedRange.toDate!)}`;
 
   return (
     <PortalDrawer testId="order-history-drawer" onOutsideClick={closeDrawer}>
@@ -273,13 +271,16 @@ export function OrderHistoryDrawer() {
               className="inline-flex h-10 items-center gap-2 rounded-[9px] border border-pos-primaryLine bg-pos-primarySoft px-3 text-sm font-black text-pos-primary transition-colors hover:border-pos-primary max-[760px]:h-9 max-[760px]:px-2 max-[760px]:text-xs"
             >
               <CalendarDays size={17} />
-              <span className="max-[640px]:max-w-[70px] max-[640px]:truncate">{selectedDateLabel}</span>
+              <span className="max-[640px]:max-w-[70px] max-[640px]:truncate">
+                <span className="max-[640px]:hidden">Thời gian: </span>
+                {selectedDateLabel}
+              </span>
               <ChevronDown size={16} />
             </button>
 
             {isDateMenuOpen && (
               <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-[292px] rounded-[10px] border border-pos-line bg-white p-2 shadow-[0_18px_45px_rgb(15_23_42_/_16%)] max-[760px]:right-[-44px] max-[760px]:w-[260px]">
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-1 gap-1.5">
                   {dateRangeOptions.map((option) => (
                     <button
                       type="button"
@@ -287,7 +288,7 @@ export function OrderHistoryDrawer() {
                       data-testid={`history-date-range-${option.key}`}
                       onClick={() => selectDateRange(option.key)}
                       className={clsx(
-                        "min-h-9 rounded-[8px] border px-2 text-sm font-extrabold transition-colors max-[760px]:text-xs",
+                        "min-h-9 rounded-[8px] border px-3 text-left text-sm font-extrabold transition-colors max-[760px]:text-xs",
                         dateRange === option.key
                           ? "border-pos-primary bg-pos-primary text-white"
                           : "border-pos-line bg-pos-surface2 text-pos-ink hover:border-pos-primaryLine",
@@ -330,23 +331,6 @@ export function OrderHistoryDrawer() {
               </div>
             )}
           </div>
-
-          <label className="relative block w-[230px] max-[900px]:w-[184px] max-[700px]:w-[132px]">
-            <Search
-              size={16}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-pos-muted max-[760px]:left-2"
-            />
-            <input
-              data-testid="history-search"
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                resetList();
-              }}
-              placeholder="Mã đơn, bàn..."
-              className="h-10 w-full rounded-[9px] border border-pos-line bg-pos-surface2 pl-9 pr-3 text-sm font-semibold text-pos-ink outline-none transition-colors placeholder:text-pos-muted focus:border-pos-primary max-[760px]:h-9 max-[760px]:pl-7 max-[760px]:text-xs"
-            />
-          </label>
 
           <IconButton label="Làm mới danh sách" onClick={() => void historyQuery.refetch()}>
             <RefreshCw size={17} />
@@ -433,7 +417,7 @@ export function OrderHistoryDrawer() {
             voidedByLabel={voidedByLabel}
             voidedTimeLabel={voidedTimeLabel}
             onReprint={reprintReceipt}
-            onCopyOrderNo={copyOrderNo}
+            onCopyDisplayNo={copyDisplayNo}
             onRetry={() => void detailQuery.refetch()}
             onVoid={openVoidConfirm}
           />
@@ -449,7 +433,7 @@ export function OrderHistoryDrawer() {
           onOutsideClick={() => setVoidConfirmOpen(false)}
         >
           <div className="grid w-[min(420px,92vw)] gap-3 rounded-pos bg-pos-surface p-6 shadow-[0_20px_60px_rgb(0_0_0_/_25%)] max-[760px]:p-4">
-            <h3 className="m-0 text-lg font-black text-pos-ink">Hủy đơn #{selected.orderNo}</h3>
+            <h3 className="m-0 text-lg font-black text-pos-ink">Hủy đơn #{selected.displayNo}</h3>
             <p className="m-0 rounded-[8px] border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-sm font-semibold text-[#991b1b]">
               Đơn {formatVndShort(selectedDetail?.total ?? selected.total)} sẽ bị loại khỏi doanh thu ngày {selected.createdAt}. Thao tác không thể hoàn tác.
             </p>

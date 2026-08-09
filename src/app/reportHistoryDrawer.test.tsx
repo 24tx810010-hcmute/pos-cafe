@@ -59,11 +59,15 @@ const resetAppStoreForDrawer = (drawer: "orderHistory" | "report") => {
   });
 };
 
-const renderDrawer = (drawer: "orderHistory" | "report") => {
+const renderDrawer = (
+  drawer: "orderHistory" | "report",
+  configureState?: (state: MockState, businessDate: string) => void,
+) => {
   const state = createSeededMockState();
   state.session = { storeId: "store-demo-001", storeNo: 1 };
   const businessDate = businessDateForTest();
   seedOrdersForToday(state, businessDate);
+  configureState?.(state, businessDate);
   const ports = createMockPorts(state);
   const historySpy = vi.spyOn(ports.order, "listOrderHistory");
   const detailSpy = vi.spyOn(ports.order, "getOrder");
@@ -104,21 +108,52 @@ afterEach(() => {
 describe("Report and history drawers", () => {
   it("loads order history through the order history port and fetches selected order detail", async () => {
     const user = userEvent.setup();
-    const { businessDate, detailSpy, historySpy } = renderDrawer("orderHistory");
+    const { detailSpy, historySpy } = renderDrawer("orderHistory");
 
     await waitFor(() =>
       expect(historySpy).toHaveBeenCalledWith({
-        fromDate: businessDate,
-        toDate: businessDate,
         page: 1,
-        pageSize: 8,
+        pageSize: 20,
       }),
     );
+    expect(screen.getByTestId("history-date-filter-button")).toHaveTextContent("Thời gian: Gần đây");
 
     await user.click(await screen.findByTestId("history-row-ord-paid-1"));
 
     await waitFor(() => expect(detailSpy).toHaveBeenCalledWith("ord-paid-1"));
     expect(await screen.findByText(/Latte/)).toBeInTheDocument();
+  });
+
+  it("renders unique presentation numbers for repeated daily order numbers and keeps UUID selection", async () => {
+    const user = userEvent.setup();
+    const { detailSpy } = renderDrawer("orderHistory", (state, businessDate) => {
+      const baseOrder = state.orders.find((order) => order.id === "ord-paid-1")!;
+      state.orders = [
+        { ...structuredClone(baseOrder), id: "ord-history-new", orderNo: 2, status: "void" },
+        { ...structuredClone(baseOrder), id: "ord-history-middle", orderNo: 1 },
+        {
+          ...structuredClone(baseOrder),
+          id: "ord-history-old",
+          orderNo: 1,
+          businessDate: shiftBusinessDate(businessDate, -2),
+        },
+      ];
+    });
+
+    const newestRow = await screen.findByTestId("history-row-ord-history-new");
+    const middleRow = screen.getByTestId("history-row-ord-history-middle");
+    const oldestRow = screen.getByTestId("history-row-ord-history-old");
+    expect(within(newestRow).getByText("#3")).toBeInTheDocument();
+    expect(within(middleRow).getByText("#2")).toBeInTheDocument();
+    expect(within(oldestRow).getByText("#1")).toBeInTheDocument();
+
+    await user.click(middleRow);
+    await waitFor(() => expect(detailSpy).toHaveBeenCalledWith("ord-history-middle"));
+    expect(await screen.findByText("Chi tiết đơn #2")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Đã hủy" }));
+    expect(within(await screen.findByTestId("history-row-ord-history-new")).getByText("#1")).toBeInTheDocument();
+    expect(await screen.findByText("Chi tiết đơn #1")).toBeInTheDocument();
   });
 
   it("shows paid order payment snapshot in the receipt summary", async () => {
@@ -166,7 +201,7 @@ describe("Report and history drawers", () => {
         fromDate,
         toDate: businessDate,
         page: 1,
-        pageSize: 8,
+        pageSize: 20,
       }),
     );
   });
