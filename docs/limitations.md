@@ -1,6 +1,6 @@
 # Limitations & Future Work
 
-Tài liệu này ghi các giới hạn đã biết của `main@b7b7262`, lý do chưa triển khai và hướng mở rộng. Đây là nguồn cho chương hạn chế/hướng phát triển của báo cáo; không được biến seam hoặc UI preview thành tính năng hoàn chỉnh.
+Tài liệu này ghi các giới hạn đã biết của `main@c7f2f4e` (rà soát lại toàn bộ ngày 2026-08-12), lý do chưa triển khai và hướng mở rộng. Đây là nguồn cho chương hạn chế/hướng phát triển của báo cáo; không được biến seam hoặc UI preview thành tính năng hoàn chỉnh.
 
 ## Bảo Mật Và Phân Quyền
 
@@ -52,7 +52,7 @@ Tài liệu này ghi các giới hạn đã biết của `main@b7b7262`, lý do 
 
 - Ứng dụng landscape-first; portrait chỉ đưa hướng dẫn xoay thay vì cung cấp toàn bộ POS workflow.
 - Exit animation drawer/popup còn là polish tùy chọn.
-- Bundle chính còn vượt ngưỡng cảnh báo 500 KB; baseline build ngày 2026-07-30 khoảng 1.34 MB minified/368 KB gzip cho JS.
+- Bundle chính còn vượt ngưỡng cảnh báo 500 KB; build xác minh lại ngày 2026-08-12 cho một chunk JS duy nhất 1.342,81 KB minified / 367,59 KB gzip (CSS 62,61 KB / 12,17 KB gzip). Chưa có code splitting.
 - Catalog asset built-in làm tăng static deployment; chưa có pipeline tối ưu/chuyển toàn bộ ảnh phù hợp sang WebP.
 - Chưa có tìm kiếm/favorite/quản lý vòng đời cho asset decor và nền bàn.
 

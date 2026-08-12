@@ -143,4 +143,4 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 - Playwright smoke kiểm tra flow demo chính và khả năng mở module/drawer.
 - Supabase smoke riêng dùng config `playwright.supabase.config.ts` khi cần kiểm tra cloud/realtime.
 - `architectureBoundaries.test.ts` dùng TypeScript AST scanner để kiểm tra hướng import và ngăn Supabase/browser leak vào layer cấm.
-- Baseline local ngày 2026-07-30 đạt 49 files/257 tests và mock smoke 34 pass/31 skipped/0 failed; bằng chứng cloud có ngày chạy riêng. Ma trận và gap đầy đủ ở [testing.md](testing.md).
+- Baseline local ngày 2026-08-12 đạt 49 files/260 tests và mock smoke 34 pass/31 skipped/0 failed; bằng chứng cloud có ngày chạy riêng. Ma trận và gap đầy đủ ở [testing.md](testing.md).

@@ -16,19 +16,19 @@ Tài liệu này gom bằng chứng kiểm thử hiện hành để dùng trong 
 
 ## Baseline Local Hiện Tại
 
-Kiểm tra trực tiếp ngày **2026-07-30** trên `main@b7b7262`:
+Kiểm tra trực tiếp ngày **2026-08-12** trên `main@c7f2f4e`:
 
 | Lệnh | Kết quả |
 | --- | --- |
-| `npm test` | **49/49 test files, 257/257 tests pass** |
-| `npm run build` | TypeScript strict + Vite production build pass |
-| `npm run smoke` | **34 passed, 31 skipped, 0 failed** trong 65 case/project combinations |
+| `npm test` | **49/49 test files, 260/260 tests pass** trong 15,4 giây |
+| `npm run build` | TypeScript strict + Vite production build pass, 3196 module trong 1,62 giây |
+| `npm run smoke` | **34 passed, 31 skipped, 0 failed** trong 65 case/project combinations, 22,9 giây |
 
 Ghi chú:
 
 - 31 case skipped chủ yếu do test chỉ áp dụng cho một số viewport hoặc portrait guard; không phải 31 lỗi.
-- Build tạo bundle JS khoảng 1.34 MB minified, khoảng 368 KB gzip và còn Vite chunk-size warning trên 500 KB.
-- `npm run smoke:supabase` không được chạy lại ngày 2026-07-30 vì phụ thuộc credential và cloud state; không được gộp với kết quả local ở trên.
+- Build tạo một chunk JS duy nhất 1.342,81 KB minified / 367,59 KB gzip (CSS 62,61 KB / 12,17 KB gzip) và còn Vite chunk-size warning trên 500 KB.
+- `npm run smoke:supabase` không được chạy lại ngày 2026-08-12 vì phụ thuộc credential và cloud state; không được gộp với kết quả local ở trên.
 
 ## Bằng Chứng Cloud Gần Nhất
 
@@ -37,7 +37,7 @@ Ghi chú:
 | 2026-07-19, phase 20 | `npm run smoke:supabase`: **5/5 pass** | Tạo/pay/history/report, void paid, instant pay, realtime và deny `payment.take` qua RPC |
 | 2026-07-27, phase 23 | PostgREST read-only HTTP 200 | Migration 013, `tables.background_asset_key` và full floor-plan select |
 
-Không claim rằng toàn bộ 257 local tests đã chạy trên Supabase. Cloud suite là một tập flow E2E nhỏ hơn, có mục tiêu kiểm chứng integration/RPC.
+Không claim rằng toàn bộ 260 local tests đã chạy trên Supabase. Cloud suite là một tập flow E2E nhỏ hơn, có mục tiêu kiểm chứng integration/RPC.
 
 ## Nhóm Bằng Chứng Quan Trọng
 
