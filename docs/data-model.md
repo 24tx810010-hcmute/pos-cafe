@@ -32,7 +32,7 @@ erDiagram
 - `store_settings.store_id` là PK/FK nên mỗi store có tối đa một settings row; create-store flow luôn tạo row này, nhưng schema riêng lẻ vẫn cho phép store có 0 settings.
 - `menu_items.category_id` thuộc cùng store; modifier dùng bảng nối nhiều-nhiều `menu_item_option_groups`.
 - `tables` và `floor_decor_items` thuộc một `floor_area`; order dine-in có `table_id`, takeaway để `null`.
-- `order_items`/`order_item_options` là snapshot để lịch sử không đổi khi menu sửa sau này.
+- `order_items`/`order_item_options` là snapshot để lịch sử không đổi khi menu sửa sau này. Bất biến này chỉ chắc chắn với đơn **đã chốt** (`paid`/`void`); đơn còn `open` sẽ bị định giá lại theo menu hiện tại ở lần sửa kế tiếp — xem [limitations.md](limitations.md#giá-và-ghi-nhận-doanh-thu).
 - `order_no` unique theo `(store_id, business_date, order_no)`; `lock_version` bảo vệ update cạnh tranh.
 - App/RPC hiện tạo tối đa một payment cho một order paid, nhưng schema **không có unique constraint** trên `payments.order_id`; đây là invariant nghiệp vụ, không phải ràng buộc DB tuyệt đối.
 
@@ -113,7 +113,8 @@ erDiagram
 - `business_date` lấy theo timezone của store, không theo timezone máy.
 - `order_no` unique theo `(store_id, business_date, order_no)`.
 - `lock_version` dùng để phát hiện stale/conflict khi nhiều máy cùng thao tác (tách đơn instant pay cũng bump version đơn gốc).
-- Replace order lines không hard-delete item cũ; item cũ được mark `removed`.
+- Replace order lines không hard-delete item cũ; item cũ được mark `removed`. Dòng mới luôn lấy lại tên/giá từ menu hiện tại, nên mỗi lần sửa đơn mở là một lần re-snapshot **toàn bộ** đơn chứ không chỉ dòng thay đổi.
+- `business_date` chốt lúc tạo đơn và không đổi khi sửa; đơn mở qua ngày vẫn thuộc business date cũ.
 - Hủy đơn có 2 đường khác nhau: (1) đơn `open` bị hủy trước thanh toán = submit toàn bộ quantity 0 (đặt `total=0`, trả bàn, `paid_at` vẫn null); (2) đơn `paid` bị hủy = RPC `void_order` — **giữ nguyên** `total`/`order_no`/`business_date`/`paid_at` và payment row (audit + report tính đúng), chỉ đổi `status='void'`, ghi metadata hủy, bump `lock_version`, không đụng bàn. Dấu `paid_at is not null` phân biệt đơn "hủy sau khi đã thu tiền" với đơn "hủy trước thanh toán".
 
 ## Nhóm Payment & Report

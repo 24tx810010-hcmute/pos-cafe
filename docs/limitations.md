@@ -1,6 +1,6 @@
 # Limitations & Future Work
 
-Tài liệu này ghi các giới hạn đã biết của `main@c7f2f4e` (rà soát lại toàn bộ ngày 2026-08-12), lý do chưa triển khai và hướng mở rộng. Đây là nguồn cho chương hạn chế/hướng phát triển của báo cáo; không được biến seam hoặc UI preview thành tính năng hoàn chỉnh.
+Tài liệu này ghi các giới hạn đã biết của `main@c7f2f4e` (rà soát lại toàn bộ ngày 2026-08-12; bổ sung mục giá/doanh thu ngày 2026-08-15), lý do chưa triển khai và hướng mở rộng. Đây là nguồn cho chương hạn chế/hướng phát triển của báo cáo; không được biến seam hoặc UI preview thành tính năng hoàn chỉnh.
 
 ## Bảo Mật Và Phân Quyền
 
@@ -29,6 +29,18 @@ Tài liệu này ghi các giới hạn đã biết của `main@c7f2f4e` (rà so�
 - Chưa có refund, discount/voucher, price override, mở két, ca làm việc hoặc kiểm két.
 
 **Hướng phát triển:** provider abstraction cho thanh toán điện tử, transaction/refund ledger, constraint hoặc invariant DB phù hợp và liên kết bill tách nếu nghiệp vụ cần truy vết.
+
+## Giá Và Ghi Nhận Doanh Thu
+
+Rà soát ngày 2026-08-15 trên `main@c7f2f4e`. Chuỗi đóng băng giá là `menu_items.price` → `order_items.unit_price` (snapshot lúc submit) → `orders.total` → doanh thu report; report chỉ `sum(orders.total)` theo `business_date` của đơn `paid`, không join lại menu. Nhờ vậy **đơn đã thanh toán không bao giờ bị đổi giá hồi tố** khi menu sửa sau đó. Các giới hạn dưới đây nằm ở rìa của cơ chế này, chưa được xử lý.
+
+- **Sửa đơn mở làm định giá lại toàn bộ đơn.** `submit_order_changes` theo mô hình replace-submit: mọi dòng cũ bị mark `removed` rồi chèn lại từ đầu theo giá menu **hiện tại**, không có nhánh giữ giá cũ cho dòng không đổi. Đơn mở từ trước khi đổi giá, nếu sau đó được thêm/bớt món, sẽ tính lại giá mới cho **cả những món gọi trước khi đổi giá**, không riêng dòng mới.
+- **Đơn qua ngày ghi doanh thu vào ngày cũ với giá mới.** `business_date` chốt một lần lúc tạo đơn và không cập nhật khi sửa. Kết hợp với điểm trên: đơn tạo hôm trước, sửa và thanh toán hôm sau thì doanh thu cộng vào report của **ngày tạo đơn** nhưng theo **giá của ngày thanh toán**. Biểu đồ doanh thu theo giờ dùng `paid_at` (giờ thực) nên report ngày cũ có thể xuất hiện cột giờ thuộc ngày kế tiếp.
+- **Ẩn/xóa món khóa luôn thao tác sửa các đơn mở có món đó.** Vì replace-submit validate lại mọi dòng, một món `is_available=false` hoặc đã tombstone sẽ làm **cả lần sửa** thất bại (`MENU_ITEM_UNAVAILABLE`), kể cả khi thao tác thực tế chỉ là bớt một món khác. Đơn còn lại chỉ có thể thanh toán nguyên trạng hoặc hủy.
+- **Không có lịch sử giá menu.** Đổi giá là UPDATE tại chỗ trên `menu_items.price`; không có bảng price history hay hiệu lực theo thời gian. Muốn truy "giá món A ngày X" chỉ có thể suy ngược từ `order_items` của các đơn ngày đó, và không suy được nếu ngày đó món không bán ra.
+- **Cột giảm giá tồn tại nhưng chưa dùng.** `orders.discount_type`/`discount_value` luôn bị RPC ghi đè `none`/0 và `total := subtotal`. Đây là schema seam, không phải tính năng.
+
+**Hướng phát triển:** cho replace-submit giữ `unit_price` của dòng không đổi (so khớp theo món + option + note) thay vì lấy lại giá menu; quyết định rõ đơn qua ngày thuộc business date nào và có rebase khi thanh toán hay không; tách validate món hết hàng theo từng dòng để không chặn cả lần sửa; thêm price history nếu cần đối soát theo thời điểm; hiện thực discount trước khi mở khuyến mãi/voucher.
 
 ## In Ấn Và Bếp
 
@@ -71,7 +83,8 @@ Tài liệu này ghi các giới hạn đã biết của `main@c7f2f4e` (rà so�
 ## Thứ Tự Ưu Tiên Đề Xuất
 
 1. Bổ sung realtime subscription cho `menu_item_option_groups`.
-2. Chụp screenshot/diagram và xác minh deployment live cho báo cáo.
-3. Code splitting và tối ưu asset để xử lý chunk-size warning.
-4. Siết employee security boundary nếu dùng ngoài môi trường demo tin cậy.
-5. Chọn một hướng sản phẩm lớn tiếp theo: kitchen, thanh toán điện tử hoặc offline-first; không mở đồng thời cả ba.
+2. Giữ giá dòng không đổi khi replace-submit, và tách validate món hết hàng theo từng dòng.
+3. Chụp screenshot/diagram và xác minh deployment live cho báo cáo.
+4. Code splitting và tối ưu asset để xử lý chunk-size warning.
+5. Siết employee security boundary nếu dùng ngoài môi trường demo tin cậy.
+6. Chọn một hướng sản phẩm lớn tiếp theo: kitchen, thanh toán điện tử hoặc offline-first; không mở đồng thời cả ba.
