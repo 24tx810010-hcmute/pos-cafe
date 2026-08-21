@@ -77,6 +77,30 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
   - `clear_demo_data`
 - RPC đảm bảo lock/version, order number, snapshot giá/tên/options, status order/table và payment consistency. Mỗi lần tách đơn cũng bump `lock_version` của đơn gốc nên các máy khác nhận tín hiệu như mọi mutation khác.
 
+### Bảo đảm ACID
+
+Mỗi RPC là một plpgsql function nên toàn bộ thân hàm chạy trong **một transaction ngầm** — không migration nào có `begin`/`commit` tường minh, và cũng không cần. **Atomicity** và **Durability** đến từ PostgreSQL. Phần dự án chủ động thiết kế là **Isolation** và **Consistency**, làm theo bốn lớp:
+
+| Lớp | Cơ chế | Chặn tình huống |
+| --- | --- | --- |
+| Serialize ghi POS | `pg_advisory_xact_lock(hashtext(store_id \|\| ':pos-write'))` | Hai thiết bị cùng ghi POS trong một store chèn nhau |
+| Cấp số đơn | `pg_advisory_xact_lock(hashtext(store_id \|\| ':' \|\| business_date))` | Hai đơn cùng đọc `max(order_no)` rồi cùng ghi một số |
+| Row lock | `select ... for update` trên `orders`, `tables`, `order_items` | Đọc-rồi-ghi trên dòng đang bị transaction khác sửa |
+| Optimistic lock | So `orders.lock_version` với `p_expected_lock_version` | Client gửi thay đổi dựa trên snapshot cũ → `ORDER_VERSION_CONFLICT` |
+
+**Consistency** dựa vào constraint `unique (store_id, business_date, order_no)` (migration 001). Chính constraint này buộc luồng tách đơn phải đổi `order_no` của đơn gốc **trước** để nhả số cũ cho đơn tách, nếu không sẽ vi phạm unique giữa chừng (migration 010).
+
+**Phủ không đồng đều:** `submit_order_changes`, `pay_order` và `pay_order_items` dùng đủ bốn lớp. `void_order` (migration 011) chỉ dùng row lock + optimistic lock, **không** lấy advisory lock — nó chỉ đổi `status` của đúng một đơn `paid` và không cấp `order_no` mới, nên row lock đã đủ, và việc bỏ advisory lock tránh chặn bán hàng khi admin hủy đơn cũ.
+
+**Điểm nghẽn đã biết:** advisory lock `':pos-write'` dùng **một khóa duy nhất cho mọi thao tác ghi POS của cả store**. Hai thu ngân gửi đơn cho hai bàn khác nhau vẫn phải xếp hàng chờ nhau. Với một quán vài thiết bị thì không cảm nhận được, và đổi lại là mô hình lý luận rất đơn giản: ghi POS trong một store là tuần tự. Cần đo lại thời gian giữ khóa nếu:
+
+- Thêm việc vào trong cùng transaction — ví dụ trừ tồn kho theo định lượng làm kéo dài thời gian giữ khóa.
+- Quán đông với nhiều thiết bị ghi liên tục.
+
+Hướng thu hẹp nếu cần: hạ phạm vi khóa xuống theo `table_id` hoặc `order_id` cho phần ghi đơn, giữ khóa theo `business_date` riêng cho việc cấp `order_no`.
+
+**Ranh giới của bảo đảm:** mọi bảo đảm trên chỉ có **bên trong một lời gọi RPC**. Một chuỗi nhiều RPC từ client không phải một transaction, nên nếu lời gọi thứ hai hỏng thì lời gọi thứ nhất đã commit rồi. Đây cũng là lý do offline-first là thay đổi lớn: khi mất mạng thì không có transaction, không cấp được `order_no` và không so được `lock_version` với sự thật phía server. Phân tích chi tiết ở đề xuất `add-offline-data-layer` và `add-offline-sync-conflict-resolution` trong [../openspec/README.md](../openspec/README.md).
+
 ### ADR: Instant Pay — TÁCH ĐƠN ĐỘC LẬP (split-order)
 
 **Quyết định (phase 18, bản chốt):** thanh toán một phần = tách các món được chọn ra một **đơn mới hoàn toàn độc lập** (UUID client cấp) và thanh toán đơn đó ngay trong cùng transaction. Hai đơn không có liên kết dữ liệu nào — chỉ tình cờ chung `table_id` lúc thanh toán. Đơn gốc còn lại trên bàn là đơn `open` bình thường.
@@ -94,6 +118,7 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 - Supabase Realtime chỉ dùng làm tín hiệu invalidation/refetch.
 - App không merge payload realtime thủ công vào cache.
 - Realtime nằm trong `IRealtimePort`/feature integration để giữ transport tập trung.
+- **Transport là WebSocket:** `supabase-js` mở WebSocket tới Supabase Realtime (Phoenix channel); app chỉ dùng `client.channel(...)` + `postgres_changes` nên không có code WebSocket thủ công nào trong `src`. Reconnect, auth và lọc `store_id=eq.<id>` do SDK và Realtime server lo. Đánh đổi: app không kiểm soát backoff/heartbeat của socket — đây là một lý do vẫn giữ polling 5s làm lưới an toàn.
 - **Quyết định (phase tiểu luận, online-only): KHÔNG optimistic update / KHÔNG patch cache.** Ưu tiên độ chính xác giữa các máy (server là nguồn sự thật) hơn là cảm giác "tức thì" trên máy đang thao tác. Optimistic guessing dễ gây lệch trạng thái đa thiết bị và phá đường đọc đơn nhất — vốn cũng là seam cho offline-first sau này (đổi nguồn đọc sang bản sao local + outbox mà không phải gỡ cache-patch). Đánh đổi chấp nhận: một nhịp refetch nền trên máy đang thao tác.
 - **Phủ tín hiệu:** publication gồm `orders, payments, tables` + bảng menu/floor. `order_items` cố ý KHÔNG publish vì `submit_order_changes` luôn bump `orders.lock_version` → một event trên `orders` đã đủ (tránh double-refetch). `orders/payments/tables` → invalidate open orders + floor + report; order detail (`["orders","detail",id]`) nằm dưới prefix `["orders"]` nên cũng được refetch theo.
 - **Giới hạn hiện tại:** migration 008 đã publish `menu_item_option_groups`, nhưng `SupabaseRealtimePort` chưa subscribe bảng nối này. Thao tác chỉ gắn/bỏ một modifier group khỏi món sẽ không tự invalidate menu trên máy khác; cần refresh/reconnect. Các thay đổi category/item/group/value vẫn realtime như bình thường.
