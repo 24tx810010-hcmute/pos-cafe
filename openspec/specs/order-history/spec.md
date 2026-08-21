@@ -20,9 +20,14 @@ Màn lịch sử SHALL chỉ liệt kê đơn đã kết thúc, gồm đơn đã
 - **WHEN** thu ngân tách và thanh toán một phần của đơn tại bàn
 - **THEN** đơn tách xuất hiện ngay trong lịch sử như một dòng độc lập, không cần chờ bàn đóng
 
-### Requirement: Bộ lọc, tìm kiếm và phân trang
+### Requirement: Bộ lọc và phân trang
 
-Lịch sử SHALL lọc được theo khoảng ngày với mặc định là hôm nay, và hỗ trợ các lựa chọn nhanh hôm nay, 7 ngày, tháng này và khoảng ngày tùy chọn. Lọc theo trạng thái, loại đơn và từ khóa tìm kiếm MUST được áp dụng ở tầng dữ liệu trước khi cắt trang.
+Lịch sử SHALL mặc định hiển thị các đơn gần đây nhất **không giới hạn ngày kinh doanh**, và SHALL hỗ trợ thu hẹp theo hôm nay, 7 ngày, tháng này hoặc khoảng ngày tùy chọn. Lọc theo trạng thái và loại đơn MUST được áp dụng ở tầng dữ liệu trước khi cắt trang.
+
+#### Scenario: Mở lịch sử lần đầu
+
+- **WHEN** người dùng mở màn lịch sử
+- **THEN** danh sách hiển thị các đơn đã kết thúc gần đây nhất, kể cả đơn của những ngày kinh doanh trước, không bị giới hạn về ngày hôm nay
 
 #### Scenario: Chọn khoảng ngày tùy chọn
 
@@ -31,8 +36,22 @@ Lịch sử SHALL lọc được theo khoảng ngày với mặc định là hô
 
 #### Scenario: Phân trang giữ payload ổn định
 
-- **WHEN** khoảng ngày chứa nhiều đơn hơn một trang
+- **WHEN** bộ lọc hiện tại khớp nhiều đơn hơn một trang
 - **THEN** hệ thống trả về từng trang thay vì toàn bộ danh sách
+
+### Requirement: Số thứ tự hiển thị trong danh sách lịch sử
+
+Vì danh sách có thể trải nhiều ngày kinh doanh mà số bill chỉ duy nhất trong phạm vi một ngày, danh sách lịch sử SHALL hiển thị một **số thứ tự theo bộ lọc hiện tại**, đếm giảm dần từ tổng số đơn khớp bộ lọc. Số này MUST NOT bị hiểu là số bill; số bill vẫn là giá trị hiển thị trong chi tiết đơn và trên hóa đơn.
+
+#### Scenario: Hai đơn cùng số bill ở hai ngày khác nhau
+
+- **WHEN** danh sách chứa đơn số bill 12 của hôm nay và đơn số bill 12 của hôm qua
+- **THEN** hai dòng mang hai số thứ tự hiển thị khác nhau, không bị trùng
+
+#### Scenario: Đổi bộ lọc
+
+- **WHEN** người dùng đổi bộ lọc làm thay đổi tập đơn khớp
+- **THEN** số thứ tự hiển thị được tính lại theo tập đơn mới
 
 ### Requirement: Chi tiết đơn dựng từ dữ liệu đã chụp
 

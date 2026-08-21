@@ -69,6 +69,8 @@ Nếu có mâu thuẫn, kiểm tra code/migration trước rồi cập nhật ro
 - Có thể claim RLS cô lập store; không claim employee PIN là DB identity hoặc quyền per-employee chống client độc hại.
 - Có thể claim online realtime invalidate/refetch; không claim offline hoặc SLA cứng ≤5 giây.
 - Có thể claim cash payment và browser print preview; không claim QR processing hoặc máy in POS thật.
+- Có thể claim mutation order/payment chạy trong transaction phía database, có khóa chống tranh chấp giữa nhiều thiết bị và optimistic locking chống ghi đè; **không** liệt kê tên hàm khóa, tên RPC hay số migration trong báo cáo. Có thể nêu như một hạn chế rằng phạm vi khóa hiện ở mức cửa hàng nên ghi POS trong cùng một cửa hàng là tuần tự.
+- Có thể claim đồng bộ đa thiết bị dùng kênh thời gian thực trên nền WebSocket do nền tảng backend cung cấp, kết hợp tải lại theo chu kỳ làm lưới an toàn; **không** claim đã tự hiện thực giao thức WebSocket, và **không** claim kiểm soát được backoff/heartbeat của kết nối.
 
 ## Artefact Còn Cần Bổ Sung Ngoài Nhánh Docs
 
