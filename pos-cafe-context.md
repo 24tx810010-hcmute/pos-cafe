@@ -1,7 +1,7 @@
 # Context: POS Quán Cà Phê (đa thiết bị, online-only) — TLCN
 
-> **Cập nhật 2026-07-30 sau phase 24 audit report-readiness.** Tóm tắt nhanh cho mỗi session.
-> **App truth hiện tại:** `main@3d9b64a`; migration 013 đã apply/verify; UI hiện tại chỉ mở role Quản lý/Thu ngân, còn kitchen giữ seam code/schema cho tương lai.
+> **Cập nhật 2026-08-21 sau lần rà soát đồng bộ docs với code.** Tóm tắt nhanh cho mỗi session.
+> **App truth hiện tại:** `main@c7f2f4e`; migration 013 đã apply/verify; UI hiện tại chỉ mở role Quản lý/Thu ngân, còn kitchen giữ seam code/schema cho tương lai.
 > **Docs branch:** nhánh `docs` độc lập, chỉ giữ Markdown knowledge base; không merge vào `main`.
 > **Spec đầy đủ (archive):** [docs/archive/superpowers/specs/2026-06-09-pos-cafe-design.md](docs/archive/superpowers/specs/2026-06-09-pos-cafe-design.md)
 > **Architecture summary:** [docs/architecture.md](docs/architecture.md)
@@ -18,13 +18,13 @@
 - **Đề tài:** Quản lý order quán cà phê **đa thiết bị đồng bộ song song**, phân quyền vai trò. Không phải bài toán quản lý chuỗi đa chi nhánh. TLCN, < 1 tháng, 2h/ngày, 0đ. **AI lập trình chính**.
 - **Flagship:** Menu Editor + Floor-Plan Editor (sơ đồ bàn trực quan).
 
-## Trạng thái hiện tại (2026-07-30)
+## Trạng thái hiện tại (2026-08-21)
 
-- **Main đã đối chiếu:** `main@3d9b64a`; phase 23 nền bàn đã commit, migration 013 đã apply/verify. Phase 22 chốt kitchen future-only nằm trong `main@1b0098b`.
+- **Main đã đối chiếu:** `main@c7f2f4e`; phase 23 nền bàn đã commit, migration 013 đã apply/verify. Sau phase 24: `main@b7b7262` gỡ dependency form không dùng, `main@c7f2f4e` đổi cách liệt kê lịch sử đơn. Phase 22 chốt kitchen future-only nằm trong `main@1b0098b`.
 - **Docs mới nhất:** nhánh `docs` là knowledge base độc lập, chỉ lưu `.md`; không chứa source code, package/config, HTML prototype, screenshot binary hoặc file tạm.
 - **Đã xong trong code:** DB/RPC foundation, Supabase/mock adapters, Store/Auth/Seed, POS order/payment, admin, realtime, UI binding/hardening, instant pay, hủy đơn paid, report audit, editor quyền per-employee, catalog 9 texture tường + 131 ảnh decor và catalog nền trắng + 11 ảnh nền bàn cho Floor Editor/POS.
 - **Role hiện hành:** UI chỉ cho `admin` và `cashier`. `kitchen` còn trong enum/schema/core để mở rộng sau nhưng đã ẩn khỏi nav, drawer registry, màn PIN và form tạo/sửa nhân viên; kitchen queue chưa phải tính năng hiện tại.
-- **Validation local mới nhất 2026-07-30:** `npm test` pass 49 files/257 tests, `npm run build` pass với Vite chunk-size warning đã biết, `npm run smoke` pass 34/31 theo điều kiện viewport và 0 failure. Cloud evidence có ngày riêng trong `docs/testing.md`.
+- **Validation local mới nhất 2026-08-21:** `npm test` pass 49 files/260 tests, `npm run build` pass 3197 module với Vite chunk-size warning đã biết. `npm run smoke` KHÔNG chạy lại được ngày này vì Playwright thiếu binary trình duyệt; kết quả 34 pass/31 skipped/0 failure là của 2026-08-12. Cloud evidence có ngày riêng trong `docs/testing.md`.
 - **Backlog kỹ thuật còn lại:** realtime subscription cho `menu_item_option_groups`, bundle/code-splitting, exit animation nếu cần polish, siết employee security boundary nếu triển khai ngoài môi trường demo tin cậy, xác minh deployment live và screenshot/diagram artefact cho báo cáo.
 
 ## Quyết định đã chốt
@@ -32,7 +32,7 @@
 | Hạng mục | Chốt |
 |---|---|
 | Ngôn ngữ | **TypeScript** |
-| Stack | React + Vite + TS + Tailwind + MUI controls + Zustand + TanStack Query + Supabase + Recharts + react-hot-toast. Form hiện dùng controlled state/validation thủ công; RHF/Zod có trong dependency nhưng chưa dùng trong `src`. Package: npm. Deploy Vercel + Supabase free |
+| Stack | React + Vite + TS + Tailwind + MUI controls + Zustand + TanStack Query + Supabase + Recharts + react-hot-toast. Form dùng controlled state và validation thủ công; `react-hook-form`, `@hookform/resolvers` và `zod` đã bị gỡ khỏi dependency ở `main@b7b7262` vì không dùng. Package: npm. Deploy Vercel + Supabase free |
 | Backend | **Supabase** (Postgres + Auth + Realtime + RLS) |
 | Kiến trúc | **Ports & Adapters theo hướng Hexagonal Architecture** — domain/core/ports không phụ thuộc Supabase; concrete adapter chỉ được compose ở runtime boundary |
 | Navigation | **Single URL** (`/` hoặc `/app`) + internal app state; không dùng browser history cho workflow POS/admin |

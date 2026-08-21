@@ -51,6 +51,7 @@ Folder này ghi nhật ký implement theo phase. Mục tiêu là track nhanh nh�
 - [phase-23-table-background-assets.md](phase-23-table-background-assets.md): thêm 11 nền bàn built-in + nền trắng mặc định, persist bằng `tables.background_asset_key` (migration 013) và render đồng nhất trong Floor Editor/POS.
 - [phase-24-report-readiness-sync.md](phase-24-report-readiness-sync.md): audit `main@3d9b64a`, sửa stale/overclaim và chuẩn hóa requirements/testing/limitations/source map cho báo cáo.
 - [phase-25-unused-dependency-cleanup.md](phase-25-unused-dependency-cleanup.md): gỡ ba thư viện form/validation không dùng, xác minh lại test/build/smoke và đồng bộ baseline tài liệu.
+- [phase-26-history-recent-listing.md](phase-26-history-recent-listing.md): lịch sử đơn mặc định liệt kê gần đây không giới hạn ngày, thay số bill bằng số thứ tự theo bộ lọc, gỡ ô tìm kiếm khỏi UI.
 
 ## Template Duy Trì
 

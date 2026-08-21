@@ -14,6 +14,21 @@ Tài liệu này gom bằng chứng kiểm thử hiện hành để dùng trong 
 | Mock E2E | Playwright | Flow người dùng và responsive trên nhiều viewport với adapter mock |
 | Cloud E2E | Playwright | Flow thật qua Supabase, RPC, RLS và realtime khi có env phù hợp |
 
+
+## Chạy Lại Ngày 2026-08-21
+
+Chạy lại trên cùng baseline `main@c7f2f4e` để xác nhận số liệu trước khi dùng cho báo cáo:
+
+| Lệnh | Kết quả | Ghi chú |
+| --- | --- | --- |
+| `npm test` | **49/49 test files, 260/260 tests pass** trong 22,89 giây | Khớp lần chạy 2026-08-12; thời gian chạy khác do máy |
+| `npm run build` | TypeScript strict + Vite production build pass, **3197 module** trong 2,43 giây | Tăng 1 module so với 2026-08-12 |
+| `npm run smoke` | **Không chạy được** | Playwright thiếu binary trình duyệt: `browserType.launch: Executable doesn't exist ... chrome-headless-shell.exe`. Không phải lỗi ứng dụng. Cần `npx playwright install` rồi chạy lại |
+
+Số liệu bundle cập nhật theo lần build 2026-08-21: một chunk JS duy nhất **1.347,25 KB minified / 368,88 KB gzip**, CSS 62,61 KB / 12,17 KB gzip. Chunk-size warning trên 500 KB vẫn còn.
+
+Kết quả mock smoke **34 pass/31 skipped/0 failed** dưới đây là của ngày **2026-08-12** và chưa được xác nhận lại; khi đưa vào báo cáo phải ghi đúng ngày đó, không gộp vào ngày 2026-08-21.
+
 ## Baseline Local Hiện Tại
 
 Kiểm tra trực tiếp ngày **2026-08-12** trên `main@c7f2f4e`:
@@ -27,7 +42,7 @@ Kiểm tra trực tiếp ngày **2026-08-12** trên `main@c7f2f4e`:
 Ghi chú:
 
 - 31 case skipped chủ yếu do test chỉ áp dụng cho một số viewport hoặc portrait guard; không phải 31 lỗi.
-- Build tạo một chunk JS duy nhất 1.342,81 KB minified / 367,59 KB gzip (CSS 62,61 KB / 12,17 KB gzip) và còn Vite chunk-size warning trên 500 KB.
+- Build ngày 2026-08-12 tạo một chunk JS duy nhất 1.342,81 KB minified / 367,59 KB gzip (CSS 62,61 KB / 12,17 KB gzip) và còn Vite chunk-size warning trên 500 KB. Số liệu mới nhất xem mục chạy lại ngày 2026-08-21 ở trên.
 - `npm run smoke:supabase` không được chạy lại ngày 2026-08-12 vì phụ thuộc credential và cloud state; không được gộp với kết quả local ở trên.
 
 ## Bằng Chứng Cloud Gần Nhất

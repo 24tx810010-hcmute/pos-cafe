@@ -65,6 +65,15 @@ File này khóa phạm vi phase tiểu luận để tránh nhầm giữa tính n
 - Order history filter, report master/detail và các catalog floor đã là **implemented**, không còn nằm trong nhóm “làm nếu kịp”.
 - Bổ sung traceability yêu cầu, baseline kiểm thử, giới hạn và hướng phát triển; tách rõ bằng chứng local, cloud và deployment readiness.
 
+
+## Scope Update 2026-08-21
+
+- Root docs được rà lại theo `main@c7f2f4e` và thống nhất một baseline duy nhất; trước đó các file ghi bốn mốc khác nhau (`3d9b64a`, `1b0098b`, `b7b7262`, `c7f2f4e`).
+- Màn Lịch sử đơn đổi hành vi ở `main@c7f2f4e`: mặc định liệt kê gần đây không giới hạn ngày, số hiển thị là số thứ tự theo bộ lọc chứ không phải số bill, và ô tìm kiếm đã bị gỡ khỏi giao diện. Xem [implementation-log/phase-26-history-recent-listing.md](implementation-log/phase-26-history-recent-listing.md).
+- Tìm kiếm trong lịch sử đơn chuyển từ **implemented** sang **seam chưa có entry point**; không còn được kể là chức năng hiện hành.
+- Bổ sung phân tích bảo đảm ACID và transport realtime vào [architecture.md](architecture.md), kèm hai dòng claim an toàn tương ứng trong [report-source-map.md](report-source-map.md).
+- Quản lý spec chuyển sang OpenSpec đặt tại `openspec/` trên chính nhánh này: 14 baseline spec mô tả hiện trạng và 24 đề xuất mở rộng đang chờ chốt.
+
 ## Phần Hoàn Thiện Tùy Chọn
 
 - Exit animation khi đóng drawer/popup và visual polish bổ sung.

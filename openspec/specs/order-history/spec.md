@@ -41,7 +41,7 @@ Lịch sử SHALL mặc định hiển thị các đơn gần đây nhất **kh�
 
 ### Requirement: Số thứ tự hiển thị trong danh sách lịch sử
 
-Vì danh sách có thể trải nhiều ngày kinh doanh mà số bill chỉ duy nhất trong phạm vi một ngày, danh sách lịch sử SHALL hiển thị một **số thứ tự theo bộ lọc hiện tại**, đếm giảm dần từ tổng số đơn khớp bộ lọc. Số này MUST NOT bị hiểu là số bill; số bill vẫn là giá trị hiển thị trong chi tiết đơn và trên hóa đơn.
+Vì danh sách có thể trải nhiều ngày kinh doanh mà số bill chỉ duy nhất trong phạm vi một ngày, màn lịch sử SHALL hiển thị một **số thứ tự theo bộ lọc hiện tại**, đếm giảm dần từ tổng số đơn khớp bộ lọc. Số này SHALL được dùng ở cả danh sách và tiêu đề chi tiết đơn, và MUST NOT bị hiểu là số bill. Số bill MUST vẫn xuất hiện trên hóa đơn in.
 
 #### Scenario: Hai đơn cùng số bill ở hai ngày khác nhau
 

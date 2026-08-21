@@ -1,6 +1,6 @@
 # Requirements & Traceability
 
-Tài liệu này chuyển phạm vi hiện hành thành yêu cầu có mã để dùng trong báo cáo tiểu luận và truy vết sang tính năng, thiết kế và kiểm thử. Baseline được đối chiếu ngày **2026-07-30** là `main@b7b7262`.
+Tài liệu này chuyển phạm vi hiện hành thành yêu cầu có mã để dùng trong báo cáo tiểu luận và truy vết sang tính năng, thiết kế và kiểm thử. Baseline được đối chiếu ngày **2026-08-21** là `main@c7f2f4e`.
 
 > Cột **Bằng chứng chính** là traceability nội bộ cho AI/developer. Khi viết báo cáo, không sao chép tên code, file, symbol hoặc migration từ cột này; chỉ dùng chúng để kiểm chứng rồi diễn đạt lại yêu cầu và thiết kế ở mức hệ thống.
 
@@ -30,7 +30,7 @@ Tài liệu này chuyển phạm vi hiện hành thành yêu cầu có mã để
 | FR-11 | Thanh toán toàn bộ đơn bằng tiền mặt, tính tiền thiếu/thối và trả bàn về trống | Đã triển khai | [features.md](features.md#payment), RPC `pay_order` |
 | FR-12 | Chọn món/số lượng để tách thành đơn độc lập và thanh toán ngay | Đã triển khai | ADR instant pay, RPC `pay_order_items`, migration 010 |
 | FR-13 | Preview/in phiếu tạm tính và hóa đơn qua browser | Đã triển khai ở mức web | Phase 13–14, `ReceiptPreview`; không claim tích hợp ESC/POS |
-| FR-14 | Xem lịch sử có khoảng ngày, trạng thái, loại đơn, tìm kiếm, phân trang và chi tiết snapshot | Đã triển khai | [features.md](features.md#order-history), `OrderHistoryDrawer` |
+| FR-14 | Xem lịch sử đơn đã kết thúc, mặc định gần đây không giới hạn ngày, lọc theo khoảng ngày/trạng thái/loại đơn, phân trang và xem chi tiết snapshot | Đã triển khai | [features.md](features.md#order-history), `OrderHistoryDrawer` |
 | FR-15 | Hủy đơn đã thanh toán theo quyền, lý do, audit và optimistic lock | Đã triển khai | Phase 19, RPC `void_order`, migration 011 |
 | FR-16 | Quản lý menu/category/món/modifier và upload ảnh món JPG/PNG/WebP tối đa 5MB | Đã triển khai | [features.md](features.md#menu-editor), migrations 005–006 |
 | FR-17 | Quản lý khu, bàn, decor; kéo, resize, xoay, khóa và lưu changeset | Đã triển khai | [features.md](features.md#floor-editor), phase 17 và 21 |

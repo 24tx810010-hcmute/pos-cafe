@@ -64,7 +64,7 @@ Rà soát ngày 2026-08-15 trên `main@c7f2f4e`. Chuỗi đóng băng giá là `
 
 - Ứng dụng landscape-first; portrait chỉ đưa hướng dẫn xoay thay vì cung cấp toàn bộ POS workflow.
 - Exit animation drawer/popup còn là polish tùy chọn.
-- Bundle chính còn vượt ngưỡng cảnh báo 500 KB; build xác minh lại ngày 2026-08-12 cho một chunk JS duy nhất 1.342,81 KB minified / 367,59 KB gzip (CSS 62,61 KB / 12,17 KB gzip). Chưa có code splitting.
+- Bundle chính còn vượt ngưỡng cảnh báo 500 KB; build xác minh lại ngày 2026-08-21 cho một chunk JS duy nhất 1.347,25 KB minified / 368,88 KB gzip (CSS 62,61 KB / 12,17 KB gzip). Chưa có code splitting.
 - Catalog asset built-in làm tăng static deployment; chưa có pipeline tối ưu/chuyển toàn bộ ảnh phù hợp sang WebP.
 - Chưa có tìm kiếm/favorite/quản lý vòng đời cho asset decor và nền bàn.
 - **Ghi POS trong một store là tuần tự.** Ba RPC ghi chính (`submit_order_changes`, `pay_order`, `pay_order_items`) đều lấy cùng một advisory lock phạm vi store (`':pos-write'`), nên hai thu ngân gửi đơn cho hai bàn khác nhau vẫn phải xếp hàng chờ nhau. Với một quán vài thiết bị thì không cảm nhận được, và đổi lại là mô hình lý luận rất đơn giản. Chưa có đo đạc thời gian giữ khóa hay thử tải đồng thời. Rủi ro tăng nếu thêm việc vào trong cùng transaction (ví dụ trừ tồn kho theo định lượng) hoặc số thiết bị ghi tăng. Chi tiết ở [architecture.md](architecture.md).

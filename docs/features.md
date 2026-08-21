@@ -83,11 +83,13 @@
 
 ## Order History
 
-- Xem danh sách đơn theo khoảng ngày; mặc định `Hôm nay`.
+- Mặc định hiển thị các đơn đã kết thúc **gần đây nhất, không giới hạn ngày kinh doanh** (`main@c7f2f4e`). Trước đó mặc định là `Hôm nay`.
 - Chỉ hiển thị đơn đã kết thúc (`Đã thanh toán`, `Đã hủy`); đơn đang mở thuộc màn Bàn/Mang đi.
 - **Instant pay**: mỗi lần tách thanh toán là một ĐƠN độc lập → tự nhiên là một dòng lịch sử riêng, hiện **ngay sau khi thu tiền** (không chờ bàn đóng). Bàn trả 2 lần = 2 đơn không liên kết gì nhau, chỉ cùng nhãn bàn; số đơn tăng theo thứ tự thanh toán.
-- Bộ lọc ngày là một nút `Filter date`, mở popup chọn `Hôm nay`, `7 ngày`, `Tháng này` hoặc khoảng ngày tùy chọn.
-- Danh sách đơn dùng phân trang để giữ payload ổn định; date/status/type/search được áp dụng ở repository trước khi cắt trang.
+- Bộ lọc ngày là một nút `Filter date`, mở popup chọn `Gần đây` (mặc định), `Hôm nay`, `7 ngày`, `Tháng này` hoặc khoảng ngày tùy chọn.
+- **Số hiển thị trong lịch sử KHÔNG phải số bill.** Vì danh sách trải nhiều ngày mà `order_no` chỉ duy nhất trong phạm vi một `business_date`, cả cột trái lẫn cột phải hiển thị `displayNo` — số thứ tự đếm giảm theo tập đơn khớp bộ lọc (`total - (page-1) * pageSize - index`). `order_no` thật chỉ còn xuất hiện trên hóa đơn in. Đổi bộ lọc thì `displayNo` được tính lại.
+- Danh sách đơn dùng phân trang để giữ payload ổn định (`PAGE_SIZE = 20`); date/status/type được áp dụng ở repository trước khi cắt trang.
+- **Không còn ô tìm kiếm trong UI.** Trường `search` vẫn nằm trong `OrderHistoryFilter` và repository vẫn hỗ trợ, nhưng màn hình không có entry point cho nó — đây là seam, không phải tính năng hiện hành.
 - Layout chính là 2 cột: cột trái hiển thị thông tin nhanh của đơn, cột phải hiển thị chi tiết dạng receipt.
 - Cột phải hiển thị item snapshot/options/note/quantity, khách hàng fallback `Khách lẻ`, **nhân viên thanh toán** được map từ `payment.employeeId`, phương thức thanh toán và paid time. Không hiển thị thêm ô `Thu ngân` trùng dữ liệu.
 - Summary thanh toán cố định cuối cột phải theo thứ tự `Khách đưa`, `Tiền thừa`, `Tổng tiền`; `Tổng tiền` nổi bật hơn.

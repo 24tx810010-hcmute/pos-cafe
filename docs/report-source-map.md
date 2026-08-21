@@ -1,6 +1,6 @@
 # Thesis Report Source Map
 
-Nhánh `docs` là **nguồn dữ liệu để viết báo cáo**, không phải bản Word hoàn chỉnh. Baseline current-truth được audit ngày **2026-07-30** theo `main@b7b7262`.
+Nhánh `docs` là **nguồn dữ liệu để viết báo cáo**, không phải bản Word hoàn chỉnh. Baseline current-truth được audit ngày **2026-08-21** theo `main@c7f2f4e`.
 
 ## Quy Tắc Cứng Cho AI Tổng Hợp Báo Cáo
 
@@ -64,7 +64,7 @@ Nếu có mâu thuẫn, kiểm tra code/migration trước rồi cập nhật ro
 ## Các Claim An Toàn
 
 - Có thể claim app có 15 bảng nghiệp vụ ở trạng thái schema cuối cùng, schema được quản lý bằng migration có phiên bản và order/payment dùng transaction phía database; không liệt kê migration cụ thể trong báo cáo.
-- Có thể claim local baseline ngày 2026-07-30 đạt 257/257 test và 34 mock smoke pass; phải giữ riêng evidence cloud.
+- Có thể claim local baseline ngày 2026-08-21 trên `main@c7f2f4e` đạt 260/260 test (49 test files) và production build pass. Mock smoke 34 pass là kết quả ngày 2026-08-12; phải ghi đúng ngày và giữ riêng evidence cloud.
 - Có thể claim áp dụng Ports & Adapters theo hướng Hexagonal Architecture; không nên claim textbook hexagonal tuyệt đối.
 - Có thể claim RLS cô lập store; không claim employee PIN là DB identity hoặc quyền per-employee chống client độc hại.
 - Có thể claim online realtime invalidate/refetch; không claim offline hoặc SLA cứng ≤5 giây.
@@ -75,7 +75,7 @@ Nếu có mâu thuẫn, kiểm tra code/migration trước rồi cập nhật ro
 ## Artefact Còn Cần Bổ Sung Ngoài Nhánh Docs
 
 - File Word theo mẫu của trường, trang bìa, thông tin sinh viên/giảng viên và quy định định dạng.
-- Screenshot mới từ `main@b7b7262`, sơ đồ kiến trúc/ERD đã render và hình minh họa demo.
+- Screenshot mới từ `main@c7f2f4e`, sơ đồ kiến trúc/ERD đã render và hình minh họa demo.
 - URL deployment live, ngày kiểm tra, cấu hình môi trường đã che secret.
 - Tài liệu tham khảo học thuật/chính thức cho React, PostgreSQL, Supabase, realtime, RLS và kiến trúc.
 - Kết quả khảo sát người dùng hoặc benchmark nếu báo cáo yêu cầu; repository hiện chưa có dữ liệu này.

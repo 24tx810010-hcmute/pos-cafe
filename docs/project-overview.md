@@ -38,11 +38,11 @@ Phase tiểu luận ưu tiên demo end-to-end:
 
 ## Trạng Thái Gần Nhất
 
-- App truth được đối chiếu lại ngày **2026-07-30** từ baseline `main@b7b7262`; chuỗi migration hiện hành là 001–013. Migration 013 đã được apply/verify trước lần audit. Kitchen đã được chốt future-only và loại khỏi các entry point UI hiện hành.
+- App truth được đối chiếu lại ngày **2026-08-21** từ baseline `main@c7f2f4e`; chuỗi migration hiện hành là 001–013. Migration 013 đã được apply/verify trước lần audit. Kitchen đã được chốt future-only và loại khỏi các entry point UI hiện hành.
 - Nhánh `docs` là nhánh tài liệu độc lập, chỉ giữ file `.md` để đọc nhanh; không merge vào `main` và không chứa source app/binary artifact.
 - Mock mode và local test cover core flow cùng các admin module. Cloud E2E gần nhất cover một tập 5 flow integration gồm tạo/pay/history/report, instant pay, hủy đơn paid, realtime và deny-permission; không suy rộng thành toàn bộ admin UI đã chạy E2E trên cloud.
 - Kiến trúc hiện có boundary guard bằng TypeScript import scanner, ports/adapters rõ layer, split Supabase/mock adapters, device print port no-op + receipt preview UI, portal popup/drawer primitives và quyền theo hành động per-employee (`permission_overrides`, `hasPermission`/`requirePermission`) đã enforce ở 5 action runtime.
 - UI đã qua pass Tailwind-first; `LeftNav` là rail chính, drawer mặc định full-screen, click overlay để đóng và slide-in theo placement. Employees Drawer dùng layout danh sách–chi tiết hai pane; Floor stage scale-to-fit; catalog có 9 texture tường + 131 ảnh decor và nền trắng + 11 ảnh nền bàn.
-- Validation local ngày 2026-07-30: **257/257** unit/component/feature tests pass, production build pass, mock Playwright smoke **34 pass/31 skipped/0 failed**. Supabase suite gần nhất **5/5 pass** ngày 2026-07-19; PostgREST migration 013 verify HTTP 200 ngày 2026-07-27. Xem [testing.md](testing.md).
+- Validation local ngày 2026-08-21 trên `main@c7f2f4e`: **260/260** unit/component/feature tests pass (49 test files) và production build pass. Mock Playwright smoke **34 pass/31 skipped/0 failed** là kết quả ngày 2026-08-12, chưa chạy lại ngày 2026-08-21. Supabase suite gần nhất **5/5 pass** ngày 2026-07-19; PostgREST migration 013 verify HTTP 200 ngày 2026-07-27. Xem [testing.md](testing.md).
 - Giới hạn đồng bộ đã biết: realtime adapter chưa subscribe `menu_item_option_groups`, nên thay đổi chỉ gắn/bỏ modifier khỏi món cần refresh/reconnect ở thiết bị khác.
 - Các giới hạn bảo mật, realtime, thanh toán, in, hiệu năng và deployment được phân loại tại [limitations.md](limitations.md); không claim employee PIN là DB identity, offline, QR processing hoặc máy in POS thật.

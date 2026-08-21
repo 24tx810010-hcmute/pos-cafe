@@ -88,10 +88,10 @@ Danh sách này mô tả các màn/drawer hiện có theo contract: màn làm g�
 
 ## 11. Order History Drawer
 
-- **Purpose:** tra cứu đơn đã kết thúc theo ngày và filter, không hiển thị đơn đang mở.
+- **Purpose:** tra cứu đơn đã kết thúc, mặc định liệt kê gần đây nhất không giới hạn ngày kinh doanh; không hiển thị đơn đang mở. Số hiển thị là số thứ tự theo bộ lọc, không phải số bill.
 - **User:** cashier/admin.
-- **Minimum data:** date range, order summaries, selected order detail, table/employee name map, payment snapshot gồm `employeeId` của nhân viên thực hiện thanh toán, metadata hủy và quyền `order.voidPaid` của nhân viên hiện tại.
-- **Primary actions:** lọc ngày/status đã thanh toán/đã hủy/type/search, chọn order, xem detail, in lại hóa đơn paid; người có quyền được hủy đơn paid bằng lý do có sẵn + ghi chú.
+- **Minimum data:** phạm vi ngày (có thể rỗng khi ở chế độ `Gần đây`), tổng số đơn khớp bộ lọc để tính `displayNo`, order summaries, selected order detail, table/employee name map, payment snapshot gồm `employeeId` của nhân viên thực hiện thanh toán, metadata hủy và quyền `order.voidPaid` của nhân viên hiện tại.
+- **Primary actions:** lọc theo phạm vi ngày (`Gần đây` mặc định, `Hôm nay`, `7 ngày`, `Tháng này`, tùy chọn), lọc status đã thanh toán/đã hủy và loại đơn, chọn order, xem detail, in lại hóa đơn paid; người có quyền được hủy đơn paid bằng lý do có sẵn + ghi chú.
 - **Void contract:** popup phải cảnh báo số tiền/ngày doanh thu và tính không thể hoàn tác; `Lý do khác` bắt buộc ghi chú; trước khi gọi RPC phải refetch detail để lấy `lock_version` mới nhất.
 - **Important states:** loading, empty, error, selected order not found, detail stale/version conflict, đang hủy; đơn void hiển thị người hủy/thời điểm/lý do và không cho in lại.
 

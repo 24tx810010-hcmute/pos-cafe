@@ -40,7 +40,7 @@ Runbook này dùng để chuẩn bị demo/bảo vệ phase tiểu luận.
 - **Instant pay tách đơn (phase 18): ĐÃ kiểm chứng** qua E2E trên cloud đã áp migration 009+010 (tách dòng, số bill theo thứ tự trả, lịch sử 2 đơn độc lập).
 - **Hủy đơn đã thanh toán (phase 19): ĐÃ kiểm chứng** trên cloud đã áp migration 011: admin tạo/thanh toán/hủy đơn qua UI, popup đóng, audit hiện và badge chuyển `Đã hủy`; fix refetch `lock_version` trước khi gọi RPC đã chạy ổn định. Ngày 2026-07-19 chạy lại targeted E2E 1/1 pass.
 - **Phân quyền per-employee (phase 20): ĐÃ kiểm chứng cloud** sau khi áp migration 012. E2E admin deny `payment.take` → cashier đăng nhập lại vẫn tạo đơn được, UI khóa thanh toán; gọi thẳng payment RPC trả `FORBIDDEN`. Full `smoke:supabase` 5/5 pass ngày 2026-07-19.
-- **Baseline local hiện hành:** xem [testing.md](testing.md). Không gộp 257 local tests với 5 cloud E2E thành một con số.
+- **Baseline local hiện hành:** xem [testing.md](testing.md). Không gộp 260 local tests với 5 cloud E2E thành một con số.
 
 ## Luận Điểm Nên Nói Khi Bảo Vệ
 
