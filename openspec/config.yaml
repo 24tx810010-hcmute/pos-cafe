@@ -13,7 +13,7 @@ context: |
   `src/ports` không phụ thuộc Supabase; adapter cụ thể chỉ compose ở runtime
   boundary. Có architecture boundary test.
 
-  Nghiệp vụ hiện hành: Store Key ghép thiết bị -> chọn nhân viên + PIN.
+  Nghiệp vụ hiện hành: Store Key ghép thiết bị, sau đó chọn nhân viên và nhập PIN.
   Role UI mở `admin` và `cashier`; `kitchen` chỉ là enum/seam tương lai.
   Quyền có 2 trục: module theo role, và 5 quyền hành động
   (`order.create`, `order.update`, `order.voidOpen`, `payment.take`,
@@ -22,53 +22,43 @@ context: |
   số bill tăng theo thứ tự thanh toán.
   Đồng bộ đa thiết bị hiện là online-only qua Supabase Realtime.
 
-  Quy ước viết:
-  - Ngôn ngữ mọi artifact: TIẾNG VIỆT. Giữ nguyên keyword cấu trúc OpenSpec
-    (Requirement, Scenario, WHEN, THEN, ADDED, MODIFIED, REMOVED, RENAMED),
-    tên bảng/RPC/symbol/lệnh và thuật ngữ kỹ thuật.
+  Quy ước viết artifact:
+  - NỘI DUNG viết bằng TIẾNG VIỆT.
+  - GIỮ NGUYÊN tiếng Anh: heading cấu trúc của schema (Why, What Changes,
+    Capabilities, New Capabilities, Modified Capabilities, Impact), keyword
+    OpenSpec (Requirement, Scenario, WHEN, THEN, Purpose, ADDED, MODIFIED,
+    REMOVED, RENAMED), tên bảng/RPC/symbol/lệnh và thuật ngữ kỹ thuật.
   - Tên thư mục change và capability path: kebab-case tiếng Anh.
   - Commit theo Conventional Commits. Không gắn trailer đồng tác giả AI.
-  - Tài liệu nền: nhánh `docs` (`docs/requirements.md` giữ mã FR/NFR,
+  - Tài liệu nền nằm ở nhánh `docs`: `docs/requirements.md` (giữ mã FR/NFR),
     `docs/features.md`, `docs/architecture.md`, `docs/data-model.md`,
-    `docs/limitations.md`, `pos-cafe-context.md`). Source code nằm ở nhánh
-    `main`, worktree `D:\Workspace\pos-cafe`.
+    `docs/limitations.md`, `pos-cafe-context.md`.
+  - Source code nằm ở nhánh `main`, worktree `D:\Workspace\pos-cafe`.
 
 rules:
   proposal:
-    - Viết bằng tiếng Việt.
-    - BẮT BUỘC có section `## Câu hỏi phải chốt trước khi làm` liệt kê mọi
-      thông tin còn thiếu cần người dùng xác nhận. Không được tự giả định thay
-      người dùng ở các điểm ảnh hưởng phạm vi, hành vi quan sát được, mô hình
-      dữ liệu, quyền hạn hoặc tiêu chí nghiệm thu.
-    - BẮT BUỘC có section `## Ngoài phạm vi` và `## Phụ thuộc`.
-    - Ghi rõ nếu proposal lật lại một quyết định đã chốt trong
-      `pos-cafe-context.md` hoặc `docs/requirements.md`, kèm mã FR/NFR liên quan.
+    - "Giữ nguyên 4 heading của template: Why, What Changes, Capabilities, Impact. Nội dung bên dưới viết tiếng Việt."
+    - "BẮT BUỘC thêm section `## Câu hỏi phải chốt trước khi làm`, liệt kê mọi thông tin còn thiếu cần người dùng xác nhận. Không tự giả định thay người dùng ở các điểm ảnh hưởng phạm vi, hành vi quan sát được, mô hình dữ liệu, quyền hạn hoặc tiêu chí nghiệm thu."
+    - "BẮT BUỘC thêm section `## Ngoài phạm vi` và `## Phụ thuộc`."
+    - "Nếu proposal lật lại một quyết định đã chốt trong `pos-cafe-context.md` hoặc `docs/requirements.md` thì phải ghi rõ, kèm mã FR/NFR liên quan."
   specs:
-    - Viết bằng tiếng Việt, giữ nguyên keyword cấu trúc và thuật ngữ kỹ thuật.
-    - Mỗi requirement phải truy vết được về mã FR/NFR trong `docs/requirements.md`
-      khi có, hoặc khai báo mã mới nếu là năng lực mới.
+    - "Nội dung tiếng Việt; giữ nguyên keyword cấu trúc và thuật ngữ kỹ thuật."
+    - "Mỗi requirement phải truy vết được về mã FR/NFR trong `docs/requirements.md` khi có, hoặc khai báo mã mới nếu là năng lực mới."
   design:
-    - Viết bằng tiếng Việt.
-    - Phải nêu rõ ranh giới Ports & Adapters: cái gì vào `domain`/`core`/`ports`,
-      cái gì thuộc adapter Supabase.
-    - Phải nêu ảnh hưởng tới RLS, migration và realtime nếu có.
+    - "Nội dung tiếng Việt."
+    - "Phải nêu rõ ranh giới Ports and Adapters, tức cái gì thuộc `domain`, `core`, `ports` và cái gì thuộc adapter Supabase."
+    - "Phải nêu ảnh hưởng tới RLS, migration và realtime nếu có."
   tasks:
-    - Viết bằng tiếng Việt.
-    - Chia task tối đa khoảng 2 giờ mỗi mục.
-    - Phải có mục cập nhật tài liệu nhánh `docs` và mục kiểm thử tương ứng.
+    - "Nội dung tiếng Việt."
+    - "Chia task tối đa khoảng 2 giờ mỗi mục."
+    - "Phải có mục cập nhật tài liệu nhánh `docs` và mục kiểm thử tương ứng."
 
 operations:
   apply:
     guidance:
-      - TRƯỚC KHI viết code hoặc artifact chi tiết, phải đọc section
-        `## Câu hỏi phải chốt trước khi làm` trong proposal và hỏi người dùng
-        toàn bộ câu hỏi chưa được trả lời. Không bắt đầu implement khi còn
-        câu hỏi bỏ ngỏ ảnh hưởng phạm vi hoặc hành vi.
-      - Ghi câu trả lời của người dùng ngược lại vào proposal (mục Quyết định)
-        trước khi tiếp tục.
-      - Code nằm ở worktree `D:\Workspace\pos-cafe` (nhánh `main`); artifact
-        OpenSpec nằm ở `D:\Workspace\pos-cafe-docs` (nhánh `docs`).
+      - "TRƯỚC KHI viết code hoặc artifact chi tiết, phải đọc section `## Câu hỏi phải chốt trước khi làm` trong proposal và hỏi người dùng toàn bộ câu hỏi chưa được trả lời. Không bắt đầu implement khi còn câu hỏi bỏ ngỏ ảnh hưởng phạm vi hoặc hành vi."
+      - "Ghi câu trả lời của người dùng ngược lại vào proposal, dưới mục Quyết định đã chốt, trước khi tiếp tục."
+      - "Code nằm ở worktree `D:\\Workspace\\pos-cafe` (nhánh `main`); artifact OpenSpec nằm ở `D:\\Workspace\\pos-cafe-docs` (nhánh `docs`)."
   archive:
     guidance:
-      - Cập nhật `docs/requirements.md`, `docs/features.md` và
-        `pos-cafe-context.md` cho khớp trạng thái mới trước khi archive.
+      - "Cập nhật `docs/requirements.md`, `docs/features.md` và `pos-cafe-context.md` cho khớp trạng thái mới trước khi archive."
