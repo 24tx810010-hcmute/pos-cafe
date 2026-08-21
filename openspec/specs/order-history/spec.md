@@ -53,6 +53,11 @@ Vì danh sách có thể trải nhiều ngày kinh doanh mà số bill chỉ duy
 - **WHEN** người dùng đổi bộ lọc làm thay đổi tập đơn khớp
 - **THEN** số thứ tự hiển thị được tính lại theo tập đơn mới
 
+#### Scenario: Số bill không xuất hiện trong màn lịch sử
+
+- **WHEN** người dùng xem một đơn trong danh sách hoặc mở chi tiết của nó
+- **THEN** màn lịch sử không hiển thị số bill ở bất kỳ đâu; muốn xem số bill thì phải in lại hóa đơn
+
 ### Requirement: Chi tiết đơn dựng từ dữ liệu đã chụp
 
 Chi tiết đơn SHALL hiển thị tên món, tùy chọn, ghi chú và số lượng theo bản chụp tại thời điểm đặt, cùng nhân viên đã thu tiền, phương thức thanh toán và thời điểm thanh toán. Số tiền khách đưa và tiền thối MUST đọc từ bản chụp thanh toán, MUST NOT tính lại ở giao diện.

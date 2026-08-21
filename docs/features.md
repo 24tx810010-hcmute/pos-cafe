@@ -87,9 +87,9 @@
 - Chỉ hiển thị đơn đã kết thúc (`Đã thanh toán`, `Đã hủy`); đơn đang mở thuộc màn Bàn/Mang đi.
 - **Instant pay**: mỗi lần tách thanh toán là một ĐƠN độc lập → tự nhiên là một dòng lịch sử riêng, hiện **ngay sau khi thu tiền** (không chờ bàn đóng). Bàn trả 2 lần = 2 đơn không liên kết gì nhau, chỉ cùng nhãn bàn; số đơn tăng theo thứ tự thanh toán.
 - Bộ lọc ngày là một nút `Filter date`, mở popup chọn `Gần đây` (mặc định), `Hôm nay`, `7 ngày`, `Tháng này` hoặc khoảng ngày tùy chọn.
-- **Số hiển thị trong lịch sử KHÔNG phải số bill.** Vì danh sách trải nhiều ngày mà `order_no` chỉ duy nhất trong phạm vi một `business_date`, cả cột trái lẫn cột phải hiển thị `displayNo` — số thứ tự đếm giảm theo tập đơn khớp bộ lọc (`total - (page-1) * pageSize - index`). `order_no` thật chỉ còn xuất hiện trên hóa đơn in. Đổi bộ lọc thì `displayNo` được tính lại.
+- **Số hiển thị trong lịch sử KHÔNG phải số bill, và đây là chủ ý.** Vì danh sách trải nhiều ngày mà `order_no` chỉ duy nhất trong phạm vi một `business_date`, hiển thị `order_no` sẽ sinh nhiều dòng trùng số. Nên cả cột trái lẫn cột phải hiển thị `displayNo` — số thứ tự đếm giảm theo tập đơn khớp bộ lọc (`total - (page-1) * pageSize - index`). Đổi bộ lọc thì `displayNo` được tính lại. `order_no` giữ đúng vai trò số bill và **chỉ xuất hiện trên hóa đơn in**; màn lịch sử cố ý không hiển thị nó.
 - Danh sách đơn dùng phân trang để giữ payload ổn định (`PAGE_SIZE = 20`); date/status/type được áp dụng ở repository trước khi cắt trang.
-- **Không còn ô tìm kiếm trong UI.** Trường `search` vẫn nằm trong `OrderHistoryFilter` và repository vẫn hỗ trợ, nhưng màn hình không có entry point cho nó — đây là seam, không phải tính năng hiện hành.
+- **Chưa dùng trên UI:** ô tìm kiếm và bộ lọc theo bàn. Repository hỗ trợ `search` và `tableIds` nhưng màn hình không có entry point cho cả hai. Xem mục [Seam: Có Code Nhưng CHƯA Dùng Trên UI](#seam-có-code-nhưng-chưa-dùng-trên-ui).
 - Layout chính là 2 cột: cột trái hiển thị thông tin nhanh của đơn, cột phải hiển thị chi tiết dạng receipt.
 - Cột phải hiển thị item snapshot/options/note/quantity, khách hàng fallback `Khách lẻ`, **nhân viên thanh toán** được map từ `payment.employeeId`, phương thức thanh toán và paid time. Không hiển thị thêm ô `Thu ngân` trùng dữ liệu.
 - Summary thanh toán cố định cuối cột phải theo thứ tự `Khách đưa`, `Tiền thừa`, `Tổng tiền`; `Tổng tiền` nổi bật hơn.
@@ -155,10 +155,24 @@
 - Clear demo bị block khi còn order mở để tránh mất dữ liệu đang bán.
 - Seed demo idempotent: chạy lại sau khi clear sẽ hồi sinh đúng các row mẫu đã xóa mềm (clear `deleted_at`), không tạo trùng.
 
-## Optional/Future UI
+## Seam: Có Code Nhưng CHƯA Dùng Trên UI
 
-- Kitchen queue/role là future-only. Component scaffold và enum/schema còn trong code để tham khảo, nhưng không được đăng ký trong app shell và không có entry point người dùng.
-- Payment settings/QR hiện là preview UI local, chưa persist qua `settingsRepo` và chưa phải QR payment processing thật.
+Các mục dưới đây **đã có code, schema hoặc hỗ trợ ở tầng dữ liệu, nhưng người dùng không có đường nào chạm tới từ giao diện**. Chúng KHÔNG phải chức năng hiện hành và không được liệt kê như tính năng trong báo cáo. Trạng thái xác minh ngày 2026-08-21 trên `main@c7f2f4e`.
+
+| Seam | Có gì trong code | Vì sao chưa dùng trên UI |
+| --- | --- | --- |
+| Kitchen queue và role bếp | Enum `kitchen` trong schema/domain, `KitchenQueueDrawer` scaffold | Không đăng ký trong `DRAWER_REGISTRY`, bị ẩn khỏi nav, màn PIN và form tạo/sửa nhân viên. Chốt future-only từ phase 22 |
+| Tìm kiếm trong lịch sử đơn | `OrderHistoryFilter.search`; cả mock repo và Supabase repo đều lọc được | Ô tìm kiếm đã bị gỡ khỏi `OrderHistoryDrawer` ở `main@c7f2f4e`. Không còn entry point |
+| Lọc lịch sử theo bàn | `OrderHistoryFilter.tableIds`; cả hai adapter đều lọc được | Chưa từng có control nào trên giao diện truyền tham số này |
+| Giảm giá trên đơn | Cột `orders.discount_type` và `orders.discount_value` | RPC luôn ghi đè `'none'`/0 và đặt `total := subtotal`. Không có tham chiếu nào trong `src`. Là chỗ chừa sẵn cho khuyến mãi sau này |
+| Thông tin QR thanh toán | `store_settings.qr_info` trong schema; `PaymentSettingsDrawer` có ô nhập và preview | Giá trị chỉ nằm trong state cục bộ của màn, không đi qua `settingsRepo`. Tải lại trang là mất |
+| Phương thức thanh toán ngoài tiền mặt | Danh sách phương thức dựng để mở rộng | Thẻ, chuyển khoản và QR hiển thị ở trạng thái vô hiệu hóa để không bị hiểu nhầm là đã xử lý thật |
+| Khóa cửa hàng theo giấy phép | `stores.is_active` được ghi khi tạo cửa hàng | Không nơi nào đọc lại để chặn truy cập; RLS và RPC không kiểm tra cột này. Chỉ là khái niệm ở tầng ứng dụng |
+| In qua thiết bị | `IPrintPort.renderOrderTicket` và `renderReceipt` được `orderFlow` gọi thật | `BrowserPrintPort` chủ ý no-op. Việc in thực tế do lớp UI `ReceiptPreview` làm bằng popup và lệnh in của trình duyệt. Không có tích hợp máy in nhiệt |
+| Xuất báo cáo ra tệp | Nút `Xuất` có trong màn báo cáo | Luôn ở trạng thái `disabled`; chưa có logic sinh tệp |
+| Ngăn kéo drawer theo workspace | `PortalDrawer` nhận option viewport 176px/68px | Mọi drawer production đều dùng full-screen; option này không được truyền ở đâu |
+
+Quy tắc khi viết báo cáo: mô tả các mục này ở chương hạn chế và hướng phát triển, dùng đúng chữ **chưa dùng trên UI** hoặc **chưa có entry point**, không dùng chữ "đã hỗ trợ" hay "đã có".
 
 ## Shared UI Behavior
 

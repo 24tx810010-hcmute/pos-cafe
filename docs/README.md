@@ -10,6 +10,7 @@ Folder này là knowledge base hiện tại của dự án POS Cafe và là ngu�
 | Viết phần yêu cầu và traceability | [requirements.md](requirements.md) |
 | Biết phase tiểu luận gồm gì, không gồm gì | [phase-scope.md](phase-scope.md) |
 | Liệt kê tính năng chính | [features.md](features.md) |
+| Biết cái gì có code nhưng chưa dùng trên UI | [features.md](features.md#seam-có-code-nhưng-chưa-dùng-trên-ui) |
 | Hiểu dữ liệu và quan hệ nghiệp vụ | [data-model.md](data-model.md) |
 | Hiểu kiến trúc code/backend | [architecture.md](architecture.md) |
 | Hiểu các màn hình chính | [screens.md](screens.md) |

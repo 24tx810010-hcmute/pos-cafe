@@ -56,6 +56,7 @@ Rà soát ngày 2026-08-15 trên `main@c7f2f4e`. Chuỗi đóng băng giá là `
 - Không có gộp/chuyển bàn.
 - Order history dùng fallback `Khách lẻ` vì domain chưa có customer entity.
 - Custom role và module permission per-employee chưa có; catalog hiện chỉ gồm 5 quyền hành động.
+- Một số phần đã có code hoặc schema nhưng **chưa dùng trên UI** vì không có entry point: tìm kiếm và lọc theo bàn trong lịch sử đơn, cột giảm giá trên đơn, `store_settings.qr_info`, `stores.is_active`, xuất báo cáo ra tệp, kitchen queue. Danh sách đầy đủ kèm lý do ở mục seam trong [features.md](features.md#seam-có-code-nhưng-chưa-dùng-trên-ui); không kể chúng như chức năng hiện hành.
 - Upload asset runtime chỉ có ảnh món; decor và nền bàn là catalog built-in.
 
 **Lý do hoãn:** các phần này mở rộng đáng kể data model, workflow và testing nhưng không cần để chứng minh core POS cafe nhỏ trong thời gian tiểu luận.

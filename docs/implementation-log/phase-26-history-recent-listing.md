@@ -32,10 +32,15 @@
 - Nêu rõ số hiển thị trong lịch sử là số thứ tự theo bộ lọc, **không phải số bill**. Số bill chỉ còn xuất hiện trên hóa đơn in. Đây là điểm dễ hiểu nhầm khi trình bày, nên nói thẳng.
 - Không liệt kê tìm kiếm như một chức năng hiện hành của màn lịch sử.
 
+## Quyết Định Đã Chốt
+
+- **Màn lịch sử không hiển thị `order_no` là CHỦ Ý, không phải thiếu sót.** Người dùng xác nhận ngày 2026-08-21 rằng đây là quyết định đã có từ trước. Lý do nhất quán với thiết kế: `order_no` chỉ duy nhất trong phạm vi một `business_date`, nên khi danh sách trải nhiều ngày thì hiển thị nó sẽ sinh ra nhiều dòng trùng số và gây nhầm lẫn. `order_no` giữ đúng vai trò số bill trên hóa đơn in, không phải số dòng tra cứu.
+- Vì vậy khi viết báo cáo, trình bày `displayNo` và `order_no` là hai khái niệm khác nhau có mục đích khác nhau, không mô tả như một hạn chế.
+
 ## Giới Hạn
 
-- Người dùng không còn cách nào xem `order_no` thật của một đơn từ trong màn lịch sử; phải in lại hóa đơn mới thấy. Chưa rõ đây là chủ ý hay là hệ quả chưa được cân nhắc.
-- Trường `search` trở thành code không có đường tới từ giao diện; hoặc nên nối lại entry point, hoặc nên gỡ để tránh hiểu nhầm là tính năng.
+- Trường `search` trở thành code không có đường tới từ giao diện. Đã ghi vào mục seam của [../features.md](../features.md); cần quyết định nối lại entry point hay gỡ hẳn.
+- Trường `tableIds` trong cùng bộ lọc cũng chưa từng có control nào trên giao diện truyền vào.
 - Phase này không đụng tới hiệu năng truy vấn khi phạm vi `Gần đây` chạy trên lượng đơn lớn; chưa có đo đạc.
 
 ## Liên Quan
