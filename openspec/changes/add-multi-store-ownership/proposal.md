@@ -44,6 +44,7 @@ Kiến trúc hiện tại đã cô lập dữ liệu theo cửa hàng bằng ch�
 
 ## Phụ thuộc
 
+- `add-owner-account-and-store-provisioning`: **bắt buộc làm trước.** Change đó đã đưa vào khái niệm chủ sở hữu, trường định danh chủ trên bản ghi cửa hàng và nhánh chính sách bảo mật cho chủ. Nhờ vậy change này thu hẹp lại còn phần giao diện chuyển đổi cửa hàng và phần quan hệ nhân viên với nhiều cửa hàng, thay vì phải tự dựng lại tầng danh tính từ đầu. Câu hỏi số 5 ở dưới, về cách chủ sở hữu đăng nhập, đã được change đó trả lời.
 - `redesign-permission-model`: gần như bắt buộc làm trước, vì quyền theo từng cửa hàng không thể gắn vào mô hình quyền toàn cục hiện tại.
 - `enforce-permissions-at-database`: liên quan chặt, vì cả hai đều viết lại chính sách bảo mật mức dòng. Làm tách rời sẽ phải viết lại hai lần.
 

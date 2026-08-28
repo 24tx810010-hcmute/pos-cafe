@@ -44,6 +44,13 @@ Không có.
 
 - `redesign-permission-model`: phải chốt mô hình quyền trước, nếu không sẽ phải viết lại chính sách database hai lần.
 - `expand-e2e-coverage`: cần bộ kiểm thử luồng nghiệp vụ trước khi đụng vào chính sách bảo mật, vì sai sót ở đây làm hỏng toàn bộ ứng dụng.
+- `add-owner-account-and-store-provisioning`: change đó bổ sung một nhánh chủ sở hữu vào chính sách bảo mật mức dòng. Nếu làm sau change này thì phải rà lại toàn bộ chính sách vừa viết, nên nên làm trước.
+
+## Ghi chú về phương án thu hẹp
+
+Trao đổi ngày 2026-08-28 nêu một phương án trung gian đáng cân nhắc khi trả lời câu hỏi số 1 và số 7: **giữ nguyên danh tính cấp cửa hàng, không làm danh tính riêng cho từng nhân viên, nhưng bắt mọi lời gọi nghiệp vụ nhạy cảm đọc lại quyền hiệu lực từ database** thay vì tin tham số client gửi lên, kèm nhật ký đầy đủ. Cách này đã áp dụng cho ba lời gọi order và payment chính, nên chỉ là mở rộng phạm vi chứ không phải đổi mô hình xác thực.
+
+Đánh đổi: chặn được việc vượt quyền qua ứng dụng và qua lời gọi thủ công có tham số giả, nhưng **không** chặn được người đã có Store Key ghi thẳng vào bảng bằng quyền cấp cửa hàng. Mức bảo đảm này phải được phát biểu chính xác trong tài liệu thay vì claim quá lên. Bù lại, phạm vi và rủi ro nhỏ hơn nhiều so với việc viết lại toàn bộ chính sách bảo mật mức dòng, và không buộc ghép lại thiết bị.
 
 ## Câu hỏi phải chốt trước khi làm
 
