@@ -21,7 +21,7 @@ Không có. Đây là thay đổi về kiểm thử, không đổi hành vi quan
 
 ### Modified Capabilities
 
-Không có. Các kịch bản E2E bám theo scenario đã mô tả trong baseline spec của `payment`, `order-history`, `access-control`, `multi-device-sync`, `menu-management`, `floor-plan-editor`.
+Không có. Các kịch bản E2E bám theo scenario đã mô tả trong baseline spec của `payment`, `order-history`, `order-void`, `receipt-printing`, `access-control`, `multi-device-sync`, `menu-management`, `floor-plan-editor`.
 
 ## Impact
 

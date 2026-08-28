@@ -25,7 +25,8 @@ Ngược lại, hiển thị quá nhiều cũng hỏng: màn bán hàng cần g�
 
 - `offline-data-layer`: bổ sung yêu cầu công khai trạng thái hàng đợi ra ngoài để giao diện hiển thị được.
 - `order-management`: bổ sung dấu hiệu đơn chưa được xác nhận.
-- `payment`: bổ sung dấu hiệu thanh toán chưa được xác nhận, và hành vi khi hóa đơn được in cho đơn chưa xác nhận.
+- `payment`: bổ sung dấu hiệu thanh toán chưa được xác nhận.
+- `receipt-printing`: bổ sung hành vi khi hóa đơn được in cho một đơn chưa được xác nhận.
 
 ## Impact
 

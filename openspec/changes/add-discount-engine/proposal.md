@@ -28,7 +28,8 @@ Change này lật lại phần ngoài phạm vi của `docs/requirements.md` v�
 
 - `order-management`: tổng đơn không còn bằng tổng các dòng; bổ sung hành vi áp và gỡ giảm giá trên đơn.
 - `payment`: số tiền phải thu tính theo tổng sau giảm; ảnh hưởng tới cả luồng tách đơn thanh toán một phần.
-- `order-history`: chi tiết đơn và hóa đơn in lại phải hiển thị khoản giảm đã áp.
+- `order-history`: chi tiết đơn phải hiển thị khoản giảm đã áp.
+- `receipt-printing`: phiếu tạm tính, hóa đơn và hóa đơn in lại phải hiển thị khoản giảm đã áp.
 - `reporting`: bổ sung số liệu tổng giảm giá và tách bạch với doanh thu.
 - `access-control`: bổ sung quyền áp giảm giá.
 

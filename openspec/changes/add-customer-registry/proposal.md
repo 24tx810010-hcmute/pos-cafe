@@ -26,6 +26,7 @@ Hệ thống hiện không có khái niệm khách hàng. Màn thanh toán và m
 - `order-management`: bổ sung khả năng gắn khách hàng vào đơn.
 - `payment`: đổi hiển thị khách hàng, vốn đang cố định là khách lẻ.
 - `order-history`: đổi hiển thị khách hàng trong chi tiết đơn, và bổ sung tìm kiếm theo khách.
+- `receipt-printing`: đổi hiển thị khách hàng trên hóa đơn, vốn đang cố định là khách lẻ.
 - `access-control`: bổ sung quyền xem và sửa dữ liệu khách hàng.
 
 ## Impact

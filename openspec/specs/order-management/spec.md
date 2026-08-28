@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Cho nhân viên tạo và chỉnh sửa đơn tại bàn hoặc đơn mang đi, chọn món kèm tùy chọn dùng chung, và gửi phiếu cho bếp, với giá được chốt phía database tại thời điểm gửi đơn. Truy vết: FR-07, FR-08, FR-09, FR-10.
+Cho nhân viên tạo và chỉnh sửa đơn tại bàn hoặc đơn mang đi, chọn món kèm tùy chọn dùng chung, và gửi đơn với giá được chốt phía database tại thời điểm gửi. Phiếu gửi bếp sinh ra khi gửi đơn thuộc năng lực `receipt-printing`. Truy vết: FR-07, FR-08, FR-09.
 
 ## Requirements
 
@@ -61,15 +61,6 @@ Khi gửi đơn, hệ thống SHALL gửi thay đổi lên database và database
 
 - **WHEN** quản lý đổi giá món sau khi đơn đã được gửi
 - **THEN** đơn đã gửi giữ nguyên giá đã chụp, giá mới chỉ áp dụng cho đơn gửi sau đó
-
-### Requirement: Phiếu gửi bếp chỉ chứa món mới thêm
-
-Khi gửi đơn, hệ thống SHALL tạo phiếu gửi bếp chỉ liệt kê các dòng mới thêm so với đơn hiện có, so khớp theo nội dung gồm món, tùy chọn và ghi chú. Phiếu gửi bếp MUST chỉ hiển thị tên món và số lượng, MUST NOT hiển thị giá.
-
-#### Scenario: Thêm món vào đơn đang mở
-
-- **WHEN** nhân viên mở lại một đơn đã có 3 món, thêm 1 món rồi gửi đơn
-- **THEN** phiếu gửi bếp chỉ liệt kê 1 món vừa thêm
 
 ### Requirement: Bảo vệ chỉnh sửa đơn
 

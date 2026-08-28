@@ -27,7 +27,7 @@ Có mô hình tồn kho mà không nối với việc bán hàng thì kho vẫn 
 - `inventory-core`: bổ sung loại biến động do bán hàng và do hoàn khi hủy đơn.
 - `order-management`: bổ sung hành vi kiểm tra và trừ tồn trong luồng đơn hàng.
 - `payment`: bổ sung hành vi trừ tồn khi tách đơn thanh toán một phần, nếu thời điểm trừ tồn được chốt là lúc thanh toán.
-- `order-history`: bổ sung hành vi hoàn tồn khi hủy đơn đã thanh toán.
+- `order-void`: bổ sung hành vi hoàn tồn khi hủy đơn đã thanh toán.
 - `menu-management`: bổ sung phần khai báo định lượng cho món và cho giá trị tùy chọn.
 
 ## Impact
