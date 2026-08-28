@@ -51,7 +51,8 @@ Nếu có mâu thuẫn, kiểm tra code/migration trước rồi cập nhật ro
 | Thiết kế cơ sở dữ liệu | [data-model.md](data-model.md) |
 | Cài đặt và quyết định kỹ thuật | [implementation-log/README.md](implementation-log/README.md) |
 | Kiểm thử và đánh giá | [testing.md](testing.md), [demo-runbook.md](demo-runbook.md) |
-| Hạn chế và hướng phát triển | [limitations.md](limitations.md) |
+| Kế hoạch và trình tự thực hiện | [roadmap.md](roadmap.md) |
+| Hạn chế và hướng phát triển | [limitations.md](limitations.md), [roadmap.md](roadmap.md) giai đoạn 2 |
 | Phụ lục/demo | [demo-runbook.md](demo-runbook.md), [screenshots/README.md](screenshots/README.md) |
 
 ## Cách Dùng Phase Log

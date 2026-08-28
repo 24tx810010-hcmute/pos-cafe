@@ -16,6 +16,7 @@ Folder này là knowledge base hiện tại của dự án POS Cafe và là ngu�
 | Hiểu các màn hình chính | [screens.md](screens.md) |
 | Giải thích chọn công nghệ và đánh đổi | [tech-stack.md](tech-stack.md) |
 | Lấy số liệu kiểm thử đã phân môi trường | [testing.md](testing.md) |
+| Biết đang ở đâu trong lộ trình và làm gì tiếp | [roadmap.md](roadmap.md) |
 | Viết hạn chế và hướng phát triển | [limitations.md](limitations.md) |
 | Ánh xạ tài liệu sang chương báo cáo | [report-source-map.md](report-source-map.md) |
 | Học kiến trúc phổ biến và lý do chọn của dự án | [architecture-explainer.html](architecture-explainer.html) — mở bằng trình duyệt |

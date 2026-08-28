@@ -26,13 +26,13 @@ Các proposal trỏ tới phần đã di chuyển đã được cập nhật the
 
 ## Trạng thái hiện tại của `changes/`
 
-26 change đang ở trạng thái **mới có `proposal.md`**, chưa có `specs/`, `design.md`, `tasks.md`. Đây là chủ ý, không phải thiếu sót.
+25 trong 26 change đang ở trạng thái **mới có `proposal.md`**, chưa có `specs/`, `design.md`, `tasks.md`. Đây là chủ ý, không phải thiếu sót. Change còn lại là `redesign-permission-model`, đã có đủ bốn artifact và sẵn sàng implement.
 
-Vì vậy `openspec validate --changes` báo lỗi `Change must have at least one delta` cho 21 change. Đó là trạng thái mong đợi: delta spec chỉ được viết sau khi các câu hỏi trong proposal đã có câu trả lời. 5 change còn lại thuộc nhóm công cụ và quy trình nên đặt `skip_specs: true` và đã pass.
+Vì vậy `openspec validate --changes` báo lỗi `Change must have at least one delta` cho 20 change. Đó là trạng thái mong đợi: delta spec chỉ được viết sau khi các câu hỏi trong proposal đã có câu trả lời. 5 change thuộc nhóm công cụ và quy trình đặt `skip_specs: true` nên pass, cộng `redesign-permission-model` đã có delta nên cũng pass, tổng 6 pass.
 
 Hai change đã có mục `## Quyết định đã chốt` được điền:
 
-- `redesign-permission-model`: **đã chốt hết**, đủ điều kiện viết delta spec ngay.
+- `redesign-permission-model`: **đã chốt hết và đã có đủ artifact** gồm `specs/`, `design.md` và `tasks.md`. Chờ implement.
 - `add-owner-account-and-store-provisioning`: **đã chốt hết**, 17 quyết định, không còn câu hỏi bỏ ngỏ. Đủ điều kiện viết delta spec.
 
 Hai change này phải làm nối tiếp: `redesign-permission-model` đưa vào vai trò chủ quán, `add-owner-account-and-store-provisioning` sau đó gắn vai trò đó với tài khoản chủ đã xác thực email. `add-provider-admin-console` tách ra từ trao đổi ngày 2026-08-28 và làm sau cùng.
@@ -49,6 +49,8 @@ Mỗi `proposal.md` có section `## Câu hỏi phải chốt trước khi làm`.
 Quy tắc này cũng được khai báo trong `openspec/config.yaml` phần `operations.apply.guidance` để mọi phiên làm việc sau đều thấy.
 
 ## Thứ tự phụ thuộc
+
+Mục này ghi **cái nào chặn cái nào**. Còn **khi nào làm và theo trình tự nào**, kèm trạng thái tiến độ, nằm ở `docs/roadmap.md`. Đừng chép nội dung giữa hai nơi.
 
 Mỗi proposal có section `## Phụ thuộc`. Các quan hệ chính:
 
