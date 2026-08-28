@@ -18,6 +18,7 @@ Folder này là knowledge base hiện tại của dự án POS Cafe và là ngu�
 | Lấy số liệu kiểm thử đã phân môi trường | [testing.md](testing.md) |
 | Viết hạn chế và hướng phát triển | [limitations.md](limitations.md) |
 | Ánh xạ tài liệu sang chương báo cáo | [report-source-map.md](report-source-map.md) |
+| Học kiến trúc phổ biến và lý do chọn của dự án | [architecture-explainer.html](architecture-explainer.html) — mở bằng trình duyệt |
 | Chuẩn bị bảo vệ/demo | [demo-runbook.md](demo-runbook.md) |
 | Chuẩn bị redesign UI/UX | [ui-redesign-context.md](ui-redesign-context.md) |
 | Track tiến độ implement theo phase | [implementation-log/README.md](implementation-log/README.md) |
@@ -30,6 +31,7 @@ Folder này là knowledge base hiện tại của dự án POS Cafe và là ngu�
 - `implementation-log/` ghi nhật ký implement theo phase, dùng để track nhanh nhánh/commit/tính năng/gap.
 - `screenshots/` chỉ giữ chỉ mục/ghi chú Markdown; nhánh `docs` không giữ binary screenshot.
 - `archive/` chứa tài liệu cũ, audit, handoff và spec chi tiết theo lịch sử; binary/prototype artifact cũ đã loại khỏi nhánh docs.
+- `architecture-explainer.html` là trang học tập tự chứa (mở trực tiếp bằng trình duyệt, không cần cài gì). Nó giải thích 8 kiến trúc phần mềm phổ biến, đối chiếu với lựa chọn của dự án, và gom các lập luận "chọn gì / bỏ gì / vì sao / đánh đổi" theo đúng khuôn dùng cho chương thiết kế kiến trúc. Phần chi tiết cài đặt trong trang được đánh dấu riêng và **không** dùng cho báo cáo, theo [report-source-map.md](report-source-map.md).
 
 ## Thứ Tự Tin Cậy
 

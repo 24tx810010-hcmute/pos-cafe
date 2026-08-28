@@ -1,0 +1,1552 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bản vẽ kiến trúc — học 8 kiến trúc phần mềm qua một quán cà phê</title>
+<meta name="description" content="Trang học 8 kiến trúc phần mềm phổ biến, giải thích bằng chuyện quán cà phê, kèm sơ đồ tương tác, quiz và liên hệ trực tiếp với dự án POS Cafe.">
+<style>
+/* ============================================================
+   BẢN VẼ KIẾN TRÚC — in riso hai màu trên giấy can
+   Mực A: xanh bản vẽ.  Mực B: cam.  Chồng mực = nâu sẫm.
+   ============================================================ */
+:root{
+  --paper:#E7E7E2;
+  --paper-2:#DEDED8;
+  --grid:#CFCFC7;
+  --ink:#17235A;
+  --ink-2:#5A6285;
+  --rule:#B9B9B0;
+  --blue:#1B3FA0;
+  --blue-soft:#C9D2EC;
+  --orange:#FF6C2F;
+  --orange-soft:#FBD5C2;
+  --overlap:#7E3323;
+  --warn:#A8321B;
+  --blend:multiply;
+  --shadow:0 1px 0 var(--rule);
+  --maxw:2200px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15161C;
+    --paper-2:#1C1E26;
+    --grid:#23252F;
+    --ink:#E4E6EE;
+    --ink-2:#9AA0B8;
+    --rule:#343747;
+    --blue:#7E9CFF;
+    --blue-soft:#26304F;
+    --orange:#FF8A57;
+    --orange-soft:#3A2419;
+    --overlap:#FFB89C;
+    --warn:#FF7D63;
+    --blend:screen;
+    --shadow:0 1px 0 var(--rule);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15161C;
+  --paper-2:#1C1E26;
+  --grid:#23252F;
+  --ink:#E4E6EE;
+  --ink-2:#9AA0B8;
+  --rule:#343747;
+  --blue:#7E9CFF;
+  --blue-soft:#26304F;
+  --orange:#FF8A57;
+  --orange-soft:#3A2419;
+  --overlap:#FFB89C;
+  --warn:#FF7D63;
+  --blend:screen;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:86px}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+
+body{
+  margin:0;
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:28px 28px, 28px 28px;
+  color:var(--ink);
+  font-family:Cambria,"Times New Roman",Tinos,Constantia,serif;
+  font-size:clamp(17.5px,0.44vw + 14.8px,21px);
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+/* hạt giấy in */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.30;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E");
+  mix-blend-mode:var(--blend);
+}
+
+h1,h2,h3,h4{font-family:"Segoe UI",system-ui,-apple-system,Tahoma,Arial,sans-serif;font-weight:700;line-height:1.18;margin:0}
+p{margin:0 0 .85em}
+a{color:var(--blue)}
+strong{font-weight:600;color:var(--ink)}
+code,.mono{font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 clamp(20px,2.4vw,56px)}
+.eyebrow{
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11px;letter-spacing:.13em;line-height:1.9;
+  text-transform:uppercase;color:var(--ink-2);margin:0 0 .6em;
+}
+
+/* ---------- thanh tiêu đề bản vẽ ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;
+  background:var(--paper);border-bottom:1px solid var(--ink);
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11px;letter-spacing:.1em;line-height:1.9;text-transform:uppercase;
+}
+.topbar__in{max-width:var(--maxw);margin:0 auto;padding:9px clamp(20px,2.4vw,56px);display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.topbar__id{color:var(--orange);font-weight:700}
+.topbar__sp{flex:1}
+.tgl{display:flex;border:1px solid var(--ink);background:transparent}
+.tgl button{
+  font:inherit;letter-spacing:.1em;line-height:1.9;text-transform:uppercase;
+  background:transparent;color:var(--ink);border:0;padding:5px 11px;cursor:pointer;
+}
+.tgl button+button{border-left:1px solid var(--ink)}
+.tgl button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.tgl button:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.score{border:1px solid var(--rule);padding:5px 11px;color:var(--ink-2)}
+.score b{color:var(--orange)}
+@media (max-width:760px){
+  .topbar__in{padding:7px 16px;gap:8px}
+  .wrap{padding:0 16px}
+  .topbar__sub{display:none}
+  .topbar__sp{flex:0}
+  .tgl button{padding:4px 8px}
+  .score{padding:4px 8px}
+  #themeBtn{padding:4px 8px !important}
+}
+
+/* ---------- hero ---------- */
+.hero{padding:56px 0 8px}
+.hero__kicker{font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11.5px;letter-spacing:.18em;line-height:2;text-transform:uppercase;color:var(--ink-2);margin-bottom:22px}
+.hero h1{
+  font-size:clamp(38px,6.4vw,78px);
+  font-weight:800;
+  line-height:1.22;
+  letter-spacing:-.012em;
+  text-shadow:3px 3px 0 var(--orange);
+  margin-bottom:.12em;
+}
+.hero h1 em{font-style:normal;color:var(--blue);text-shadow:3px 3px 0 var(--orange)}
+.hero h1,.sheet__title,.final h3{font-family:"Segoe UI Black","Segoe UI",system-ui,-apple-system,Tahoma,Arial,sans-serif}
+.hero__lede{max-width:72ch;font-size:clamp(19px,0.5vw + 15px,23px);color:var(--ink-2);margin-top:22px}
+.hero__lede strong{color:var(--ink)}
+
+/* ---------- mặt bằng tương tác ---------- */
+.plan{margin:38px 0 0;border:1.5px solid var(--ink);background:var(--paper-2);position:relative}
+.plan__hd{
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  padding:11px 16px;border-bottom:1px solid var(--ink);
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11px;letter-spacing:.12em;line-height:1.9;text-transform:uppercase;color:var(--ink-2);
+}
+.plan__hd b{color:var(--ink)}
+.plan svg{display:block;width:100%;height:auto;max-height:900px;margin:0 auto}
+.plan__ctrl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:14px 16px;border-top:1px solid var(--ink)}
+.btn{
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:12px;letter-spacing:.08em;line-height:1.8;text-transform:uppercase;
+  background:var(--ink);color:var(--paper);border:1px solid var(--ink);padding:8px 16px;cursor:pointer;
+}
+.btn:hover{background:var(--blue);border-color:var(--blue)}
+.btn:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.btn--ghost{background:transparent;color:var(--ink)}
+.btn--ghost:hover{background:var(--orange);border-color:var(--orange);color:#fff}
+.plan__say{
+  flex:1;min-width:240px;font-size:.86em;line-height:1.5;color:var(--ink);
+  border-left:3px solid var(--orange);padding-left:12px;
+}
+.plan__say b{font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11px;letter-spacing:.1em;line-height:1.9;text-transform:uppercase;color:var(--orange);display:block}
+.rm{fill:var(--blue-soft);stroke:var(--ink);stroke-width:1.5;cursor:pointer;mix-blend-mode:var(--blend)}
+.rm:hover{fill:var(--orange-soft)}
+.rm.is-on{fill:var(--orange-soft);stroke:var(--orange);stroke-width:2.5}
+.rm-l{font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11px;font-weight:500;letter-spacing:.09em;fill:var(--ink);pointer-events:none;text-transform:uppercase}
+.rm-s{font-family:Cambria,"Times New Roman",Tinos,Constantia,serif;font-size:12.5px;fill:var(--ink-2);pointer-events:none}
+.wall{fill:none;stroke:var(--ink);stroke-width:3}
+.thin{fill:none;stroke:var(--ink-2);stroke-width:1}
+.dash{fill:none;stroke:var(--orange);stroke-width:1.6;stroke-dasharray:7 5}
+.dot{fill:var(--orange);stroke:var(--ink);stroke-width:1.5}
+
+/* ---------- danh mục bản vẽ ---------- */
+.index{margin:64px 0 0;border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);padding:8px 0}
+.index ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.index li{border-right:1px solid var(--rule)}
+.index li:last-child{border-right:0}
+.index a{display:block;padding:14px 16px;text-decoration:none;color:var(--ink)}
+.index a:hover{background:var(--orange-soft)}
+.index .c{font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11px;letter-spacing:.14em;color:var(--orange);display:block}
+.index .t{display:block;font-family:"Segoe UI",system-ui,-apple-system,Tahoma,Arial,sans-serif;font-weight:700;font-size:16px;line-height:1.25;margin:3px 0 2px}
+.index .g{display:block;font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:10.5px;color:var(--ink-2);letter-spacing:.06em}
+
+/* ---------- tờ bản vẽ ---------- */
+.sheet{padding:76px 0 0;border-top:1px solid var(--rule);margin-top:56px}
+.sheet:first-of-type{border-top:0}
+.sheet__head{display:grid;grid-template-columns:auto 1fr auto;gap:8px 22px;align-items:end;margin-bottom:30px}
+.sheet__code{
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-weight:700;font-size:13px;letter-spacing:.14em;
+  color:#fff;background:var(--blue);padding:6px 10px;align-self:start;
+}
+.sheet__title{font-size:clamp(25px,3.8vw,40px);font-weight:800;line-height:1.22;letter-spacing:-.008em}
+.sheet__sub{grid-column:2;font-size:.95em;color:var(--ink-2);margin:6px 0 0;max-width:70ch}
+.gauge{text-align:right;font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:10.5px;letter-spacing:.1em;line-height:1.9;text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
+.gauge__bars{display:flex;gap:3px;justify-content:flex-end;margin:6px 0 4px}
+.gauge__bars i{width:20px;height:9px;border:1px solid var(--ink);display:block}
+.gauge__bars i.on{background:var(--orange)}
+@media (max-width:720px){
+  .sheet__head{grid-template-columns:auto 1fr}
+  .gauge{grid-column:1/-1;text-align:left}
+  .gauge__bars{justify-content:flex-start}
+}
+
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,2.8vw,64px);align-items:start}
+@media (max-width:880px){.cols{grid-template-columns:1fr;gap:26px}}
+
+.lane{border-left:2px solid var(--rule);padding-left:18px}
+.lane--plain{border-left-color:var(--orange)}
+.lane--tech{border-left-color:var(--blue)}
+.lane p,.lane li{max-width:88ch}
+.lane ul{margin:0 0 .8em;padding-left:1.1em}
+.lane li{margin-bottom:.35em}
+
+/* ---------- sơ đồ hộp ---------- */
+.dgm{margin:26px 0;border:1.5px solid var(--ink);background:var(--paper-2);padding:22px clamp(18px,2vw,40px)}
+.dgm__cap{font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:10.5px;letter-spacing:.12em;line-height:1.9;text-transform:uppercase;color:var(--ink-2);margin-bottom:16px}
+.flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
+.flow__b{
+  flex:1 1 160px;min-width:140px;border:1.5px solid var(--ink);background:var(--blue-soft);
+  padding:12px 12px;mix-blend-mode:var(--blend);
+}
+.flow__b b{display:block;font-family:"Segoe UI",system-ui,-apple-system,Tahoma,Arial,sans-serif;font-size:.78em;line-height:1.25}
+.flow__b span{display:block;font-size:.76em;color:var(--ink-2);margin-top:5px;line-height:1.4}
+.flow__b--hot{background:var(--orange-soft)}
+.flow__a{
+  display:flex;align-items:center;justify-content:center;padding:0 9px;
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;color:var(--orange);font-size:17px;font-weight:700;
+}
+@media (max-width:640px){
+  .flow{flex-direction:column}
+  .flow__a{padding:5px 0;transform:rotate(90deg)}
+}
+
+/* ---------- hộp đóng dấu: dùng cho báo cáo ---------- */
+.stamp{margin:30px 0 0;border:2px solid var(--ink);background:var(--paper-2)}
+.stamp__hd{
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  background:var(--ink);color:var(--paper);padding:10px 16px;
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11px;letter-spacing:.11em;line-height:1.9;text-transform:uppercase;
+}
+.stamp__hd .tag{background:var(--orange);color:#fff;padding:2px 8px;letter-spacing:.08em}
+.stamp__bd{padding:18px clamp(16px,2.2vw,48px)}
+.stamp dl{margin:0;display:grid;grid-template-columns:minmax(112px,auto) 1fr;gap:2px 18px}
+.stamp dt{
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:10.5px;letter-spacing:.1em;line-height:1.9;text-transform:uppercase;
+  color:var(--ink-2);padding-top:6px;
+}
+.stamp dd{margin:0;padding:4px 0;border-bottom:1px dotted var(--rule)}
+.stamp dd:last-of-type{border-bottom:0}
+.stamp__ft{padding:0 clamp(16px,2.2vw,48px) 16px}
+@media (min-width:1280px){
+  .stamp dl{grid-template-columns:minmax(96px,auto) minmax(0,1fr) minmax(96px,auto) minmax(0,1fr);gap:2px clamp(18px,1.8vw,40px)}
+}
+@media (max-width:640px){
+  .stamp dl{grid-template-columns:1fr;gap:0}
+  .stamp dt{padding-top:12px}
+}
+
+/* ---------- chi tiết cài đặt ---------- */
+.impl{margin:22px 0 0;border:1px dashed var(--rule);background:transparent}
+.impl summary{
+  cursor:pointer;padding:12px 15px;
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11px;letter-spacing:.09em;line-height:1.9;text-transform:uppercase;color:var(--ink-2);
+}
+.impl summary:hover{color:var(--orange)}
+.impl summary:focus-visible{outline:2px solid var(--orange);outline-offset:-2px}
+.impl__bd{padding:2px 15px 16px;font-size:.92em}
+.impl__bd p,.impl__bd li{max-width:96ch}
+.impl__bd ul{padding-left:1.1em;margin:0}
+.impl__bd li{margin-bottom:.4em}
+
+/* ---------- ghi chú trung thực ---------- */
+.note{
+  margin:22px 0 0;border-left:4px solid var(--warn);background:transparent;padding:4px 0 4px 16px;
+  font-size:.92em;color:var(--ink-2);max-width:96ch;
+}
+.note b{display:block;font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:10.5px;letter-spacing:.11em;line-height:1.9;text-transform:uppercase;color:var(--warn);margin-bottom:3px}
+
+/* ---------- đổi adapter ---------- */
+.swap{margin:26px 0;border:1.5px solid var(--ink);background:var(--paper-2)}
+.swap__hd{padding:12px 16px;border-bottom:1px solid var(--ink);display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.swap__hd span{font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:10.5px;letter-spacing:.11em;line-height:1.9;text-transform:uppercase;color:var(--ink-2);margin-right:4px}
+.chip{
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11.5px;letter-spacing:.06em;
+  border:1.5px solid var(--ink);background:transparent;color:var(--ink);padding:6px 12px;cursor:pointer;
+}
+.chip[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:#fff}
+.chip:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.swap__bd{display:grid;grid-template-columns:1.15fr auto 1fr;gap:0;align-items:stretch}
+@media (max-width:760px){.swap__bd{grid-template-columns:1fr}}
+.swap__core{padding:20px 18px;border-right:1px solid var(--rule)}
+.swap__core h4{font-size:.92em;margin-bottom:8px}
+.swap__core p{font-size:.86em;color:var(--ink-2);margin:0}
+.swap__port{
+  display:flex;align-items:center;justify-content:center;padding:0 14px;border-right:1px solid var(--rule);
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:10.5px;letter-spacing:.14em;line-height:1.9;color:var(--orange);writing-mode:vertical-rl;text-transform:uppercase;
+}
+@media (max-width:760px){.swap__port{writing-mode:horizontal-tb;padding:10px;border-right:0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.swap__core{border-right:0}}
+.swap__ad{padding:20px 18px;background:var(--orange-soft);mix-blend-mode:var(--blend)}
+.swap__ad h4{font-size:.92em;margin-bottom:8px}
+.swap__ad p{font-size:.86em;margin:0 0 .5em}
+.swap__ad .st{font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11px;letter-spacing:.07em;color:var(--overlap)}
+.swap__ft{border-top:1px solid var(--ink);padding:12px 16px;font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:12px;color:var(--ink-2)}
+.swap__ft b{color:var(--orange);font-size:15px}
+
+/* ---------- quiz ---------- */
+.quiz{margin:34px 0 0;border:1.5px solid var(--blue);background:transparent}
+.quiz__hd{background:var(--blue);color:#fff;padding:9px 16px;font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11px;letter-spacing:.12em;line-height:1.9;text-transform:uppercase}
+.quiz__bd{padding:18px 16px}
+.quiz__q{font-family:"Segoe UI",system-ui,-apple-system,Tahoma,Arial,sans-serif;font-weight:700;font-size:1.02em;line-height:1.35;margin-bottom:14px}
+.quiz__opts{display:grid;gap:8px}
+.opt{
+  display:flex;gap:11px;align-items:flex-start;text-align:left;width:100%;
+  border:1px solid var(--rule);background:transparent;color:var(--ink);
+  font:inherit;font-size:.92em;padding:11px 14px;cursor:pointer;line-height:1.45;
+}
+.opt:hover:not([disabled]){border-color:var(--ink);background:var(--paper-2)}
+.opt[disabled]{cursor:default}
+.opt .k{font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:12px;color:var(--ink-2);padding-top:2px;flex:0 0 auto}
+.opt.is-right{border-color:var(--blue);border-width:2px;background:var(--blue-soft)}
+.opt.is-wrong{border-color:var(--warn);border-width:2px;opacity:.75}
+.quiz__fb{margin-top:14px;font-size:.92em;border-left:3px solid var(--orange);padding-left:12px;display:none}
+.quiz__fb.show{display:block}
+.quiz__fb b{font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:10.5px;letter-spacing:.11em;line-height:1.9;text-transform:uppercase;color:var(--orange);display:block;margin-bottom:2px}
+
+/* ---------- bảng quyết định ---------- */
+.tblwrap{overflow-x:auto;border:1.5px solid var(--ink);margin:28px 0}
+table{border-collapse:collapse;width:100%;min-width:820px;font-size:.92em}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{
+  background:var(--ink);color:var(--paper);border-bottom:0;
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:10.5px;letter-spacing:.11em;line-height:1.9;text-transform:uppercase;font-weight:400;
+}
+tbody tr:last-child td{border-bottom:0}
+td b{font-family:"Segoe UI",system-ui,-apple-system,Tahoma,Arial,sans-serif;}
+.yes{color:var(--blue);font-weight:600}
+.no{color:var(--warn)}
+
+/* ---------- phản biện ---------- */
+.qa{border-top:1.5px solid var(--ink);margin-top:26px}
+.qa details{border-bottom:1px solid var(--rule)}
+.qa summary{
+  cursor:pointer;padding:16px 40px 16px 0;position:relative;
+  font-family:"Segoe UI",system-ui,-apple-system,Tahoma,Arial,sans-serif;font-weight:700;font-size:1.02em;line-height:1.35;
+}
+.qa summary::after{content:"+";position:absolute;right:8px;top:14px;color:var(--orange);font-size:22px;font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace}
+.qa details[open] summary::after{content:"–"}
+.qa summary:hover{color:var(--blue)}
+.qa summary:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.qa__bd{padding:0 0 20px;max-width:92ch}
+
+/* ---------- kết ---------- */
+.final{margin:70px 0 0;border:2px solid var(--ink);background:var(--paper-2);padding:30px 24px;text-align:center}
+.final h3{font-size:clamp(23px,3.6vw,34px);font-weight:800;line-height:1.26;letter-spacing:-.012em}
+.final__n{font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:56px;font-weight:700;color:var(--orange);line-height:1;margin:14px 0 6px}
+.final p{max-width:60ch;font-size:.95em;margin-left:auto;margin-right:auto;color:var(--ink-2)}
+
+footer{margin-top:80px;border-top:1.5px solid var(--ink);padding:26px 0 60px}
+.colophon{
+  display:flex;gap:26px;flex-wrap:wrap;justify-content:space-between;
+  font-family:Consolas,"Cascadia Mono",Menlo,"DejaVu Sans Mono","Courier New",monospace;font-size:11px;letter-spacing:.09em;line-height:1.9;text-transform:uppercase;color:var(--ink-2);
+}
+
+/* ---------- chế độ đọc ---------- */
+body[data-mode="plain"] .lane--tech,
+body[data-mode="plain"] .impl,
+body[data-mode="plain"] .tech-only{display:none}
+body[data-mode="plain"] .cols{grid-template-columns:1fr}
+body[data-mode="plain"] .lane--plain{max-width:76ch}
+
+::selection{background:var(--orange);color:#fff}
+:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+</style>
+</head>
+<body data-mode="full">
+
+<div class="topbar">
+  <div class="topbar__in">
+    <span class="topbar__id">BẢN VẼ A</span>
+    <span class="topbar__sub">Kiến trúc phần mềm · dự án POS Cafe</span>
+    <span class="topbar__sp"></span>
+    <div class="tgl" role="group" aria-label="Chế độ đọc">
+      <button type="button" id="mPlain" aria-pressed="false">Dễ hiểu</button>
+      <button type="button" id="mFull" aria-pressed="true">Đầy đủ</button>
+    </div>
+    <div class="score" aria-live="polite">Quiz <b id="scoreN">0</b>/9</div>
+    <button type="button" class="btn btn--ghost" id="themeBtn" style="padding:5px 11px">Đổi nền</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <p class="hero__kicker">Đọc bản vẽ · dành cho cả người không học công nghệ thông tin</p>
+  <h1>Kiến trúc<br>phần mềm<br><em>đọc như mặt bằng quán</em></h1>
+  <p class="hero__lede">
+    Kiến trúc phần mềm là <strong>cách chia việc và chia phòng</strong> bên trong một phần mềm: ai giữ dữ liệu,
+    ai quyết định, ai chỉ hiển thị, và các phần nói chuyện với nhau qua cửa nào. Trang này đi qua
+    <strong>8 kiến trúc phổ biến ngoài thực tế</strong>, mỗi cái kể trước bằng chuyện quán cà phê, rồi nói lại cho
+    chính xác, rồi soi vào dự án POS Cafe: <strong>có dùng không, dùng tới đâu, và vì sao chọn cái này thay vì cái kia</strong>.
+  </p>
+</section>
+
+<!-- ============ MẶT BẰNG TƯƠNG TÁC ============ -->
+<section class="plan" aria-label="Mặt bằng tương tác của phần mềm">
+  <div class="plan__hd">
+    <b>Mặt bằng A-00</b>
+    <span>Một đơn hàng đi qua những phòng nào</span>
+    <span style="margin-left:auto">Bấm vào từng phòng để xem phòng đó làm gì</span>
+  </div>
+
+  <svg id="planSvg" viewBox="0 0 1000 470" role="img" aria-label="Sơ đồ mặt bằng: khu khách, quầy order, sổ tay luật quán, cửa giao hàng và kho trung tâm">
+    <!-- tường bao -->
+    <rect class="wall" x="42" y="46" width="700" height="380"/>
+    <!-- mũi tên hướng bắc -->
+    <g transform="translate(966,60)">
+      <path class="thin" d="M0,26 L0,-6 M-6,4 L0,-6 L6,4"/>
+      <text class="rm-l" x="-4" y="40" text-anchor="middle">B</text>
+    </g>
+    <!-- vạch kích thước -->
+    <path class="thin" d="M42,36 L742,36 M42,30 L42,42 M742,30 L742,42"/>
+    <text class="rm-l" x="392" y="28" text-anchor="middle">PHẦN MỀM CHẠY TRÊN MÁY CỦA QUÁN</text>
+    <path class="thin" d="M812,36 L978,36 M812,30 L812,42 M978,30 L978,42"/>
+    <text class="rm-l" x="895" y="28" text-anchor="middle">MÁY CHỦ Ở XA</text>
+
+    <!-- phòng 1 -->
+    <rect class="rm" id="r1" x="62" y="66" width="238" height="340" tabindex="0" role="button" aria-label="Khu khách, tức màn hình"/>
+    <text class="rm-l" x="80" y="92">01 · KHU KHÁCH</text>
+    <text class="rm-s" x="80" y="114">Màn hình, nút bấm</text>
+    <text class="rm-s" x="80" y="132">Chỗ nhân viên thao tác</text>
+    <!-- bàn ghế trang trí -->
+    <g class="thin">
+      <circle cx="120" cy="200" r="20"/><circle cx="196" cy="200" r="20"/><circle cx="272" cy="200" r="20"/>
+      <circle cx="120" cy="272" r="20"/><circle cx="196" cy="272" r="20"/><circle cx="272" cy="272" r="20"/>
+      <rect x="98" y="336" width="176" height="26"/>
+    </g>
+    <text class="rm-s" x="186" y="354" text-anchor="middle">quầy thu ngân</text>
+
+    <!-- phòng 2 -->
+    <rect class="rm" id="r2" x="320" y="66" width="188" height="158" tabindex="0" role="button" aria-label="Quầy order, tức luồng nghiệp vụ"/>
+    <text class="rm-l" x="336" y="92">02 · QUẦY ORDER</text>
+    <text class="rm-s" x="336" y="114">Trình tự các bước</text>
+    <text class="rm-s" x="336" y="132">Bàn này mở đơn chưa?</text>
+    <text class="rm-s" x="336" y="150">Nhân viên có quyền không?</text>
+
+    <!-- phòng 3 -->
+    <rect class="rm" id="r3" x="320" y="248" width="188" height="158" tabindex="0" role="button" aria-label="Sổ tay luật quán, tức lõi nghiệp vụ"/>
+    <text class="rm-l" x="336" y="274">03 · SỔ TAY LUẬT</text>
+    <text class="rm-s" x="336" y="296">Cách cộng tiền</text>
+    <text class="rm-s" x="336" y="314">Cách chốt giá lúc gửi bếp</text>
+    <text class="rm-s" x="336" y="332">Không biết gì về mạng</text>
+
+    <!-- phòng 4 -->
+    <rect class="rm" id="r4" x="528" y="66" width="196" height="340" tabindex="0" role="button" aria-label="Cửa giao hàng, tức cổng và bộ nối"/>
+    <text class="rm-l" x="544" y="92">04 · CỬA GIAO HÀNG</text>
+    <text class="rm-s" x="544" y="114">Ổ cắm chuẩn</text>
+    <text class="rm-s" x="544" y="132">Lưu, in, báo tin</text>
+    <!-- ổ cắm -->
+    <g class="thin">
+      <rect x="560" y="180" width="132" height="34"/><text class="rm-s" x="626" y="202" text-anchor="middle">ổ lưu dữ liệu</text>
+      <rect x="560" y="228" width="132" height="34"/><text class="rm-s" x="626" y="250" text-anchor="middle">ổ in hoá đơn</text>
+      <rect x="560" y="276" width="132" height="34"/><text class="rm-s" x="626" y="298" text-anchor="middle">ổ báo tin</text>
+    </g>
+
+    <!-- kho -->
+    <rect class="rm" id="r5" x="812" y="146" width="166" height="180" tabindex="0" role="button" aria-label="Kho trung tâm, tức máy chủ và cơ sở dữ liệu"/>
+    <text class="rm-l" x="828" y="172">05 · KHO</text>
+    <text class="rm-s" x="828" y="194">Sự thật duy nhất</text>
+    <text class="rm-s" x="828" y="212">Mọi máy đọc chung</text>
+    <text class="rm-s" x="828" y="230">Ghi trọn vẹn hoặc</text>
+    <text class="rm-s" x="828" y="248">không ghi gì</text>
+
+    <!-- đường mạng -->
+    <path class="dash" d="M724,236 L812,236"/>
+    <text class="rm-l" x="768" y="222" text-anchor="middle">MẠNG</text>
+
+    <!-- cửa -->
+    <path class="thin" d="M300,220 L320,220 M300,290 L320,290 M508,145 L528,145 M508,326 L528,326 M414,224 L414,248"/>
+
+    <!-- đường đi của đơn hàng -->
+    <path id="route" d="M186,236 L310,236 L414,150 L414,326 L560,326 L626,236 L724,236 L900,236" fill="none" stroke="none"/>
+    <circle id="marker" class="dot" cx="186" cy="236" r="9" opacity="0"/>
+  </svg>
+
+  <div class="plan__ctrl">
+    <button class="btn" id="runBtn" type="button">▶ Chạy thử: khách gọi 2 ly cà phê</button>
+    <div class="plan__say" id="planSay">
+      <b>Chọn một phòng</b>
+      Mỗi phòng là một lớp của phần mềm. Chia phòng để khi thay một thứ thì không phải đập cả quán.
+    </div>
+  </div>
+</section>
+
+<!-- ============ DANH MỤC ============ -->
+<nav class="index" aria-label="Danh mục bản vẽ">
+  <ol>
+    <li><a href="#a01"><span class="c">A-01</span><span class="t">Client – Server</span><span class="g">Dùng chính</span></a></li>
+    <li><a href="#a02"><span class="c">A-02</span><span class="t">Phân lớp</span><span class="g">Dùng chính</span></a></li>
+    <li><a href="#a03"><span class="c">A-03</span><span class="t">MVC / MVVM</span><span class="g">Dùng biến thể</span></a></li>
+    <li><a href="#a04"><span class="c">A-04</span><span class="t">Monolith / Microservices</span><span class="g">Cố ý không tách</span></a></li>
+    <li><a href="#a05"><span class="c">A-05</span><span class="t">Ports &amp; Adapters</span><span class="g">Xương sống dự án</span></a></li>
+    <li><a href="#a06"><span class="c">A-06</span><span class="t">Clean Architecture</span><span class="g">Dùng một phần</span></a></li>
+    <li><a href="#a07"><span class="c">A-07</span><span class="t">Hướng sự kiện</span><span class="g">Dùng một phần</span></a></li>
+    <li><a href="#a08"><span class="c">A-08</span><span class="t">Serverless / BaaS</span><span class="g">Dùng chính</span></a></li>
+  </ol>
+</nav>
+
+
+<!-- ==================== A-01 ==================== -->
+<section class="sheet" id="a01">
+  <header class="sheet__head">
+    <div class="sheet__code">A-01</div>
+    <h2 class="sheet__title">Client – Server</h2>
+    <div class="gauge">Mức dùng trong dự án<div class="gauge__bars"><i class="on"></i><i class="on"></i><i class="on"></i></div>Dùng chính</div>
+    <p class="sheet__sub">Câu hỏi gốc của mọi kiến trúc: ai giữ sự thật?</p>
+  </header>
+
+  <div class="cols">
+    <div class="lane lane--plain">
+      <p class="eyebrow">Kể như chuyện quán</p>
+      <p>Khách ngồi bàn, gọi món với nhân viên. Nhân viên không tự nấu — họ chuyển yêu cầu vào bếp. Bếp giữ nguyên liệu, giữ công thức, và là nơi duy nhất biết còn bao nhiêu ly.</p>
+      <p>Nếu mỗi nhân viên tự giữ một cuốn sổ riêng, hai người cùng bán ly cuối cùng thì quán vỡ trận. Vì vậy quán chỉ có <strong>một chỗ giữ sự thật</strong>, còn lại đều đi hỏi chỗ đó.</p>
+    </div>
+    <div class="lane lane--tech">
+      <p class="eyebrow">Nói cho chính xác</p>
+      <p><strong>Client</strong> là phần chạy trước mặt người dùng: máy tính tiền, máy tính bảng, trình duyệt. <strong>Server</strong> là phần giữ dữ liệu và luật, chạy ở nơi khác.</p>
+      <ul>
+        <li>Client gửi yêu cầu, server trả kết quả.</li>
+        <li>Nhiều client dùng chung một server, nên tất cả thấy cùng một dữ liệu.</li>
+        <li>Server là nơi cuối cùng quyết định đúng sai. Client chỉ hỏi và hiển thị.</li>
+      </ul>
+      <p>Gần như mọi phần mềm có nhiều người dùng chung đều nằm trên nền này: ngân hàng, mạng xã hội, phần mềm bán hàng.</p>
+    </div>
+  </div>
+
+  <figure class="dgm">
+    <figcaption class="dgm__cap">Hình A-01 · Ba máy trong quán, một nguồn sự thật</figcaption>
+    <div class="flow">
+      <div class="flow__b"><b>Máy thu ngân</b><span>Client</span></div>
+      <div class="flow__a">→</div>
+      <div class="flow__b flow__b--hot"><b>Máy chủ + cơ sở dữ liệu</b><span>Nơi duy nhất giữ đơn hàng, bàn, tiền</span></div>
+      <div class="flow__a">←</div>
+      <div class="flow__b"><b>Máy tính bảng của phục vụ</b><span>Client</span></div>
+    </div>
+  </figure>
+
+  <div class="stamp">
+    <div class="stamp__hd"><span class="tag">Dùng cho báo cáo</span> Quyết định · nền tảng triển khai</div>
+    <div class="stamp__bd">
+      <dl>
+        <dt>Chọn</dt><dd>Mô hình client – server: nhiều thiết bị trong quán cùng đọc ghi trên một cơ sở dữ liệu tập trung.</dd>
+        <dt>Không chọn</dt><dd>Mỗi máy giữ dữ liệu riêng rồi đồng bộ với nhau sau.</dd>
+        <dt>Vì sao</dt><dd>Yêu cầu cốt lõi của bài toán là nhiều thiết bị phải thấy cùng một trạng thái bàn và đơn ngay lập tức. Dữ liệu phân tán trên từng máy sẽ sinh ra bài toán hợp nhất xung đột mà nghiệp vụ quán không cần.</dd>
+        <dt>Đánh đổi</dt><dd>Ứng dụng phụ thuộc kết nối mạng. Mất mạng thì không bán được, vì không có kho dữ liệu cục bộ để tiếp tục ghi đơn.</dd>
+      </dl>
+    </div>
+    <div class="stamp__ft"><button class="btn btn--ghost copy" type="button">Sao chép đoạn này</button></div>
+  </div>
+
+  <div class="quiz" data-answer="1">
+    <div class="quiz__hd">Kiểm tra nhanh · 1 / 9</div>
+    <div class="quiz__bd">
+      <p class="quiz__q">Vì sao dự án không cho mỗi máy tự giữ dữ liệu riêng?</p>
+      <div class="quiz__opts">
+        <button class="opt" type="button"><span class="k">A</span><span>Vì như vậy tốn dung lượng của máy</span></button>
+        <button class="opt" type="button"><span class="k">B</span><span>Vì nhiều máy phải thấy cùng một trạng thái bàn và đơn, dữ liệu tách rời sẽ sinh xung đột</span></button>
+        <button class="opt" type="button"><span class="k">C</span><span>Vì trình duyệt không cho phép lưu dữ liệu</span></button>
+      </div>
+      <div class="quiz__fb"><b>Giải thích</b>Đúng: cả quán cần một nguồn sự thật. Đây cũng là lý do ứng dụng chấp nhận điểm yếu online-only trong giai đoạn này.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== A-02 ==================== -->
+<section class="sheet" id="a02">
+  <header class="sheet__head">
+    <div class="sheet__code">A-02</div>
+    <h2 class="sheet__title">Kiến trúc phân lớp</h2>
+    <div class="gauge">Mức dùng trong dự án<div class="gauge__bars"><i class="on"></i><i class="on"></i><i class="on"></i></div>Dùng chính</div>
+    <p class="sheet__sub">Chia quán thành các khu, và cấm đi tắt qua tường.</p>
+  </header>
+
+  <div class="cols">
+    <div class="lane lane--plain">
+      <p class="eyebrow">Kể như chuyện quán</p>
+      <p>Quán chia thành khu khách, quầy order, bếp và kho. Khách không tự chạy vào kho lấy hàng. Muốn gì thì nói với phục vụ, phục vụ báo quầy, quầy báo bếp, bếp lấy kho.</p>
+      <p>Nghe qua thì mất công. Nhưng nhờ vậy, hôm nào đổi nhà cung cấp thì <strong>chỉ kho biết chuyện đó</strong>. Khách vẫn gọi món y như cũ.</p>
+    </div>
+    <div class="lane lane--tech">
+      <p class="eyebrow">Nói cho chính xác</p>
+      <p>Phần mềm chia thành các lớp xếp chồng, mỗi lớp chỉ được gọi xuống lớp dưới, không gọi ngược lên trên:</p>
+      <ul>
+        <li><strong>Lớp giao diện</strong> — hiển thị và nhận thao tác.</li>
+        <li><strong>Lớp nghiệp vụ</strong> — trình tự các bước, kiểm tra điều kiện, quyền.</li>
+        <li><strong>Lớp truy cập dữ liệu</strong> — đọc ghi cơ sở dữ liệu.</li>
+      </ul>
+      <p>Quy tắc quan trọng nhất không phải là có bao nhiêu lớp, mà là <strong>chiều phụ thuộc chỉ đi một hướng</strong>. Khi giao diện gọi thẳng xuống cơ sở dữ liệu, lớp trung gian mất tác dụng và kiến trúc chỉ còn trên giấy.</p>
+    </div>
+  </div>
+
+  <figure class="dgm">
+    <figcaption class="dgm__cap">Hình A-02 · Chiều phụ thuộc đi một hướng</figcaption>
+    <div class="flow">
+      <div class="flow__b"><b>Giao diện</b><span>Màn hình, ngăn kéo thao tác</span></div>
+      <div class="flow__a">→</div>
+      <div class="flow__b"><b>Luồng nghiệp vụ</b><span>Gọi món, thanh toán, phân quyền</span></div>
+      <div class="flow__a">→</div>
+      <div class="flow__b"><b>Lõi và hợp đồng dữ liệu</b><span>Kiểu dữ liệu, quy tắc tính tiền</span></div>
+      <div class="flow__a">→</div>
+      <div class="flow__b flow__b--hot"><b>Bộ nối hạ tầng</b><span>Cơ sở dữ liệu, in, báo tin</span></div>
+    </div>
+  </figure>
+
+  <div class="stamp">
+    <div class="stamp__hd"><span class="tag">Dùng cho báo cáo</span> Quyết định · tổ chức mã nguồn</div>
+    <div class="stamp__bd">
+      <dl>
+        <dt>Chọn</dt><dd>Tách bốn lớp rõ ràng: giao diện, luồng nghiệp vụ, lõi nghiệp vụ và hợp đồng dữ liệu, bộ nối hạ tầng.</dd>
+        <dt>Không chọn</dt><dd>Viết truy vấn cơ sở dữ liệu trực tiếp trong thành phần giao diện.</dd>
+        <dt>Vì sao</dt><dd>Cho phép thay hạ tầng mà không sửa giao diện, và cho phép kiểm thử nghiệp vụ mà không cần kết nối mạng.</dd>
+        <dt>Đánh đổi</dt><dd>Nhiều tệp hơn, nhiều lớp trung gian hơn so với cách viết trực tiếp. Với dự án nhỏ, chi phí này thấy ngay còn lợi ích thì tới muộn.</dd>
+        <dt>Kiểm chứng</dt><dd>Ranh giới phụ thuộc giữa các lớp được ràng buộc bằng một kiểm thử tự động: kiểm thử này đọc toàn bộ khai báo phụ thuộc trong mã nguồn và báo lỗi nếu có lớp gọi sai chiều. Kiến trúc vì vậy không chỉ là quy ước, mà là điều kiện để mã nguồn được chấp nhận.</dd>
+      </dl>
+    </div>
+    <div class="stamp__ft"><button class="btn btn--ghost copy" type="button">Sao chép đoạn này</button></div>
+  </div>
+
+  <details class="impl">
+    <summary>Chi tiết cài đặt — để học, đừng chép vào báo cáo</summary>
+    <div class="impl__bd">
+      <ul>
+        <li>Các lớp nằm trong <code>src/</code>: <code>app</code> (giao diện) → <code>features</code> (luồng) → <code>domain</code>, <code>core</code>, <code>ports</code> → <code>adapters</code>.</li>
+        <li>Kiểm thử ranh giới là <code>src/architectureBoundaries.test.ts</code>. Nó dùng bộ phân tích cú pháp TypeScript để quét <code>import</code>, <code>export ... from</code> và cả <code>import()</code> động.</li>
+        <li>Luật đang được ép: <code>domain/core/ports</code> không phụ thuộc React hay adapter; <code>features</code> không nhập từ <code>app</code> hay <code>adapters</code>; chỉ đúng một tệp được phép lắp adapter cụ thể.</li>
+        <li>Chạy thử: <code>npm run test</code>.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="quiz" data-answer="2">
+    <div class="quiz__hd">Kiểm tra nhanh · 2 / 9</div>
+    <div class="quiz__bd">
+      <p class="quiz__q">Điều gì làm cho kiến trúc phân lớp thực sự có hiệu lực, chứ không chỉ là cách đặt tên thư mục?</p>
+      <div class="quiz__opts">
+        <button class="opt" type="button"><span class="k">A</span><span>Có ít nhất ba lớp</span></button>
+        <button class="opt" type="button"><span class="k">B</span><span>Mỗi lớp nằm trong một thư mục riêng</span></button>
+        <button class="opt" type="button"><span class="k">C</span><span>Chiều phụ thuộc chỉ đi một hướng, và có cơ chế phát hiện khi bị vi phạm</span></button>
+      </div>
+      <div class="quiz__fb"><b>Giải thích</b>Thư mục chỉ là cách sắp xếp. Kiến trúc sống được nhờ ràng buộc phụ thuộc, và ràng buộc chỉ đáng tin khi có kiểm thử tự động canh giữ.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== A-03 ==================== -->
+<section class="sheet" id="a03">
+  <header class="sheet__head">
+    <div class="sheet__code">A-03</div>
+    <h2 class="sheet__title">MVC và MVVM</h2>
+    <div class="gauge">Mức dùng trong dự án<div class="gauge__bars"><i class="on"></i><i class="on"></i><i></i></div>Dùng biến thể</div>
+    <p class="sheet__sub">Tách cái người dùng nhìn thấy ra khỏi cái là sự thật.</p>
+  </header>
+
+  <div class="cols">
+    <div class="lane lane--plain">
+      <p class="eyebrow">Kể như chuyện quán</p>
+      <p>Thực đơn treo tường là <strong>cái người ta nhìn</strong>. Bảng giá gốc trong sổ của chủ quán là <strong>sự thật</strong>. Người phục vụ đứng giữa: nghe khách nói, tra sổ, rồi cập nhật lại tấm bảng.</p>
+      <p>Nếu ai đó sửa thẳng lên tấm bảng mà không sửa sổ, quán bắt đầu bán sai giá. Đó chính là lỗi mà kiểu tách này sinh ra để phòng.</p>
+    </div>
+    <div class="lane lane--tech">
+      <p class="eyebrow">Nói cho chính xác</p>
+      <ul>
+        <li><strong>Model</strong> — dữ liệu và quy tắc, là sự thật.</li>
+        <li><strong>View</strong> — phần hiển thị, không tự quyết định gì.</li>
+        <li><strong>Controller / ViewModel</strong> — nhận thao tác, gọi model, đẩy kết quả ra view.</li>
+      </ul>
+      <p>Giao diện web hiện đại thường không dùng MVC cổ điển nữa mà dùng <strong>thành phần</strong> kết hợp <strong>kho trạng thái</strong>. Nhưng ý tưởng gốc vẫn còn nguyên, chỉ đổi tên: cái quan trọng là tách <strong>trạng thái máy chủ</strong> khỏi <strong>trạng thái giao diện</strong>.</p>
+      <p><strong>Trạng thái máy chủ</strong> là dữ liệu vay mượn từ nơi khác: thực đơn, danh sách bàn, đơn đang mở. Nó có thể cũ đi và cần tải lại. <strong>Trạng thái giao diện</strong> là chuyện của riêng máy này: đang mở ngăn kéo nào, đang chọn khu nào, ai đang đăng nhập trên máy này.</p>
+    </div>
+  </div>
+
+  <figure class="dgm">
+    <figcaption class="dgm__cap">Hình A-03 · Hai loại trạng thái, hai cách quản lý</figcaption>
+    <div class="flow">
+      <div class="flow__b flow__b--hot"><b>Trạng thái máy chủ</b><span>Thực đơn, bàn, đơn, báo cáo. Có bộ nhớ đệm, có tải lại, có thể cũ.</span></div>
+      <div class="flow__a">+</div>
+      <div class="flow__b"><b>Trạng thái giao diện</b><span>Ngăn kéo đang mở, khu đang chọn, nhân viên đang thao tác. Không cần đồng bộ đi đâu.</span></div>
+      <div class="flow__a">→</div>
+      <div class="flow__b"><b>Màn hình</b><span>Chỉ vẽ lại theo hai nguồn trên</span></div>
+    </div>
+  </figure>
+
+  <div class="stamp">
+    <div class="stamp__hd"><span class="tag">Dùng cho báo cáo</span> Quyết định · quản lý trạng thái giao diện</div>
+    <div class="stamp__bd">
+      <dl>
+        <dt>Chọn</dt><dd>Tách hẳn trạng thái máy chủ và trạng thái giao diện thành hai cơ chế quản lý khác nhau: một thư viện chuyên về bộ nhớ đệm và tải lại cho dữ liệu máy chủ, một kho trạng thái nhẹ cho điều hướng và ngữ cảnh màn hình.</dd>
+        <dt>Không chọn</dt><dd>Gom tất cả vào một kho trạng thái toàn cục duy nhất, hoặc dùng một thư viện quản lý trạng thái nặng theo kiểu cổ điển.</dd>
+        <dt>Vì sao</dt><dd>Hai loại trạng thái có vòng đời khác nhau. Dữ liệu máy chủ cần bộ nhớ đệm, trạng thái tải, trạng thái lỗi và cơ chế làm mới khi có tín hiệu từ máy khác. Trạng thái giao diện thì không cần gì trong số đó. Trộn chung buộc phải tự viết lại các cơ chế đã có sẵn.</dd>
+        <dt>Đánh đổi</dt><dd>Phải giữ kỷ luật đặt tên khoá truy vấn và xác định đúng phạm vi cần làm mới sau mỗi thao tác ghi.</dd>
+      </dl>
+    </div>
+    <div class="stamp__ft"><button class="btn btn--ghost copy" type="button">Sao chép đoạn này</button></div>
+  </div>
+
+  <details class="impl">
+    <summary>Chi tiết cài đặt — để học, đừng chép vào báo cáo</summary>
+    <div class="impl__bd">
+      <ul>
+        <li>Trạng thái máy chủ: TanStack Query. Sau mỗi mutation thì gọi <code>invalidateQueries</code> đúng phạm vi, không tự vá bộ nhớ đệm bằng tay.</li>
+        <li>Trạng thái giao diện: Zustand trong <code>src/app/useAppStore.ts</code> — nhân viên hiện tại, khu và nhóm món đang chọn, ngăn kéo đang mở, ngữ cảnh thanh toán.</li>
+        <li>Ứng dụng chỉ có một URL, không dùng router. Điều hướng là trạng thái trong kho, không phải đường dẫn.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="quiz" data-answer="0">
+    <div class="quiz__hd">Kiểm tra nhanh · 3 / 9</div>
+    <div class="quiz__bd">
+      <p class="quiz__q">Đâu là <em>trạng thái máy chủ</em> chứ không phải trạng thái giao diện?</p>
+      <div class="quiz__opts">
+        <button class="opt" type="button"><span class="k">A</span><span>Danh sách bàn đang có khách</span></button>
+        <button class="opt" type="button"><span class="k">B</span><span>Ngăn kéo thanh toán đang mở hay đóng</span></button>
+        <button class="opt" type="button"><span class="k">C</span><span>Khu vực đang được chọn trên màn hình</span></button>
+      </div>
+      <div class="quiz__fb"><b>Giải thích</b>Danh sách bàn là dữ liệu vay từ máy chủ: máy khác đổi thì máy này phải biết. Hai đáp án còn lại chỉ đúng với riêng máy đang thao tác.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== A-04 ==================== -->
+<section class="sheet" id="a04">
+  <header class="sheet__head">
+    <div class="sheet__code">A-04</div>
+    <h2 class="sheet__title">Monolith &amp; Microservices</h2>
+    <div class="gauge">Mức dùng trong dự án<div class="gauge__bars"><i class="on"></i><i></i><i></i></div>Cố ý không tách</div>
+    <p class="sheet__sub">Một quán làm hết, hay một chuỗi cửa hàng phải gọi điện cho nhau.</p>
+  </header>
+
+  <div class="cols">
+    <div class="lane lane--plain">
+      <p class="eyebrow">Kể như chuyện quán</p>
+      <p><strong>Monolith</strong> là một quán làm hết mọi việc dưới cùng một mái: pha chế, thu ngân, kho, sổ sách. Muốn hỏi gì thì quay sang hỏi, trả lời ngay.</p>
+      <p><strong>Microservices</strong> là tách thành nhiều cửa hàng chuyên biệt ở nhiều địa chỉ: một nơi lo pha chế, một nơi lo thu tiền, một nơi lo kho. Mỗi nơi tự lớn, tự thuê người, tự sửa chữa mà không làm phiền nơi khác.</p>
+      <p>Cái giá là: giờ họ phải <strong>gọi điện cho nhau</strong>. Điện thoại bận thì sao? Nơi thu tiền báo đã thu, nhưng nơi giữ kho chưa nghe máy thì sao? Đó là những câu hỏi không tồn tại khi mọi thứ trong một mái nhà.</p>
+    </div>
+    <div class="lane lane--tech">
+      <p class="eyebrow">Nói cho chính xác</p>
+      <p><strong>Monolith</strong>: toàn bộ hệ thống là một đơn vị triển khai duy nhất. Các phần gọi nhau trực tiếp, dùng chung một cơ sở dữ liệu, và có thể nằm chung trong một giao dịch.</p>
+      <p><strong>Microservices</strong>: chia theo miền nghiệp vụ, mỗi dịch vụ có kho dữ liệu riêng và triển khai độc lập. Đổi lại phải chấp nhận:</p>
+      <ul>
+        <li>Giao tiếp qua mạng, nên có độ trễ và có thể thất bại.</li>
+        <li>Không còn giao dịch chung. Muốn giữ nhất quán phải dùng các mẫu bù trừ nhiều bước.</li>
+        <li>Cần hạ tầng vận hành riêng: theo dõi, truy vết, phát hiện lỗi phân tán.</li>
+      </ul>
+      <p>Có một điểm giữa: <strong>modular monolith</strong> — vẫn triển khai một khối, nhưng bên trong chia module có ranh giới rõ. Đây là chỗ đứng của phần lớn dự án vừa và nhỏ.</p>
+    </div>
+  </div>
+
+  <figure class="dgm">
+    <figcaption class="dgm__cap">Hình A-04 · Cái mất khi tách dịch vụ: giao dịch chung</figcaption>
+    <div class="flow">
+      <div class="flow__b"><b>Một khối</b><span>Trừ món, ghi đơn, đổi trạng thái bàn, ghi tiền — tất cả trong <em>một</em> giao dịch. Hỏng bước nào thì huỷ cả, không để lại nửa vời.</span></div>
+      <div class="flow__a">≠</div>
+      <div class="flow__b flow__b--hot"><b>Nhiều dịch vụ</b><span>Mỗi bước là một lời gọi mạng riêng. Bước hai hỏng thì bước một đã ghi xong rồi. Phải tự viết cơ chế hoàn tác.</span></div>
+    </div>
+  </figure>
+
+  <div class="stamp">
+    <div class="stamp__hd"><span class="tag">Dùng cho báo cáo</span> Quyết định · phạm vi hệ thống · câu phản biện kinh điển</div>
+    <div class="stamp__bd">
+      <dl>
+        <dt>Chọn</dt><dd>Một khối triển khai duy nhất, chia module rõ ràng theo miền nghiệp vụ bên trong.</dd>
+        <dt>Không chọn</dt><dd>Kiến trúc microservices.</dd>
+        <dt>Vì sao</dt><dd>Ba lý do. Thứ nhất, quy mô bài toán là một quán với vài thiết bị và một cơ sở dữ liệu, không có nhu cầu mở rộng độc lập theo từng miền. Thứ hai, nghiệp vụ cốt lõi đòi hỏi đơn hàng, trạng thái bàn và khoản thu phải nhất quán tuyệt đối trong cùng một thao tác; tách dịch vụ sẽ phá vỡ giao dịch chung và buộc phải tự xây cơ chế bù trừ phức tạp hơn nhiều lần lợi ích thu được. Thứ ba, chi phí vận hành của microservices rơi vào hạ tầng và giám sát, những thứ nằm ngoài phạm vi và thời gian của đồ án.</dd>
+        <dt>Đánh đổi</dt><dd>Không mở rộng độc lập từng phần được, và mọi thay đổi đều triển khai lại cả khối. Với quy mô hiện tại, cả hai đều không phải ràng buộc thực tế.</dd>
+        <dt>Hướng mở</dt><dd>Ranh giới module bên trong đã đủ rõ để tách dịch vụ về sau nếu quy mô thay đổi, mà không phải viết lại nghiệp vụ.</dd>
+      </dl>
+    </div>
+    <div class="stamp__ft"><button class="btn btn--ghost copy" type="button">Sao chép đoạn này</button></div>
+  </div>
+
+  <div class="note">
+    <b>Nói cho đúng mực</b>
+    Microservices không phải là bậc cao hơn của monolith. Nó là một đánh đổi khác, giải quyết bài toán tổ chức nhiều đội và bài toán mở rộng không đều. Dự án một người, một quán, một cơ sở dữ liệu mà tách microservices là chọn nhầm bài toán.
+  </div>
+
+  <div class="quiz" data-answer="1">
+    <div class="quiz__hd">Kiểm tra nhanh · 4 / 9</div>
+    <div class="quiz__bd">
+      <p class="quiz__q">Nếu tách thanh toán và quản lý bàn thành hai dịch vụ riêng, khó khăn lớn nhất phát sinh là gì?</p>
+      <div class="quiz__opts">
+        <button class="opt" type="button"><span class="k">A</span><span>Mã nguồn dài hơn</span></button>
+        <button class="opt" type="button"><span class="k">B</span><span>Thu tiền và trả bàn về trạng thái trống không còn nằm chung một giao dịch, nên có thể xảy ra trạng thái nửa vời</span></button>
+        <button class="opt" type="button"><span class="k">C</span><span>Giao diện phải vẽ lại từ đầu</span></button>
+      </div>
+      <div class="quiz__fb"><b>Giải thích</b>Đây là lập luận trung tâm cho lựa chọn một khối trong dự án: tính nhất quán của đơn, bàn và tiền quan trọng hơn khả năng mở rộng độc lập mà quy mô hiện tại chưa cần.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== A-05 ==================== -->
+<section class="sheet" id="a05">
+  <header class="sheet__head">
+    <div class="sheet__code">A-05</div>
+    <h2 class="sheet__title">Ports &amp; Adapters</h2>
+    <div class="gauge">Mức dùng trong dự án<div class="gauge__bars"><i class="on"></i><i class="on"></i><i class="on"></i></div>Xương sống dự án</div>
+    <p class="sheet__sub">Còn gọi là kiến trúc lục giác. Đây là kiến trúc chính của dự án này.</p>
+  </header>
+
+  <div class="cols">
+    <div class="lane lane--plain">
+      <p class="eyebrow">Kể như chuyện quán</p>
+      <p>Quán lắp sẵn <strong>ổ cắm chuẩn</strong> trên tường: ổ cho máy in hoá đơn, ổ cho máy tính tiền, ổ cho hệ thống lưu dữ liệu. Thiết bị nào cũng được, miễn cắm vừa ổ.</p>
+      <p>Hôm nay dùng máy in nhiệt. Mai đổi sang máy in khác. Quán không phải đục tường, không phải đổi cách nhân viên làm việc. <strong>Chỉ rút phích ra, cắm phích mới vào.</strong></p>
+      <p>Và vì có ổ cắm, quán có thể cắm một <strong>thiết bị giả</strong> để tập huấn nhân viên: bấm y như thật, in ra giấy nháp, không ảnh hưởng sổ sách. Đó chính là cách dự án chạy hàng trăm bài kiểm thử mà không cần internet.</p>
+    </div>
+    <div class="lane lane--tech">
+      <p class="eyebrow">Nói cho chính xác</p>
+      <p>Kiến trúc đặt <strong>lõi nghiệp vụ ở giữa</strong> và quy định: lõi không được biết gì về hạ tầng cụ thể.</p>
+      <ul>
+        <li><strong>Port</strong> là một bản hợp đồng: nêu ra <em>cần làm được việc gì</em>, không nêu <em>làm bằng cách nào</em>. Ví dụ: “lưu đơn hàng”, “in hoá đơn”, “báo cho máy khác biết có thay đổi”.</li>
+        <li><strong>Adapter</strong> là phần hiện thực hợp đồng đó bằng một công nghệ cụ thể.</li>
+        <li>Phía <strong>điều khiển</strong> là thứ gọi vào lõi: màn hình, kiểm thử, dòng lệnh.</li>
+        <li>Phía <strong>bị điều khiển</strong> là thứ lõi gọi ra: cơ sở dữ liệu, máy in, kênh báo tin.</li>
+      </ul>
+      <p>Điểm mấu chốt: đổi công nghệ ở phía ngoài <strong>không sinh ra thay đổi nào ở lõi</strong>. Nếu đổi cơ sở dữ liệu mà phải sửa màn hình, tức là ranh giới đã bị thủng.</p>
+    </div>
+  </div>
+
+  <!-- đổi adapter -->
+  <div class="swap">
+    <div class="swap__hd">
+      <span>Thử đổi thiết bị cắm vào ổ</span>
+      <button class="chip" type="button" data-ad="0" aria-pressed="true">Cắm cơ sở dữ liệu thật</button>
+      <button class="chip" type="button" data-ad="1" aria-pressed="false">Cắm dữ liệu giả để kiểm thử</button>
+      <button class="chip" type="button" data-ad="2" aria-pressed="false">Cắm kho cục bộ khi mất mạng</button>
+    </div>
+    <div class="swap__bd">
+      <div class="swap__core">
+        <h4>Lõi nghiệp vụ</h4>
+        <p>Cách tính tiền, quy tắc chốt giá lúc gửi bếp, quy tắc đánh số hoá đơn, kiểm tra quyền nhân viên, trình tự gọi món và thanh toán.</p>
+        <p style="margin-top:10px"><em>Phần này không đổi một chữ khi bạn bấm các nút bên trên.</em></p>
+      </div>
+      <div class="swap__port">Ổ cắm · Port</div>
+      <div class="swap__ad" id="adBox">
+        <h4 id="adTitle">Bộ nối cơ sở dữ liệu đám mây</h4>
+        <p id="adDesc">Đọc ghi trên cơ sở dữ liệu quan hệ ở xa. Các thao tác quan trọng gọi vào hàm phía máy chủ để được chạy trong một giao dịch.</p>
+        <p class="st" id="adStat">Trạng thái: đang dùng khi chạy thật</p>
+      </div>
+    </div>
+    <div class="swap__ft">Số dòng phải sửa trong lõi nghiệp vụ khi đổi bộ nối: <b>0</b></div>
+  </div>
+
+  <div class="stamp">
+    <div class="stamp__hd"><span class="tag">Dùng cho báo cáo</span> Quyết định · kiến trúc chủ đạo</div>
+    <div class="stamp__bd">
+      <dl>
+        <dt>Chọn</dt><dd>Ports &amp; Adapters theo hướng kiến trúc lục giác. Giao diện và luồng nghiệp vụ chỉ phụ thuộc vào tập hợp cổng trừu tượng, không phụ thuộc thư viện của nhà cung cấp hạ tầng.</dd>
+        <dt>Không chọn</dt><dd>Gọi trực tiếp thư viện cơ sở dữ liệu, thư viện in ấn hoặc thư viện thời gian thực từ trong thành phần giao diện.</dd>
+        <dt>Vì sao</dt><dd>Ba lợi ích đo được. Thứ nhất, toàn bộ nghiệp vụ kiểm thử được bằng bộ nối dữ liệu giả, không cần mạng, nên bộ kiểm thử chạy nhanh và ổn định. Thứ hai, buổi trình diễn không phụ thuộc tình trạng dịch vụ đám mây. Thứ ba, mở sẵn đường đổi hạ tầng về sau — thêm kho dữ liệu cục bộ cho chế độ ngoại tuyến, hoặc thay in xem trước bằng máy in chuyên dụng — mà không phải sửa luồng bán hàng.</dd>
+        <dt>Đánh đổi</dt><dd>Phải viết và duy trì thêm lớp hợp đồng và lớp chuyển đổi dữ liệu. Với mỗi nghiệp vụ mới, chi phí là một hợp đồng cộng ít nhất hai phần hiện thực.</dd>
+        <dt>Giảm rủi ro</dt><dd>Giữ bề mặt hợp đồng nhỏ, và bắt buộc mọi bộ nối cùng hiện thực đúng một hợp đồng để hành vi không lệch nhau.</dd>
+        <dt>Mức độ trung thực</dt><dd>Nên trình bày là “áp dụng Ports &amp; Adapters theo hướng kiến trúc lục giác”, không nên khẳng định đây là kiến trúc lục giác chuẩn mực hoàn toàn, vì dự án nặng về giao diện và một phần bảo đảm nhất quán được đặt trong cơ sở dữ liệu.</dd>
+      </dl>
+    </div>
+    <div class="stamp__ft"><button class="btn btn--ghost copy" type="button">Sao chép đoạn này</button></div>
+  </div>
+
+  <details class="impl">
+    <summary>Chi tiết cài đặt — để học, đừng chép vào báo cáo</summary>
+    <div class="impl__bd">
+      <ul>
+        <li>Hợp đồng nằm ở <code>src/ports/index.ts</code>: <code>IAuthRepo</code>, <code>IEmployeeRepo</code>, <code>IMenuRepo</code>, <code>IOrderRepo</code>, <code>IPaymentRepo</code>, <code>IReportRepo</code>, <code>IPrintPort</code>, <code>IRealtimePort</code>…</li>
+        <li>Hai bộ nối thật: <code>src/adapters/supabase</code> và <code>src/adapters/mock</code>. Bộ nối cục bộ cho chế độ ngoại tuyến <strong>chưa được hiện thực</strong> — chỉ là hướng mở, đừng kể như tính năng.</li>
+        <li>Chỉ <code>src/app/runtimePorts.ts</code> được phép lắp bộ nối cụ thể. Mọi chỗ khác nhận cổng qua React context ở <code>src/features/shared/portsContext.tsx</code>.</li>
+        <li><code>BrowserPrintPort</code> hiện không làm gì thật; nó giữ chỗ cho bộ nối máy in về sau.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="quiz" data-answer="2">
+    <div class="quiz__hd">Kiểm tra nhanh · 5 / 9</div>
+    <div class="quiz__bd">
+      <p class="quiz__q">Dấu hiệu nào cho thấy ranh giới ports &amp; adapters đã bị phá vỡ?</p>
+      <div class="quiz__opts">
+        <button class="opt" type="button"><span class="k">A</span><span>Có nhiều hơn một bộ nối cho cùng một cổng</span></button>
+        <button class="opt" type="button"><span class="k">B</span><span>Lõi nghiệp vụ được viết bằng cùng ngôn ngữ với giao diện</span></button>
+        <button class="opt" type="button"><span class="k">C</span><span>Đổi nhà cung cấp cơ sở dữ liệu mà phải sửa mã trong các thành phần màn hình</span></button>
+      </div>
+      <div class="quiz__fb"><b>Giải thích</b>Thước đo duy nhất là: thay đổi ở hạ tầng có lan vào lõi và giao diện hay không. Nhiều bộ nối cho một cổng lại đúng là điều kiến trúc này hướng tới.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== A-06 ==================== -->
+<section class="sheet" id="a06">
+  <header class="sheet__head">
+    <div class="sheet__code">A-06</div>
+    <h2 class="sheet__title">Clean Architecture</h2>
+    <div class="gauge">Mức dùng trong dự án<div class="gauge__bars"><i class="on"></i><i class="on"></i><i></i></div>Dùng một phần, có chủ đích</div>
+    <p class="sheet__sub">Luật của quán viết trong sổ tay, không viết lên máy tính tiền.</p>
+  </header>
+
+  <div class="cols">
+    <div class="lane lane--plain">
+      <p class="eyebrow">Kể như chuyện quán</p>
+      <p>Quy tắc “giá tính theo lúc gửi bếp, không tính theo lúc trả tiền” là <strong>luật của quán</strong>. Nó đúng dù quán dùng máy tính tiền hãng nào, dù ghi sổ tay hay ghi máy.</p>
+      <p>Vì vậy luật phải nằm trong <strong>sổ tay</strong> — chỗ trong cùng, ổn định nhất. Máy tính tiền chỉ là <strong>chi tiết</strong>: hỏng thì thay, đổi hãng thì đổi, luật vẫn nguyên.</p>
+      <p>Kiến trúc này nói: cái gì càng ít thay đổi thì đặt càng vào trong; cái gì hay thay đổi thì đẩy ra ngoài.</p>
+    </div>
+    <div class="lane lane--tech">
+      <p class="eyebrow">Nói cho chính xác</p>
+      <p>Các vòng đồng tâm, và một quy tắc duy nhất: <strong>phụ thuộc chỉ hướng vào trong</strong>.</p>
+      <ul>
+        <li><strong>Thực thể</strong> — khái niệm và quy tắc nghiệp vụ bền nhất.</li>
+        <li><strong>Ca sử dụng</strong> — trình tự thực hiện một nghiệp vụ cụ thể.</li>
+        <li><strong>Bộ chuyển đổi</strong> — nối ca sử dụng với thế giới bên ngoài.</li>
+        <li><strong>Khung và trình điều khiển</strong> — thư viện giao diện, cơ sở dữ liệu, mạng. Đây là <em>chi tiết</em>, không phải kiến trúc.</li>
+      </ul>
+      <p>Clean Architecture và Ports &amp; Adapters cùng đuổi theo một mục tiêu, chỉ khác cách vẽ. Nói ngắn: lục giác nhấn vào <em>ranh giới và hợp đồng</em>; đồng tâm nhấn vào <em>thứ tự ổn định của tri thức</em>.</p>
+    </div>
+  </div>
+
+  <figure class="dgm">
+    <figcaption class="dgm__cap">Hình A-06 · Chỗ dự án đi đúng chuẩn, và chỗ cố ý đi lệch</figcaption>
+    <div class="flow">
+      <div class="flow__b"><b>Đúng chuẩn</b><span>Kiểu dữ liệu nghiệp vụ, quy tắc tính tiền, các phép kiểm tra điều kiện — không phụ thuộc thư viện giao diện hay nhà cung cấp hạ tầng.</span></div>
+      <div class="flow__a">/</div>
+      <div class="flow__b flow__b--hot"><b>Cố ý lệch chuẩn</b><span>Một phần luật nghiệp vụ quan trọng đặt <em>trong cơ sở dữ liệu</em>: cấp số hoá đơn, khoá chống tranh chấp, chốt giao dịch. Clean Architecture nói đây là chi tiết hạ tầng — dự án cố tình không theo.</span></div>
+    </div>
+  </figure>
+
+  <div class="stamp">
+    <div class="stamp__hd"><span class="tag">Dùng cho báo cáo</span> Quyết định · vị trí đặt luật nghiệp vụ · câu phản biện kinh điển</div>
+    <div class="stamp__bd">
+      <dl>
+        <dt>Chọn</dt><dd>Giữ khái niệm nghiệp vụ và các quy tắc tính toán ở lõi độc lập hạ tầng, nhưng đặt các nghiệp vụ đòi hỏi tính đúng đắn khi nhiều máy ghi đồng thời xuống tầng cơ sở dữ liệu, dưới dạng thủ tục chạy trọn trong một giao dịch.</dd>
+        <dt>Không chọn</dt><dd>Đặt toàn bộ luật nghiệp vụ ở tầng ứng dụng và để phía máy trạm tự tính rồi ghi vào nhiều bảng bằng nhiều lời gọi rời rạc.</dd>
+        <dt>Vì sao</dt><dd>Tính đúng đắn khi nhiều thiết bị ghi cùng lúc chỉ bảo đảm được ở nơi có giao dịch thật, tức cơ sở dữ liệu. Ví dụ cụ thể: cấp số hoá đơn. Nếu để máy trạm đọc số lớn nhất rồi cộng một, hai máy đọc cùng lúc sẽ cấp trùng số. Đặt phép cấp số trong một giao dịch có khoá thì tình huống đó không xảy ra được. Tương tự với thao tác thanh toán: trừ đơn, đổi trạng thái bàn và ghi khoản thu phải cùng thành công hoặc cùng thất bại.</dd>
+        <dt>Đánh đổi</dt><dd>Một phần logic nằm ngoài mã nguồn ứng dụng nên khó đọc và khó kiểm thử hơn, và ứng dụng gắn chặt hơn với hệ quản trị cơ sở dữ liệu đang dùng.</dd>
+        <dt>Giảm rủi ro</dt><dd>Số lượng thủ tục phía cơ sở dữ liệu được giữ ít và chỉ dành cho nghiệp vụ đòi hỏi giao dịch; mọi thứ còn lại vẫn ở tầng ứng dụng. Lỗi từ tầng dữ liệu được ánh xạ về một kiểu lỗi thống nhất trước khi lên giao diện.</dd>
+      </dl>
+    </div>
+    <div class="stamp__ft"><button class="btn btn--ghost copy" type="button">Sao chép đoạn này</button></div>
+  </div>
+
+  <details class="impl">
+    <summary>Chi tiết cài đặt — để học, đừng chép vào báo cáo</summary>
+    <div class="impl__bd">
+      <ul>
+        <li>Lõi độc lập: <code>src/domain</code> (kiểu dữ liệu) và <code>src/core</code> (<code>money.ts</code>, <code>guards.ts</code>, <code>orderDraft.ts</code>, <code>appError.ts</code>).</li>
+        <li>Nghiệp vụ đặt trong PostgreSQL dưới dạng hàm <code>plpgsql</code>: <code>submit_order_changes</code>, <code>pay_order</code>, <code>pay_order_items</code>, <code>void_order</code>, <code>verify_employee_pin</code>, <code>clear_demo_data</code>.</li>
+        <li>Bốn lớp chống tranh chấp: khoá tư vấn theo cửa hàng, khoá tư vấn theo ngày kinh doanh khi cấp số đơn, khoá dòng khi đọc để ghi, và khoá lạc quan qua <code>lock_version</code>.</li>
+        <li>Điểm nghẽn đã biết: khoá ghi hiện ở phạm vi cả cửa hàng, nên hai thu ngân gửi đơn cho hai bàn khác nhau vẫn phải xếp hàng. Chấp nhận vì quy mô nhỏ và mô hình suy luận đơn giản.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="quiz" data-answer="1">
+    <div class="quiz__hd">Kiểm tra nhanh · 6 / 9</div>
+    <div class="quiz__bd">
+      <p class="quiz__q">Vì sao đặt phép cấp số hoá đơn xuống cơ sở dữ liệu thay vì tính ở máy trạm?</p>
+      <div class="quiz__opts">
+        <button class="opt" type="button"><span class="k">A</span><span>Vì cơ sở dữ liệu tính nhanh hơn máy trạm</span></button>
+        <button class="opt" type="button"><span class="k">B</span><span>Vì hai máy đọc số lớn nhất cùng lúc sẽ cấp trùng số, chỉ giao dịch có khoá mới chặn được</span></button>
+        <button class="opt" type="button"><span class="k">C</span><span>Vì viết bằng SQL thì ngắn hơn</span></button>
+      </div>
+      <div class="quiz__fb"><b>Giải thích</b>Đây là chỗ lý thuyết kiến trúc phải nhường tính đúng đắn. Clean Architecture khuyên đẩy hạ tầng ra ngoài, nhưng bảo đảm chống tranh chấp chỉ tồn tại ở nơi có giao dịch thật.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== A-07 ==================== -->
+<section class="sheet" id="a07">
+  <header class="sheet__head">
+    <div class="sheet__code">A-07</div>
+    <h2 class="sheet__title">Kiến trúc hướng sự kiện</h2>
+    <div class="gauge">Mức dùng trong dự án<div class="gauge__bars"><i class="on"></i><i class="on"></i><i></i></div>Dùng một phần</div>
+    <p class="sheet__sub">Gõ chuông thay vì đứng hỏi liên tục.</p>
+  </header>
+
+  <div class="cols">
+    <div class="lane lane--plain">
+      <p class="eyebrow">Kể như chuyện quán</p>
+      <p>Bếp xong món thì <strong>gõ chuông</strong>. Không cần biết ai đang nghe. Phục vụ nào rảnh thì ngó lên, thấy bàn nào xong thì bưng.</p>
+      <p>Cách còn lại là phục vụ cứ vài giây lại chạy vào bếp hỏi “xong chưa?”. Vừa mệt, vừa chậm, vừa làm phiền bếp.</p>
+      <p>Ở đây có một lựa chọn tinh tế: <strong>tiếng chuông nên nói bao nhiêu?</strong> Chuông chỉ kêu “có việc mới” rồi phục vụ tự vào xem — hay chuông hô luôn “bàn 5, hai ly nâu đá”? Dự án chọn cách thứ nhất.</p>
+    </div>
+    <div class="lane lane--tech">
+      <p class="eyebrow">Nói cho chính xác</p>
+      <p>Các thành phần không gọi thẳng nhau. Bên tạo thay đổi <strong>phát sự kiện</strong>; bên quan tâm <strong>đăng ký nhận</strong>. Hai bên không cần biết nhau tồn tại.</p>
+      <p>Ba mức, từ nhẹ tới nặng:</p>
+      <ul>
+        <li><strong>Sự kiện chỉ là tín hiệu</strong> — báo “có thay đổi ở chỗ này”, bên nhận tự đi hỏi lại dữ liệu mới.</li>
+        <li><strong>Sự kiện mang dữ liệu</strong> — gửi kèm nội dung thay đổi, bên nhận tự ghép vào bộ nhớ đệm. Nhanh hơn, nhưng phải tự xử lý sự kiện đến sai thứ tự, đến trùng, hoặc mất.</li>
+        <li><strong>Event sourcing</strong> — không lưu trạng thái hiện tại, chỉ lưu chuỗi sự kiện, trạng thái được dựng lại bằng cách phát lại chuỗi đó. Mạnh về truy vết, nhưng là một mô hình dữ liệu hoàn toàn khác.</li>
+      </ul>
+    </div>
+  </div>
+
+  <figure class="dgm">
+    <figcaption class="dgm__cap">Hình A-07 · Tín hiệu, không phải dữ liệu</figcaption>
+    <div class="flow">
+      <div class="flow__b"><b>Máy A ghi đơn</b><span>Thay đổi nằm ở máy chủ</span></div>
+      <div class="flow__a">→</div>
+      <div class="flow__b flow__b--hot"><b>Kênh thời gian thực</b><span>Chỉ báo: “dữ liệu đơn vừa đổi”</span></div>
+      <div class="flow__a">→</div>
+      <div class="flow__b"><b>Máy B</b><span>Đánh dấu dữ liệu cũ rồi tải lại từ máy chủ. Không tự ghép nội dung sự kiện.</span></div>
+    </div>
+  </figure>
+
+  <div class="stamp">
+    <div class="stamp__hd"><span class="tag">Dùng cho báo cáo</span> Quyết định · đồng bộ nhiều thiết bị</div>
+    <div class="stamp__bd">
+      <dl>
+        <dt>Chọn</dt><dd>Dùng kênh thời gian thực trên nền WebSocket do nền tảng hạ tầng cung cấp, và xem sự kiện nhận được thuần tuý như <em>tín hiệu làm mới</em>: khi có tín hiệu thì đánh dấu dữ liệu liên quan là cũ và tải lại từ máy chủ. Kèm theo là cơ chế tải lại theo chu kỳ làm lưới an toàn.</dd>
+        <dt>Không chọn</dt><dd>Ghép trực tiếp nội dung sự kiện vào bộ nhớ đệm phía máy trạm; và không chọn event sourcing.</dd>
+        <dt>Vì sao</dt><dd>Ghép nội dung sự kiện bằng tay buộc phải tự xử lý sự kiện đến trùng, đến sai thứ tự và bị mất khi mất kết nối, tức là tự viết lại một cơ chế đồng bộ. Vì lượng dữ liệu của một quán nhỏ, chi phí tải lại toàn phần rất thấp, nên đổi lấy sự đơn giản và ít lỗi là đánh đổi có lợi. Event sourcing giải bài toán truy vết và dựng lại lịch sử, không phải bài toán của đồ án này.</dd>
+        <dt>Đánh đổi</dt><dd>Phát sinh thêm lượt yêu cầu tải lại, và độ trễ không tối ưu tuyệt đối so với cách ghép trực tiếp.</dd>
+        <dt>Giới hạn phải nêu</dt><dd>Chu kỳ tải lại dự phòng không phải cam kết thời gian đáp ứng. Không nên phát biểu như một mức chất lượng dịch vụ cứng.</dd>
+      </dl>
+    </div>
+    <div class="stamp__ft"><button class="btn btn--ghost copy" type="button">Sao chép đoạn này</button></div>
+  </div>
+
+  <div class="note">
+    <b>Trung thực về phạm vi</b>
+    Dự án <em>không</em> tự hiện thực giao thức WebSocket và không kiểm soát được cơ chế thử lại hay nhịp giữ kết nối của tầng dưới. Nên phát biểu là “sử dụng kênh thời gian thực do nền tảng cung cấp”, không phát biểu là “xây dựng hệ thống thời gian thực”.
+  </div>
+
+  <div class="quiz" data-answer="0">
+    <div class="quiz__hd">Kiểm tra nhanh · 7 / 9</div>
+    <div class="quiz__bd">
+      <p class="quiz__q">Lợi ích chính của việc coi sự kiện chỉ là tín hiệu, thay vì để sự kiện mang theo dữ liệu?</p>
+      <div class="quiz__opts">
+        <button class="opt" type="button"><span class="k">A</span><span>Không phải tự xử lý sự kiện trùng, sai thứ tự hoặc bị mất — cứ hỏi lại máy chủ là ra dữ liệu đúng</span></button>
+        <button class="opt" type="button"><span class="k">B</span><span>Tiết kiệm băng thông tối đa</span></button>
+        <button class="opt" type="button"><span class="k">C</span><span>Giảm độ trễ xuống mức thấp nhất có thể</span></button>
+      </div>
+      <div class="quiz__fb"><b>Giải thích</b>Cách này tốn băng thông hơn và trễ hơn một chút. Cái đổi lại là ít trạng thái sai — đúng thứ quan trọng với phần mềm tính tiền.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== A-08 ==================== -->
+<section class="sheet" id="a08">
+  <header class="sheet__head">
+    <div class="sheet__code">A-08</div>
+    <h2 class="sheet__title">Serverless &amp; BaaS</h2>
+    <div class="gauge">Mức dùng trong dự án<div class="gauge__bars"><i class="on"></i><i class="on"></i><i class="on"></i></div>Dùng chính</div>
+    <p class="sheet__sub">Thuê bếp trung tâm thay vì tự xây bếp.</p>
+  </header>
+
+  <div class="cols">
+    <div class="lane lane--plain">
+      <p class="eyebrow">Kể như chuyện quán</p>
+      <p>Muốn mở quán, có hai đường. Một là tự xây bếp: mua thiết bị, thuê thợ, tự bảo trì, tự lo cháy nổ. Hai là thuê một bếp trung tâm đã dựng sẵn: trả tiền theo mức dùng, hỏng thì có người lo.</p>
+      <p>Đường thứ hai mở quán nhanh hơn nhiều. Cái giá là <strong>phải theo luật của người cho thuê</strong>: giờ giấc, giới hạn, và nếu bếp đó đóng cửa thì quán cũng đứng.</p>
+    </div>
+    <div class="lane lane--tech">
+      <p class="eyebrow">Nói cho chính xác</p>
+      <p><strong>BaaS</strong> — nền tảng cung cấp sẵn cơ sở dữ liệu, xác thực, phân quyền, thời gian thực và lưu trữ tệp. Ứng dụng gọi thẳng vào đó, không cần viết và vận hành máy chủ riêng.</p>
+      <p><strong>Serverless</strong> — mã chạy theo từng lời gọi trên hạ tầng do nhà cung cấp quản lý, không có tiến trình máy chủ chạy thường trực do mình trông.</p>
+      <ul>
+        <li>Được: rút ngắn rất nhiều thời gian dựng hệ thống, có sẵn phân quyền ở tầng dữ liệu và kênh thời gian thực.</li>
+        <li>Mất: phụ thuộc dịch vụ quản lý, giới hạn gói dùng, và khó tự tay tinh chỉnh phần dưới.</li>
+      </ul>
+    </div>
+  </div>
+
+  <figure class="dgm">
+    <figcaption class="dgm__cap">Hình A-08 · Ai chịu trách nhiệm phần nào</figcaption>
+    <div class="flow">
+      <div class="flow__b"><b>Nhóm phát triển lo</b><span>Giao diện, nghiệp vụ, thiết kế dữ liệu, chính sách phân quyền, thủ tục giao dịch</span></div>
+      <div class="flow__a">|</div>
+      <div class="flow__b flow__b--hot"><b>Nhà cung cấp lo</b><span>Máy chủ, sao lưu, mở rộng, xác thực, kênh thời gian thực, lưu trữ tệp</span></div>
+    </div>
+  </figure>
+
+  <div class="stamp">
+    <div class="stamp__hd"><span class="tag">Dùng cho báo cáo</span> Quyết định · nền tảng hạ tầng</div>
+    <div class="stamp__bd">
+      <dl>
+        <dt>Chọn</dt><dd>Nền tảng dịch vụ hậu cần quản lý, cung cấp cơ sở dữ liệu quan hệ, xác thực, phân quyền ở tầng dòng dữ liệu, kênh thời gian thực và lưu trữ tệp. Phần giao diện xây tĩnh và triển khai trên nền tảng lưu trữ tĩnh.</dd>
+        <dt>Không chọn</dt><dd>Tự viết và tự vận hành máy chủ ứng dụng trên máy chủ ảo; và không chọn nền tảng dữ liệu phi quan hệ.</dd>
+        <dt>Vì sao</dt><dd>Bài toán cần dữ liệu quan hệ có ràng buộc chặt và giao dịch thật cho nghiệp vụ đơn hàng và thanh toán, nên nền tảng phi quan hệ không phù hợp. Đồng thời cần kênh thời gian thực và cơ chế cô lập dữ liệu giữa các cửa hàng ngay từ đầu; tự xây các phần này sẽ chiếm phần lớn thời lượng đồ án mà không phải là đóng góp chuyên môn chính.</dd>
+        <dt>Đánh đổi</dt><dd>Phụ thuộc một nhà cung cấp và giới hạn của gói miễn phí; ứng dụng chỉ hoạt động khi có kết nối.</dd>
+        <dt>Giảm rủi ro</dt><dd>Toàn bộ nhà cung cấp bị cô lập sau lớp cổng trừu tượng, nên việc thay nền tảng là thay bộ nối, không phải viết lại nghiệp vụ. Đây chính là chỗ kiến trúc ở tờ A-05 trả lại giá trị.</dd>
+      </dl>
+    </div>
+    <div class="stamp__ft"><button class="btn btn--ghost copy" type="button">Sao chép đoạn này</button></div>
+  </div>
+
+  <div class="quiz" data-answer="2">
+    <div class="quiz__hd">Kiểm tra nhanh · 8 / 9</div>
+    <div class="quiz__bd">
+      <p class="quiz__q">Rủi ro lớn nhất của việc dựa vào nền tảng dịch vụ quản lý, và dự án giảm nó bằng cách nào?</p>
+      <div class="quiz__opts">
+        <button class="opt" type="button"><span class="k">A</span><span>Rủi ro chi phí, giảm bằng cách dùng gói miễn phí</span></button>
+        <button class="opt" type="button"><span class="k">B</span><span>Rủi ro hiệu năng, giảm bằng cách thêm bộ nhớ đệm</span></button>
+        <button class="opt" type="button"><span class="k">C</span><span>Rủi ro lệ thuộc nhà cung cấp, giảm bằng cách cô lập nhà cung cấp sau lớp cổng trừu tượng</span></button>
+      </div>
+      <div class="quiz__fb"><b>Giải thích</b>Đây là chỗ hai quyết định kiến trúc nối vào nhau: chọn nền tảng quản lý để đi nhanh, và dùng ports &amp; adapters để việc đi nhanh đó không khoá chặt dự án.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== BẢNG QUYẾT ĐỊNH ==================== -->
+<section class="sheet" id="bang">
+  <header class="sheet__head">
+    <div class="sheet__code">B-01</div>
+    <h2 class="sheet__title">Bảng quyết định</h2>
+    <p class="sheet__sub">Một trang gom hết: chọn gì, bỏ gì, vì sao, mất gì. Dùng thẳng cho chương thiết kế kiến trúc.</p>
+  </header>
+
+  <div class="tblwrap">
+    <table>
+      <thead>
+        <tr><th>Vấn đề</th><th>Chọn</th><th>Không chọn</th><th>Lý do quyết định</th><th>Đánh đổi chấp nhận</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Nơi giữ dữ liệu</b></td>
+          <td class="yes">Máy chủ tập trung</td>
+          <td class="no">Dữ liệu riêng từng máy</td>
+          <td>Nhiều thiết bị phải thấy cùng trạng thái bàn và đơn</td>
+          <td>Phụ thuộc kết nối mạng</td>
+        </tr>
+        <tr>
+          <td><b>Tổ chức mã nguồn</b></td>
+          <td class="yes">Phân lớp có ràng buộc phụ thuộc</td>
+          <td class="no">Gọi hạ tầng thẳng từ giao diện</td>
+          <td>Đổi hạ tầng không lan vào giao diện; kiểm thử được không cần mạng</td>
+          <td>Nhiều lớp trung gian hơn</td>
+        </tr>
+        <tr>
+          <td><b>Trạng thái giao diện</b></td>
+          <td class="yes">Tách trạng thái máy chủ và trạng thái màn hình</td>
+          <td class="no">Một kho trạng thái toàn cục</td>
+          <td>Hai loại có vòng đời khác nhau; gộp phải tự viết lại bộ nhớ đệm</td>
+          <td>Cần kỷ luật đặt khoá truy vấn</td>
+        </tr>
+        <tr>
+          <td><b>Phạm vi hệ thống</b></td>
+          <td class="yes">Một khối, chia module</td>
+          <td class="no">Microservices</td>
+          <td>Đơn, bàn, tiền phải nhất quán trong một giao dịch; quy mô không cần mở rộng độc lập</td>
+          <td>Triển khai lại toàn khối mỗi lần thay đổi</td>
+        </tr>
+        <tr>
+          <td><b>Ranh giới hạ tầng</b></td>
+          <td class="yes">Ports &amp; Adapters</td>
+          <td class="no">Gọi thư viện nhà cung cấp trong giao diện</td>
+          <td>Kiểm thử bằng bộ nối giả; trình diễn không phụ thuộc đám mây; mở đường đổi hạ tầng</td>
+          <td>Thêm lớp hợp đồng và lớp chuyển đổi</td>
+        </tr>
+        <tr>
+          <td><b>Vị trí luật nghiệp vụ tranh chấp cao</b></td>
+          <td class="yes">Trong cơ sở dữ liệu, chạy trong một giao dịch</td>
+          <td class="no">Tính ở máy trạm rồi ghi nhiều bảng rời</td>
+          <td>Cấp số hoá đơn và chốt thanh toán chỉ đúng khi có giao dịch và khoá</td>
+          <td>Logic khó đọc hơn; gắn chặt với hệ quản trị đang dùng</td>
+        </tr>
+        <tr>
+          <td><b>Đồng bộ nhiều máy</b></td>
+          <td class="yes">Sự kiện là tín hiệu làm mới</td>
+          <td class="no">Ghép nội dung sự kiện vào bộ nhớ đệm</td>
+          <td>Tránh phải tự xử lý sự kiện trùng, sai thứ tự, bị mất</td>
+          <td>Thêm lượt tải lại, độ trễ không tối ưu</td>
+        </tr>
+        <tr>
+          <td><b>Hạ tầng</b></td>
+          <td class="yes">Nền tảng dịch vụ quản lý, dữ liệu quan hệ</td>
+          <td class="no">Tự vận hành máy chủ; nền tảng phi quan hệ</td>
+          <td>Cần ràng buộc quan hệ, giao dịch, thời gian thực và cô lập dữ liệu ngay từ đầu</td>
+          <td>Lệ thuộc nhà cung cấp và giới hạn gói dùng</td>
+        </tr>
+        <tr>
+          <td><b>Chế độ hoạt động</b></td>
+          <td class="yes">Chỉ trực tuyến trong giai đoạn này</td>
+          <td class="no">Ưu tiên cục bộ, đồng bộ sau</td>
+          <td>Yêu cầu chính là đồng bộ nhiều máy; xử lý ngoại tuyến làm tăng vọt độ phức tạp</td>
+          <td>Mất mạng thì không bán được — đã ghi vào chương hạn chế</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ==================== PHẢN BIỆN ==================== -->
+<section class="sheet" id="phanbien">
+  <header class="sheet__head">
+    <div class="sheet__code">B-02</div>
+    <h2 class="sheet__title">Câu hỏi hay bị vặn</h2>
+    <p class="sheet__sub">Bấm vào từng câu để xem hướng trả lời dựa trên thiết kế thật của hệ thống.</p>
+  </header>
+
+  <div class="qa">
+    <details>
+      <summary>Sao không dùng microservices cho đúng xu hướng?</summary>
+      <div class="qa__bd">
+        <p>Vì xu hướng không phải là tiêu chí thiết kế. Microservices giải hai bài toán: nhiều đội cần triển khai độc lập, và các phần hệ thống cần mở rộng ở mức rất khác nhau. Dự án này không có cả hai.</p>
+        <p>Quan trọng hơn, nghiệp vụ cốt lõi cần đơn hàng, trạng thái bàn và khoản thu cùng thành công hoặc cùng thất bại. Trong một khối, điều đó là một giao dịch. Tách dịch vụ thì mất giao dịch chung và phải tự xây cơ chế bù trừ nhiều bước — phức tạp hơn nhiều so với lợi ích thu được ở quy mô một quán.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Sao logic nghiệp vụ lại nằm trong cơ sở dữ liệu? Vậy còn gì là tách lớp?</summary>
+      <div class="qa__bd">
+        <p>Đây là một lệch chuẩn có chủ đích và chỉ áp dụng cho nhóm nghiệp vụ có tranh chấp ghi. Lý do là tính đúng đắn: khi nhiều thiết bị ghi cùng lúc, chỉ nơi có giao dịch thật mới bảo đảm được kết quả.</p>
+        <p>Ví dụ trực tiếp: nếu để máy trạm tự cấp số hoá đơn bằng cách đọc số lớn nhất rồi cộng một, hai máy đọc cùng lúc sẽ cấp trùng. Đặt phép này trong một giao dịch có khoá thì tình huống đó không xảy ra được.</p>
+        <p>Phần còn lại — kiểu dữ liệu, quy tắc tính toán, trình tự thao tác, phân quyền hiển thị — vẫn nằm ở tầng ứng dụng và vẫn được ràng buộc bởi kiểm thử ranh giới phụ thuộc.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Ports &amp; Adapters có phải là bày vẽ cho một dự án nhỏ không?</summary>
+      <div class="qa__bd">
+        <p>Nó đã trả lại giá trị ngay trong quá trình làm, chứ không phải là đầu tư cho tương lai xa. Cụ thể: toàn bộ nghiệp vụ chạy được với bộ nối dữ liệu giả, nên bộ kiểm thử chạy nhanh và không phụ thuộc mạng; và buổi trình diễn không phụ thuộc tình trạng dịch vụ đám mây.</p>
+        <p>Chi phí thật là lớp hợp đồng và lớp chuyển đổi dữ liệu phải viết thêm. Đây là đánh đổi đã biết và được nêu rõ, không phải chi phí ẩn.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Hệ thống có phải là kiến trúc lục giác chuẩn không?</summary>
+      <div class="qa__bd">
+        <p>Không, và không nên khẳng định như vậy. Cách phát biểu đúng là: dự án áp dụng Ports &amp; Adapters theo hướng kiến trúc lục giác, nhằm tách nghiệp vụ khỏi hạ tầng.</p>
+        <p>Lý do dè dặt: dự án nặng về giao diện, và một phần bảo đảm nhất quán được đặt trong cơ sở dữ liệu thay vì trong tầng ca sử dụng như mô hình chuẩn mô tả.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Hệ thống thời gian thực này có bảo đảm bao lâu thì các máy đồng bộ?</summary>
+      <div class="qa__bd">
+        <p>Không có cam kết thời gian đáp ứng cứng. Sự kiện được dùng làm tín hiệu làm mới và có cơ chế tải lại theo chu kỳ làm lưới an toàn, nhưng chu kỳ đó là biện pháp phòng hờ chứ không phải mức chất lượng dịch vụ.</p>
+        <p>Cũng cần nói rõ: kênh thời gian thực là do nền tảng hạ tầng cung cấp. Dự án không tự hiện thực giao thức truyền và không kiểm soát cơ chế thử lại của tầng dưới.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Mất mạng thì sao? Quán ngừng bán à?</summary>
+      <div class="qa__bd">
+        <p>Đúng, và đây là hạn chế đã ghi nhận, không phải điều bỏ sót. Giai đoạn này hệ thống chỉ hoạt động trực tuyến.</p>
+        <p>Lý do là ưu tiên: yêu cầu số một là đồng bộ nhiều thiết bị, còn xử lý ngoại tuyến kéo theo hàng loạt bài toán mới — hàng đợi cục bộ, giải quyết xung đột khi kết nối lại, và đặc biệt là không thể cấp số hoá đơn hay so phiên bản dữ liệu khi không nói chuyện được với máy chủ.</p>
+        <p>Điểm cần nhấn: hệ thống đã chuẩn bị sẵn chỗ để lắp chế độ ngoại tuyến sau này, vì mọi truy cập dữ liệu đều đi qua lớp cổng trừu tượng. Nhưng đó là hướng phát triển, không phải tính năng hiện có.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Làm sao chứng minh kiến trúc thật sự được tuân thủ, chứ không chỉ nằm trên sơ đồ?</summary>
+      <div class="qa__bd">
+        <p>Bằng một kiểm thử tự động chuyên kiểm tra ranh giới phụ thuộc. Kiểm thử này đọc toàn bộ khai báo phụ thuộc trong mã nguồn và báo lỗi nếu một lớp gọi sai chiều, kể cả khi phụ thuộc được nạp động lúc chạy.</p>
+        <p>Nói cách khác, vi phạm kiến trúc làm hỏng bộ kiểm thử, nên mã vi phạm không đi qua được cửa. Đây là điểm nên nêu trong chương kiểm thử và chương thiết kế kiến trúc.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Nếu làm lại, sẽ đổi gì?</summary>
+      <div class="qa__bd">
+        <p>Ba điểm đáng cân nhắc, đều đã nhận diện được nhờ vận hành thật:</p>
+        <p>Thứ nhất, thu hẹp phạm vi khoá chống tranh chấp. Hiện khoá ghi ở mức cả cửa hàng, nên hai thu ngân thao tác cho hai bàn khác nhau vẫn phải xếp hàng. Có thể hạ phạm vi xuống theo bàn hoặc theo đơn, giữ khoá theo ngày riêng cho việc cấp số hoá đơn.</p>
+        <p>Thứ hai, giữ nguyên giá của những dòng không thay đổi khi sửa đơn, thay vì định giá lại toàn bộ đơn theo bảng giá hiện tại.</p>
+        <p>Thứ ba, tách việc kiểm tra món hết hàng theo từng dòng, để một món ngừng bán không chặn cả lần sửa đơn.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+
+<!-- ==================== KẾT ==================== -->
+<section class="sheet" id="ket">
+  <header class="sheet__head">
+    <div class="sheet__code">B-03</div>
+    <h2 class="sheet__title">Một câu để nhớ</h2>
+    <p class="sheet__sub">Nếu chỉ giữ lại một ý từ toàn bộ trang này.</p>
+  </header>
+
+  <div class="cols">
+    <div class="lane lane--plain">
+      <p class="eyebrow">Rút gọn</p>
+      <p style="font-size:22px;line-height:1.4">Kiến trúc không phải là chọn cái <strong>tốt nhất</strong>. Kiến trúc là <strong>biết mình đang đổi cái gì lấy cái gì</strong>, và nói được lý do.</p>
+      <p>Một dự án chọn microservices mà không giải thích được mình mất giao dịch chung là chưa hiểu quyết định của chính mình. Một dự án chọn monolith và nói rõ vì sao thì đã làm đúng phần khó.</p>
+    </div>
+    <div class="lane lane--tech">
+      <p class="eyebrow">Bốn câu luôn phải trả lời được</p>
+      <ul>
+        <li><strong>Chọn gì</strong> — phát biểu quyết định thành một câu.</li>
+        <li><strong>Bỏ gì</strong> — nêu phương án thay thế đã cân nhắc và loại.</li>
+        <li><strong>Vì sao</strong> — buộc vào một ràng buộc thật của bài toán, không buộc vào sở thích.</li>
+        <li><strong>Mất gì</strong> — nêu đánh đổi. Quyết định không có đánh đổi thường là quyết định chưa được suy nghĩ.</li>
+      </ul>
+      <p>Mọi hộp đóng dấu trong trang này đều theo đúng bốn mục đó, để chép thẳng sang chương thiết kế kiến trúc của báo cáo.</p>
+    </div>
+  </div>
+
+  <div class="quiz" data-answer="1">
+    <div class="quiz__hd">Kiểm tra nhanh · 9 / 9</div>
+    <div class="quiz__bd">
+      <p class="quiz__q">Một quyết định kiến trúc được trình bày là “không có nhược điểm nào”. Nên hiểu thế nào?</p>
+      <div class="quiz__opts">
+        <button class="opt" type="button"><span class="k">A</span><span>Đó là quyết định tối ưu, nên chọn ngay</span></button>
+        <button class="opt" type="button"><span class="k">B</span><span>Nhiều khả năng đánh đổi chưa được nhận ra, chứ không phải là không có</span></button>
+        <button class="opt" type="button"><span class="k">C</span><span>Tuỳ vào công nghệ đang dùng</span></button>
+      </div>
+      <div class="quiz__fb"><b>Giải thích</b>Mọi kiến trúc đều mua một thứ bằng một thứ khác. Không thấy đánh đổi thường là chưa nhìn đủ xa, và đó là chỗ hội đồng sẽ hỏi.</div>
+    </div>
+  </div>
+
+  <div class="final" id="finalBox">
+    <h3>Kết quả kiểm tra</h3>
+    <div class="final__n" id="finalN">0 / 9</div>
+    <p id="finalMsg">Trả lời hết chín câu để xem tổng kết.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="colophon">
+    <span>Bản vẽ A · Kiến trúc phần mềm · POS Cafe</span>
+    <span>Tài liệu học tập và tư liệu cho chương thiết kế kiến trúc</span>
+    <span>Nguồn đối chiếu: architecture.md · tech-stack.md · limitations.md</span>
+  </div>
+</footer>
+
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- chế độ đọc ---------- */
+  var body = document.body;
+  var mPlain = document.getElementById("mPlain");
+  var mFull  = document.getElementById("mFull");
+  function setMode(m){
+    body.setAttribute("data-mode", m);
+    mPlain.setAttribute("aria-pressed", String(m === "plain"));
+    mFull.setAttribute("aria-pressed", String(m === "full"));
+    try { localStorage.setItem("arch-mode", m); } catch(e){}
+  }
+  mPlain.addEventListener("click", function(){ setMode("plain"); });
+  mFull.addEventListener("click", function(){ setMode("full"); });
+  try {
+    var saved = localStorage.getItem("arch-mode");
+    if (saved) setMode(saved);
+  } catch(e){}
+
+  /* ---------- đổi nền sáng tối ---------- */
+  var themeBtn = document.getElementById("themeBtn");
+  themeBtn.addEventListener("click", function(){
+    var root = document.documentElement;
+    var cur = root.getAttribute("data-theme");
+    var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var next;
+    if (cur === "dark") next = "light";
+    else if (cur === "light") next = "dark";
+    else next = dark ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("arch-theme", next); } catch(e){}
+  });
+  try {
+    var st = localStorage.getItem("arch-theme");
+    if (st) document.documentElement.setAttribute("data-theme", st);
+  } catch(e){}
+
+  /* ---------- mặt bằng: chọn phòng ---------- */
+  var rooms = {
+    r1: ["01 · Khu khách — lớp giao diện",
+         "Chỗ nhân viên nhìn và bấm. Lớp này không tự quyết định gì về nghiệp vụ: nó hỏi lớp trong và vẽ lại kết quả. Đổi cách trình bày ở đây không đụng tới cách tính tiền."],
+    r2: ["02 · Quầy order — luồng nghiệp vụ",
+         "Trình tự các bước của một thao tác: bàn này đã mở đơn chưa, nhân viên có quyền không, gọi tiếp việc gì. Đây là nơi ghép các mảnh lại thành một nghiệp vụ hoàn chỉnh."],
+    r3: ["03 · Sổ tay luật quán — lõi nghiệp vụ",
+         "Cách cộng tiền, cách chốt giá tại thời điểm gửi bếp, các phép kiểm tra điều kiện. Phần này không biết gì về mạng, về cơ sở dữ liệu hay về thư viện giao diện — nên kiểm thử được mà không cần chạy cả ứng dụng."],
+    r4: ["04 · Cửa giao hàng — cổng và bộ nối",
+         "Các ổ cắm chuẩn: lưu dữ liệu, in hoá đơn, báo tin cho máy khác. Lõi chỉ biết ổ cắm, không biết thiết bị nào đang cắm vào. Nhờ vậy đổi thiết bị mà không phải sửa lõi."],
+    r5: ["05 · Kho trung tâm — máy chủ và cơ sở dữ liệu",
+         "Nơi duy nhất giữ sự thật. Mọi máy trong quán đọc chung ở đây. Những thao tác quan trọng được ghi trọn vẹn hoặc không ghi gì cả, để không bao giờ xuất hiện trạng thái nửa vời như đã thu tiền mà bàn vẫn báo có khách."]
+  };
+  var say = document.getElementById("planSay");
+  function pick(id){
+    Object.keys(rooms).forEach(function(k){
+      var el = document.getElementById(k);
+      if (el) el.classList.toggle("is-on", k === id);
+    });
+    var d = rooms[id];
+    say.innerHTML = "<b>" + d[0] + "</b>" + d[1];
+  }
+  Object.keys(rooms).forEach(function(k){
+    var el = document.getElementById(k);
+    if (!el) return;
+    el.addEventListener("click", function(){ pick(k); });
+    el.addEventListener("keydown", function(ev){
+      if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); pick(k); }
+    });
+  });
+
+  /* ---------- mặt bằng: chạy thử một đơn hàng ---------- */
+  var route  = document.getElementById("route");
+  var marker = document.getElementById("marker");
+  var runBtn = document.getElementById("runBtn");
+  var steps = [
+    [0.00, "r1", "Bước 1 · Khu khách",
+     "Khách gọi hai ly cà phê. Nhân viên bấm trên màn hình. Màn hình chưa tự quyết định gì cả."],
+    [0.18, "r2", "Bước 2 · Quầy order",
+     "Kiểm tra trước khi làm: bàn này đang mở đơn hay chưa, nhân viên này có quyền gửi bếp không."],
+    [0.40, "r3", "Bước 3 · Sổ tay luật",
+     "Áp luật quán: giá của món được chốt ngay tại lúc gửi bếp. Sau này chủ quán đổi giá thì đơn đã gửi không bị tính lại."],
+    [0.62, "r4", "Bước 4 · Cửa giao hàng",
+     "Đóng gói yêu cầu theo đúng ổ cắm chuẩn. Tới đây phần bên trong vẫn không biết dữ liệu sẽ được lưu bằng công nghệ nào."],
+    [0.93, "r5", "Bước 5 · Kho trung tâm",
+     "Ghi đơn trong một giao dịch: cấp số đơn, lưu các món kèm giá đã chốt, đổi trạng thái bàn — tất cả cùng thành công hoặc cùng huỷ."],
+    [0.03, "r1", "Bước 6 · Quay lại các máy",
+     "Kho gõ chuông báo có thay đổi. Máy tính bảng của phục vụ tự tải lại và hiện bàn đó đang có khách. Không ai phải bấm làm mới."]
+  ];
+  var timer = null;
+
+  function place(t){
+    var L = route.getTotalLength();
+    var p = route.getPointAtLength(L * t);
+    marker.setAttribute("cx", p.x);
+    marker.setAttribute("cy", p.y);
+  }
+  function showStep(i){
+    var s = steps[i];
+    place(s[0]);
+    pick(s[1]);
+    say.innerHTML = "<b>" + s[2] + "</b>" + s[3];
+  }
+  function stop(){
+    if (timer) { clearInterval(timer); timer = null; }
+    runBtn.textContent = "▶ Chạy thử: khách gọi 2 ly cà phê";
+  }
+  runBtn.addEventListener("click", function(){
+    if (timer) { stop(); return; }
+    marker.setAttribute("opacity", "1");
+    var i = 0;
+    showStep(0);
+    runBtn.textContent = "■ Dừng lại";
+    if (reduce) { stop(); return; }
+    timer = setInterval(function(){
+      i++;
+      if (i >= steps.length) { stop(); return; }
+      showStep(i);
+    }, 3400);
+  });
+
+  /* ---------- đổi bộ nối ---------- */
+  var adapters = [
+    ["Bộ nối cơ sở dữ liệu đám mây",
+     "Đọc ghi trên cơ sở dữ liệu quan hệ ở xa. Các thao tác quan trọng gọi vào hàm phía máy chủ để được chạy trong một giao dịch.",
+     "Trạng thái: đang dùng khi chạy thật"],
+    ["Bộ nối dữ liệu giả",
+     "Giữ toàn bộ dữ liệu trong bộ nhớ, có sẵn thực đơn và sơ đồ bàn mẫu. Chạy được không cần internet, không cần tài khoản.",
+     "Trạng thái: đang dùng khi chạy kiểm thử và khi trình diễn ngoại tuyến"],
+    ["Bộ nối kho cục bộ",
+     "Ghi đơn xuống máy khi mất mạng rồi đồng bộ lên sau. Phải giải quyết thêm bài toán xung đột và cấp số hoá đơn khi ngoại tuyến.",
+     "Trạng thái: CHƯA hiện thực — chỉ là hướng phát triển, không phải tính năng hiện có"]
+  ];
+  var adTitle = document.getElementById("adTitle");
+  var adDesc  = document.getElementById("adDesc");
+  var adStat  = document.getElementById("adStat");
+  var chips = Array.prototype.slice.call(document.querySelectorAll(".chip[data-ad]"));
+  chips.forEach(function(c){
+    c.addEventListener("click", function(){
+      var i = parseInt(c.getAttribute("data-ad"), 10);
+      chips.forEach(function(o){ o.setAttribute("aria-pressed", String(o === c)); });
+      adTitle.textContent = adapters[i][0];
+      adDesc.textContent  = adapters[i][1];
+      adStat.textContent  = adapters[i][2];
+    });
+  });
+
+  /* ---------- quiz ---------- */
+  var answered = 0, correct = 0;
+  var total = document.querySelectorAll(".quiz").length;
+  var scoreN = document.getElementById("scoreN");
+  var finalN = document.getElementById("finalN");
+  var finalMsg = document.getElementById("finalMsg");
+
+  document.querySelectorAll(".quiz").forEach(function(q){
+    var right = parseInt(q.getAttribute("data-answer"), 10);
+    var opts = Array.prototype.slice.call(q.querySelectorAll(".opt"));
+    var fb = q.querySelector(".quiz__fb");
+    opts.forEach(function(o, idx){
+      o.addEventListener("click", function(){
+        if (q.dataset.done) return;
+        q.dataset.done = "1";
+        answered++;
+        if (idx === right) correct++;
+        opts.forEach(function(x, j){
+          x.disabled = true;
+          if (j === right) x.classList.add("is-right");
+          else if (j === idx) x.classList.add("is-wrong");
+        });
+        fb.classList.add("show");
+        scoreN.textContent = String(correct);
+        if (answered === total) {
+          finalN.textContent = correct + " / " + total;
+          if (correct === total) finalMsg.textContent = "Đủ chín câu. Bạn nắm được cả phần lý thuyết lẫn phần lý do chọn của dự án — đây chính là chỗ hội đồng sẽ hỏi sâu.";
+          else if (correct >= 6) finalMsg.textContent = "Nắm được ý chính. Nên đọc lại các hộp đóng dấu ở những tờ bạn trả lời sai, vì đó là phần lập luận dùng thẳng cho báo cáo.";
+          else finalMsg.textContent = "Nên đọc lại từ tờ A-02 và A-05. Hai tờ đó là xương sống của toàn bộ lập luận kiến trúc trong dự án.";
+          finalMsg.parentElement.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+        }
+      });
+    });
+  });
+
+  /* ---------- sao chép hộp đóng dấu ---------- */
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var stamp = btn.closest(".stamp");
+      var lines = [];
+      stamp.querySelectorAll("dt").forEach(function(dt){
+        var dd = dt.nextElementSibling;
+        lines.push(dt.textContent.trim() + ": " + (dd ? dd.textContent.trim() : ""));
+      });
+      var text = lines.join("\n");
+      var done = function(){
+        var old = btn.textContent;
+        btn.textContent = "Đã sao chép";
+        setTimeout(function(){ btn.textContent = old; }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function(){ fallback(text, done); });
+      } else {
+        fallback(text, done);
+      }
+    });
+  });
+  function fallback(text, done){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); done(); } catch(e){}
+    document.body.removeChild(ta);
+  }
+})();
+</script>
+</body>
+</html>
