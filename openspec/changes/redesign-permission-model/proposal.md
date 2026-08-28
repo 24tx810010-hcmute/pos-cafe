@@ -12,7 +12,7 @@ Change này lật lại một phần quyết định FR-04 và mục vai trò t�
 
 - **Đưa catalog quyền và vai trò xuống database thành dữ liệu**, thay cho enum cứng trong mã nguồn. Thêm quyền mới về sau là thêm bản ghi, không phải sửa nhiều nơi.
 - **Mở rộng bộ vai trò dựng sẵn** từ ba lên năm vai trò đang dùng được: chủ quán, quản lý, thu ngân, phục vụ và kế toán. Vai trò bếp giữ nguyên làm seam chưa bật trên giao diện. Tách chủ quán ra khỏi vai trò admin hiện tại để có một vai trò không tự khóa mình được và không ai leo thang lên được.
-- **Mở rộng bộ quyền hành động từ năm lên mười ba**, phủ cả các module quản trị là thực đơn, sơ đồ, nhân viên, báo cáo và cài đặt. Chỉ khai báo quyền có tính năng thật đứng sau.
+- **Mở rộng bộ quyền hành động từ năm lên mười bốn**, phủ cả các module quản trị là thực đơn, sơ đồ, nhân viên, báo cáo và cài đặt, và phủ cả hai module chỉ xem là sơ đồ bàn và lịch sử đơn. Chỉ khai báo quyền có tính năng thật đứng sau.
 - **Đánh dấu một nhóm quyền là dành riêng cho chủ quán**, không gán được cho vai trò khác kể cả khi chủ muốn. Nhóm này gồm xóa toàn bộ dữ liệu và cấp lại Store Key.
 - **Bỏ trục quyền module riêng.** Module hiện lên điều hướng khi nhân viên có ít nhất một quyền thuộc nhóm của module đó. Nhờ vậy quyền vào các module quản trị chỉnh được theo từng nhân viên, thay vì chỉ chặn cứng theo vai trò như hiện nay.
 - **Giữ nguyên cơ chế ghi đè theo từng nhân viên** bằng danh sách cấp thêm và danh sách chặn, với quy tắc chặn luôn thắng. Công thức này đã có kiểm thử, không đập đi.
@@ -85,23 +85,28 @@ Tách người ghi order khỏi người cầm tiền là kiểm soát nội b�
 
 Hai vai trò để dành, chưa seed vì chưa có tính năng đứng sau: thủ kho chờ `add-inventory-core`, trưởng ca chờ `add-shift-management`.
 
-**Câu 3 tiếp — Catalog quyền mở rộng từ năm lên mười ba.** Chỉ khai báo quyền có tính năng thật, đúng quy tắc không claim seam là tính năng:
+**Câu 3 tiếp — Catalog quyền mở rộng từ năm lên mười bốn.** Chỉ khai báo quyền có tính năng thật, đúng quy tắc không claim seam là tính năng:
 
 | Quyền | Chủ quán | Quản lý | Thu ngân | Phục vụ | Kế toán |
 | --- | :-: | :-: | :-: | :-: | :-: |
-| Tạo đơn | Có | Có | Có | Có | |
-| Sửa đơn | Có | Có | Có | Có | |
-| Hủy đơn mở | Có | Có | Có | | |
-| Thu tiền | Có | Có | Có | | |
-| Hủy đơn đã thanh toán | Có | Có | | | |
-| Quản lý thực đơn | Có | Có | | | |
-| Quản lý sơ đồ | Có | Có | | | |
-| Quản lý nhân viên | Có | Có | | | |
-| Chỉnh quyền nhân viên | Có | | | | |
-| Xem báo cáo | Có | Có | | | Có |
-| Đổi cài đặt cửa hàng | Có | | | | |
-| Xóa toàn bộ dữ liệu (chỉ chủ quán) | Có | | | | |
-| Cấp lại Store Key (chỉ chủ quán) | Có | | | | |
+| `floor.view` xem sơ đồ bàn | Có | Có | Có | Có | |
+| `order.create` tạo đơn | Có | Có | Có | Có | |
+| `order.update` sửa đơn | Có | Có | Có | Có | |
+| `order.voidOpen` hủy đơn mở | Có | Có | Có | | |
+| `payment.take` thu tiền | Có | Có | Có | | |
+| `orderHistory.view` xem lịch sử đơn | Có | Có | Có | | Có |
+| `order.voidPaid` hủy đơn đã thanh toán | Có | Có | | | |
+| `menu.manage` quản lý thực đơn | Có | Có | | | |
+| `floor.manage` quản lý sơ đồ | Có | Có | | | |
+| `employee.manage` quản lý nhân viên | Có | Có | | | |
+| `employee.permission.edit` chỉnh quyền nhân viên | Có | | | | |
+| `report.view` xem báo cáo | Có | Có | | | Có |
+| `settings.manage` đổi cài đặt cửa hàng | Có | | | | |
+| `data.wipe` xóa toàn bộ dữ liệu (chỉ chủ quán) | Có | | | | |
+
+Hai quyền chỉ xem là `floor.view` và `orderHistory.view` được bổ sung ngày 2026-08-28 khi viết delta spec. Lý do: quyết định bỏ trục module ở câu 4 khiến mọi module phải suy ra từ quyền, nhưng sơ đồ bàn và lịch sử đơn là hai module chỉ xem nên trước đó không có quyền hành động nào ánh xạ tới. Không thêm thì hoặc hai module biến mất với mọi người, hoặc phải làm ngoại lệ cho chúng luôn hiện, mà ngoại lệ thì kế toán cũng thấy sơ đồ bàn.
+
+Quyền `store.key.rotate` cấp lại Store Key không được khai báo ở change này, vì tính năng đứng sau nó thuộc `add-owner-account-and-store-provisioning`. Change đó bổ sung quyền này vào danh mục khi tính năng được làm, nâng tổng lên mười lăm.
 
 Các mã quyền trong danh mục sản xuất hiện chưa có tính năng đứng sau vẫn **không** đưa vào đợt này: chuyển bàn, gộp bàn, hoàn tiền, áp giảm giá, ghi đè giá, mở ngăn kéo tiền và các quyền ca làm việc. Cấu trúc dữ liệu cho phép thêm chúng khi tính năng tương ứng được làm.
 
