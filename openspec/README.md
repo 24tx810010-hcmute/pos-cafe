@@ -52,6 +52,8 @@ Quy tắc này cũng được khai báo trong `openspec/config.yaml` phần `ope
 
 Mục này ghi **cái nào chặn cái nào**. Còn **khi nào làm và theo trình tự nào**, kèm trạng thái tiến độ, nằm ở `docs/roadmap.md`. Đừng chép nội dung giữa hai nơi.
 
+Lưu ý: phụ thuộc khái niệm ở đây **không phải** thứ tự thực hiện. Thứ tự thực hiện còn bị chi phối bởi chi phí trên kho mã, cụ thể là ba lời gọi tiền bị khai báo lại toàn bộ mỗi lần sửa, quanh 1.100 dòng mỗi lần. `docs/roadmap.md` giải thích chỗ hai tiêu chí này mâu thuẫn và vì sao chọn như vậy.
+
 Mỗi proposal có section `## Phụ thuộc`. Các quan hệ chính:
 
 - `define-test-strategy` nên làm trước `expand-e2e-coverage` và `setup-test-data-environment`; cả ba nên có trước `add-ci-pipeline`, và `add-ci-pipeline` trước `add-cd-deployment`.
@@ -59,7 +61,8 @@ Mỗi proposal có section `## Phụ thuộc`. Các quan hệ chính:
 - `add-discount-engine` bắt buộc trước mã giảm giá, giờ vàng và đổi điểm.
 - `add-customer-registry` bắt buộc trước `add-loyalty-points`.
 - `add-inventory-core` bắt buộc trước hai change tồn kho còn lại.
-- `add-owner-account-and-store-provisioning` bắt buộc trước `add-multi-store-ownership` và `add-provider-admin-console`, và nên trước `enforce-permissions-at-database` vì nó thêm một nhánh chủ sở hữu vào chính sách bảo mật mức dòng.
+- `add-owner-account-and-store-provisioning` bắt buộc trước `add-multi-store-ownership` và `add-provider-admin-console`.
+- Quan hệ giữa `add-owner-account-and-store-provisioning` và `enforce-permissions-at-database` tùy **phạm vi** của cái sau. Với bản đầy đủ có danh tính riêng cho từng nhân viên ở tầng chính sách bảo mật thì tài khoản chủ **bắt buộc** làm trước. Với bản thu hẹp, tức mọi lời gọi nhạy cảm đọc lại quyền từ cơ sở dữ liệu, thứ tự ngược lại rẻ hơn; xem phần "Vì sao thứ tự này" trong `docs/roadmap.md`.
 - `add-multi-store-ownership` bắt buộc trước `add-cross-store-reporting`.
 - `add-idempotent-write-operations` bắt buộc trước `add-offline-data-layer`, và nên trước `enforce-permissions-at-database` nếu cả hai cùng sửa chữ ký các lời gọi ghi.
 - `add-offline-data-layer` bắt buộc trước hai change offline còn lại. Riêng lát mỏng hiển thị trạng thái mạng trong `add-offline-status-ux` làm được độc lập trước.

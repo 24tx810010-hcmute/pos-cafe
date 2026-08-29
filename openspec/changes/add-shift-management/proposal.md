@@ -57,6 +57,12 @@ Ngoài ra, ca làm việc trong quán cà phê còn gắn với việc bàn giao
 8. Có cần xuất bảng công ra tệp không? Lưu ý nút xuất báo cáo hiện đang bị vô hiệu hóa vì chưa hỗ trợ.
 9. Nếu sau này làm nhiều cửa hàng thì một nhân viên có làm ở nhiều cửa hàng không? Câu trả lời ảnh hưởng mô hình dữ liệu ngay từ đầu.
 
+10. Phải gắn định danh ca vào từng bản ghi thanh toán, hay suy ra ca từ thời điểm thanh toán so với khoảng mở và chốt ca?
+
+    Đây là câu hỏi về chi phí chứ không chỉ về mô hình dữ liệu. Ba lời gọi tiền hiện bị khai báo lại toàn bộ mỗi lần sửa, quanh 1.100 dòng mỗi lần. Gắn thêm cột định danh ca nghĩa là chép lại chụm đó thêm một lần nữa ở cuối đợt. Suy ra từ thời điểm thì không đụng gì tới chúng.
+
+    Đánh đổi của việc suy ra từ thời điểm: ca phải không chồng lấn nhau, và việc sửa giờ mở hoặc chốt ca sau đó sẽ đổi luôn kết quả đối soát của những ca liền kề.
+
 ## Quyết định đã chốt
 
 Chưa có. Ghi câu trả lời của người dùng vào mục này trước khi bắt đầu implement.
