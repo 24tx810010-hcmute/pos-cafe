@@ -88,12 +88,13 @@ Nhóm kiểm két đầu và cuối ca cũng nối vào mạch kiểm soát nộ
 
 ## Giai Đoạn 2 — Sau Khi Bảo Vệ
 
-Hai mươi mốt change còn lại, xếp theo tầng. Không gắn ngày. Trong mỗi tầng, dấu mũi tên là quan hệ bắt buộc trước sau.
+Hai mươi hai change còn lại, xếp theo tầng. Không gắn ngày. Trong mỗi tầng, dấu mũi tên là quan hệ bắt buộc trước sau.
 
 **Tầng A — Vận hành và chất lượng.** Làm trước nếu sản phẩm đi vào dùng thật, vì nó quyết định khả năng bảo trì.
 
 - `define-test-strategy` → phần còn lại của `expand-e2e-coverage` và `setup-test-data-environment` → `add-ci-pipeline` → `add-cd-deployment`
 - `add-provider-admin-console`: màn quản trị cho nhà cung cấp, gồm xem, tạm ngưng và xóa cửa hàng, và nới hạn mức số cửa hàng. Phụ thuộc phần tài khoản chủ đã làm ở giai đoạn 1
+- `add-idempotent-write-operations`: khóa chống trùng cho các lời gọi ghi. Độc lập với ngoại tuyến và đáng làm dù không bao giờ làm ngoại tuyến, vì hiện một yêu cầu bị timeout phía client nhưng đã chạy xong phía database có thể sinh bản ghi thứ hai. **Ứng viên kéo về giai đoạn 1** nếu quyết định về phạm vi ngoại tuyến đi theo hướng làm nền trước
 
 **Tầng B — Bán hàng nâng cao.** Nhóm dễ thấy nhất với người dùng cuối.
 
@@ -112,6 +113,8 @@ Hai mươi mốt change còn lại, xếp theo tầng. Không gắn ngày. Trong
 - `add-multi-store-ownership` → `add-cross-store-reporting`
 
 **Tầng F — Ngoại tuyến.** Lật lại quyết định online-only đang ghi trong `requirements.md`, nên nếu làm thì phải cập nhật lại tài liệu.
+
+Ngày 2026-08-28, ba đề xuất của tầng này đã được viết chi tiết lại dựa trên rà soát mã nguồn: năm ràng buộc từ hiện trạng, mô hình hàng đợi ý định một chiều, bảng thao tác nào được phép ngoại tuyến, hai mươi tình huống phải xử lý, và chiến lược kiểm thử. **Phạm vi trong 16 tuần chưa chốt**: ước lượng trung thực cho phần bán hàng ngoại tuyến là năm tới bảy tuần, nhiều hơn bốn tuần của nhóm ca làm việc đang giữ chỗ ở giai đoạn 1.
 
 - `add-offline-data-layer` → `add-offline-status-ux`, `add-offline-sync-conflict-resolution`
 

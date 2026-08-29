@@ -15,6 +15,18 @@ Ngược lại, hiển thị quá nhiều cũng hỏng: màn bán hàng cần g�
 - Vô hiệu hóa và giải thích các chức năng không dùng được khi ngoại tuyến, thay vì để người dùng bấm rồi gặp lỗi.
 - Hướng dẫn ngắn gọn cho nhân viên về việc nên và không nên làm gì khi đang ngoại tuyến.
 
+## Lát mỏng làm được trước, không cần kho dữ liệu cục bộ
+
+Phần lớn change này phụ thuộc `add-offline-data-layer`, nhưng có một lát mỏng **làm được ngay và độc lập hoàn toàn**, ước lượng khoảng ba tới năm ngày:
+
+- Phát hiện và hiển thị trạng thái mất kết nối.
+- Giữ các màn hình đọc được từ dữ liệu đã tải, thay vì để trống hoặc quay vòng vô hạn.
+- Chặn các thao tác ghi bằng một thông báo người dùng hiểu được, thay vì để họ bấm rồi nhận lỗi kỹ thuật.
+
+Lát mỏng này không cho bán hàng khi mất mạng, nên nó không thay thế `add-offline-data-layer`. Nhưng nó xóa được trải nghiệm tệ nhất hiện nay là ứng dụng trông như hỏng mà không nói vì sao, và nó là thứ duy nhất trong cả nhóm ngoại tuyến vừa với một dự án đang kín lịch.
+
+Ba mục còn lại của change này — đánh dấu thao tác chưa được xác nhận, hiển thị số việc đang chờ gửi, và thông báo xung đột — vẫn phải chờ hai change kia.
+
 ## Capabilities
 
 ### New Capabilities
@@ -42,7 +54,7 @@ Ngược lại, hiển thị quá nhiều cũng hỏng: màn bán hàng cần g�
 
 ## Phụ thuộc
 
-- `add-offline-data-layer`: bắt buộc.
+- `add-offline-data-layer`: bắt buộc cho phần lớn change, **trừ lát mỏng** nêu ở mục trên.
 - `add-offline-sync-conflict-resolution`: cần để hiển thị đúng trạng thái xung đột.
 
 ## Câu hỏi phải chốt trước khi làm

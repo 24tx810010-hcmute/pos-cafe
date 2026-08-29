@@ -35,6 +35,83 @@ Hiện hệ thống chống ghi đè bằng khóa lạc quan: thao tác dựa tr
 - Cần bộ kiểm thử riêng cho các tình huống xung đột, và các tình huống này khó dựng lại.
 - Cập nhật `docs/architecture.md`, `docs/limitations.md`, `pos-cafe-context.md`.
 
+## Danh mục tình huống phải xử lý
+
+Hai mươi tình huống rút ra từ chính cấu trúc dữ liệu và các lời gọi ghi hiện có, ngày 2026-08-28. Danh sách này là đầu vào bắt buộc cho việc thiết kế chính sách hòa giải và cho bộ kiểm thử: mỗi dòng phải có một quyết định và ít nhất một kịch bản kiểm thử.
+
+**Số và định danh**
+
+| # | Tình huống |
+| --- | --- |
+| 1 | Hai thiết bị cùng tạo đơn khi ngoại tuyến rồi đồng bộ cùng lúc |
+| 2 | Thiết bị ngoại tuyến mở đơn cho một bàn, thiết bị đang online cũng mở đơn cho đúng bàn đó |
+| 3 | Đơn tạo lúc gần nửa đêm, đồng bộ sau khi đã sang ngày kinh doanh mới |
+| 4 | Đơn ngoại tuyến đồng bộ sau khi số của các đơn cùng ngày đã nhảy do người khác tách đơn thanh toán |
+
+**Thực đơn**
+
+| # | Tình huống |
+| --- | --- |
+| 5 | Món bị xóa mềm trong lúc thiết bị ngoại tuyến, đơn ngoại tuyến có món đó |
+| 6 | Giá món đổi trong lúc thiết bị ngoại tuyến — dùng giá lúc ghi hay giá lúc đồng bộ |
+| 7 | Nhóm tùy chọn bị sửa trong lúc thiết bị ngoại tuyến |
+| 8 | Món bị ẩn khỏi thực đơn nhưng đơn ngoại tuyến đã chọn |
+
+**Bàn và sơ đồ**
+
+| # | Tình huống |
+| --- | --- |
+| 9 | Bàn bị xóa trong trình sửa sơ đồ, đơn ngoại tuyến trỏ tới bàn đó |
+| 10 | Bàn đã được trả về trống ở thiết bị khác, đơn ngoại tuyến vẫn coi là đang phục vụ |
+
+**Nhân viên và quyền**
+
+| # | Tình huống |
+| --- | --- |
+| 11 | Nhân viên bị tạm khóa trong lúc thiết bị ngoại tuyến nhưng vẫn đang thao tác |
+| 12 | Quyền bị gỡ trong lúc ngoại tuyến — ý định tạo lúc còn quyền có được áp dụng không |
+| 13 | Đổi người trực khi ngoại tuyến, trong khi PIN hiện được so khớp phía database |
+| 14 | PIN bị đặt lại trong lúc thiết bị ngoại tuyến |
+
+**Tiền, nếu thanh toán được phép làm ngoại tuyến**
+
+| # | Tình huống |
+| --- | --- |
+| 15 | Thanh toán ngoại tuyến rồi đơn đó bị thiết bị khác hủy online trước khi đồng bộ |
+| 16 | Thanh toán ngoại tuyến bị gửi hai lần do ứng dụng khởi động lại giữa chừng |
+| 17 | Tiền thối tính lúc ngoại tuyến nhưng tổng đơn đổi sau khi đồng bộ |
+| 18 | Báo cáo doanh thu chạy trong lúc còn ý định chưa gửi, số liệu thiếu mà không ai biết |
+
+**Vận hành**
+
+| # | Tình huống |
+| --- | --- |
+| 19 | Thiết bị ngoại tuyến qua đêm rồi mới đồng bộ |
+| 20 | Người dùng xóa dữ liệu trình duyệt khi còn ý định chưa gửi |
+
+Tình huống 20 là rủi ro nghiêm trọng nhất và **không giải quyết trọn vẹn được bằng phần mềm**. Tối thiểu phải cảnh báo rõ khi còn hàng đợi và chặn các thao tác dọn dữ liệu trong ứng dụng, nhưng người dùng vẫn xóa được từ phía trình duyệt.
+
+## Chiến lược kiểm thử
+
+Đây là phần dễ làm ẩu nhất trong toàn bộ dự án, vì các tình huống ở trên khó dựng lại bằng tay và dễ bị bỏ sót.
+
+**Kiểm thử hợp đồng dùng chung.** Dự án đã có nguyên tắc adapter mock và adapter thật cùng thỏa một hợp đồng, theo NFR-03. Adapter cục bộ là adapter thứ ba và phải chạy **cùng một bộ kiểm thử hợp đồng**, không viết bộ riêng.
+
+**Kiểm thử đơn vị cho hàng đợi.** Thứ tự phát lại, chống gửi trùng, lùi dần khi gửi lại thất bại, và khôi phục đúng khi ứng dụng bị đóng giữa lúc đang gửi.
+
+**Kiểm thử tích hợp phát lại.** Dựng sẵn một hàng đợi, phát vào database thật, và khẳng định phát hai lần cho kết quả giống hệt phát một lần.
+
+**Kiểm thử đầu cuối với mạng bị ngắt thật.** Công cụ kiểm thử đầu cuối hiện dùng ngắt được mạng ở mức ngữ cảnh trình duyệt, nên dựng lại được đúng kịch bản đang ghi đơn thì rớt mạng, ghi tiếp, nối lại, rồi kiểm tra dữ liệu trên máy chủ.
+
+**Kiểm thử theo tính chất, phần đáng giá nhất.** Sinh ngẫu nhiên chuỗi thao tác của hai tới ba thiết bị, ngắt mạng ở những thời điểm ngẫu nhiên, rồi phát lại theo nhiều thứ tự khác nhau. Sau mỗi lần chạy, khẳng định bốn bất biến:
+
+- Không có hai đơn cùng số trong cùng một ngày kinh doanh
+- Tổng tiền các bản ghi thanh toán bằng tổng tiền các đơn ở trạng thái đã thanh toán
+- Không ý định nào bị áp dụng hai lần
+- Không ý định nào biến mất mà không để lại dấu vết
+
+Cách này bắt được lớp lỗi mà kiểm thử viết tay bỏ sót, và bản thân nó là một mục có sức nặng cho chương kiểm thử của báo cáo.
+
 ## Ngoài phạm vi
 
 - Kho dữ liệu cục bộ và hàng đợi. Việc đó thuộc `add-offline-data-layer`.
@@ -44,6 +121,7 @@ Hiện hệ thống chống ghi đè bằng khóa lạc quan: thao tác dựa tr
 ## Phụ thuộc
 
 - `add-offline-data-layer`: bắt buộc.
+- `add-idempotent-write-operations`: bắt buộc, gián tiếp qua change trên. Bảo đảm không sinh trùng là điều kiện cần để phát lại hàng đợi an toàn.
 
 ## Câu hỏi phải chốt trước khi làm
 

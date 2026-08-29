@@ -8,6 +8,55 @@ Hệ thống hiện là online-only: mất mạng thì không bán được hàn
 
 Change này chỉ dựng nền: lưu dữ liệu cục bộ và xếp hàng thao tác. Việc hòa giải xung đột và phần giao diện được tách riêng vì mỗi phần đủ lớn để làm độc lập.
 
+## Ràng buộc từ hiện trạng
+
+Rà soát mã nguồn và migration ngày 2026-08-28 tìm ra năm ràng buộc quyết định mọi phương án. Ghi lại ở đây vì chúng không hiển nhiên từ tài liệu, và bỏ sót một trong số đó là thiết kế sai ngay từ đầu.
+
+**1. Số đơn cũng là số bill, và nó thay đổi được.** Trong luồng tách đơn thanh toán, đơn gốc **bị đổi số** sang số kế tiếp để nhả số cũ cho đơn tách vừa thu tiền. Bàn số 12 trả hai lần thì bill lần một mang số 12, phần còn lại chuyển thành số 13.
+
+Hệ quả cho ngoại tuyến rất nặng: số của một đơn đang mở đổi được **do hành vi của thiết bị khác**. Một máy ngoại tuyến giữ bản sao đơn số 12 có thể thấy nó thành số 13 sau khi nối lại. Nghĩa là ở chế độ ngoại tuyến, ngay cả dữ liệu **đọc** cũng không ổn định, chứ không riêng dữ liệu ghi.
+
+**2. Cấp số là lấy số lớn nhất trong ngày cộng một, dưới khóa phía database**, kèm ràng buộc duy nhất theo cửa hàng và ngày kinh doanh. Hai thiết bị ngoại tuyến cùng tự cấp số thì chắc chắn đụng nhau lúc đồng bộ.
+
+**3. Mọi lời gọi ghi đòi đúng phiên bản khóa lạc quan hiện tại.** Thao tác xếp hàng từ nhiều giờ trước mang phiên bản cũ, nên mọi khác biệt đều biến thành lỗi cần người xử lý chứ không tự hòa giải.
+
+**4. Giá món do database ghi lúc gửi đơn**, không nhận từ client. Ngoại tuyến buộc phải chốt giá từ thực đơn đã lưu cục bộ, nên phải quyết dùng giá lúc ghi hay giá lúc đồng bộ.
+
+**5. Một lần tách đơn thanh toán là giao dịch năm phần**: tạo đơn mới, chèn các dòng món, ghi bản ghi thanh toán, đổi số đơn gốc, cập nhật trạng thái bàn. Phát lại từ hàng đợi phải nguyên tử cả năm phần, không được nửa chừng.
+
+**Điểm sáng:** định danh đơn, dòng món và thanh toán đều là UUID **do client sinh**, không phải chuỗi tăng dần của database. Cộng với ports mỏng và rõ ràng, nền để cắm một adapter cục bộ đã có sẵn mà không phải viết lại tầng tính năng.
+
+## Mô hình đề xuất: hàng đợi ý định một chiều
+
+Không làm theo hướng "cơ sở dữ liệu cục bộ là nguồn sự thật rồi hợp nhất hai chiều". Với dữ liệu tiền bạc, hợp nhất tự động là sai về nguyên tắc: không ai muốn hệ thống tự quyết giùm khi hai thiết bị bất đồng về một khoản tiền.
+
+Tách dữ liệu làm hai loại, xử lý khác nhau:
+
+**Dữ liệu tham chiếu — bản sao chỉ đọc.** Thực đơn, sơ đồ bàn, danh sách nhân viên, quyền. Quán không sửa thực đơn lúc mất mạng nên nhóm này không xung đột; chỉ cần lưu cục bộ và làm mới khi có mạng.
+
+**Thao tác bán hàng — hàng đợi ý định.** Không lưu "trạng thái đơn sau khi sửa" mà lưu **ý định**, ví dụ thêm hai ly cà phê vào đơn X, hoặc tạo đơn mang đi Y gồm các món này. Mỗi ý định mang một khóa chống trùng sinh đúng một lần và giữ nguyên qua mọi lần gửi lại.
+
+Khi có mạng, phát lại tuần tự. **Database vẫn là nơi duy nhất cấp số và chốt tiền**; client chỉ đề nghị.
+
+Ba lý do mô hình này hợp với hệ thống hiện tại:
+
+- Nó **né hẳn bài toán số bill**. Ngoại tuyến không cấp số; số cấp lúc đồng bộ. Ràng buộc duy nhất và việc đổi số đơn gốc vẫn do database lo đúng như hiện nay, không phải viết lại.
+- Nó đổi bài toán từ hợp nhất hai chiều thành **phát lại một chiều**, rẻ hơn nhiều bậc và kiểm thử được.
+- Ý định dạng cộng dồn thì tự hòa giải được. Thêm hai ly cà phê áp dụng được bất kể ai đã thêm gì trước đó; trong khi đặt đơn thành một trạng thái cụ thể thì không.
+
+Chính điểm cuối quyết định thao tác nào được phép làm khi ngoại tuyến:
+
+| Thao tác | Ngoại tuyến | Lý do |
+| --- | --- | --- |
+| Tạo đơn mới | Cho | Định danh do client sinh, số cấp lúc đồng bộ |
+| Thêm món vào đơn | Cho | Cộng dồn, hòa giải được |
+| Sửa số lượng, xóa dòng đã gửi | Không | Không cộng dồn, cần phiên bản khóa lạc quan |
+| Thanh toán | Không, ở phạm vi change này | Đụng số bill, tiền và trạng thái bàn cùng lúc |
+| Hủy đơn mở, hủy đơn đã thanh toán | Không | Thao tác đụng tiền |
+| Mọi thao tác quản trị | Không | Không gấp, không có lý do làm ngoại tuyến |
+
+Bảng này là đề xuất, không phải quyết định. Câu hỏi số 3 ở dưới vẫn để mở việc có cho thanh toán ngoại tuyến hay không, vì đó là ranh giới giữa một tính năng có ích vừa phải và một tính năng có ích thật.
+
 ## What Changes
 
 - Thêm kho dữ liệu cục bộ trên thiết bị, giữ đủ dữ liệu để bán hàng khi mất mạng: thực đơn, sơ đồ bàn, nhân viên, quyền và các đơn đang mở.
@@ -46,6 +95,8 @@ Change này chỉ dựng nền: lưu dữ liệu cục bộ và xếp hàng thao
 
 ## Phụ thuộc
 
+- `add-idempotent-write-operations`: **bắt buộc làm trước.** Phát lại hàng đợi chính là gửi trùng có chủ ý; không có khóa chống trùng thì mọi lần gửi lại đều có nguy cơ sinh thêm bản ghi.
+- `add-offline-status-ux`: phần hiển thị trạng thái mạng ở mức tối thiểu làm được **trước** change này và độc lập với nó; xem ghi chú trong proposal đó.
 - `expand-e2e-coverage`: rất nên có trước, vì change này viết lại cách toàn bộ ứng dụng lấy dữ liệu.
 
 ## Câu hỏi phải chốt trước khi làm
@@ -59,6 +110,11 @@ Change này chỉ dựng nền: lưu dữ liệu cục bộ và xếp hàng thao
 7. Có chấp nhận thêm dependency mới không?
 8. Ngoại tuyến áp dụng cho toàn bộ ứng dụng hay chỉ cho luồng bán hàng? Các module quản trị có thể để nguyên yêu cầu có mạng.
 9. Nhiều thiết bị cùng ngoại tuyến trong cùng một quán thì có cần thấy nhau không? Nếu có thì đây là bài toán khác hẳn và lớn hơn nhiều.
+10. Ý định tạo lúc ngoại tuyến rồi đồng bộ sau khi ngày kinh doanh đã sang ngày mới thì ghi vào ngày nào? Ngày lúc thao tác thì báo cáo đúng nghiệp vụ nhưng phải ghi lùi; ngày lúc đồng bộ thì đơn giản nhưng doanh thu sai ngày.
+11. Đơn ngoại tuyến trỏ tới một món hoặc một bàn đã bị xóa trong lúc thiết bị mất mạng thì xử lý thế nào?
+12. Nhân viên bị tạm khóa hoặc bị gỡ quyền trong lúc thiết bị ngoại tuyến thì các ý định họ tạo trước đó có được áp dụng không?
+13. Đăng nhập lúc ngoại tuyến bằng cách nào? Hiện PIN được so khớp phía database, nên ngoại tuyến hoặc phải lưu bản băm cục bộ, hoặc phải chấp nhận không đổi được người trực khi mất mạng.
+14. Giới hạn thời gian ngoại tuyến tối đa là bao lâu trước khi ứng dụng từ chối nhận thêm thao tác? Không có giới hạn thì hàng đợi có thể phình tới mức không hòa giải nổi.
 
 ## Quyết định đã chốt
 
