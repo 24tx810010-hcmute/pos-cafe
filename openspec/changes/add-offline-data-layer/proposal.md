@@ -118,4 +118,81 @@ Bảng này là đề xuất, không phải quyết định. Câu hỏi số 3 �
 
 ## Quyết định đã chốt
 
-Chưa có. Ghi câu trả lời của người dùng vào mục này trước khi bắt đầu implement.
+**1. Làm thật, không dừng ở phân tích thiết kế.** Chốt 2026-08-30.
+
+Quyết định online-only là **hoãn theo ngân sách thời gian** của bài tiểu luận chuyên ngành, không phải một lựa chọn kiến trúc: làm hybrid tốn thời gian viết và thời gian kiểm thử, mà lúc đó không đủ. `docs/requirements.md` đã ghi đúng như vậy khi đặt "Offline-first/local database" dưới mục "Ngoài Phạm Vi Hoặc Hoãn", kèm câu "không được tính là thiếu so với baseline tiểu luận hiện tại".
+
+Đồ án tốt nghiệp có ngân sách 16 tuần nên ràng buộc đó không còn. Vì vậy đây là **gỡ một khoản hoãn**, không phải lật một quyết định thiết kế.
+
+Hệ quả cho tài liệu:
+
+- FR-21 và NFR-05 nói về đồng bộ giữa nhiều thiết bị khi online. Vẫn đúng, không phải sửa.
+- `openspec/specs/multi-device-sync/spec.md` yêu cầu "MUST NOT tuyên bố hỗ trợ làm việc ngoại tuyến" sẽ đổi khi change này được archive. Đó là luồng bình thường của OpenSpec, không phải mâu thuẫn.
+- Mục "Change lật lại quyết định đã chốt" trong `openspec/README.md` đang xếp change này chung với các change thật sự lật quyết định. Đã ghi chú lại cho đúng.
+
+**2. Mục tiêu tối thiểu: nhận đơn mới khi mất mạng, không thanh toán.** Chốt 2026-08-30.
+
+Cho phép khi ngoại tuyến:
+
+- Đọc thực đơn, sơ đồ bàn, danh sách nhân viên và quyền từ bản sao cục bộ.
+- Tạo đơn mới.
+- Thêm món vào đơn **được tạo lúc ngoại tuyến và chưa đồng bộ**.
+
+Không cho phép:
+
+- Sửa số lượng hoặc xóa dòng của đơn **đã tồn tại trên máy chủ**.
+- Thanh toán, hủy đơn mở, hủy đơn đã thanh toán.
+- Mọi thao tác quản trị.
+
+Cơ sở kỹ thuật, đo trên kho mã ngày 2026-08-30: `submit_order_changes` nhận `p_order_id` là UUID do client sinh (`src/adapters/supabase/orderRepo.ts`), và `p_expected_lock_version` khai kiểu `number | null` (`src/domain/inputs.ts`), đơn mới truyền `null` (`src/features/pos/orderFlow.test.ts`). Migration 012 đã có nhánh `if p_expected_lock_version is not null`. Vì vậy phát lại một đơn mới **không cần phiên bản khóa lạc quan và không phải đổi chữ ký RPC nào**.
+
+Đây là điều kiện giữ danh sách xung đột đủ ngắn để liệt kê hết và kiểm thử hết trong ngân sách ba tuần.
+
+**3. Không cho thanh toán khi ngoại tuyến.** Chốt 2026-08-30.
+
+Cho phép thì thiết bị phải tự cấp số bill lúc ngoại tuyến. Số bill hiện do database cấp dưới khóa theo cửa hàng và ngày kinh doanh, và còn **bị đổi** trong luồng tách đơn thanh toán. Hai thiết bị ngoại tuyến cùng thu tiền là chắc chắn đụng nhau, và đó là mất tiền thật.
+
+Giữ quyết định này thì `pay_order` và `pay_order_items` không bị đụng: trong ba lời gọi tiền, offline chỉ chạm `submit_order_changes`.
+
+**4. Số bill cấp lúc đồng bộ. Database giữ độc quyền cấp số.** Chốt 2026-08-30.
+
+Hệ quả của quyết định 3. Ngoại tuyến không sinh số tạm, nên không có việc đánh số lại lúc đồng bộ, và hóa đơn đã đưa cho khách không bao giờ lệch với hệ thống. Ràng buộc duy nhất theo cửa hàng và ngày kinh doanh giữ nguyên, không phải viết lại.
+
+**5. Kho cục bộ dùng IndexedDB, đặt trong `src/adapters/offline/`.** Chốt 2026-08-30.
+
+Hai bảng: `outbox` chứa hàng đợi ý định có thứ tự, mỗi bản ghi mang khóa chống trùng; `reference` chứa ảnh chụp thực đơn, sơ đồ, nhân viên và quyền.
+
+Không dùng `localStorage`: API đồng bộ chặn main thread, không có transaction nên tab chết giữa lúc ghi làm hỏng dữ liệu, chỉ chứa chuỗi, và giới hạn khoảng 5MB.
+
+Hai luật thiết kế bắt buộc:
+
+1. **Ghi bền trước, cập nhật giao diện sau.** Không bao giờ báo cho nhân viên là đã ghi nhận trước khi ý định nằm trên đĩa.
+2. **Không có bước đẩy dữ liệu lúc đóng tab.** Không dựa vào `beforeunload`; sự kiện này không đáng tin và trên thiết bị di động thường không bắn. Đóng tab phải là chuyện không có gì xảy ra, vì không còn gì chỉ sống trong bộ nhớ.
+
+Rủi ro chấp nhận, phải ghi vào `docs/limitations.md`: người dùng xóa dữ liệu duyệt web, mở tab ẩn danh, hoặc đổi máy thì hàng đợi mất hẳn. Không có cách kỹ thuật nào cứu; IndexedDB cũng bị xóa cùng. Giảm nhẹ bằng ba việc: gọi `navigator.storage.persist()` để chặn eviction tự động khi máy thiếu chỗ, giới hạn cửa sổ ngoại tuyến, và hiển thị rõ số việc chưa gửi.
+
+Ghi chú: ứng dụng **đã** phụ thuộc kho trình duyệt từ trước. `createSupabaseBrowserClient` đặt `persistSession: true`, và supabase-js lưu phiên vào `localStorage`. Xóa dữ liệu duyệt web đã đồng nghĩa mất phiên cửa hàng ngay ở hiện trạng. Ngoại tuyến mở rộng rủi ro đang có chứ không tạo ra loại rủi ro mới.
+
+**7. Thêm đúng một dependency mới: Dexie.** Chốt 2026-08-30.
+
+Không dùng RxDB. RxDB là framework replication hai chiều, mà hệ này cố ý không hợp nhất hai chiều: database phải giữ độc quyền cấp số bill và chốt tiền. Dùng RxDB là trả giá đầy đủ cho một cỗ máy rồi tắt phần chính của nó, đồng thời kéo kiến trúc về hướng local-first vốn đã bị loại ở phần "Mô hình đề xuất". Ngoài ra một số plugin storage của RxDB thuộc bản premium trả phí, không hợp với đồ án.
+
+Không dùng `localForage`: chỉ có key-value, không có transaction, và tự động rơi về `localStorage` khi IndexedDB không dùng được — phá đúng yêu cầu transaction ở quyết định 5.
+
+Không dựng service worker và Background Sync ở phạm vi này: chỉ Chromium hỗ trợ, Safari và Firefox không có, nên chạy iPad là hỏng; ngoài ra service worker nằm ngoài cây `adapters` nên `src/architectureBoundaries.test.ts` không canh được. Tab POS mở suốt giờ bán nên phát lại lúc mở ứng dụng cộng lúc có mạng lại là đủ. Ghi vào phần "Ngoài phạm vi".
+
+Ràng buộc bắt buộc: thư viện **không được xuất hiện trong `ports` hay `domain`**. Test biên giới enforce `ports` chỉ import `ports` và `domain`, nên interface outbox phải khai bằng type của `domain`. Nhờ vậy quyết định chọn thư viện đảo ngược được, chỉ đụng một thư mục.
+
+**Ba điều kiện kèm theo quyết định làm.** Chốt 2026-08-30.
+
+1. Phạm vi hẹp theo quyết định 2 và 3. Không nới trong giai đoạn 1.
+2. Làm sau một cờ tắt. Hết tuần 13 mà chưa vững thì tắt cờ, demo trực tuyến, trình phần ngoại tuyến ở dạng thiết kế cộng nguyên mẫu.
+3. Danh sách tình huống xung đột phải có chính sách viết ra và kiểm thử chạy xanh mới tính là xong.
+
+**Câu hỏi đã thành không áp dụng nhờ phạm vi hẹp**
+
+- Câu 3 của `add-offline-sync-conflict-resolution`: không sinh số tạm nên không có việc đánh số lại.
+- Câu 2 của `add-offline-sync-conflict-resolution`: không có đơn thanh toán ngoại tuyến.
+- Câu 4 của `add-offline-status-ux`: không có hóa đơn ngoại tuyến để đánh dấu.
+
+Còn để mở: câu 6, 8, 9, 10, 11, 12, 13, 14 của change này.

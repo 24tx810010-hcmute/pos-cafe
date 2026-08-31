@@ -259,3 +259,51 @@ Ghi ngày 2026-08-28, theo trao đổi với người dùng.
     **Giai đoạn 2, khôi phục và vòng đời quyền sở hữu.** Quên Store Key; cấp lại Store Key kèm ba lớp rào chắn; đặt lại PIN của vai trò chủ quán; đổi email chủ; chuyển quyền sở hữu.
 
     Delta spec chia theo capability cho rõ, không dồn hết vào `owner-account`.
+
+19. **Cấp lại Store Key chỉ khả dụng khi phiên tài khoản chủ đang đăng nhập.** Chốt 2026-08-31.
+
+    Nút cấp lại chỉ hiện trên mặt web của tài khoản chủ, sau khi chủ đã đăng nhập bằng mã một lần gửi tới email đã xác thực. Ứng dụng POS tại quán không có lối vào nào cho chức năng này, kể cả với nhân viên vai trò `owner`.
+
+    Hệ quả: **không thêm quyền nào vào danh mục quyền hành động.** Danh mục giữ đúng mười bốn quyền của `redesign-permission-model`, và `access-control` không nằm trong danh sách capability bị change này sửa.
+
+    Điều này cũng giải quyết một mâu thuẫn giữa hai tài liệu: proposal của `redesign-permission-model` liệt kê cấp lại Store Key vào nhóm quyền dành riêng cho chủ quán, trong khi `specs/access-control/spec.md` của chính change đó chỉ ghi `data.wipe`. Spec đúng, proposal sai; proposal đã được sửa lại cho khớp.
+
+    Lý do chọn hướng này thay vì mở thêm lối vào trong ứng dụng: lớp rào chắn thứ ba ở quyết định 16 là một mã một lần mới gửi tới email chủ, nên thao tác này vốn đã đòi phiên chủ. Đặt nút ở nơi không có phiên chủ chỉ tạo ra một đường dẫn vòng về đúng chỗ đó.
+
+    Luồng quên Store Key **không** đổi: nó vẫn có hai lối vào theo quyết định 8, gồm màn ghép thiết bị và màn Cài đặt trong ứng dụng, vì nó không đụng tới thiết bị nào.
+
+20. **Chốt các ngưỡng bảo mật và giới hạn tần suất.** Chốt 2026-08-31.
+
+    Quyết định 10 và 14 yêu cầu có các giới hạn này nhưng không nêu con số. Không có số thì không viết được requirement kiểm chứng được.
+
+    | Tham số | Giá trị |
+    | --- | --- |
+    | Hạn dùng mã một lần | 10 phút |
+    | Độ dài mã | 6 chữ số |
+    | Số lần nhập sai tối đa mỗi mã | 5, quá thì hủy mã và bắt yêu cầu mã mới |
+    | Gửi mã, theo email | 3 lần mỗi 15 phút, 10 lần mỗi ngày |
+    | Gửi mã, theo địa chỉ mạng | 10 lần mỗi giờ |
+    | Gửi email quên Store Key | 3 lần mỗi giờ, tính theo email |
+    | Tạo cửa hàng | 3 lần mỗi ngày, tính theo tài khoản chủ |
+    | Trần số cửa hàng mỗi tài khoản chủ | 5 |
+    | Hạn phiên đăng nhập của chủ | 7 ngày, gia hạn mỗi lần dùng |
+
+    Toàn bộ để ở dạng cấu hình phía server, giống trần 5 cửa hàng ở quyết định 14: đổi giá trị không kéo theo migration và không phải sửa mã rải rác.
+
+    Hạn phiên 7 ngày trả lời rủi ro "phiên bỏ ngỏ trên máy dùng chung" mà quyết định 16 nêu ra nhưng chưa đặt giới hạn.
+
+21. **Chừa sẵn đường mở rộng sang nhiều cửa hàng, nhưng không làm tính năng chuỗi trong phạm vi này.** Chốt 2026-08-31.
+
+    Quản lý chuỗi vẫn ngoài phạm vi, đúng như `pos-cafe-context.md`, `docs/requirements.md`, `docs/phase-scope.md` và `docs/limitations.md` đang ghi. Change này không làm thực đơn dùng chung, giá thống nhất, báo cáo tổng hợp hay màn chuyển đổi cửa hàng.
+
+    Nhưng cấu trúc dữ liệu và giao diện MUST NOT khóa cứng ở một cửa hàng, để khi được hỏi thì trả lời được là chưa làm chứ không phải không làm được. Cụ thể:
+
+    - Quan hệ chủ và cửa hàng là quan hệ một nhiều ở tầng lược đồ. **Không** đặt ràng buộc duy nhất trên trường chủ sở hữu.
+    - Mặt web của chủ hiển thị **danh sách** cửa hàng, kể cả khi danh sách chỉ có một dòng.
+    - Email quên Store Key liệt kê theo dạng danh sách, đúng như quyết định 6 đã nêu.
+    - Mọi truy vấn phía server nhận định danh cửa hàng làm tham số, không suy ra từ "cửa hàng duy nhất của chủ này".
+    - Bảng nhật ký thao tác quản trị gắn với từng cửa hàng, không gắn với tài khoản chủ.
+
+    Baseline spec `store-isolation` đã đặc tả sẵn kịch bản một chủ sở hữu hai quán và nói rõ hệ thống không cung cấp màn tổng hợp chung. Quyết định này giữ nguyên phát biểu đó và chỉ bổ sung ràng buộc rằng lược đồ không được đi ngược lại nó.
+
+    Phần còn thiếu để thành tính năng chuỗi, ghi ra để trả lời được khi bị hỏi: màn chuyển đổi cửa hàng đang làm việc, báo cáo hợp nhất nhiều cửa hàng, danh mục dùng chung giữa các cửa hàng, và quan hệ nhân viên làm ở nhiều cửa hàng. Bốn việc đó nằm ở `add-multi-store-ownership` và `add-cross-store-reporting`.

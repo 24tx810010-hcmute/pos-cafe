@@ -26,14 +26,14 @@ Các proposal trỏ tới phần đã di chuyển đã được cập nhật the
 
 ## Trạng thái hiện tại của `changes/`
 
-26 trong 27 change đang ở trạng thái **mới có `proposal.md`**, chưa có `specs/`, `design.md`, `tasks.md`. Đây là chủ ý, không phải thiếu sót. Change còn lại là `redesign-permission-model`, đã có đủ bốn artifact và sẵn sàng implement.
+25 trong 27 change đang ở trạng thái **mới có `proposal.md`**, chưa có `specs/`, `design.md`, `tasks.md`. Đây là chủ ý, không phải thiếu sót. Hai change đã có đủ bốn artifact và sẵn sàng implement: `redesign-permission-model` và `add-owner-account-and-store-provisioning` (viết ngày 2026-08-31).
 
-Vì vậy `openspec validate --changes` báo lỗi `Change must have at least one delta` cho 21 change. Đó là trạng thái mong đợi: delta spec chỉ được viết sau khi các câu hỏi trong proposal đã có câu trả lời. 5 change thuộc nhóm công cụ và quy trình đặt `skip_specs: true` nên pass, cộng `redesign-permission-model` đã có delta nên cũng pass, tổng 6 pass.
+Vì vậy `openspec validate --changes` báo lỗi `Change must have at least one delta` cho 20 change. Đó là trạng thái mong đợi: delta spec chỉ được viết sau khi các câu hỏi trong proposal đã có câu trả lời. 5 change thuộc nhóm công cụ và quy trình đặt `skip_specs: true` nên pass, cộng hai change đã có delta, tổng 7 pass.
 
 Hai change đã có mục `## Quyết định đã chốt` được điền:
 
 - `redesign-permission-model`: **đã chốt hết và đã có đủ artifact** gồm `specs/`, `design.md` và `tasks.md`. Chờ implement.
-- `add-owner-account-and-store-provisioning`: **đã chốt hết**, 18 quyết định, không còn câu hỏi bỏ ngỏ. Đủ điều kiện viết delta spec.
+- `add-owner-account-and-store-provisioning`: **đã chốt hết**, 21 quyết định, không còn câu hỏi bỏ ngỏ. Bốn artifact đã viết xong ngày 2026-08-31, delta chia bốn capability là `owner-account` (mới), `store-onboarding`, `store-isolation` và `employee-session`. Chờ implement.
 
 Hai change này phải làm nối tiếp: `redesign-permission-model` đưa vào vai trò chủ quán, `add-owner-account-and-store-provisioning` sau đó gắn vai trò đó với tài khoản chủ đã xác thực email. `add-provider-admin-console` tách ra từ trao đổi ngày 2026-08-28 và làm sau cùng.
 
@@ -75,5 +75,7 @@ Bốn change dưới đây mâu thuẫn với các quyết định đang ghi tro
 | --- | --- |
 | `add-multi-store-ownership` | Không phải bài toán quản lý chuỗi đa chi nhánh |
 | `add-provider-admin-console` | Cô lập dữ liệu tuyệt đối giữa các cửa hàng (NFR-02) |
-| `add-offline-data-layer` | Online-only, offline-first hoãn sang mở rộng (FR-21, NFR-05) |
+| `add-offline-data-layer` | Online-only, offline-first hoãn sang mở rộng (FR-21, NFR-05). **Xem ghi chú bên dưới: đây là gỡ hoãn, không phải lật quyết định.** |
 | `enforce-permissions-at-database` | NFR-02 không đồng nghĩa bảo mật per-employee |
+
+**Ghi chú 2026-08-30.** Riêng `add-offline-data-layer` không thuộc loại lật quyết định. Online-only là hoãn theo ngân sách thời gian của bài tiểu luận chuyên ngành, đúng như `docs/requirements.md` ghi ở mục "Ngoài Phạm Vi Hoặc Hoãn"; ngân sách 16 tuần của đồ án tốt nghiệp làm ràng buộc đó hết hiệu lực. FR-21 và NFR-05 nói về đồng bộ khi online nên vẫn đúng và không phải sửa. Chi tiết ở quyết định số 1 của proposal.

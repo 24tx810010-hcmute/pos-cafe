@@ -10,7 +10,7 @@ Nó không chép lại quan hệ phụ thuộc giữa các change — phần đ�
 | Hạn cuối | 21/12/2026 |
 | Ngân sách | 16 tuần tròn, kết thúc 17/12, còn 4 ngày đệm |
 | Yêu cầu đầu ra | Code chạy thật dùng được, không phải chỉ phân tích thiết kế |
-| Cập nhật lần cuối | 28/08/2026, xếp lại thứ tự theo chi phí trên kho mã |
+| Cập nhật lần cuối | 30/08/2026, đổi nhóm ca làm việc lấy nhóm bán hàng khi mất mạng |
 
 Dự án đi từ tiểu luận cuối kỳ lên đồ án tốt nghiệp. Hai việc bắt buộc đến từ nhận xét của giảng viên phản biện: kiểm soát việc tạo cửa hàng, và tổ chức lại phân quyền cho đúng một hệ POS vận hành thật.
 
@@ -36,8 +36,8 @@ Mười mục, làm tuần tự. Thứ tự dưới đây được xếp lại n
 | 4 | 6 | 02/10 – 08/10 | Siết quyền xuống tầng dữ liệu, bản thu hẹp | Gọi thẳng vào cơ sở dữ liệu khi thiếu quyền bị từ chối | `[ ]` |
 | 5 | 7–9 | 09/10 – 29/10 | Tài khoản chủ và kiểm soát tạo quán, giai đoạn 1 | Không có email đã xác thực thì không tạo được cửa hàng | `[ ]` |
 | 6 | 10 | 30/10 – 05/11 | Khôi phục và vòng đời quyền sở hữu, giai đoạn 2 | Mất Store Key vẫn lấy lại được cửa hàng | `[ ]` |
-| 7 | 11–12 | 06/11 – 19/11 | Chấm công vào ca và ra ca | Nhân viên vào ca và ra ca, dữ liệu công lên được báo cáo | `[ ]` |
-| 8 | 13 | 20/11 – 26/11 | Quản lý ca làm việc và bảng công | Mở ca, chốt ca, kiểm két đầu và cuối ca | `[ ]` |
+| 7 | 11–12 | 06/11 – 19/11 | Kho cục bộ và hàng đợi ý định | Rút mạng vẫn tạo được đơn mới; có mạng lại đơn tự lên máy chủ, không trùng, số bill do database cấp | `[ ]` |
+| 8 | 13 | 20/11 – 26/11 | Hòa giải xung đột và trạng thái kết nối trên giao diện | Sáu tình huống xung đột có chính sách và kiểm thử chạy xanh; nhân viên luôn thấy rõ đang ngoại tuyến và còn bao nhiêu việc chưa gửi | `[ ]` |
 | 9 | 14 | 27/11 – 03/12 | Triển khai thật, làm cứng, sao lưu | Bản chạy thật có địa chỉ truy cập được và có sao lưu định kỳ | `[ ]` |
 | 10 | 15–16 | 04/12 – 17/12 | Viết báo cáo, chụp lại ảnh màn hình, đồng bộ tài liệu | Bản thảo báo cáo đầy đủ | `[ ]` |
 
@@ -52,8 +52,8 @@ Bốn ngày từ 18/12 tới 21/12 để nguyên làm đệm và tập demo. Kh�
 | 3 | `redesign-permission-model` |
 | 4 | `enforce-permissions-at-database`, bản thu hẹp |
 | 5, 6 | `add-owner-account-and-store-provisioning`, chia hai giai đoạn theo quyết định số 18 của proposal |
-| 7 | `add-employee-time-clock` |
-| 8 | `add-shift-management` |
+| 7 | `add-offline-data-layer`, phạm vi hẹp theo quyết định 2 và 3 của proposal |
+| 8 | `add-offline-sync-conflict-resolution` và lát mỏng của `add-offline-status-ux` |
 
 ### Vì sao thứ tự này
 
@@ -77,7 +77,13 @@ Ba điều chỉnh rút ra:
 
 **Không đổi:** tài khoản chủ giữ nguyên vị trí sau phân quyền, vì nó gắn vai trò chủ quán vào tài khoản chủ. Bù lại nó có bề mặt va chạm thấp nhất trong cả nhóm — chạm vào adapter xác thực, bảng cửa hàng, chính sách bảo mật và một thành phần chạy phía máy chủ, gần như không đụng luồng đơn và thanh toán.
 
-**Cảnh báo cho mục 8.** Nếu việc kiểm két đầu và cuối ca đòi mỗi bản ghi thanh toán phải mang định danh ca, thì ba lời gọi tiền lại bị viết lại lần nữa ở tuần 13. Nên cân nhắc suy ra ca từ thời điểm thanh toán thay vì lưu thêm cột. Đã ghi thành câu hỏi trong proposal tương ứng.
+**Cảnh báo cho mục 7 và 8.** Đây là hai mục rủi ro nhất của cả giai đoạn, và chúng nằm ngay trước tuần triển khai. Ba điều kiện bắt buộc, đã ghi trong `## Quyết định đã chốt` của `add-offline-data-layer`:
+
+1. Giữ đúng phạm vi hẹp: chỉ đơn mới, không thanh toán ngoại tuyến. Không nới trong giai đoạn 1.
+2. Làm sau một cờ tắt. Hết tuần 13 mà chưa vững thì tắt cờ, demo trực tuyến, trình phần ngoại tuyến ở dạng thiết kế cộng nguyên mẫu. Đây là chốt cứng, không gia hạn sang tuần 14.
+3. Chưa có kiểm thử xung đột chạy xanh thì chưa tính là xong.
+
+Phần ngoại tuyến chỉ chạm `submit_order_changes` trong ba lời gọi tiền, và không đổi chữ ký của nó. Nhờ khóa chống trùng ở mục 2, việc phát lại một thao tác đã gửi dở không sinh bản ghi trùng — đây là lý do mục 2 phải xong trước.
 
 ### Cổng chặn không được bỏ qua
 
@@ -96,27 +102,31 @@ Các việc dưới đây không chiếm tuần riêng, nhưng phải xong trư�
 | Chốt bảy câu hỏi còn lại của `enforce-permissions-at-database` | **trước tuần 6** | `[ ]` |
 | Chốt bảy câu hỏi của `add-idempotent-write-operations`, trong đó có việc kiểm tra dữ liệu thật xem đã từng sinh bản ghi trùng chưa | **trước tuần 2** | `[ ]` |
 | Mua tên miền, cấu hình nhà cung cấp gửi email, gửi thử và xác nhận không rơi vào thư rác | trước tuần 7 | `[ ]` |
-| Viết ba artifact còn thiếu cho `add-owner-account-and-store-provisioning`: đặc tả delta, thiết kế, danh sách việc. Quyết định đã chốt hết nên đây là việc viết, không phải việc quyết | trước tuần 7 | `[ ]` |
-| Chốt chín câu hỏi của `add-employee-time-clock` | trước tuần 11 | `[ ]` |
-| Chốt chín câu hỏi của `add-shift-management` | trước tuần 13 | `[ ]` |
+| ~~Viết ba artifact còn thiếu cho `add-owner-account-and-store-provisioning`~~ | trước tuần 7 | `[x]` xong 31/08/2026 |
+| Chốt các câu hỏi còn để mở của ba change ngoại tuyến, và viết đủ delta spec, design, tasks cho chúng | **trước tuần 11** | `[ ]` |
 
 Hai hạn đầu **gấp hơn hẳn thứ tự cũ**: khóa chống trùng chuyển lên tuần 2 nên các câu hỏi của nó phải chốt gần như ngay, và siết quyền tầng dữ liệu chuyển từ tuần 9 lên tuần 6.
 
 Việc tên miền và email tuy hạn muộn hơn trước nhưng vẫn nên khởi động sớm, vì phần lớn là thời gian chờ chứ không phải thời gian làm. Rủi ro cụ thể nếu để trễ: mã một lần rơi vào thư rác thì không đăng nhập được, và mô hình không mật khẩu không có đường vào thay thế.
 
-### Lý do chọn nhóm ca làm việc
+### Lý do đổi nhóm ca làm việc lấy nhóm ngoại tuyến
 
-Ngân sách 16 tuần chỉ đủ cho đúng một nhóm tính năng mới. Đã cân nhắc bốn ứng viên là ca làm việc, cơ chế giảm giá, khách hàng thân thiết và tồn kho.
+Ngân sách 16 tuần chỉ đủ cho đúng một nhóm tính năng mới. Đến 30/08/2026 chỗ này đổi từ nhóm ca làm việc sang bán hàng khi mất mạng, phạm vi hẹp.
 
-Chọn nhóm ca làm việc vì ba lý do:
+Lý do đổi:
 
-- Nó chứng minh trực tiếp luận điểm trung tâm của đồ án. Mô hình quyền mới được thiết kế để thêm quyền là thêm dữ liệu chứ không sửa kiểu cứng; thêm trọn một nhóm tính năng cùng nhóm quyền của nó mà không đụng vào cấu trúc quyền là bằng chứng cho điều đó.
-- Nó không đụng vào phần tính tiền, với điều kiện suy ra ca từ thời điểm thanh toán thay vì lưu thêm cột. Cơ chế giảm giá và đổi điểm đều sửa cách tính tổng đơn, tức lại chép lại ba lời gọi tiền.
-- Nhóm kiểm két đầu và cuối ca nối vào mạch kiểm soát nội bộ mà cả đồ án đang xoay quanh.
+- **Quyết định online-only vốn là hoãn theo thời gian, không phải lựa chọn kiến trúc.** `docs/requirements.md` xếp nó ở mục "Ngoài Phạm Vi Hoặc Hoãn" kèm câu "không được tính là thiếu so với baseline tiểu luận hiện tại". Ngân sách 16 tuần làm ràng buộc sinh ra nó hết hiệu lực, nên đây là gỡ một khoản hoãn.
+- **Luận điểm mà nhóm ca làm việc phục vụ đã được chứng minh ở chỗ khác.** `redesign-permission-model` tự nó đã chứng minh việc thêm quyền là thêm dữ liệu: mười bốn quyền lưu ở tầng dữ liệu, điều hướng suy ra từ quyền, không có bảng ánh xạ vai trò sang module. Nhóm ca chỉ là bằng chứng thứ hai cho cùng luận điểm, nên mất nó rẻ hơn nhiều so với mất bằng chứng thứ nhất.
+- **Nhóm ngoại tuyến chứng minh một luận điểm khác mà chưa có gì chứng minh:** ranh giới ports và adapters đủ mỏng để cắm một adapter cục bộ mà không sửa `domain`, `core` hay `features`. `src/architectureBoundaries.test.ts` kiểm chứng việc này bằng máy, không phải bằng lời.
+- **Giá trị demo cao hơn hẳn.** Rút mạng trước hội đồng, vẫn nhận đơn, nối lại, đơn tự lên. Nhóm ca là CRUD cộng báo cáo.
+
+Rủi ro đã cân nhắc: đây là nhóm dễ bị hỏi sâu nhất, vì phần hòa giải sau khi có mạng là chỗ dễ hở. Cách quản là thu phạm vi cho danh sách tình huống đủ ngắn để liệt kê hết và kiểm thử hết, chứ không né chủ đề. Với phạm vi hẹp thì danh sách còn sáu tình huống, không phải hai mươi.
+
+Nhóm ca làm việc chuyển sang giai đoạn 2, tầng G.
 
 ## Giai Đoạn 2 — Sau Khi Bảo Vệ
 
-Hai mươi mốt change còn lại, xếp theo tầng. Không gắn ngày. Trong mỗi tầng, dấu mũi tên là quan hệ bắt buộc trước sau.
+Các change còn lại, xếp theo tầng. Không gắn ngày. Trong mỗi tầng, dấu mũi tên là quan hệ bắt buộc trước sau.
 
 **Tầng A — Vận hành và chất lượng.** Làm trước nếu sản phẩm đi vào dùng thật, vì nó quyết định khả năng bảo trì.
 
@@ -139,11 +149,15 @@ Hai mươi mốt change còn lại, xếp theo tầng. Không gắn ngày. Trong
 
 - `add-multi-store-ownership` → `add-cross-store-reporting`
 
-**Tầng F — Ngoại tuyến.** Lật lại quyết định online-only đang ghi trong `requirements.md`, nên nếu làm thì phải cập nhật lại tài liệu.
+**Tầng F — Ngoại tuyến, phần còn lại.** Phần lõi đã chuyển lên giai đoạn 1 ngày 30/08/2026. Còn lại ở đây là phần vượt quá phạm vi hẹp: thanh toán ngoại tuyến, sửa đơn đã tồn tại trên máy chủ, và service worker kèm Background Sync.
 
 Ngày 2026-08-28, ba đề xuất của tầng này đã được viết chi tiết lại dựa trên rà soát mã nguồn: năm ràng buộc từ hiện trạng, mô hình hàng đợi ý định một chiều, bảng thao tác nào được phép ngoại tuyến, hai mươi tình huống phải xử lý, và chiến lược kiểm thử. **Phạm vi trong 16 tuần chưa chốt**: ước lượng trung thực cho phần bán hàng ngoại tuyến là năm tới bảy tuần, nhiều hơn bốn tuần của nhóm ca làm việc đang giữ chỗ ở giai đoạn 1.
 
 - `add-offline-data-layer` → `add-offline-status-ux`, `add-offline-sync-conflict-resolution`
+
+**Tầng G — Ca làm việc.** Chuyển xuống đây ngày 30/08/2026 để nhường ba tuần cho nhóm ngoại tuyến. Vẫn là ứng viên mạnh nhất cho nhóm tính năng kế tiếp.
+
+- `add-employee-time-clock` → `add-shift-management`
 
 ## Nguyên Tắc Xếp Thứ Tự
 
