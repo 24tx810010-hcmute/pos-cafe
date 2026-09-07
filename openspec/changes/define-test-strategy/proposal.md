@@ -55,6 +55,8 @@ Hai câu phát sinh trong lúc trao đổi, cũng đã chốt:
 8. ~~Tình huống biên nào bắt buộc có trên cloud E2E?~~ **Đã trả lời ở quyết định 8.**
 9. ~~Có script hóa kịch bản demo thành test tự động không, và làm khi nào?~~ **Đã trả lời ở quyết định 9: có, làm ngay trong tuần này.**
 
+10. ~~Chạy `smoke:supabase` để lại cửa hàng thử trên Supabase mà không dọn, có chấp nhận không?~~ **Đã trả lời ở quyết định 10: chấp nhận, kèm điều kiện.**
+
 Không còn câu hỏi bỏ ngỏ.
 
 ## Quyết định đã chốt
@@ -192,3 +194,23 @@ Phạm vi: bước 1 tới 14 của `docs/demo-runbook.md`, chạy liền một 
 Giá trị tăng thêm so với bộ test đang có, nói rõ để không phóng đại: các bước riêng lẻ **đã** được phủ bởi 5 test cloud và bộ mock E2E hiện tại. Cái mới là **một mạch liên tục theo đúng thứ tự demo** — nó bắt được lỗi ở chỗ nối giữa các bước mà test rời rạc bỏ sót, và nó sinh ra một trace chạy được dùng làm bằng chứng trong báo cáo.
 
 Hệ quả đã biết và chấp nhận: `add-owner-account-and-store-provisioning` sẽ **làm vỡ script này** ở tuần 7 tới 9, vì proposal của change đó ghi rõ luồng tạo cửa hàng hiện tại phải viết lại. Đó là hành vi đúng chứ không phải lãng phí: script vỡ là tín hiệu cho biết hành trình người dùng đã đổi, và việc sửa nó là một phần của change kia.
+
+**10. Chấp nhận `smoke:supabase` để lại dữ liệu thử trên Supabase, với điều kiện việc dọn được xử lý ở change sau.** Chốt 2026-09-07.
+
+Rà `tests/supabase/pos-cafe-supabase.spec.ts` ngày 2026-09-07: **không có `afterAll`, không có `afterEach`, không có bước xóa nào**. Mỗi lần chạy để lại một cửa hàng thử trên project Supabase thật, và chúng tích tụ.
+
+Ba phương án đã cân nhắc:
+
+| | Phương án | Lý do chọn hoặc loại |
+| --- | --- | --- |
+| a | Cứ chạy, chấp nhận dữ liệu tích tụ, dọn ở change sau | **Chọn** |
+| b | Chạy rồi dọn tay sau mỗi lần | **Loại.** Tốn công lặp lại và chắc chắn có lần quên; một quy trình dựa vào việc nhớ thì không phải quy trình |
+| c | Hoãn mục 6.3 tới khi có `setup-test-data-environment` | **Loại.** Nó chặn việc đóng mục 1 của roadmap, mà mục 1 đang trễ lịch |
+
+Lý do phương án a chấp nhận được **ở thời điểm này**: quyết định 9 của `add-owner-account-and-store-provisioning` sẽ **xóa sạch toàn bộ dữ liệu** trên môi trường thật ở tuần 7 tới 9. Dọn tay từ giờ tới đó là công bỏ đi.
+
+**Điều kiện của chủ dự án:** chấp nhận với ràng buộc phần rác này **phải được xử lý về sau**, không để trôi. Nghĩa vụ đó ghi vào `setup-test-data-environment`, mục "Nợ kỹ thuật thừa hưởng".
+
+**Hạn chót cứng, không phải mong muốn.** Quyết định 14 của `add-owner-account-and-store-provisioning` đặt **trần 5 cửa hàng mỗi tài khoản chủ**. Từ khi change đó lên, `smoke:supabase` tạo một cửa hàng mỗi lần chạy nên **lần chạy thứ sáu sẽ đỏ vì chạm trần**. Tức phương án a có hạn dùng: phải có cơ chế dọn hoặc lối miễn trừ **trước khi kết thúc tuần 9**, nếu không cổng cloud E2E tự khóa chính nó.
+
+Không viết bước dọn vào test ở change này. Dựng và dọn dữ liệu kiểm thử thuộc `setup-test-data-environment`; nhét vào đây là lấn phạm vi và làm hai chỗ cùng sở hữu một việc.

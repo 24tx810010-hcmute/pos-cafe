@@ -101,7 +101,8 @@ Cột "testid" liệt kê định danh **đã tồn tại** trong `src/app`. Thi
 
 - [ ] 6.1 Xác nhận bốn lệnh `npm run build`, `npm test`, `npm run test:coverage`, `npm run smoke` đều tồn tại và xanh — TC-TEST-04
 - [ ] 6.2 Xác nhận `npm run smoke:supabase` **không** nằm trong bốn lệnh trên
-- [ ] 6.3 Chạy `npm run smoke:supabase` một lần, ghi kết quả kèm baseline và ngày vào `docs/testing.md`
+- [ ] 6.3 Chạy `npm run smoke:supabase` một lần, ghi kết quả kèm baseline và ngày vào `docs/testing.md`. Ghi rõ đây là kết quả cloud, **không gộp** với số liệu chạy cục bộ thành một con số
+- [ ] 6.4 Ghi lại **số cửa hàng thử đã tạo** trong lần chạy này vào `docs/testing.md`, để sau còn biết mà dọn. Xem quyết định 10; **không** tự viết bước dọn vào test, việc đó thuộc `setup-test-data-environment`
 
 ## 7. Rà soát chất lượng tài liệu
 

@@ -89,6 +89,12 @@ Nên có nếu còn thời gian: món bị xóa giữa chừng trả `MENU_ITEM_
 
 **Việc viết ba ca bắt buộc thuộc `expand-e2e-coverage`**, không thuộc `define-test-strategy`.
 
+### Nợ đã biết của cổng cloud
+
+`npm run smoke:supabase` **không có bước dọn dẹp**, nên mỗi lần chạy để lại một cửa hàng thử trên project Supabase thật. Đã chấp nhận có ý thức ở quyết định 10 của `define-test-strategy`, vì dữ liệu cũ đằng nào cũng bị xóa sạch ở tuần 7 tới 9.
+
+**Nhưng khoản nợ này có hạn dùng.** Trần 5 cửa hàng mỗi tài khoản chủ sẽ làm **lần chạy thứ sáu đỏ vì chạm trần**, tính từ khi `add-owner-account-and-store-provisioning` lên. Phải xử lý **trước khi kết thúc tuần 9**, nếu không cổng cloud E2E tự khóa chính nó — và nó là cổng duy nhất chứng minh được chính sách bảo mật mức dòng. Nghĩa vụ ghi ở `setup-test-data-environment`, mục "Nợ kỹ thuật thừa hưởng".
+
 ## Quy Ước Đặt Tên Và Vị Trí
 
 - File test **đặt cạnh file nó kiểm**, cùng thư mục, tên `<tên>.test.ts` hoặc `.test.tsx`.

@@ -29,6 +29,21 @@ Không có.
 - Nếu chọn tạo cửa hàng kiểm thử qua database thì cần cân nhắc migration hoặc hàm tiện ích chỉ dùng cho môi trường kiểm thử; đây là điểm nhạy cảm vì không được để lọt sang sản xuất.
 - Cập nhật `docs/testing.md` và `docs/demo-runbook.md`.
 
+## Nợ kỹ thuật thừa hưởng
+
+Ghi ngày 2026-09-07. Hai khoản dưới đây **do change khác tạo ra và giao lại**, không phải phát sinh từ chính change này. Chúng là lý do change này có hạn chót cứng chứ không phải làm lúc nào cũng được.
+
+**1. Cửa hàng thử tích tụ trên Supabase.** `tests/supabase/pos-cafe-supabase.spec.ts` không có bước dọn nào, nên mỗi lần chạy `npm run smoke:supabase` để lại một cửa hàng thật. Quyết định 10 của `define-test-strategy` chấp nhận việc này **với điều kiện** change hiện tại xử lý nó.
+
+**2. Trần 5 cửa hàng sẽ khóa chính cổng cloud E2E.** Quyết định 14 của `add-owner-account-and-store-provisioning` đặt trần 5 cửa hàng mỗi tài khoản chủ. Vì mỗi lần chạy tạo một cửa hàng, **lần chạy thứ sáu sau khi change đó lên sẽ đỏ vì chạm trần**.
+
+**Hạn chót: trước khi kết thúc tuần 9** của `docs/roadmap.md`, tức trước khi `add-owner-account-and-store-provisioning` giai đoạn 1 hoàn tất. Quá mốc đó mà chưa xử lý thì cổng cloud E2E tự khóa, và nó là cổng duy nhất chứng minh được chính sách bảo mật mức dòng.
+
+Hai hướng xử lý, chốt khi làm change này:
+
+- Thêm bước dọn vào chính bộ cloud E2E, xóa cửa hàng thử ở cuối mỗi lần chạy.
+- Hoặc dùng một tài khoản chủ riêng cho kiểm thử, có lối miễn trừ hạn mức, kèm tác vụ dọn định kỳ.
+
 ## Ngoài phạm vi
 
 - Viết kịch bản kiểm thử. Việc đó thuộc `expand-e2e-coverage`.
