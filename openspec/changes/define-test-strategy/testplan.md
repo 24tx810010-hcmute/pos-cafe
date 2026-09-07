@@ -87,7 +87,7 @@ Việc **viết** ba ca cloud E2E bắt buộc ở quyết định 8 thuộc `ex
 - Sinh ra một trace Playwright lưu lại được.
 - Thời gian chạy dưới 90 giây.
 
-**Nơi hiện thực** — `tests/smoke/demo-runbook.spec.ts`.
+**Nơi hiện thực** — `tests/smoke/demo-runbook.spec.ts`; project `demo-runbook` trong `playwright.config.ts`.
 
 ---
 
@@ -221,6 +221,8 @@ Việc **viết** ba ca cloud E2E bắt buộc ở quyết định 8 thuộc `ex
 **Ghi chú** — Chứng minh script thực sự đi qua các bước chứ không chỉ mở ứng dụng rồi kết thúc. Không có phép thử này thì một script rỗng cũng xanh.
 
 **Sửa ngày 2026-09-07.** Bản đầu ghi "đổi nhãn của một nút" và **sai**: script bám `data-testid` chứ không bám chuỗi hiển thị, nên đổi nhãn sẽ không làm test đỏ. Phép thử khi đó tự nó xanh và không chứng minh được điều gì — đúng loại lỗi mà chính test case này sinh ra để phát hiện.
+
+**Nơi hiện thực** — `tests/smoke/demo-runbook.spec.ts`; hook kiểm thử nằm tại `src/app/drawers/pos/OrderCartPane.tsx`.
 
 ---
 

@@ -8,6 +8,36 @@ Chiến lược kiểm thử — sáu tầng, tiêu chí "bao nhiêu là đủ" 
 
 File này chỉ chứa **nhật ký kết quả chạy** và **checklist thủ công**. Hai file tách nhau vì nhịp cập nhật khác nhau: chiến lược đổi hiếm, nhật ký đổi mỗi lần chạy lại.
 
+## Kịch Bản Demo Và Cổng Chất Lượng, Chạy Ngày 2026-09-07
+
+Baseline: `main@7183b31`. Môi trường cục bộ: Windows, Chromium do Playwright quản lý, adapter mock; project `demo-runbook` dùng viewport **1024×600**, timeout treo **120 giây** và một khẳng định riêng buộc hành trình hoàn tất dưới **90 giây**.
+
+**Bốn cổng chất lượng cục bộ**
+
+| Lệnh | Kết quả |
+| --- | --- |
+| `npm run build` | **Pass**; TypeScript strict + Vite production build, 3197 module trong 3,96 giây. Cảnh báo chunk trên 500 KB vẫn còn |
+| `npm test` | **49/49 test files, 260/260 tests pass** trong 28,62 giây |
+| `npm run test:coverage` | **49/49 test files, 260/260 tests pass** trong 28,15 giây; dòng 92,77%, câu lệnh 88,80%, nhánh 80,80%, hàm 95,95% |
+| `npm run smoke` | **35 passed, 31 skipped, 0 failed** trong 66 case/project combinations, 41,4 giây; runbook trong lần này mất 26,6 giây |
+
+`npm run smoke:supabase` không thuộc bốn cổng cục bộ trên.
+
+**Bằng chứng riêng cho script demo**
+
+- File `tests/smoke/demo-runbook.spec.ts` có đúng một `test()` và 14 `test.step`, chạy liền mạch toàn bộ hành trình trên adapter mock.
+- Hai lần chạy độc lập liên tiếp cuối cùng đều xanh: **28,9 giây** và **29,0 giây**; cả hai thấp hơn ngưỡng 90 giây.
+- Trace cuối có **789 entry**, đọc được dưới dạng ZIP Playwright tại `test-results/demo-runbook-kịch-bản-demo-chính-chạy-liền-mạch-qua-14-bước-demo-runbook/trace.zip`.
+- TC-TEST-09: tạm gỡ `data-testid="submit-order-button-footer"`, script đỏ đúng **Bước 5** sau 5 giây với `element(s) not found`; sau đó đã phục hồi hook và chạy lại xanh hai lần.
+
+**Bằng chứng cloud — ghi riêng, không gộp vào kết quả cục bộ**
+
+| Lệnh | Kết quả | Tác dụng phụ |
+| --- | --- | --- |
+| `npm run smoke:supabase` | **5/5 pass** trong 1,3 phút trên Supabase cloud | Tạo **5 cửa hàng thử** trong lần chạy này |
+
+Không thêm và không chạy bước dọn dữ liệu. Năm cửa hàng thử được giữ lại theo quyết định của chủ dự án; nghĩa vụ dọn thuộc change `setup-test-data-environment` và phải hoàn tất trước khi kết thúc tuần 9.
+
 ## Độ Phủ Nền, Đo Ngày 2026-09-07
 
 Lần đầu tiên đo được độ phủ, sau khi cài `@vitest/coverage-v8` theo `define-test-strategy`. Baseline: nhánh `claude/hopeful-albattani-42cb20`, xuất phát từ `main@c7f2f4e`.
