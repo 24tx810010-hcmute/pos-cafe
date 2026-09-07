@@ -8,13 +8,23 @@ Chia hai giai đoạn theo quyết định 18. Kết thúc giai đoạn 1 là m�
 
 # Giai đoạn 1 — Danh tính và gate tạo cửa hàng
 
-## 1. Việc có thời gian chờ, khởi động sớm nhất có thể
+## 1. Đường gửi email — làm ngay, không có việc nào phải chờ duyệt
 
-- [ ] 1.1 Mua tên miền cho việc gửi email
-- [ ] 1.2 Chọn nhà cung cấp gửi email theo bốn yêu cầu ở quyết định 15
-- [ ] 1.3 Xác minh tên miền và cấu hình bản ghi xác thực người gửi
+Mốc phải đạt là mức 1 ở quyết định 15. Mức 3 là phần thưởng nếu xin được tên miền, **không** phải điều kiện.
+
+- [ ] 1.1 Tạo một tài khoản Gmail riêng của dự án, không dùng tài khoản cá nhân
+- [ ] 1.2 Bật xác thực hai bước cho tài khoản đó, rồi tạo App Password
+- [ ] 1.3 Cấu hình SMTP tùy chỉnh trong Supabase trỏ tới `smtp.gmail.com` cổng 587 bằng App Password vừa tạo
 - [ ] 1.4 Gửi thử tới ít nhất một nhà cung cấp hộp thư phổ biến, xác nhận vào hộp thư chính chứ không vào thư rác
-- [ ] 1.5 Ghi lại hạn mức gửi của gói đang dùng, đối chiếu với nhu cầu của giai đoạn phát triển và buổi demo
+- [ ] 1.5 Ghi lại hạn mức gửi mỗi ngày, đối chiếu với nhu cầu của giai đoạn phát triển và buổi demo
+
+### 1b. Nâng lên mức 3, chạy song song và không chặn gì
+
+- [ ] 1b.1 Kiểm tra chương trình cấp tên miền `.id.vn` hoặc `.io.vn` miễn phí còn hiệu lực không, nộp hồ sơ nếu có
+- [ ] 1b.2 Đăng ký GitHub Student Developer Pack bằng email trường, nhận tên miền kèm theo
+- [ ] 1b.3 Xin được tên miền thì xác minh nó ở nhà cung cấp gửi email và cấu hình bản ghi xác thực người gửi
+- [ ] 1b.4 Chuyển cấu hình SMTP sang tên miền mới, chạy lại phép thử ở mục 1.4
+- [ ] 1b.5 Không xin được trước tuần 14 thì giữ mức 1 và ghi lý do vào `docs/limitations.md`
 
 ## 2. Lược đồ và migration
 

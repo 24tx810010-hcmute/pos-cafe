@@ -8,7 +8,8 @@ Nó không chép lại quan hệ phụ thuộc giữa các change — phần đ�
 | --- | --- |
 | Bắt đầu | 28/08/2026 |
 | Hạn cuối | 21/12/2026 |
-| Ngân sách | 16 tuần tròn, kết thúc 17/12, còn 4 ngày đệm |
+| Ngân sách thời gian | 16 tuần tròn, kết thúc 17/12, còn 4 ngày đệm |
+| Ngân sách tiền | Không có. Mọi dịch vụ phải dùng được ở gói miễn phí |
 | Yêu cầu đầu ra | Code chạy thật dùng được, không phải chỉ phân tích thiết kế |
 | Cập nhật lần cuối | 30/08/2026, đổi nhóm ca làm việc lấy nhóm bán hàng khi mất mạng |
 
@@ -101,7 +102,7 @@ Các việc dưới đây không chiếm tuần riêng, nhưng phải xong trư�
 | --- | --- | --- |
 | Chốt bảy câu hỏi còn lại của `enforce-permissions-at-database` | **trước tuần 6** | `[ ]` |
 | Chốt bảy câu hỏi của `add-idempotent-write-operations`, trong đó có việc kiểm tra dữ liệu thật xem đã từng sinh bản ghi trùng chưa | **trước tuần 2** | `[ ]` |
-| Mua tên miền, cấu hình nhà cung cấp gửi email, gửi thử và xác nhận không rơi vào thư rác | trước tuần 7 | `[ ]` |
+| Dựng đường gửi email ở mức 1: Gmail riêng của dự án, App Password, cấu hình SMTP, gửi thử xác nhận không vào thư rác. Không phải mua gì, không phải chờ duyệt | trước tuần 7 | `[ ]` |
 | ~~Viết ba artifact còn thiếu cho `add-owner-account-and-store-provisioning`~~ | trước tuần 7 | `[x]` xong 31/08/2026 |
 | Chốt các câu hỏi còn để mở của ba change ngoại tuyến, và viết đủ delta spec, design, tasks cho chúng | **trước tuần 11** | `[ ]` |
 

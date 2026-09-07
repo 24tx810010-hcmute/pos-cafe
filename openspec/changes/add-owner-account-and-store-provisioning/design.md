@@ -201,7 +201,7 @@ Bốn việc đó nằm ở `add-multi-store-ownership` và `add-cross-store-rep
 | Rủi ro | Giảm nhẹ |
 | --- | --- |
 | Store Key nằm lại trong hộp thư sau khi gửi | Giới hạn tần suất, không ghi vào nhật ký, email nhắc dùng chức năng cấp lại nếu nghi lộ. Quyết định 8 đã chấp nhận đánh đổi này |
-| Mã một lần rơi vào thư rác thì không đăng nhập được, vì không có mật khẩu thay thế | Nhà cung cấp gửi email riêng, tên miền đã xác minh, kiểm tra thực tế trước ngày demo. Quyết định 15 |
+| Mã một lần rơi vào thư rác thì không đăng nhập được, vì không có mật khẩu thay thế | Gửi qua SMTP của một tài khoản Gmail riêng của dự án, được Google ký DKIM trên `gmail.com`. Kiểm tra thực tế khả năng vào hộp thư chính trước ngày demo. Quyết định 15 mức 1 |
 | Mất khóa mã hóa là mất khả năng khôi phục Store Key của mọi cửa hàng | Sao lưu khóa tách khỏi bản sao lưu database; cột phiên bản khóa cho phép xoay |
 | Store Key rò rỉ thì ai cũng ghép được thiết bị | Chức năng cấp lại là biện pháp bù duy nhất. Quyết định 13 đã ghi nhận hạn chế này |
 | Chủ mất hẳn quyền truy cập email thì cửa hàng kẹt | Đổi email chủ là biện pháp phòng ngừa. Lối thoát cuối thuộc `add-provider-admin-console`. Quyết định 17 |
@@ -227,6 +227,6 @@ Bước 1 và bước 2 là cổng chặn, không được bỏ qua.
 
 Không còn. 21 quyết định trong `proposal.md` đã phủ hết. Ba việc còn lại là việc thực hiện chứ không phải việc quyết:
 
-- Chọn nhà cung cấp gửi email cụ thể, theo bốn yêu cầu ở quyết định 15.
-- Mua tên miền và cấu hình bản ghi xác thực người gửi.
+- Dựng đường gửi email ở mức 1 của quyết định 15: tài khoản Gmail riêng của dự án, App Password, cấu hình SMTP tùy chỉnh.
+- Nộp hồ sơ xin tên miền miễn phí để nâng lên mức 3. Không chặn tiến độ.
 - Xin xác nhận của chủ dự án trước khi xóa dữ liệu cũ.

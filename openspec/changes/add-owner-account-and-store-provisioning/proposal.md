@@ -207,20 +207,35 @@ Ghi ngày 2026-08-28, theo trao đổi với người dùng.
 
     Khi chạm hạn mức, giao diện thông báo rõ đã đạt số cửa hàng tối đa và hướng dẫn liên hệ nhà cung cấp để nới. Việc nới hạn mức theo từng tài khoản được đưa vào `add-provider-admin-console`.
 
-15. **Cấu hình nhà cung cấp gửi email riêng, gửi từ một tên miền riêng đã xác minh.** Không dùng dịch vụ gửi email mặc định của nền tảng backend.
+15. **Không dùng dịch vụ gửi email mặc định của nền tảng backend cho bản chạy thật. Chọn cách gửi theo bốn mức, dưới ràng buộc không có ngân sách tiền.** Sửa lại ngày 2026-09-07.
 
     Quyết định số 10 làm email trở thành đường vào bắt buộc và lặp lại, chứ không còn là thao tác một lần lúc đăng ký. Email hiện gánh ba luồng: mã đăng nhập của chủ ở mỗi lần đăng nhập, gửi lại Store Key, và đặt lại PIN của vai trò chủ quán. Dịch vụ mặc định giới hạn tần suất ở mức vài email mỗi giờ và nhà cung cấp khuyến cáo không dùng cho môi trường thật, nên trần đó chạm ngay trong lúc phát triển.
 
-    Yêu cầu khi triển khai:
+    **Ràng buộc mới, chưa được ghi ở bản trước:** đồ án **không có ngân sách tiền**. Bản trước mặc định việc mua tên miền là đương nhiên, và đó là giả định sai. Mọi lựa chọn dưới đây phải dùng được ở gói miễn phí.
 
-    - Xác minh tên miền và cấu hình bản ghi xác thực người gửi, để email vào hộp thư chính thay vì thư rác.
-    - Gửi được tới địa chỉ email bất kỳ, không giới hạn ở địa chỉ đã xác minh của chính tài khoản gửi.
+    Bốn mức, xếp theo thời gian bỏ ra chứ không theo chất lượng:
+
+    | Mức | Cách | Dùng cho |
+    | --- | --- | --- |
+    | 0 | Dịch vụ tích hợp sẵn của nền tảng backend | Chỉ dùng khi phát triển và tự kiểm thử. Vài email mỗi giờ |
+    | 1 | SMTP của một tài khoản Gmail riêng của dự án, dùng App Password | **Mức tối thiểu chấp nhận được cho bản chạy thật của đồ án** |
+    | 2 | Nhà cung cấp gửi email có gói miễn phí, xác minh **một địa chỉ gửi** thay vì cả tên miền | Khi cần hạn mức cao hơn hoặc cần thống kê gửi |
+    | 3 | Nhà cung cấp gửi email cộng **tên miền riêng đã xác minh** | Mức mong muốn, chỉ làm nếu xin được tên miền miễn phí |
+
+    **Mức 1 là mốc phải đạt.** Lý do chọn nó làm mốc thay vì mức 3: rủi ro thật cần chặn là mã một lần rơi vào thư rác, vì quyết định 10 đã bỏ mật khẩu nên không có đường đăng nhập thay thế. Gửi qua SMTP của Gmail được Google ký DKIM trên `gmail.com`, nên khả năng vào hộp thư chính đã tốt. Thứ mức 3 thêm vào chủ yếu là địa chỉ gửi mang tên dự án, tức giá trị hình thức.
+
+    Đánh đổi của mức 1, ghi rõ để không nói quá: địa chỉ gửi là một Gmail chứ không phải địa chỉ mang tên cửa hàng, và trần gửi khoảng vài trăm thư mỗi ngày. Cả hai đều không cản trở đồ án.
+
+    Yêu cầu bắt buộc, áp cho mọi mức từ 1 trở lên:
+
+    - Gửi được tới địa chỉ email bất kỳ, không giới hạn ở địa chỉ của chính tài khoản gửi.
     - Hạn mức đủ cho cả giai đoạn phát triển lẫn buổi demo.
     - Kiểm tra thực tế khả năng vào hộp thư chính với ít nhất một nhà cung cấp hộp thư phổ biến, trước ngày demo.
+    - Tài khoản gửi phải là tài khoản **riêng của dự án**, không dùng tài khoản cá nhân, vì thông tin đăng nhập của nó nằm trong biến môi trường.
 
-    Rủi ro cụ thể phải kiểm soát: mã một lần rơi vào thư rác làm hỏng toàn bộ luồng đăng nhập, vì không còn mật khẩu để đăng nhập thay thế.
+    Đường nâng cấp lên mức 3 nếu xin được tên miền miễn phí: chương trình cấp tên miền `.id.vn` hoặc `.io.vn` cho người Việt trẻ, hoặc tên miền kèm theo GitHub Student Developer Pack. Cả hai đều phải chờ duyệt nên **không được để chúng chặn tiến độ**; nộp hồ sơ song song, duyệt kịp thì nâng cấp, không kịp thì giữ mức 1.
 
-    Không chốt tên nhà cung cấp cụ thể ở mức proposal; chọn khi triển khai theo bốn yêu cầu trên.
+    Việc nâng cấp rẻ vì `design.md` đã đặt phần gửi email sau một port: đổi mức chỉ là đổi cấu hình SMTP, không sửa dòng nào trong `src`.
 
 16. **Cấp lại Store Key đòi ba lớp rào chắn.**
 
