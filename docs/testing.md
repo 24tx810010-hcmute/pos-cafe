@@ -4,16 +4,9 @@ Tài liệu này gom bằng chứng kiểm thử hiện hành để dùng trong 
 
 ## Chiến Lược
 
-| Lớp | Công cụ | Phạm vi |
-| --- | --- | --- |
-| Unit | Vitest | Money, guard, modifier, draft, report helper, invalidation và mapper |
-| Feature/service | Vitest | Session, order, instant pay, void paid, admin flows và permission |
-| Component | Testing Library + Vitest | Drawer/screen, dirty state, loading/error, permission UI, portal |
-| Architecture | Vitest + TypeScript AST scanner | Hướng phụ thuộc giữa domain/core/ports/features/app/adapters |
-| Adapter contract | Vitest | Mock/Supabase parity, RPC payload, mapping lỗi và migration contract |
-| Mock E2E | Playwright | Flow người dùng và responsive trên nhiều viewport với adapter mock |
-| Cloud E2E | Playwright | Flow thật qua Supabase, RPC, RLS và realtime khi có env phù hợp |
+Chiến lược kiểm thử — sáu tầng, tiêu chí "bao nhiêu là đủ" theo loại thay đổi, cổng chất lượng, ngưỡng độ phủ và quy ước đặt tên — nằm ở [test-strategy.md](test-strategy.md).
 
+File này chỉ chứa **nhật ký kết quả chạy** và **checklist thủ công**. Hai file tách nhau vì nhịp cập nhật khác nhau: chiến lược đổi hiếm, nhật ký đổi mỗi lần chạy lại.
 
 ## Độ Phủ Nền, Đo Ngày 2026-09-07
 
@@ -100,20 +93,36 @@ Không claim rằng toàn bộ 260 local tests đã chạy trên Supabase. Cloud
 - **Responsive:** Playwright projects cho 1366×768, 1024×600, 844×390, 740×360 và portrait 390×844.
 - **Architecture:** `src/architectureBoundaries.test.ts` ngăn dependency layer đi sai hướng và Supabase/browser leak.
 
+## Checklist Thủ Công
+
+Hai việc dưới đây **về bản chất không tự động hóa được**. Mọi thứ khác đã hoặc đang được chuyển sang tự động; lý do giữ đúng hai việc này xem [test-strategy.md](test-strategy.md) mục "Phần Giữ Thủ Công".
+
+Chạy trước mỗi mốc đóng mục roadmap và trước ngày demo. Ghi ngày ngay khi chạy; **chưa chạy được thì ghi rõ lý do, không bỏ trống**.
+
+| Việc | Ngày chạy gần nhất | Kết quả và ghi chú |
+| --- | --- | --- |
+| Gửi một email thử qua đường gửi đang cấu hình, xác nhận vào hộp thư chính chứ không vào thư rác | *chưa chạy* | Chưa dựng đường gửi email. Thuộc `add-owner-account-and-store-provisioning` nhóm 1 |
+| Mở ứng dụng trên thiết bị thật ở chế độ ngang, kiểm thao tác chạm và bàn phím ảo | *chưa chạy* | Ghi rõ loại và kích thước thiết bị khi chạy |
+
+Diễn tập kịch bản demo trước đây nằm ở đây, nay **đã chuyển sang tự động** thành `tests/smoke/demo-runbook.spec.ts`.
+
 ## Cách Chạy
 
 ```text
-npm test
 npm run build
+npm test
+npm run test:coverage
 npm run smoke
 npm run smoke:supabase
 ```
+
+Bốn lệnh đầu là cổng chất lượng, chạy được cục bộ và không cần hạ tầng ngoài. Lệnh thứ năm là cổng theo mốc.
 
 `smoke:supabase` cần cấu hình `VITE_DATA_MODE=supabase`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, migration/storage/realtime đúng phiên bản và Supabase Auth cho phép signup nhận session phù hợp với flow demo.
 
 ## Khoảng Trống Kiểm Thử
 
-- Chưa có số liệu code coverage chính thức; không ghi phần trăm coverage trong báo cáo.
+- ~~Chưa có số liệu code coverage chính thức~~ **Đã có từ 2026-09-07**, xem mục "Độ Phủ Nền" ở trên. Khi ghi vào báo cáo phải kèm **phạm vi đo**, vì con số là của phần logic nghiệp vụ thuần chứ không phải của toàn bộ `src`.
 - Chưa có load/performance test hoặc đo latency realtime có kiểm soát.
 - Polling 5 giây là khoảng cấu hình, không phải cam kết mọi thiết bị hội tụ dưới 5 giây.
 - Reconnect self-heal có unit test nhưng lần kiểm chứng cross-device gần nhất vẫn cần diễn tập thủ công.

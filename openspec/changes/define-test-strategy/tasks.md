@@ -26,30 +26,65 @@ Thứ tự dưới đây bắt buộc. Nhóm 1 là cổng: chưa có số đo n�
 
 ## 3. Viết tài liệu chiến lược
 
-- [ ] 3.1 Tạo `docs/test-strategy.md`
-- [ ] 3.2 Chép bảng sáu tầng từ `design.md` mục Decisions 1, **giữ nguyên cột "không kiểm"** — đây là phần tài liệu cũ thiếu
-- [ ] 3.3 Chép bảng tiêu chí theo loại thay đổi từ `design.md` mục Decisions 2
-- [ ] 3.4 Chép bảng cổng chất lượng từ `design.md` mục Decisions 3, **kèm câu ghi rõ dự án chưa có CI nên cổng đang được giữ bằng kỷ luật**
-- [ ] 3.5 Ghi quy ước đặt tên và vị trí file test
-- [ ] 3.6 Ghi ba tình huống biên bắt buộc trên cloud E2E, kèm ghi chú việc viết chúng thuộc `expand-e2e-coverage` — TC-TEST-12
-- [ ] 3.7 Ghi luật chống trùng lặp: một hành vi chỉ kiểm ở tầng thấp nhất có thể kiểm được nó
+- [x] 3.1 Tạo `docs/test-strategy.md`
+- [x] 3.2 Chép bảng sáu tầng từ `design.md` mục Decisions 1, **giữ nguyên cột "không kiểm"** — đây là phần tài liệu cũ thiếu
+- [x] 3.3 Chép bảng tiêu chí theo loại thay đổi từ `design.md` mục Decisions 2
+- [x] 3.4 Chép bảng cổng chất lượng từ `design.md` mục Decisions 3, **kèm câu ghi rõ dự án chưa có CI nên cổng đang được giữ bằng kỷ luật**
+- [x] 3.5 Ghi quy ước đặt tên và vị trí file test
+- [x] 3.6 Ghi ba tình huống biên bắt buộc trên cloud E2E, kèm ghi chú việc viết chúng thuộc `expand-e2e-coverage` — TC-TEST-12
+- [x] 3.7 Ghi luật chống trùng lặp: một hành vi chỉ kiểm ở tầng thấp nhất có thể kiểm được nó
 
 ## 4. Rút gọn `docs/testing.md` về đúng vai trò nhật ký
 
-- [ ] 4.1 Bỏ mục "Chiến Lược" khỏi `docs/testing.md`, thay bằng một dòng trỏ sang `docs/test-strategy.md`
-- [ ] 4.2 Giữ nguyên toàn bộ phần nhật ký kết quả chạy, không sửa số liệu cũ và không sửa ngày cũ
-- [ ] 4.3 Thêm mục checklist thủ công gồm đúng hai việc: kiểm email vào hộp thư chính, và kiểm trên thiết bị thật ở chế độ ngang. Mỗi việc có cột ngày chạy và cột ghi chú
-- [ ] 4.4 Thêm dòng ghi độ phủ nền đo ở mục 1.4, kèm baseline và ngày
-- [ ] 4.5 Rà soát hai file không còn nội dung trùng nhau — TC-TEST-05
+- [x] 4.1 Bỏ mục "Chiến Lược" khỏi `docs/testing.md`, thay bằng một dòng trỏ sang `docs/test-strategy.md`
+- [x] 4.2 Giữ nguyên toàn bộ phần nhật ký kết quả chạy, không sửa số liệu cũ và không sửa ngày cũ
+- [x] 4.3 Thêm mục checklist thủ công gồm đúng hai việc: kiểm email vào hộp thư chính, và kiểm trên thiết bị thật ở chế độ ngang. Mỗi việc có cột ngày chạy và cột ghi chú
+- [x] 4.4 Thêm dòng ghi độ phủ nền đo ở mục 1.4, kèm baseline và ngày
+- [x] 4.5 Rà soát hai file không còn nội dung trùng nhau — TC-TEST-05
 
 ## 5. Script kịch bản demo
 
-- [ ] 5.1 Thêm một project vào `playwright.config.ts` chạy riêng file kịch bản demo ở viewport `tablet-landscape`
-- [ ] 5.2 Viết `tests/smoke/demo-runbook.spec.ts` đi tuần tự bước 1 tới 14 của `docs/demo-runbook.md`, **liền một mạch trong một test**
-- [ ] 5.3 Không nhân đôi bước 15 và 16; chúng đã có test riêng
-- [ ] 5.4 Xác nhận test xanh và thời gian chạy dưới 90 giây — TC-TEST-03
-- [ ] 5.5 Xác nhận test bắt được thay đổi: tạm đổi nhãn một nút ở luồng gửi đơn, xác nhận test đỏ đúng bước, rồi hoàn tác — TC-TEST-09
-- [ ] 5.6 Xác nhận trace Playwright lưu lại được để dùng làm bằng chứng trong báo cáo
+> **Phần này do agent lập trình thực hiện.** Mục dưới đây là spec đủ chi tiết để làm mà không phải đoán. Đọc kèm `design.md` mục "Script kịch bản demo" và TC-TEST-03, TC-TEST-09 trong `testplan.md`.
+
+### 5a. Ràng buộc bắt buộc
+
+- [ ] 5a.1 File đặt tại `tests/smoke/demo-runbook.spec.ts`, chạy trên **adapter mock**, không dùng Supabase
+- [ ] 5a.2 **Đúng một `test()` duy nhất** đi liền mạch 14 bước. Không tách thành nhiều test — giá trị của script nằm ở chỗ nối giữa các bước, tách ra là mất
+- [ ] 5a.3 Chỉ chạy ở **một viewport** `tablet-landscape`. Bố cục đã có `pos-cafe.spec.ts` phủ ở 5 kích thước; chạy lại 5 lần chỉ làm chậm mà không thêm thông tin
+- [ ] 5a.4 Dùng `data-testid` làm selector chính, **không** bám vào chuỗi tiếng Việt hiển thị trên giao diện. Chuỗi hiển thị đổi thường xuyên hơn testid
+- [ ] 5a.5 Tái dùng helper đang có trong `tests/smoke/pos-cafe.spec.ts`: `loginAsAdmin`, `waitForTransientOverlays`, `waitForStageFit`. Trích chúng ra module dùng chung nếu cần, **không chép lại**
+- [ ] 5a.6 Không nhân đôi bước 15 và 16 của runbook (quản trị thực đơn, sơ đồ, cài đặt, xóa dữ liệu mẫu) — đã có test riêng phủ
+
+### 5b. Mười bốn bước, kèm testid đã có sẵn trong mã
+
+Cột "testid" liệt kê định danh **đã tồn tại** trong `src/app`. Thiếu testid nào thì **thêm vào component**, đừng lách bằng selector theo chuỗi hiển thị.
+
+- [ ] 5b.1 Bước 1–3, vào ứng dụng: `landing-screen` → `go-store-pairing` hoặc `go-passcode` → `store-pairing-screen` + `store-key-input` nếu chưa ghép → `passcode-screen` → `unlock-button`. Khẳng định: vào được `floor-view`
+- [ ] 5b.2 Bước 4, mở bàn trống: `floor-view` → `table-tbl-b01`. Khẳng định: `order-drawer` mở
+- [ ] 5b.3 Bước 5, tạo đơn có tùy chọn món: `menu-item-mi-ca-phe-sua` → `modifier-confirm` → chỉnh số lượng → `submit-order-button-footer`. Khẳng định: đơn có đúng số dòng món mong đợi
+- [ ] 5b.4 Bước 6, quay lại sơ đồ. Khẳng định: `table-tbl-b01` đổi sang trạng thái đang phục vụ
+- [ ] 5b.5 Bước 7, mở lại đơn rồi chuyển sang thanh toán: `pay-button-footer`. Khẳng định: `payment-drawer` mở
+- [ ] 5b.6 Bước 8, tách đơn thanh toán — **điểm nhấn của demo**: bỏ `pay-select-all` → tick 1–2 `pay-item-checkbox` → dùng `pay-item-plus` chỉnh số lượng → hoàn tất. Khẳng định: sinh **hai đơn độc lập**, đơn tách giữ số bill gốc và đơn còn lại mang số mới
+- [ ] 5b.7 Bước 9, thanh toán phần còn lại: nhập tiền khách đưa qua `payment-keypad`. Khẳng định: khi tiền thiếu thì `payment-insufficient-warning` hiện; khi đủ thì thanh toán được. **Phải kiểm cả hai trạng thái**, đây là ranh giới nghiệp vụ chứ không phải đường trang trí
+- [ ] 5b.8 Bước 10, xem trước hóa đơn rồi quay lại sơ đồ. Khẳng định: `table-tbl-b01` về trạng thái trống
+- [ ] 5b.9 Bước 11, mở lịch sử và báo cáo. Khẳng định: hai đơn độc lập từ cùng một bàn, số đơn tăng **theo thứ tự thanh toán**
+- [ ] 5b.10 Bước 12, hủy đơn đã thanh toán: `history-void-order` → `history-void-reason` → nếu chọn lý do khác thì `history-void-note` bắt buộc → `history-void-confirm`. Khẳng định: badge đã hủy, `history-void-info` hiện người và thời điểm, nút in lại bị khóa
+- [ ] 5b.11 Bước 13, mở báo cáo. Khẳng định: đơn vừa hủy **bị loại khỏi doanh thu**, đồng thời số đơn đã hủy và tiền hủy **tăng đúng**
+- [ ] 5b.12 Bước 14, đổi quyền per-employee: `nav-employees` → chọn thu ngân → bỏ quyền thanh toán → `save-employee-button` → khóa phiên → đăng nhập lại bằng thu ngân đó. Khẳng định: vẫn tạo và sửa đơn được, nhưng nút thanh toán **bị vô hiệu và có nêu lý do**
+- [ ] 5b.13 Khôi phục quyền về như cũ ở cuối test, để lần chạy sau không phụ thuộc thứ tự
+
+### 5c. Kiểm chứng
+
+- [ ] 5c.1 Thêm một project vào `playwright.config.ts` chạy riêng file này ở `tablet-landscape`
+- [ ] 5c.2 Test xanh, thời gian chạy **dưới 90 giây** — TC-TEST-03
+- [ ] 5c.3 Trace Playwright lưu lại được, dùng làm bằng chứng trong báo cáo — TC-TEST-03
+- [ ] 5c.4 Tạm đổi nhãn hoặc gỡ một testid ở luồng gửi đơn, xác nhận test **đỏ đúng bước đó**, rồi hoàn tác — TC-TEST-09. Bỏ phép thử này thì không biết script có thực sự đi qua các bước hay chỉ mở ứng dụng rồi kết thúc
+- [ ] 5c.5 Chạy lại hai lần liên tiếp, cả hai đều xanh. Test nhấp nháy thì coi như chưa xong
+
+### 5d. Bàn giao
+
+- [ ] 5d.1 Ghi kết quả chạy vào `docs/testing.md` kèm baseline và ngày
+- [ ] 5d.2 Điền "Nơi hiện thực" cho TC-TEST-03 và TC-TEST-09 trong `testplan.md`
 
 ## 6. Cổng chất lượng
 
@@ -59,7 +94,7 @@ Thứ tự dưới đây bắt buộc. Nhóm 1 là cổng: chưa có số đo n�
 
 ## 7. Rà soát chất lượng tài liệu
 
-- [ ] 7.1 Rà mục `## Quyết định đã chốt` của `proposal.md`: mọi quyết định có nhiều phương án đều phải ghi phương án bị loại kèm lý do — TC-TEST-13
+- [x] 7.1 Rà mục `## Quyết định đã chốt` của `proposal.md`: mọi quyết định có nhiều phương án đều phải ghi phương án bị loại kèm lý do — TC-TEST-13
 - [ ] 7.2 Hỏi chủ dự án về đề xuất sửa `SPEC-STANDARD.md` nêu ở cuối `traceability.md`, phần cho phép quyết định không có use case nhưng vẫn phải có test case
 
 ## 8. Cập nhật tài liệu liên quan
