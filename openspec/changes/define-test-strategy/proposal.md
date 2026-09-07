@@ -44,13 +44,18 @@ Không có.
 
 1. ~~Mục tiêu thật của chiến lược này là gì: bảo vệ code, hay còn làm bằng chứng cho báo cáo?~~ **Đã trả lời ở quyết định 1: cả hai.**
 2. ~~Có đặt ngưỡng độ phủ bằng số không, và đo trên đâu?~~ **Đã trả lời ở quyết định 2: chỉ đặt số trên `domain` và `core`, ngưỡng 90% dòng.**
-3. Cổng chất lượng có được phép chặn merge không, hay chỉ là khuyến nghị? Nếu chặn thì chặn ở mức nào: chỉ `tsc` và unit test, hay cả E2E?
+3. ~~Cổng chất lượng có được phép chặn merge không, và chặn ở mức nào?~~ **Đã trả lời ở quyết định 3: chặn ở mức chạy được cục bộ.**
 4. ~~E2E chạy trên Supabase thật có được tính là bắt buộc không?~~ **Đã trả lời ở quyết định 4: bắt buộc theo mốc chứ không theo mỗi lần merge, và phạm vi phải gồm các tình huống biên quan trọng.**
 5. ~~Có chấp nhận thêm dependency mới cho kiểm thử không?~~ **Đã trả lời ở quyết định 5: đúng một, là `@vitest/coverage-v8`.**
 6. ~~Kiểm thử thủ công có còn chỗ trong quy trình không?~~ **Đã trả lời ở quyết định 6: còn nhưng giữ ở mức tối thiểu, và giảm dần là mục tiêu có chủ ý.**
 7. ~~Tài liệu chiến lược đặt ở đâu?~~ **Đã trả lời ở quyết định 7: tách `docs/test-strategy.md`, giữ `docs/testing.md` làm nhật ký kết quả chạy.**
 
-Còn để mở: câu 3.
+Hai câu phát sinh trong lúc trao đổi, cũng đã chốt:
+
+8. ~~Tình huống biên nào bắt buộc có trên cloud E2E?~~ **Đã trả lời ở quyết định 8.**
+9. ~~Có script hóa kịch bản demo thành test tự động không, và làm khi nào?~~ **Đã trả lời ở quyết định 9: có, làm ngay trong tuần này.**
+
+Không còn câu hỏi bỏ ngỏ.
 
 ## Quyết định đã chốt
 
@@ -116,3 +121,54 @@ Ba lý do:
 - Hai tài liệu có **nhịp cập nhật khác hẳn nhau**: chiến lược đổi hiếm, nhật ký đổi mỗi lần chạy lại bộ test.
 - Gộp chung thì phần chiến lược bị chôn dưới các bảng số liệu và ngày chạy, khó đọc và khó trích.
 - Báo cáo trích **hai chỗ khác nhau**: chiến lược thuộc chương phương pháp thực hiện, nhật ký kết quả thuộc chương kiểm thử và đánh giá. Tách sẵn thì không phải bóc tách lúc viết báo cáo.
+
+**3. Cổng chất lượng chặn ở mức chạy được cục bộ, không chặn ở mức cần hạ tầng ngoài.**
+
+Nội dung cổng, tất cả phải xanh mới coi là xong một thay đổi:
+
+| Kiểm | Lệnh | Áp dụng cho |
+| --- | --- | --- |
+| Kiểu và build | `npm run build` | Mọi thay đổi |
+| Kiểm thử đơn vị và tích hợp | `npm test` | Mọi thay đổi |
+| Ngưỡng phủ `domain` và `core` | `npm run test:coverage` | Mọi thay đổi chạm hai tầng đó |
+| Ranh giới kiến trúc | Đã nằm trong `npm test` | Mọi thay đổi |
+| Mock E2E | `npm run smoke` | Thay đổi chạm giao diện |
+| Cloud E2E | `npm run smoke:supabase` | **Không** thuộc cổng mỗi lần; chạy theo mốc ở quyết định 4 |
+
+Ba phương án đã cân nhắc:
+
+| | Phương án | Lý do chọn hoặc loại |
+| --- | --- | --- |
+| a | Chặn ở mức chạy được cục bộ | **Chọn** |
+| b | Chỉ khuyến nghị, không chặn gì | **Loại.** Không có gì ép được, và không mô tả được thành quy trình trong báo cáo |
+| c | Chặn tất cả, gồm cloud E2E mỗi lần | **Loại.** Mâu thuẫn trực tiếp với quyết định 4 |
+
+Lý do phương án a hợp: nó chỉ gồm những kiểm **chạy nhanh và luôn chạy được** mà không cần credential hay project ngoài, nên không ai có động cơ bỏ qua. Cổng mà người ta thường xuyên bỏ qua thì tệ hơn là không có cổng, vì nó tạo cảm giác an toàn giả.
+
+**Ghi chú quan trọng về hiện trạng:** dự án **chưa có CI**; `add-ci-pipeline` nằm ở giai đoạn 2 của `docs/roadmap.md`. Nên tới thời điểm này cổng được thực thi bằng kỷ luật chứ chưa có máy nào ép. Khi CI lên, bảng trên bê nguyên thành cấu hình, không phải thiết kế lại. Chiến lược phải ghi rõ điều này thay vì tuyên bố có cổng chặn thật.
+
+**8. Bộ E2E trên cloud phải phủ ba tình huống biên bắt buộc, cộng ba tình huống nên có.**
+
+Bộ hiện tại có 5 test tại `tests/supabase/pos-cafe-supabase.spec.ts`: tạo cửa hàng và thanh toán, chặn quyền `payment.take` ở cả giao diện lẫn RPC, hủy đơn đã thanh toán, tách đơn thanh toán, và realtime giữa hai trình duyệt.
+
+Bắt buộc bổ sung:
+
+| Tình huống | Vì sao bắt buộc |
+| --- | --- |
+| **Cô lập chéo cửa hàng**: phiên của cửa hàng A truy vấn dữ liệu cửa hàng B phải trả về rỗng | Đây là luận điểm NFR-02 và **hiện chưa có test nào chứng minh**. Adapter mock về nguyên tắc không chứng minh được vì nó không có chính sách bảo mật mức dòng |
+| **Xung đột khóa lạc quan**: hai thiết bị cùng sửa một đơn, thiết bị sau nhận `ORDER_VERSION_CONFLICT` | Chứng minh phần xử lý ghi đồng thời, thứ chỉ tồn tại thật ở tầng database |
+| **Không trùng số bill khi thanh toán đồng thời**: ràng buộc `unique (store_id, business_date, order_no)` giữ được | Đụng thẳng phần tiền. Cấp số dùng khóa phía database nên chỉ kiểm được ở đó |
+
+Nên có, làm nếu còn thời gian: món bị xóa giữa chừng trả `MENU_ITEM_UNAVAILABLE`; tiền khách đưa thiếu trả `PAYMENT_AMOUNT_TOO_LOW`; hủy đơn không nhập lý do trả `VOID_REASON_REQUIRED`.
+
+Nguyên tắc chọn: **chỉ đưa lên cloud những thứ mock không chứng minh được.** Ba ca bắt buộc đều thuộc loại đó; ba ca nên có thì mock kiểm được phần lớn, chạy trên cloud chỉ để xác nhận thêm.
+
+**9. Script hóa kịch bản demo thành một test Playwright, làm ngay trong tuần này, không hoãn tới tuần 14.**
+
+Đề xuất ban đầu là hoãn tới tuần 14 với lý do kịch bản demo còn đổi theo tính năng làm thêm. Chủ dự án bác lại và lý lẽ đó đúng: **đây không phải việc chuẩn bị demo mà là lưới chặn hồi quy cho hành trình chính của người dùng**, tức đúng mục đích của mục 1 trong `docs/roadmap.md`. Hoãn tới tuần 14 thì mất tác dụng bảo vệ suốt 12 tuần ở giữa.
+
+Phạm vi: bước 1 tới 14 của `docs/demo-runbook.md`, chạy liền một mạch trong một test. Bước 15 và 16 là thao tác quản trị, đã có test riêng phủ, không nhân đôi.
+
+Giá trị tăng thêm so với bộ test đang có, nói rõ để không phóng đại: các bước riêng lẻ **đã** được phủ bởi 5 test cloud và bộ mock E2E hiện tại. Cái mới là **một mạch liên tục theo đúng thứ tự demo** — nó bắt được lỗi ở chỗ nối giữa các bước mà test rời rạc bỏ sót, và nó sinh ra một trace chạy được dùng làm bằng chứng trong báo cáo.
+
+Hệ quả đã biết và chấp nhận: `add-owner-account-and-store-provisioning` sẽ **làm vỡ script này** ở tuần 7 tới 9, vì proposal của change đó ghi rõ luồng tạo cửa hàng hiện tại phải viết lại. Đó là hành vi đúng chứ không phải lãng phí: script vỡ là tín hiệu cho biết hành trình người dùng đã đổi, và việc sửa nó là một phần của change kia.
