@@ -31,7 +31,7 @@ Mười mục, làm tuần tự. Thứ tự dưới đây được xếp lại n
 
 | # | Tuần | Khoảng | Việc | Kết quả kiểm chứng được | Trạng thái |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 1 | 28/08 – 03/09 | Lưới an toàn kiểm thử và môi trường thử nghiệm | Bộ kiểm thử chạy xanh trên baseline hiện tại | `[ ]` |
+| 1 | 1 | 28/08 – 03/09 | Chiến lược kiểm thử, lưới an toàn và môi trường thử nghiệm | Chiến lược kiểm thử viết trọn theo chuẩn bảy artifact và dùng được làm khuôn mẫu; bộ kiểm thử chạy xanh trên baseline hiện tại | `[ ]` |
 | 2 | 2 | 04/09 – 10/09 | Khóa chống trùng cho lời gọi ghi, kèm tái cấu trúc dọn đường cho ba RPC tiền | Gọi hai lần cùng khóa cho kết quả như gọi một lần | `[ ]` |
 | 3 | 3–5 | 11/09 – 01/10 | Tổ chức lại phân quyền | Sáu vai trò, mười bốn quyền, điều hướng suy ra từ quyền, đổi quyền có hiệu lực ngay | `[ ]` |
 | 4 | 6 | 02/10 – 08/10 | Siết quyền xuống tầng dữ liệu, bản thu hẹp | Gọi thẳng vào cơ sở dữ liệu khi thiếu quyền bị từ chối | `[ ]` |
@@ -44,11 +44,17 @@ Mười mục, làm tuần tự. Thứ tự dưới đây được xếp lại n
 
 Bốn ngày từ 18/12 tới 21/12 để nguyên làm đệm và tập demo. Không xếp việc vào đó.
 
+### Cảnh báo lệch lịch, chưa xử lý
+
+Tính tới **07/09/2026**, mục 1 chưa bắt đầu dù khoảng thời gian của nó đã trôi qua, và hạn chốt câu hỏi của mục 2 đã quá 3 ngày. Toàn bộ cột "Khoảng" bên trên vì vậy đang **sớm hơn thực tế khoảng một tuần**.
+
+Chưa dời ngày vì việc dời kéo theo cả mười mục và phải chốt xem cắt bớt phần nào để bù. Cần chủ dự án quyết trước khi sửa bảng.
+
 ### Ánh xạ sang change
 
 | Mục | Change tương ứng |
 | --- | --- |
-| 1 | Lát mỏng của `expand-e2e-coverage` và `setup-test-data-environment`, không làm trọn hai change đó |
+| 1 | `define-test-strategy` làm **trọn** theo chuẩn bảy artifact, đóng vai khuôn mẫu cho mọi change sau; cộng lát mỏng của `expand-e2e-coverage` và `setup-test-data-environment` |
 | 2 | `add-idempotent-write-operations` |
 | 3 | `redesign-permission-model` |
 | 4 | `enforce-permissions-at-database`, bản thu hẹp |

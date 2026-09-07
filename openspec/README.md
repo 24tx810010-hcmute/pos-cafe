@@ -85,3 +85,7 @@ Bốn change dưới đây mâu thuẫn với các quyết định đang ghi tro
 Bộ tài liệu bắt buộc cho mỗi change, cách viết use case và test case, quy cách ma trận truy vết, và vai trò phân tích viên: xem [SPEC-STANDARD.md](SPEC-STANDARD.md). Chốt ngày 2026-09-07, áp cho mọi tính năng từ thời điểm đó trở đi.
 
 Tóm tắt: mỗi change cần bảy file thay vì bốn. Ba file bổ sung là `usecases.md`, `testplan.md` và `traceability.md`.
+
+`define-test-strategy` là change đầu tiên viết trọn theo chuẩn này và đóng vai **khuôn mẫu** — cần biết một file nên trông như thế nào thì mở change đó ra xem.
+
+Hai change viết trước ngày 2026-09-07 là `redesign-permission-model` và `add-owner-account-and-store-provisioning` đã có khung ba file mới nhưng để trống, sẽ điền khi bắt đầu thực hiện.

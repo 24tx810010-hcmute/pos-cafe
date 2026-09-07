@@ -105,6 +105,18 @@ Kèm ba dòng tổng kết ở cuối:
 
 Bảng này phục vụ hai việc: chặn sót lúc làm, và đưa thẳng vào chương kiểm thử của khóa luận làm bằng chứng đã phủ hết yêu cầu.
 
+## Áp ngược cho change đã viết theo chuẩn cũ
+
+Change nào đã có đủ bốn file theo chuẩn cũ trước ngày 2026-09-07 thì **tạo khung ba file mới và để trống**, ghi rõ trong file là chưa viết. Nội dung bổ sung **khi bắt đầu thực hiện change đó**, không viết trước.
+
+Lý do hoãn thay vì viết ngay: use case và test case viết trước lúc vào việc thì dễ lệch với các quyết định phát sinh trong lúc làm, và phải sửa lại hai lần. Để khung trống thì vẫn thấy được chỗ còn thiếu khi rà soát, mà không tốn công viết hai lần.
+
+Hai change đang ở trạng thái này: `redesign-permission-model` và `add-owner-account-and-store-provisioning`.
+
+## Khuôn mẫu
+
+`define-test-strategy` là change đầu tiên viết trọn theo chuẩn bảy file. Nó **là khuôn mẫu** cho mọi change sau: cần biết một file nên trông như thế nào thì mở change đó ra xem, đừng suy diễn từ mô tả trong tài liệu này.
+
 ## Quy tắc viết, áp cho cả bảy file
 
 - **Tiếng Việt** cho nội dung. Giữ nguyên tiếng Anh cho: từ khóa OpenSpec (`ADDED`, `MODIFIED`, `Requirement`, `Scenario`), từ khóa RFC 2119 (`SHALL`, `MUST`, `MUST NOT`), tên file, tên hàm, tên cột, tên biến, mã lỗi, tên thư mục change.
