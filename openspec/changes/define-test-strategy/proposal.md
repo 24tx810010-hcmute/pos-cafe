@@ -42,14 +42,77 @@ Không có.
 
 ## Câu hỏi phải chốt trước khi làm
 
-1. Mục tiêu thật của chiến lược này là gì: đủ để bảo vệ code khi phát triển tiếp, hay còn phải làm bằng chứng trình bày trong báo cáo đồ án? Hai mục tiêu này dẫn tới mức chi tiết rất khác nhau.
-2. Có đặt ngưỡng độ phủ (coverage) bằng số không? Nếu có thì ngưỡng bao nhiêu, đo trên toàn bộ `src` hay chỉ trên `domain` và `core`? Nếu không thì lấy gì thay thế làm tiêu chí "đủ test"?
+1. ~~Mục tiêu thật của chiến lược này là gì: bảo vệ code, hay còn làm bằng chứng cho báo cáo?~~ **Đã trả lời ở quyết định 1: cả hai.**
+2. ~~Có đặt ngưỡng độ phủ bằng số không, và đo trên đâu?~~ **Đã trả lời ở quyết định 2: chỉ đặt số trên `domain` và `core`, ngưỡng 90% dòng.**
 3. Cổng chất lượng có được phép chặn merge không, hay chỉ là khuyến nghị? Nếu chặn thì chặn ở mức nào: chỉ `tsc` và unit test, hay cả E2E?
-4. E2E chạy trên Supabase thật có được tính là bắt buộc không? Hiện `npm run smoke:supabase` cần một project Supabase riêng và có chi phí thời gian, cần chốt nó là bắt buộc trước khi merge hay chỉ chạy định kỳ.
-5. Có chấp nhận thêm dependency mới cho kiểm thử không (ví dụ thư viện tạo dữ liệu giả, thư viện assertion bổ sung), hay giữ nguyên đúng bộ Vitest và Playwright đang có?
-6. Kiểm thử thủ công có còn chỗ trong quy trình không, hay mục tiêu là tự động hóa toàn bộ? Nếu còn thì phần nào giữ thủ công và ghi ở đâu?
-7. Tài liệu chiến lược đặt ở đâu: viết đè vào `docs/testing.md`, hay tách file mới và để `docs/testing.md` tiếp tục làm nhật ký kết quả chạy?
+4. ~~E2E chạy trên Supabase thật có được tính là bắt buộc không?~~ **Đã trả lời ở quyết định 4: bắt buộc theo mốc chứ không theo mỗi lần merge, và phạm vi phải gồm các tình huống biên quan trọng.**
+5. ~~Có chấp nhận thêm dependency mới cho kiểm thử không?~~ **Đã trả lời ở quyết định 5: đúng một, là `@vitest/coverage-v8`.**
+6. ~~Kiểm thử thủ công có còn chỗ trong quy trình không?~~ **Đã trả lời ở quyết định 6: còn nhưng giữ ở mức tối thiểu, và giảm dần là mục tiêu có chủ ý.**
+7. ~~Tài liệu chiến lược đặt ở đâu?~~ **Đã trả lời ở quyết định 7: tách `docs/test-strategy.md`, giữ `docs/testing.md` làm nhật ký kết quả chạy.**
+
+Còn để mở: câu 3.
 
 ## Quyết định đã chốt
 
-Chưa có. Ghi câu trả lời của người dùng vào mục này trước khi bắt đầu implement.
+Ghi ngày 2026-09-07, theo trao đổi với chủ dự án. Đánh số theo câu hỏi ở mục trên.
+
+**1. Chiến lược phục vụ cả hai mục tiêu: bảo vệ code khi phát triển tiếp, và làm bằng chứng trình bày trong báo cáo.**
+
+Không chọn một trong hai. Hệ quả về mức chi tiết: mọi lựa chọn có đánh đổi phải ghi kèm phương án đã cân nhắc và lý do loại bỏ, vì phần lập luận đó là thứ báo cáo cần, còn bản thân kết luận thì không đủ để viết thành chương.
+
+Quyết định này là hệ quả trực tiếp của chuẩn chung ở `openspec/SPEC-STANDARD.md`, không phải luật riêng của change này.
+
+**2. Ngưỡng độ phủ chỉ đặt bằng số trên `domain` và `core`, mức 90% dòng. Các tầng còn lại dùng tiêu chí theo loại thay đổi, không đặt số.**
+
+Ba phương án đã cân nhắc:
+
+| | Phương án | Lý do chọn hoặc loại |
+| --- | --- | --- |
+| a | Không đặt số nào, chỉ dùng tiêu chí "loại thay đổi nào bắt buộc loại test nào" | **Loại.** Không có số thì không có gì ép được, và tiêu chí định tính sẽ trôi dần khi tiến độ gấp |
+| b | Đặt số trên toàn bộ `src` | **Loại.** Ép số lên tầng giao diện và tầng adapter đẻ ra test viết cho đủ chỉ tiêu chứ không cho đúng hành vi. Đây là bệnh đã biết của việc lấy độ phủ làm mục tiêu thay vì làm chỉ báo |
+| c | Số chỉ trên `domain` và `core`, phần còn lại dùng tiêu chí theo loại thay đổi | **Chọn** |
+
+Lý do phương án c hợp với đúng dự án này: `src/architectureBoundaries.test.ts` đã enforce rằng `domain` chỉ import `domain`, `core` chỉ import `core` và `domain`, và cả hai **cấm import `react`**. Nghĩa là hai tầng đó thuần, không I/O, không vòng đời component — thứ khó phủ thì đã bị luật kiến trúc đẩy ra khỏi chúng rồi. Phủ 90% ở nơi như vậy là mục tiêu hợp lý chứ không phải con số cho đẹp.
+
+Ngược lại, `app` và `adapters` là nơi có I/O thật và giao diện thật. Ở đó thứ đáng đo không phải số dòng chạy qua mà là **loại tình huống đã được kiểm**, nên tiêu chí phải là định tính theo loại thay đổi.
+
+Con số 90% chọn thay vì 100% vì mức tuyệt đối buộc phải viết test cho cả nhánh phòng thủ không bao giờ chạy tới, và chi phí giữ nó vượt lợi ích.
+
+**4. E2E trên Supabase thật: bắt buộc theo mốc, không bắt buộc theo mỗi lần merge. Phạm vi phải gồm các tình huống biên quan trọng, không chỉ luồng thuận.**
+
+Mốc bắt buộc chạy và ghi lại kết quả: khi đóng mỗi mục của `docs/roadmap.md`, và trước ngày demo.
+
+Lý do không ép mỗi lần merge: `npm run smoke:supabase` cần một project Supabase riêng cùng credential, và có chi phí thời gian đáng kể. Ép mỗi lần merge sẽ làm vòng lặp phát triển chậm tới mức người làm bắt đầu tìm cách bỏ qua nó — lúc đó cổng chặn thành hình thức, tệ hơn là không có.
+
+Lý do không bỏ hẳn: đây là **bằng chứng duy nhất** cho hai thứ mà adapter mock về nguyên tắc không chứng minh được — chính sách bảo mật mức dòng thật, và hành vi thật của các RPC trong PostgreSQL. `docs/testing.md` đã ghi đúng giới hạn này: "Không claim rằng toàn bộ 260 local tests đã chạy trên Supabase."
+
+Yêu cầu về phạm vi: bộ E2E trên cloud **MUST** gồm cả tình huống bị từ chối, không chỉ tình huống thành công. Danh sách tình huống biên bắt buộc sẽ chốt ở bước viết `testplan.md`.
+
+**5. Thêm đúng một dependency phát triển: `@vitest/coverage-v8`.**
+
+Cần nó để đo được ngưỡng ở quyết định 2; không có công cụ đo thì ngưỡng chỉ là lời nói.
+
+Hai loại thư viện đã cân nhắc và loại:
+
+- **Thư viện sinh dữ liệu giả.** Loại vì dữ liệu ngẫu nhiên làm test nhấp nháy: hỏng lúc này chạy lúc khác, và khi hỏng thì không dựng lại được ca hỏng. Dữ liệu thử trong dự án này phải là giá trị cố định ghi thẳng trong test, đúng như chuẩn ở `SPEC-STANDARD.md` mục 5 yêu cầu.
+- **Thư viện assertion bổ sung.** Loại vì Vitest cộng `@testing-library/jest-dom` đã phủ đủ nhu cầu hiện có. Thêm bộ assertion thứ hai chỉ tạo ra hai lối viết cho cùng một việc.
+
+Bối cảnh: dự án đang có 12 dependency runtime và một commit gần đây còn gỡ bớt thư viện không dùng, nên mỗi lần thêm phải có lý do đứng được.
+
+**6. Kiểm thử thủ công vẫn còn chỗ nhưng giữ ở mức tối thiểu, và việc thu hẹp dần phần thủ công là mục tiêu có chủ ý.**
+
+Phần thủ công chỉ giữ ở những chỗ **về bản chất không tự động hóa được**, không phải ở những chỗ ngại viết test.
+
+Ghi thành một checklist có cột ngày chạy trong `docs/testing.md`. Không có checklist thì phần thủ công biến mất khỏi bằng chứng, trong khi NFR-07 đòi bằng chứng kiểm thử nhiều lớp.
+
+Lý do coi việc giảm thao tác thủ công là điểm mạnh chứ không chỉ là tiện lợi: một quy trình tự động hóa cao là thứ trình bày được thành đóng góp kỹ thuật của đồ án, và nó chứng minh luận điểm rằng ranh giới ports và adapters cho phép kiểm thử phần lớn hệ thống mà không cần hạ tầng thật.
+
+Danh sách cụ thể phần giữ thủ công, và phần nào chuyển sang tự động được, chốt ở bước viết `testplan.md`.
+
+**7. Tách `docs/test-strategy.md` cho chiến lược. `docs/testing.md` giữ nguyên vai trò nhật ký kết quả chạy.**
+
+Ba lý do:
+
+- Hai tài liệu có **nhịp cập nhật khác hẳn nhau**: chiến lược đổi hiếm, nhật ký đổi mỗi lần chạy lại bộ test.
+- Gộp chung thì phần chiến lược bị chôn dưới các bảng số liệu và ngày chạy, khó đọc và khó trích.
+- Báo cáo trích **hai chỗ khác nhau**: chiến lược thuộc chương phương pháp thực hiện, nhật ký kết quả thuộc chương kiểm thử và đánh giá. Tách sẵn thì không phải bóc tách lúc viết báo cáo.
