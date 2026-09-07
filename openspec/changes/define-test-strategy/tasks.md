@@ -61,13 +61,22 @@ Cột "testid" liệt kê định danh **đã tồn tại** trong `src/app`. Thi
 
 - [ ] 5b.1 Bước 1–3, vào ứng dụng: `landing-screen` → `go-store-pairing` hoặc `go-passcode` → `store-pairing-screen` + `store-key-input` nếu chưa ghép → `passcode-screen` → `unlock-button`. Khẳng định: vào được `floor-view`
 - [ ] 5b.2 Bước 4, mở bàn trống: `floor-view` → `table-tbl-b01`. Khẳng định: `order-drawer` mở
-- [ ] 5b.3 Bước 5, tạo đơn có tùy chọn món: `menu-item-mi-ca-phe-sua` → `modifier-confirm` → chỉnh số lượng → `submit-order-button-footer`. Khẳng định: đơn có đúng số dòng món mong đợi
+- [ ] 5b.3 Bước 5, tạo đơn có tùy chọn món. **Kịch bản cố định, không được đổi:** `menu-item-mi-ca-phe-sua` → chọn `Size L` → `modifier-confirm` → đặt số lượng **3** → `submit-order-button-footer`. Khẳng định bằng **số tiền cụ thể**: Cà phê sữa 29.000đ cộng Size L 7.000đ bằng 36.000đ mỗi ly, tổng đơn **108.000đ**, đúng **một dòng món**. Số lấy từ `src/seed/demoSeedData.ts`; khẳng định bằng số tiền bắt được lỗi tính tiền mà khẳng định bằng số dòng bỏ sót
 - [ ] 5b.4 Bước 6, quay lại sơ đồ. Khẳng định: `table-tbl-b01` đổi sang trạng thái đang phục vụ
-- [ ] 5b.5 Bước 7, mở lại đơn rồi chuyển sang thanh toán: `pay-button-footer`. Khẳng định: `payment-drawer` mở
-- [ ] 5b.6 Bước 8, tách đơn thanh toán — **điểm nhấn của demo**: bỏ `pay-select-all` → tick 1–2 `pay-item-checkbox` → dùng `pay-item-plus` chỉnh số lượng → hoàn tất. Khẳng định: sinh **hai đơn độc lập**, đơn tách giữ số bill gốc và đơn còn lại mang số mới
+- [ ] 5b.5 Bước 7, mở lại đơn rồi chuyển sang thanh toán: bấm lại **`submit-order-button-footer`**. Khẳng định: `payment-drawer` mở.
+
+  **Sửa ngày 2026-09-07 sau khi đọc lại mã.** Bản trước ghi `pay-button-footer` và **sai**. `getOrderPrimaryAction` (`src/features/pos/orderFlow.ts:264`) trả về `submit`, `payment` hoặc `closed` cho **cùng một nút** ở `src/app/drawers/pos/OrderCartPane.tsx:114`: khi nháp còn khác đơn thì nút gửi đơn, khi nháp đã khớp đơn thì nút chuyển sang thanh toán. `pay-button-footer` nằm ở `src/app/drawers/pos/PaymentSummaryPane.tsx:244`, tức **bên trong** màn thanh toán, dùng để hoàn tất chứ không phải để mở
+- [ ] 5b.6 Bước 8, tách đơn thanh toán — **điểm nhấn của demo**: bỏ `pay-select-all` → tick `pay-item-checkbox` → dùng `pay-item-plus` đặt số lượng trả **2** trong tổng 3 → `pay-button-footer` hoàn tất. Khẳng định: sinh **hai đơn độc lập**, đơn vừa trả **72.000đ**, đơn còn lại trên bàn **36.000đ**
+- [ ] 5b.6b **Mở báo cáo ngay sau khi tách**, khẳng định doanh thu đã cộng **72.000đ** vào. Bước 8 của `docs/demo-runbook.md` ghi rõ "mở report thấy doanh thu vào NGAY" và bản spec trước bỏ sót vế này
 - [ ] 5b.7 Bước 9, thanh toán phần còn lại: nhập tiền khách đưa qua `payment-keypad`. Khẳng định: khi tiền thiếu thì `payment-insufficient-warning` hiện; khi đủ thì thanh toán được. **Phải kiểm cả hai trạng thái**, đây là ranh giới nghiệp vụ chứ không phải đường trang trí
 - [ ] 5b.8 Bước 10, xem trước hóa đơn rồi quay lại sơ đồ. Khẳng định: `table-tbl-b01` về trạng thái trống
-- [ ] 5b.9 Bước 11, mở lịch sử và báo cáo. Khẳng định: hai đơn độc lập từ cùng một bàn, số đơn tăng **theo thứ tự thanh toán**
+- [ ] 5b.9 Bước 11, mở lịch sử **và** báo cáo, khẳng định ở **hai nơi khác nhau**:
+  - Ở màn Lịch sử: hai đơn **độc lập** cùng xuất phát từ một bàn
+  - Ở màn Báo cáo: **số bill thật** và **thứ tự tăng theo lần thanh toán**
+
+  **Sửa ngày 2026-09-07 sau khi đọc lại mã.** Bản trước bắt kiểm số bill ở màn Lịch sử và **không kiểm được ở đó**. Lịch sử hiển thị `displayNo` do `historyDisplayNo(total, page, PAGE_SIZE, index)` tính ra theo vị trí trong trang (`src/app/drawers/admin/OrderHistoryDrawer.tsx:107`), tức số thứ tự danh sách chứ không phải `orderNo`. Chỉ màn Báo cáo in `orderNo` thật (`src/app/drawers/admin/ReportDrawer.tsx:485`).
+
+  **Không sửa mã nghiệp vụ để chiều theo test.** Việc Lịch sử hiển thị số thứ tự danh sách có thể là chủ ý thiết kế; nếu thấy nên đổi thì mở đề xuất riêng, không đổi lẫn vào change này
 - [ ] 5b.10 Bước 12, hủy đơn đã thanh toán: `history-void-order` → `history-void-reason` → nếu chọn lý do khác thì `history-void-note` bắt buộc → `history-void-confirm`. Khẳng định: badge đã hủy, `history-void-info` hiện người và thời điểm, nút in lại bị khóa
 - [ ] 5b.11 Bước 13, mở báo cáo. Khẳng định: đơn vừa hủy **bị loại khỏi doanh thu**, đồng thời số đơn đã hủy và tiền hủy **tăng đúng**
 - [ ] 5b.12 Bước 14, đổi quyền per-employee: `nav-employees` → chọn thu ngân → bỏ quyền thanh toán → `save-employee-button` → khóa phiên → đăng nhập lại bằng thu ngân đó. Khẳng định: vẫn tạo và sửa đơn được, nhưng nút thanh toán **bị vô hiệu và có nêu lý do**
@@ -78,7 +87,9 @@ Cột "testid" liệt kê định danh **đã tồn tại** trong `src/app`. Thi
 - [ ] 5c.1 Thêm một project vào `playwright.config.ts` chạy riêng file này ở `tablet-landscape`
 - [ ] 5c.2 Test xanh, thời gian chạy **dưới 90 giây** — TC-TEST-03
 - [ ] 5c.3 Trace Playwright lưu lại được, dùng làm bằng chứng trong báo cáo — TC-TEST-03
-- [ ] 5c.4 Tạm đổi nhãn hoặc gỡ một testid ở luồng gửi đơn, xác nhận test **đỏ đúng bước đó**, rồi hoàn tác — TC-TEST-09. Bỏ phép thử này thì không biết script có thực sự đi qua các bước hay chỉ mở ứng dụng rồi kết thúc
+- [ ] 5c.4 Tạm **gỡ `data-testid`** của nút gửi đơn, xác nhận test **đỏ đúng bước đó**, rồi hoàn tác — TC-TEST-09. Bỏ phép thử này thì không biết script có thực sự đi qua các bước hay chỉ mở ứng dụng rồi kết thúc.
+
+  **Phải gỡ testid, không được đổi nhãn.** Script bám `data-testid` theo ràng buộc 5a.4, nên đổi nhãn hiển thị sẽ **không** làm test đỏ — phép thử sẽ xanh và không chứng minh được gì. Đây là lỗi trong bản testplan đầu, đã sửa
 - [ ] 5c.5 Chạy lại hai lần liên tiếp, cả hai đều xanh. Test nhấp nháy thì coi như chưa xong
 
 ### 5d. Bàn giao

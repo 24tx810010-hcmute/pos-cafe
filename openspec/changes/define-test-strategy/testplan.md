@@ -79,7 +79,7 @@ Việc **viết** ba ca cloud E2E bắt buộc ở quyết định 8 thuộc `ex
 **Các bước**
 
 1. Chạy project Playwright dành riêng cho kịch bản demo, ở viewport `tablet-landscape`.
-2. Script đi tuần tự bước 1 tới 14 của `docs/demo-runbook.md`: mở ứng dụng ngang, ghép hoặc tạo cửa hàng, nhập PIN, mở bàn trống, tạo đơn tại chỗ có tùy chọn món, gửi đơn, xác nhận bàn chuyển sang đang phục vụ, mở lại đơn, tách đơn thanh toán một phần, xác nhận hai đơn độc lập, thanh toán phần còn lại, xác nhận bàn trống, mở lịch sử và báo cáo, hủy một đơn đã thanh toán có lý do, xác nhận báo cáo tách doanh thu và tiền hủy, đổi quyền một nhân viên rồi đăng nhập lại và xác nhận nút thanh toán bị khóa.
+2. Script đi tuần tự bước 1 tới 14 của `docs/demo-runbook.md`: mở ứng dụng ngang, ghép hoặc tạo cửa hàng, nhập PIN, mở bàn trống, tạo đơn tại chỗ có tùy chọn món, gửi đơn, xác nhận bàn chuyển sang đang phục vụ, mở lại đơn, tách đơn thanh toán một phần rồi **kiểm doanh thu cộng vào ngay**, xác nhận hai đơn độc lập, thanh toán phần còn lại, xác nhận bàn trống, mở lịch sử và báo cáo, hủy một đơn đã thanh toán có lý do, xác nhận báo cáo tách doanh thu và tiền hủy, đổi quyền một nhân viên rồi đăng nhập lại và xác nhận nút thanh toán bị khóa.
 
 **Kết quả mong đợi**
 
@@ -206,11 +206,11 @@ Việc **viết** ba ca cloud E2E bắt buộc ở quyết định 8 thuộc `ex
 | --- | --- |
 | **Truy vết** | UC-TEST-04 nhánh 2a; quyết định 9 |
 | **Mức** | E2E trên mock |
-| **Dữ liệu thử** | Tạm đổi nhãn của một nút mà script bấm ở bước 5 |
+| **Dữ liệu thử** | Tạm gỡ `data-testid` của nút gửi đơn ở `src/app/drawers/pos/OrderCartPane.tsx` |
 
 **Các bước**
 
-1. Đổi nhãn một nút trong luồng gửi đơn.
+1. Gỡ thuộc tính `data-testid="submit-order-button-footer"` khỏi component.
 2. Chạy project kịch bản demo.
 3. Hoàn tác thay đổi.
 
@@ -219,6 +219,8 @@ Việc **viết** ba ca cloud E2E bắt buộc ở quyết định 8 thuộc `ex
 - Bước 2 đỏ, và thông báo chỉ đúng bước đang hỏng.
 
 **Ghi chú** — Chứng minh script thực sự đi qua các bước chứ không chỉ mở ứng dụng rồi kết thúc. Không có phép thử này thì một script rỗng cũng xanh.
+
+**Sửa ngày 2026-09-07.** Bản đầu ghi "đổi nhãn của một nút" và **sai**: script bám `data-testid` chứ không bám chuỗi hiển thị, nên đổi nhãn sẽ không làm test đỏ. Phép thử khi đó tự nó xanh và không chứng minh được điều gì — đúng loại lỗi mà chính test case này sinh ra để phát hiện.
 
 ---
 
