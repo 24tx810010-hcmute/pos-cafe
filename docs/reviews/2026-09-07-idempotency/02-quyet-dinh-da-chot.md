@@ -1,5 +1,13 @@
 # 02 — Bốn quyết định đã chốt
 
+> **CẢNH BÁO — quyết định 4 dùng lý do sai, và mục "Đính chính đã ghi vào proposal" ở cuối file cũng sai.**
+> Đánh giá độc lập ngày 07/09/2026 cho thấy thao tác quản trị **không** tự an toàn, lý do giữ
+> `void_order` **không** đúng với mã, và bản thân phần đính chính lại dựa trên một kết luận sai.
+> **Đọc [04-dinh-chinh-sau-danh-gia.md](04-dinh-chinh-sau-danh-gia.md) trước.**
+> Kết luận của quyết định 4, 5, 6, 7 vẫn giữ; chỉ lý do phải viết lại.
+
+
+
 Chốt ngày 07/09/2026. Mỗi quyết định ghi kèm phương án bị loại và lý do loại, để người đánh giá kiểm được lập luận chứ không chỉ kiểm kết luận.
 
 Bằng chứng mã nguồn cho mọi khẳng định ở đây nằm ở [01-hien-trang-va-bang-chung.md](01-hien-trang-va-bang-chung.md).
@@ -25,11 +33,15 @@ Chỉ thao tác **không bình thường hóa** mới cần khóa.
 
 ### Vì sao loại thao tác quản trị
 
+> **LÝ DO NÀY SAI — xem tài liệu `04`.** Thao tác quản trị **không** tự an toàn: `saveMenuChanges` chạy nhiều request nối tiếp chứ không phải một giao dịch. Vẫn để chúng ngoài phạm vi được, nhưng lý do đúng là **giới hạn phạm vi change**, không phải "đã tự an toàn".
+
 Mọi kiểu `*Create` trong `src/domain/changes.ts` mang sẵn `id` do client sinh (trích đoạn ở tài liệu `01` mục 7). Gửi lại cùng một changeset là ghi lại cùng khóa chính, nên không sinh bản ghi trùng. Chúng đã bình thường hóa sẵn nhờ thiết kế định danh, không phải nhờ may mắn.
 
 ### Chỗ lập luận yếu, tự nhận
 
 `void_order` **về mặt trạng thái đã bình thường hóa**: hủy một đơn đã hủy vẫn ra trạng thái đã hủy. Theo đúng nguyên tắc trên thì lẽ ra nó không cần khóa.
+
+> **LÝ DO 1 DƯỚI ĐÂY SAI — xem tài liệu `04`.** Lần gọi thứ hai bị guard trạng thái chặn **trước khi** cập nhật các trường kiểm toán (`011:157`), nên không có dấu vết rác nào. Lý do đủ để giữ `void_order` là: sau khi mất phản hồi, caller cần xác nhận thao tác hủy trước đã thành công hay chưa.
 
 Nó vẫn nằm trong phạm vi vì hai lý do **khác** với lý do của ba cái kia:
 
@@ -96,5 +108,11 @@ Phần Why của `proposal.md` gốc viết rằng hậu quả là *"hai bản g
 Theo phân tích ở tài liệu `01`, phát biểu đó **nói quá**: đường dẫn tới bản ghi thanh toán trùng đã bị khóa lạc quan chặn. Hại thật là **sai dữ liệu chỉ ở luồng tạo đơn mới**, còn ba luồng kia là **trải nghiệm tệ**.
 
 Đính chính này đã được ghi vào đầu mục `## Quyết định đã chốt` của proposal, kèm bảng bằng chứng.
+
+> **CHÍNH ĐÍNH CHÍNH NÀY MỚI LÀ CÁI SAI.** Người đánh giá đã chỉ ra ca `pay_order_items` bấm lại
+> sau khi phiên bản đã tiến hợp lệ: nó tách và **thu tiền lần thứ hai**. Tức phát biểu gốc của
+> proposal — hai bản ghi thanh toán cho một lần thu tiền — **đúng về bản chất**, chỉ sai về đường
+> dẫn tới hậu quả. Câu hỏi đặt ra ở dòng dưới đã được trả lời, và câu trả lời là "không đúng".
+> Xem tài liệu `04` lỗi 2. Đính chính sai này **đã được gỡ khỏi `proposal.md`** ngày 07/09/2026.
 
 **Xin người đánh giá xét:** đính chính này có đúng không? Nếu phân tích ở tài liệu `01` sai ở một chỗ nào đó thì đính chính này cũng sai, và mức ưu tiên của change phải xét lại.

@@ -1,5 +1,13 @@
 # 03 — Ba câu đang mở
 
+> **CẢNH BÁO — cả ba đề xuất trong tài liệu này đã bị đánh giá độc lập bác một phần.**
+> Câu A: chỉ giữ chuỗi khóa là **chưa đủ**. Câu B: kết luận giữ được nhưng **lập luận phải viết lại**.
+> Câu C: bốn ràng buộc dọn dẹp **đặt trọng tâm sai chỗ**.
+> **Đọc [04-dinh-chinh-sau-danh-gia.md](04-dinh-chinh-sau-danh-gia.md) trước.**
+> Bản gốc được giữ nguyên có chủ ý để đối chiếu; các chỗ sai đã được đánh dấu tại chỗ.
+
+
+
 Ba câu này **chưa chốt**. Với mỗi câu, tài liệu trình bày cả hai phía và đề xuất hiện tại. Đây là phần cần đánh giá kỹ nhất.
 
 ---
@@ -45,6 +53,8 @@ Tức tải lại trang không phải hành động hiếm ở ngoài lề — n
 
 Phương án dùng IndexedDB đầy đủ bị loại vì nó thuộc phạm vi của change `add-offline-data-layer` ở tuần 11–13; làm sớm là lấn phạm vi và sẽ phải viết lại.
 
+> **CHƯA ĐỦ — xem tài liệu `04`.** Chỉ giữ chuỗi khóa thì sau khi tải lại trang ứng dụng **không có cách nào biết** đơn vừa nhập lại là thao tác của khóa cũ hay một đơn mới trùng nội dung. Cần giữ đủ thông tin khôi phục thao tác đang chờ: khóa, cửa hàng, loại thao tác, payload cùng các UUID đã sinh, version gốc, trạng thái xử lý.
+
 ### Chỗ chưa chắc, xin đánh giá
 
 1. **Nhiều tab cùng mở.** `sessionStorage` tách riêng theo tab. Hai tab cùng thao tác trên một đơn thì mỗi tab có khóa riêng — có sinh vấn đề gì không, hay đúng là hành vi mong muốn vì đó là hai ý định khác nhau?
@@ -78,6 +88,8 @@ Chủ dự án nghiêng về B với lý do: B **chủ động tải lại để
 
 Nghĩa là chọn A không đồng nghĩa với dữ liệu cũ: ảnh chụp phát lại chỉ dùng cho phản hồi tức thì, và ngay sau đó cơ chế có sẵn kéo về trạng thái mới.
 
+> **LẬP LUẬN NÀY QUÁ MẠNH — xem tài liệu `04`.** Invalidation chạy nền và **nuốt lỗi**; giao diện in biên lai **trực tiếp từ kết quả trả về, không chờ refetch**. Vẫn chọn A được, nhưng phải kèm hợp đồng rõ: kết quả phát lại mô tả **thao tác lịch sử**, trạng thái hiện tại lấy bằng truy vấn riêng.
+
 ### So sánh kiểu hỏng
 
 | | Hỏng như thế nào |
@@ -109,6 +121,8 @@ Tuần 11–13 làm chế độ ngoại tuyến. Hàng đợi có thể nằm tr
 ### Đề xuất hiện tại
 
 **7 ngày**, dư an toàn kể cả khi cửa sổ ngoại tuyến nới gấp mười lần.
+
+> **BỐN RÀNG BUỘC DƯỚI ĐÂY ĐẶT TRỌNG TÂM SAI — xem tài liệu `04`.** Lô 10.000 dòng không bảo vệ gì khi cả bảng chỉ ~2.800 dòng. Và thiếu cron **không phá bảo đảm chống trùng**, nó chỉ làm bảng lớn hơn; thứ phá bảo đảm là **xóa nhầm khóa còn hạn**.
 
 ### Rủi ro của việc dọn, và bốn ràng buộc đề xuất
 

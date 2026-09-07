@@ -65,19 +65,40 @@ Change này **không phụ thuộc chế độ ngoại tuyến** và đáng làm
 
 Ghi ngày 2026-09-07. Đánh số theo câu hỏi ở mục trên. Câu 1, 2, 3 còn đang trao đổi thêm.
 
-**Đính chính phần Why, ghi trước mọi quyết định.** Phần Why viết rằng hậu quả là "hai bản ghi thanh toán cho một lần thu tiền, kéo theo doanh thu sai". Rà mã ngày 2026-09-07 cho thấy **điều đó đã bị chặn sẵn**:
+**Phần Why giữ nguyên. Một đính chính ghi ngày 2026-09-07 đã bị rút lại cùng ngày.**
 
-| Lời gọi | Guard đang có | Gọi lại thì sao |
+Ngày 2026-09-07, sau khi rà mã, mục này từng ghi rằng phần Why "nói quá" vì đường dẫn tới bản ghi thanh toán trùng đã bị khóa lạc quan chặn. **Đính chính đó sai và đã được rút.**
+
+Một AI độc lập rà lại cùng ngày và chỉ ra ca sau, đã kiểm chứng lại bằng mã:
+
+1. Đơn có 5 ly, `lock_version = 5`. Thu ngân chọn trả 1 ly qua `pay_order_items`.
+2. Máy chủ tách và ghi thanh toán. Đơn nguồn còn 4 ly, version thành 6. **Phản hồi bị mất.**
+3. Polling 5 giây kéo về version 6.
+4. Giao diện **giữ lại lựa chọn**: `src/app/drawers/pos/PaymentDrawer.tsx:51-60` kẹp lựa chọn về dữ liệu mới chứ không xóa.
+5. Thu ngân bấm lại. `src/features/pos/orderFlow.ts:418-428` sinh **định danh mới** cho `paymentId`, `newOrderId` và `splitItemId`, gửi kèm **version 6 hiện tại**.
+6. Version khớp, guard cho qua. Một ly nữa bị tách và thu tiền.
+
+Kết quả: **hai bản ghi thanh toán trên hai đơn tách, cho một ý định thu tiền duy nhất.** Khóa lạc quan không hề bị vi phạm vì version đã tiến hợp lệ — đó chính là lý do nó không cứu được ca này.
+
+Phát biểu gốc của phần Why vì vậy **đúng về bản chất**, chỉ mô tả sai đường dẫn tới hậu quả.
+
+Phân tích đầy đủ, gồm tám lỗi khác đã xác nhận trong bản rà đầu tiên, nằm ở `docs/reviews/2026-09-07-idempotency/04-dinh-chinh-sau-danh-gia.md`.
+
+**Hiện trạng đúng sau khi rà lại hai vòng:**
+
+| Ca | Bị chặn chưa | Bằng chứng |
 | --- | --- | --- |
-| `pay_order` | `status <> 'open'` cộng `lock_version` (012) | `ORDER_VERSION_CONFLICT`, không sinh bản ghi thứ hai |
-| `pay_order_items` | như trên, trên đơn nguồn (012:110–112) | Bị chặn |
-| `void_order` | `status <> 'paid'` cộng `lock_version` (011:157–158) | Bị chặn |
-| `submit_order_changes`, đơn đã có | `lock_version` | Bị chặn |
-| **`submit_order_changes`, đơn mới** | **không có** | **Tạo đơn thứ hai** |
+| Gửi lại **nguyên yêu cầu cũ** | **Có** | `items[].id` giữ nguyên, vướng khóa chính `order_items` (`001_schema_enums.sql`) |
+| Tạo đơn **tại bàn** | **Có, hai lớp** | Guard "bàn đã có đơn mở" trong `submit_order_changes` (012), cộng chỉ mục duy nhất `orders_store_table_open_idx` (`002_indexes_rls_triggers.sql:70`) |
+| `pay_order` bấm lại | **Có** | `status <> 'open'` cộng `lock_version` |
+| `void_order` bấm lại | **Có** | `status <> 'paid'` cộng `lock_version` (011:157) |
+| **Tạo đơn mang đi, định danh mới sau khi tải lại trang** | **Không** | `table_id` là `null` nên cả guard lẫn chỉ mục đều không áp |
+| **`pay_order_items` bấm lại sau khi version đã tiến hợp lệ** | **Không. Thu tiền hai lần** | Xem diễn biến sáu bước ở trên |
+| **Gọi RPC trực tiếp với `p_expected_lock_version = NULL`** | **Không. Bỏ qua kiểm phiên bản** | So sánh `lock_version <> NULL` cho `NULL`, `IF` không chạy nhánh từ chối |
 
-Đơn mới thủng vì đơn chưa tồn tại nên không có `lock_version` để đối chiếu, và `orderId` do adapter tự sinh ở `src/adapters/supabase/orderRepo.ts:91` — mỗi lần gọi một UUID khác.
+Phát biểu đúng, thay cho phát biểu cũ: **gửi lại nguyên yêu cầu cũ thường bị chặn; bấm lại sau khi dữ liệu và định danh đã thay đổi vẫn lặp được nghiệp vụ, và ca nặng nhất là tách đơn thanh toán hai lần.**
 
-Hại thật hiện nay vì vậy là: **sai dữ liệu chỉ ở luồng tạo đơn mới**; ba luồng còn lại là **trải nghiệm tệ** — thu ngân bấm lại, nhận lỗi khó hiểu, không biết tiền đã vào chưa. Change vẫn đáng làm, nhưng phải mô tả đúng mức thay vì nói quá.
+Lỗ hổng `NULL` ở dòng cuối bảng là **vấn đề độc lập với change này** và nên xử lý riêng, không gộp vào phần chống trùng.
 
 **4. Áp khóa cho bốn lời gọi: `submit_order_changes`, `pay_order`, `pay_order_items`, `void_order`.** Chốt 2026-09-07.
 
@@ -89,11 +110,17 @@ Ba phương án đã cân nhắc:
 | b | Bốn lời gọi trên | **Chọn.** Toàn bộ nhóm đụng tiền và đụng trạng thái đơn — ranh giới tự nhiên, không phải con số chọn bừa |
 | c | Thêm cả thao tác quản trị | **Loại.** Thừa, xem lý do bên dưới |
 
-Lý do loại c: mọi kiểu `*Create` trong `src/domain/changes.ts` đều **mang sẵn `id` do client sinh** — `CategoryCreate`, `MenuItemCreate`, `OptionGroupCreate` và các kiểu còn lại. Gửi lại cùng một changeset là gửi lại cùng khóa chính, nên không sinh bản ghi trùng. Chúng đã **bình thường hóa sẵn**: làm hai lần bằng làm một lần.
+Lý do loại c, **đã sửa ngày 2026-09-07 sau đánh giá độc lập**: giới hạn phạm vi change, **không phải** vì thao tác quản trị đã tự an toàn.
+
+Lý do cũ ghi rằng chúng tự an toàn nhờ mọi kiểu `*Create` mang sẵn `id` do client sinh. **Điều đó không đủ.** `src/adapters/supabase/menuRepo.ts:51` cho thấy `saveMenuChanges` thực hiện **nhiều request nối tiếp**, không phải một giao dịch: tạo category xong mà tạo món hỏng, thì gửi lại nguyên changeset sẽ lỗi trùng khóa ở phần đã xong **trước khi** tới phần chưa xong.
 
 Nguyên tắc phân loại, ghi lại để dùng cho change sau: chỉ thao tác **không bình thường hóa** mới cần khóa. Đặt thực đơn thành trạng thái X thì làm mười lần vẫn ra X; tạo một đơn thì làm hai lần ra hai đơn.
 
-Riêng `void_order`: hủy một đơn đã hủy vẫn ra trạng thái đã hủy, nên **về mặt trạng thái nó đã bình thường hóa**. Nó vẫn nằm trong phạm vi vì hai lý do khác: nó ghi dấu vết kiểm toán gồm người hủy, thời điểm và lý do — gọi hai lần thì dấu vết thứ hai là rác; và nó đụng số liệu tiền hủy trong báo cáo.
+Riêng `void_order`: hủy một đơn đã hủy vẫn ra trạng thái đã hủy, nên **về mặt trạng thái nó đã bình thường hóa**.
+
+Lý do giữ nó trong phạm vi, **đã sửa ngày 2026-09-07**: sau khi mất phản hồi, caller **cần xác nhận thao tác hủy trước đã thành công hay chưa**.
+
+Lý do cũ ghi rằng gọi hai lần sinh dấu vết kiểm toán rác. **Sai với mã**: lần gọi thứ hai bị guard trạng thái chặn **trước khi** cập nhật các trường kiểm toán (`011_void_paid_order.sql:157`).
 
 **6. Không bật tự động thử lại. Giữ người dùng chủ động bấm lại.** Chốt 2026-09-07.
 

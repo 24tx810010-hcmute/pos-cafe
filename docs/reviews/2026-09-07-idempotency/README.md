@@ -1,5 +1,12 @@
 # Tập tài liệu nhờ đánh giá độc lập — Khóa chống trùng cho các lời gọi ghi
 
+> **CẢNH BÁO — tài liệu `01` có tám lỗi đã được xác nhận.**
+> Một AI độc lập đã rà ngày 07/09/2026 và tìm ra tám kết luận sai, trong đó ba lỗi
+> làm sai kết luận trung tâm. **Đọc [04-dinh-chinh-sau-danh-gia.md](04-dinh-chinh-sau-danh-gia.md) trước.**
+> Bản gốc được giữ nguyên có chủ ý để đối chiếu; các chỗ sai đã được đánh dấu tại chỗ.
+
+
+
 Ngày lập: **07/09/2026**. Kho mã tại `main@7183b31`.
 
 ## Nhờ đánh giá cái gì
@@ -21,6 +28,9 @@ Tập tài liệu này gom **toàn bộ phân tích, bằng chứng mã nguồn 
 | [01-hien-trang-va-bang-chung.md](01-hien-trang-va-bang-chung.md) | Vấn đề gốc, kiến trúc liên quan, và **mọi trích đoạn mã** làm bằng chứng |
 | [02-quyet-dinh-da-chot.md](02-quyet-dinh-da-chot.md) | Bốn quyết định đã chốt, kèm phương án bị loại và lý do loại |
 | [03-ba-cau-dang-mo.md](03-ba-cau-dang-mo.md) | Ba câu chưa chốt, hai phía của mỗi câu, và đề xuất hiện tại |
+| [04-dinh-chinh-sau-danh-gia.md](04-dinh-chinh-sau-danh-gia.md) | **Kết quả đánh giá độc lập ngày 07/09: tám lỗi đã xác nhận, hiện trạng sau đính chính** |
+
+**Trạng thái: đã qua một vòng đánh giá độc lập.** Kết quả nằm ở tài liệu `04`. Người đánh giá đúng ở mọi khẳng định kiểm chứng được; ba lỗi làm sai kết luận trung tâm và một phát hiện mới là lỗ hổng `NULL` trong khóa lạc quan. Vòng đánh giá tiếp theo nên bắt đầu từ tài liệu `04`.
 
 ## Những chỗ tôi tự biết là chưa chắc
 

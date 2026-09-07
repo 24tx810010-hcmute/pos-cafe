@@ -1,5 +1,12 @@
 # 01 — Hiện trạng và bằng chứng mã nguồn
 
+> **CẢNH BÁO — tài liệu này có tám lỗi đã được xác nhận.**
+> Một AI độc lập đã rà ngày 07/09/2026 và tìm ra tám kết luận sai, trong đó ba lỗi
+> làm sai kết luận trung tâm. **Đọc [04-dinh-chinh-sau-danh-gia.md](04-dinh-chinh-sau-danh-gia.md) trước.**
+> Bản gốc được giữ nguyên có chủ ý để đối chiếu; các chỗ sai đã được đánh dấu tại chỗ.
+
+
+
 Mọi trích đoạn dưới đây lấy từ `main@7183b31` ngày 07/09/2026. Người đánh giá kiểm được trực tiếp từ tài liệu này mà không cần truy cập kho mã.
 
 ## 1. Vấn đề gốc
@@ -76,6 +83,8 @@ async submitOrderChanges(input: SubmitOrderChangesInput): Promise<SubmitOrderCha
 }
 ```
 
+> **SAI — xem đính chính lỗi 5.** Tầng nghiệp vụ **có** truyền `paymentId` xuống (`orderFlow.ts:308`). Vấn đề thật là flow sinh định danh mới ở mỗi lần gọi, không phải adapter tự sinh.
+
 **Nhận xét.** Cả hai adapter sinh UUID mới nếu tầng gọi không truyền định danh xuống. Nghĩa là **mỗi lần gọi lại tạo ra một định danh khác**, và máy chủ nhìn thấy một thao tác hoàn toàn mới.
 
 Đã kiểm bằng tìm kiếm toàn kho: **giao diện chưa bao giờ truyền `paymentId` xuống** — không có kết quả nào cho `paymentId` trong `src/features/pos/useOrderPaymentFlow.ts` và trong các thành phần giao diện POS. Nên nhánh `crypto.randomUUID()` là nhánh luôn chạy.
@@ -150,6 +159,8 @@ Và kiểu dữ liệu của phiên bản khóa, `src/domain/inputs.ts` dòng 45
 
 Đơn mới truyền `null` cho trường này — xác nhận trong `src/features/pos/orderFlow.test.ts` dòng 139, 216, 274.
 
+> **SAI — xem đính chính lỗi 1 và 7.** Có ba lớp chặn bị bỏ sót: guard "bàn đã có đơn mở" trong RPC, chỉ mục duy nhất `orders_store_table_open_idx`, và khóa chính của `order_items` khi gửi lại nguyên giỏ. Ca thủng thật thu hẹp còn **đơn mang đi, định danh mới sau khi tải lại trang**.
+
 **Kết luận cần bạn kiểm.** Với một đơn mới:
 
 - Đơn chưa tồn tại, nên **không có `lock_version` nào để đối chiếu**.
@@ -158,6 +169,8 @@ Và kiểu dữ liệu của phiên bản khóa, `src/domain/inputs.ts` dòng 45
 Vì vậy lần bấm thứ hai trông giống hệt một đơn hoàn toàn mới, và máy chủ tạo đơn thứ hai. Đây là ca duy nhất trong bốn ca thực sự sinh dữ liệu trùng.
 
 ## 6. Hai cơ chế khác nhau cho hai bài toán khác nhau
+
+> **SAI KHUNG — xem đính chính lỗi 3.** Khung đúng là "trạng thái còn khớp phiên bản không" đối lại "thao tác này đã áp dụng chưa", chứ không phải "nhiều máy" đối lại "một máy". Hai yêu cầu mang khóa mới và version mới đều hợp lệ vượt được **cả hai** cơ chế.
 
 Bảng này là một kết luận quan trọng, xin bạn soi kỹ.
 
@@ -210,6 +223,8 @@ export type OptionGroupCreate = {
 };
 ```
 
+> **KHÔNG ĐỦ — xem đính chính.** `saveMenuChanges` thực hiện **nhiều request nối tiếp**, không phải một giao dịch (`menuRepo.ts:51`). Hỏng giữa chừng rồi gửi lại sẽ lỗi trùng khóa ở phần đã xong, trước khi tới phần chưa xong.
+
 Mọi kiểu `*Create` **mang sẵn `id: string`** do client sinh. Gửi lại cùng một changeset là ghi lại cùng khóa chính, nên không sinh bản ghi trùng.
 
 ## 8. Bằng chứng: nơi giữ trạng thái phía client
@@ -228,6 +243,8 @@ type AppState = {
   setDraftItems: (items: SubmitOrderDraftItem[]) => void;
 };
 ```
+
+> **THIẾU CHÍNH XÁC — xem đính chính lỗi 8.** Kho zustand thì còn, nhưng `OrderDrawer.tsx:59-64` có effect **ghi đè giỏ khi mở ngăn kéo**: mở đơn mới thì xóa, mở đơn có sẵn thì dựng lại từ máy chủ.
 
 Giỏ hàng đang soạn (`draftItems`) nằm ở đây chứ không nằm trong state của thành phần React. Hệ quả: nó **sống sót khi ngăn kéo đóng mở**, nhưng **mất khi tải lại trang**.
 
@@ -260,6 +277,8 @@ export const invalidateAfterOrderMutation = async (
 
 Đoạn mã này quan trọng cho lập luận ở tài liệu `03` câu B.
 
+> **DÙNG SAI — xem đính chính.** Đoạn này **không** cứu được lập luận "refetch giải quyết ảnh chụp cũ", vì nó chạy nền và **nuốt lỗi** (`useOrderPaymentFlow.ts:51`), còn giao diện in biên lai **trực tiếp từ kết quả trả về, không chờ refetch** (`PaymentDrawer.tsx:187`).
+
 ## 10. Bằng chứng: hệ không tự thử lại
 
 `src/app/AppProviders.tsx`:
@@ -281,6 +300,8 @@ const queryClient = useMemo(
 
 `retry: false` áp cho toàn bộ truy vấn. Hệ hiện **không tự thử lại bất cứ lời gọi nào**.
 
+> **BẰNG CHỨNG SAI PHẠM VI — xem đính chính lỗi 8.** Cấu hình này áp cho **truy vấn**, không áp cho **mutation**. Kết luận tình cờ đúng vì mutation mặc định không thử lại, nhưng đoạn mã trích không chứng minh được điều đó.
+
 ## 11. Tóm tắt hiện trạng
 
 | Lời gọi | Guard đang có | Gọi lại thì sao |
@@ -296,4 +317,8 @@ Hại thật hiện nay:
 - **Sai dữ liệu**: chỉ ở luồng tạo đơn mới.
 - **Trải nghiệm tệ**: ở ba luồng còn lại — thu ngân bấm lại, nhận lỗi khó hiểu, và **không biết tiền đã vào hay chưa**.
 
-Bản `proposal.md` gốc của change này viết rằng hậu quả là *"hai bản ghi thanh toán cho một lần thu tiền, kéo theo doanh thu sai"*. Theo phân tích trên thì **phát biểu đó nói quá**, và đã được đính chính trong proposal ngày 07/09/2026.
+> **BẢNG NÀY SAI — xem tài liệu `04` để có bảng đúng.** `pay_order_items` **không** được chặn: bấm lại sau khi version đã tiến hợp lệ sẽ tách và thu tiền lần thứ hai.
+
+Bản `proposal.md` gốc của change này viết rằng hậu quả là *"hai bản ghi thanh toán cho một lần thu tiền, kéo theo doanh thu sai"*. Tài liệu này từng kết luận **phát biểu đó nói quá**.
+
+> **KẾT LUẬN ĐÓ SAI.** Đánh giá độc lập cho thấy `pay_order_items` lặp được nghiệp vụ và sinh **hai bản ghi thanh toán cho một ý định thu tiền**. Phát biểu gốc của proposal đúng về bản chất, chỉ sai về đường dẫn tới hậu quả. Xem tài liệu `04` lỗi 2.
