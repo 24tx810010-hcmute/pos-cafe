@@ -114,7 +114,7 @@ Cột "testid" liệt kê định danh **đã tồn tại** trong `src/app`. Thi
 - [x] 8.1 Cập nhật `docs/requirements.md` phần NFR-07, trỏ tới `docs/test-strategy.md` làm định nghĩa "bằng chứng nhiều lớp"
 - [x] 8.2 Cập nhật `pos-cafe-context.md` nếu phần mô tả quy trình kiểm thử đã lỗi thời
 - [x] 8.3 Đánh dấu mục 1 trong `docs/roadmap.md` là xong, ghi ngày
-- [ ] 8.4 Chạy `openspec archive define-test-strategy --store pos-cafe-docs`
+- [x] 8.4 Chạy `openspec archive define-test-strategy --store pos-cafe-docs` — archive thành `2026-09-07-define-test-strategy` ngày 07/09/2026
 
 ## Việc không thuộc change này
 
