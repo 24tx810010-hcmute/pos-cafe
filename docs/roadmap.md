@@ -162,6 +162,11 @@ Ngày 2026-08-28, ba đề xuất của tầng này đã được viết chi ti�
 
 - `add-offline-data-layer` → `add-offline-status-ux`, `add-offline-sync-conflict-resolution`
 
+**Tầng F2 — Hiệu năng và phiên chạy dài.** Thêm ngày 07/09/2026 sau khi rà mã: tải của hệ gần như toàn bộ là đọc do polling, không phải ghi. Chưa có số đo nào nên chưa xếp trước sau với các tầng khác.
+
+- `measure-runtime-load` → `optimize-runtime-load`
+- `handle-long-running-session`, làm cùng đợt với `measure-runtime-load` vì dùng chung môi trường chạy dài, và nên trước `add-offline-data-layer`
+
 **Tầng G — Ca làm việc.** Chuyển xuống đây ngày 30/08/2026 để nhường ba tuần cho nhóm ngoại tuyến. Vẫn là ứng viên mạnh nhất cho nhóm tính năng kế tiếp.
 
 - `add-employee-time-clock` → `add-shift-management`

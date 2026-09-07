@@ -26,9 +26,13 @@ Các proposal trỏ tới phần đã di chuyển đã được cập nhật the
 
 ## Trạng thái hiện tại của `changes/`
 
-25 trong 27 change đang ở trạng thái **mới có `proposal.md`**, chưa có `specs/`, `design.md`, `tasks.md`. Đây là chủ ý, không phải thiếu sót. Hai change đã có đủ bốn artifact và sẵn sàng implement: `redesign-permission-model` và `add-owner-account-and-store-provisioning` (viết ngày 2026-08-31).
+27 trong 29 change đang ở trạng thái **mới có `proposal.md`**, chưa có các artifact còn lại. Đây là chủ ý, không phải thiếu sót. Hai change đã có đủ bốn artifact và sẵn sàng implement: `redesign-permission-model` và `add-owner-account-and-store-provisioning` (viết ngày 2026-08-31).
 
-Vì vậy `openspec validate --changes` báo lỗi `Change must have at least one delta` cho 20 change. Đó là trạng thái mong đợi: delta spec chỉ được viết sau khi các câu hỏi trong proposal đã có câu trả lời. 5 change thuộc nhóm công cụ và quy trình đặt `skip_specs: true` nên pass, cộng hai change đã có delta, tổng 7 pass.
+`define-test-strategy` đã hoàn tất và archive ngày 2026-09-07 thành `changes/archive/2026-09-07-define-test-strategy`. Nó là **khuôn mẫu** của chuẩn bảy artifact.
+
+Ba change thêm ngày 2026-09-07 sau khi rà tải lúc chạy: `measure-runtime-load`, `optimize-runtime-load` và `handle-long-running-session`. Xem mục "Nhóm hiệu năng và phiên chạy dài" bên dưới.
+
+Vì vậy `openspec validate --changes` báo lỗi `Change must have at least one delta` cho 21 change. Đó là trạng thái mong đợi: delta spec chỉ được viết sau khi các câu hỏi trong proposal đã có câu trả lời. 6 change thuộc nhóm công cụ và quy trình đặt `skip_specs: true` nên pass, cộng hai change đã có delta, tổng 8 pass.
 
 Hai change đã có mục `## Quyết định đã chốt` được điền:
 
@@ -65,7 +69,23 @@ Mỗi proposal có section `## Phụ thuộc`. Các quan hệ chính:
 - Quan hệ giữa `add-owner-account-and-store-provisioning` và `enforce-permissions-at-database` tùy **phạm vi** của cái sau. Với bản đầy đủ có danh tính riêng cho từng nhân viên ở tầng chính sách bảo mật thì tài khoản chủ **bắt buộc** làm trước. Với bản thu hẹp, tức mọi lời gọi nhạy cảm đọc lại quyền từ cơ sở dữ liệu, thứ tự ngược lại rẻ hơn; xem phần "Vì sao thứ tự này" trong `docs/roadmap.md`.
 - `add-multi-store-ownership` bắt buộc trước `add-cross-store-reporting`.
 - `add-idempotent-write-operations` bắt buộc trước `add-offline-data-layer`, và nên trước `enforce-permissions-at-database` nếu cả hai cùng sửa chữ ký các lời gọi ghi.
+- `measure-runtime-load` bắt buộc trước `optimize-runtime-load`.
+- `handle-long-running-session` nên trước `add-offline-data-layer`.
 - `add-offline-data-layer` bắt buộc trước hai change offline còn lại. Riêng lát mỏng hiển thị trạng thái mạng trong `add-offline-status-ux` làm được độc lập trước.
+
+## Nhóm hiệu năng và phiên chạy dài
+
+Thêm ngày 2026-09-07 sau khi rà mã và phát hiện tải của hệ gần như toàn bộ là **đọc do polling**, không phải ghi, chênh khoảng 50 lần. Ba change này tách nhau vì chúng có mức rủi ro và thứ tự bắt buộc khác nhau:
+
+| Change | Việc | Rủi ro |
+| --- | --- | --- |
+| `measure-runtime-load` | Đo độ trễ RPC, đếm tải polling thật, rà hạn mức Supabase | Thấp. Chỉ đo, không sửa |
+| `optimize-runtime-load` | Giảm tải polling, xem lại quan hệ polling và realtime | **Cao.** Đụng nhịp đồng bộ giữa các máy |
+| `handle-long-running-session` | Xử lý tích tụ bộ nhớ khi tab mở liên tục nhiều ngày | Trung bình. Phía trình duyệt |
+
+`measure-runtime-load` **bắt buộc trước** `optimize-runtime-load`. Chưa có số nền thì không chứng minh được tối ưu có tác dụng, và rất dễ tối ưu nhầm chỗ rẻ trong khi bỏ qua chỗ đắt.
+
+`handle-long-running-session` nên làm **cùng đợt** với `measure-runtime-load` vì cả hai cùng cần một môi trường chạy dài, và nên làm **trước** `add-offline-data-layer` vì change đó thêm một kho dữ liệu sống lâu trên máy.
 
 ## Change lật lại quyết định đã chốt
 
