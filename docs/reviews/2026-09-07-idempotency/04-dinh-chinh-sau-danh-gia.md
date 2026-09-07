@@ -46,10 +46,13 @@ Nguyên nhân sai: khi rà, chỉ tìm `unique` trong `001_schema_enums.sql` và
 | Ca | Bị chặn chưa | Vì sao |
 | --- | --- | --- |
 | Gửi lại nguyên yêu cầu cũ | **Có** | `items[].id` trùng khóa chính |
-| Đơn **tại bàn** tạo mới | **Có, hai lớp** | Guard trong RPC cộng chỉ mục duy nhất |
+| Đơn **tại bàn** tạo mới, **đơn đầu vẫn mở** | **Có, hai lớp** | Guard trong RPC cộng chỉ mục duy nhất |
+| Đơn **tại bàn** tạo mới, **đơn đầu đã đóng** | **Không** | Cả guard lẫn chỉ mục chỉ xét `status = 'open'` — xem tài liệu `06` mục 2.1 |
 | Đơn **mang đi** tạo mới, định danh mới | **Không** | `table_id` là `null` nên **cả guard lẫn chỉ mục đều không áp**; định danh mới nên không vướng khóa chính |
 
 Ca thủng thu hẹp lại còn: **tải lại trang rồi nhập lại một đơn mang đi**, vì lúc đó cả UUID đơn lẫn UUID món đều được sinh lại.
+
+> **CÂU TRÊN VẪN QUÁ HẸP — sửa ngày 07/09/2026 sau vòng hai.** Đơn **tại bàn** cũng thủng khi đơn đầu đã đóng: máy A tạo đơn rồi mất phản hồi, máy B thanh toán xong nên bàn được giải phóng, máy A nhập lại thì cả guard lẫn chỉ mục đều không áp vì cả hai chỉ xét `status = 'open'`. Xem [06-ket-qua-vong-hai.md](06-ket-qua-vong-hai.md) mục 2.1.
 
 ---
 
@@ -237,7 +240,8 @@ Còn `void_order`: lý do "gọi hai lần sinh dấu vết kiểm toán rác" *
 | Ca | Bị chặn chưa |
 | --- | --- |
 | Gửi lại nguyên yêu cầu cũ | **Có** — trùng khóa chính `order_items` |
-| Tạo đơn tại bàn | **Có** — guard RPC cộng chỉ mục duy nhất |
+| Tạo đơn tại bàn, **đơn đầu vẫn mở** | **Có** — guard RPC cộng chỉ mục duy nhất |
+| **Tạo đơn tại bàn, đơn đầu đã đóng** | **Không.** Cả hai lớp chỉ xét `status = 'open'` |
 | `pay_order` bấm lại | **Có** — `status` không còn `open` |
 | `void_order` bấm lại | **Có** — `status` không còn `paid` |
 | **Tạo đơn mang đi, định danh mới sau tải lại trang** | **Không** |

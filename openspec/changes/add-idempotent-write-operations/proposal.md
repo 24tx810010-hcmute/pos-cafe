@@ -2,7 +2,9 @@
 
 ## Why
 
-Adapter thanh toán hiện sinh định danh mới mỗi lần gọi nếu tầng trên không truyền xuống, và adapter đơn hàng cũng vậy với định danh đơn. Nghĩa là một yêu cầu **đã chạy xong phía database nhưng bị timeout phía client**, rồi được gọi lại, sẽ tạo ra bản ghi thứ hai thay vì bị chặn.
+Khi người dùng bấm lại sau một lần mất phản hồi, ứng dụng hiện **dựng lại lệnh từ màn hình đang hiển thị** thay vì gửi lại chính lệnh đã xác nhận: `src/features/pos/orderFlow.ts` sinh định danh mới ở mỗi lần gọi (`orderFlow.ts:308`, `:418-428`), lấy `lock_version` mới nhất mà polling vừa kéo về, và kẹp lại lựa chọn theo dữ liệu mới. Nghĩa là một yêu cầu **đã chạy xong phía database nhưng bị timeout phía client**, rồi được gọi lại, có thể được máy chủ nhìn thành một thao tác hoàn toàn khác.
+
+Hệ hiện có sẵn vài lớp chặn, và chúng **có tác dụng khi lần gửi lại giữ nguyên định danh cũ**: khóa chính của `order_items`, chỉ mục duy nhất một-đơn-mở-trên-một-bàn, và guard trạng thái cộng `lock_version` trong từng RPC. Nhưng không lớp nào trong số đó nhận diện được **cùng một ý định nghiệp vụ** khi định danh và ngữ cảnh đã đổi. Hai ca đã xác minh bằng đọc mã: bấm lại `pay_order_items` sau khi phiên bản đã tiến hợp lệ thì **ghi nhận thanh toán thêm lần nữa**; và tạo lại một đơn tại bàn sau khi máy khác đã thanh toán đơn đầu thì **qua được cả guard lẫn chỉ mục**, vì cả hai chỉ xét `status = 'open'`.
 
 Định danh do client sinh vốn là điểm mạnh của thiết kế hiện tại: đơn, dòng món và thanh toán đều mang khóa chính dạng UUID do client tạo, nên về nguyên tắc chống trùng được bằng chính khóa chính. Nhưng hiện việc đó **phụ thuộc vào việc tầng gọi có nhớ truyền định danh ổn định xuống hay không**, chứ không phải một bảo đảm của hệ thống. Một chỗ quên là mất bảo đảm.
 
@@ -114,9 +116,14 @@ Lý do loại c, **đã sửa ngày 2026-09-07 sau đánh giá độc lập**: g
 
 Lý do cũ ghi rằng chúng tự an toàn nhờ mọi kiểu `*Create` mang sẵn `id` do client sinh. **Điều đó không đủ.** `src/adapters/supabase/menuRepo.ts:51` cho thấy `saveMenuChanges` thực hiện **nhiều request nối tiếp**, không phải một giao dịch: tạo category xong mà tạo món hỏng, thì gửi lại nguyên changeset sẽ lỗi trùng khóa ở phần đã xong **trước khi** tới phần chưa xong.
 
-Nguyên tắc phân loại, ghi lại để dùng cho change sau: chỉ thao tác **không bình thường hóa** mới cần khóa. Đặt thực đơn thành trạng thái X thì làm mười lần vẫn ra X; tạo một đơn thì làm hai lần ra hai đơn.
+Nguyên tắc phân loại, **đã sửa ngày 2026-09-07 sau đánh giá vòng hai**. Một thao tác cần khóa nếu thỏa **ít nhất một** trong hai điều kiện:
 
-Riêng `void_order`: hủy một đơn đã hủy vẫn ra trạng thái đã hủy, nên **về mặt trạng thái nó đã bình thường hóa**.
+1. **Nó không bình thường hóa** — làm hai lần cho kết quả khác làm một lần. Đặt thực đơn thành trạng thái X thì làm mười lần vẫn ra X; tạo một đơn thì làm hai lần ra hai đơn.
+2. **Caller cần xác nhận kết quả** — sau khi mất phản hồi, người dùng phải biết được lần gửi trước đã thành công hay chưa, và hệ phải trả lời được câu đó mà không thực hiện lại.
+
+Lý do sửa: nguyên tắc cũ chỉ có điều kiện 1, nên nó **mâu thuẫn với chính lý do giữ `void_order`** ghi ngay dưới đây. Điều kiện 2 là thứ làm hai đoạn nhất quán, và nó cũng đúng với bản chất bài toán — khóa chống trùng sinh ra để trả lời "việc này xong chưa", không chỉ để chặn ghi thừa.
+
+Riêng `void_order`: hủy một đơn đã hủy vẫn ra trạng thái đã hủy, nên **về mặt trạng thái nó đã bình thường hóa**. Nó vào phạm vi theo điều kiện 2, không theo điều kiện 1.
 
 Lý do giữ nó trong phạm vi, **đã sửa ngày 2026-09-07**: sau khi mất phản hồi, caller **cần xác nhận thao tác hủy trước đã thành công hay chưa**.
 
@@ -124,7 +131,9 @@ Lý do cũ ghi rằng gọi hai lần sinh dấu vết kiểm toán rác. **Sai 
 
 **6. Không bật tự động thử lại. Giữ người dùng chủ động bấm lại.** Chốt 2026-09-07.
 
-Hiện `src/app/AppProviders.tsx` đặt `retry: false` cho toàn bộ truy vấn, tức hệ đang không tự thử lại gì cả. Quyết định này giữ nguyên trạng đó.
+Hiện `src/app/AppProviders.tsx:31-36` đặt `retry: false` **trong khối `queries`**; không có khối `mutations`, nên các lời gọi ghi chạy theo mặc định của TanStack Query, vốn cũng không thử lại mutation. Quyết định này giữ nguyên trạng đó.
+
+*(Sửa ngày 2026-09-07: bản cũ suy từ `queries.retry: false` ra "hệ đang không tự thử lại gì cả". Kết luận về hành vi vẫn đúng, nhưng nó đúng nhờ mặc định của thư viện chứ không nhờ dòng cấu hình đó — và nếu sau này có ai đặt `mutations.retry`, dòng cấu hình kia sẽ không cản.)*
 
 | | Phương án | Lý do chọn hoặc loại |
 | --- | --- | --- |

@@ -29,11 +29,14 @@ Tập tài liệu này gom **toàn bộ phân tích, bằng chứng mã nguồn 
 | [02-quyet-dinh-da-chot.md](02-quyet-dinh-da-chot.md) | Bốn quyết định đã chốt, kèm phương án bị loại và lý do loại |
 | [03-ba-cau-dang-mo.md](03-ba-cau-dang-mo.md) | Ba câu chưa chốt, hai phía của mỗi câu, và đề xuất hiện tại |
 | [04-dinh-chinh-sau-danh-gia.md](04-dinh-chinh-sau-danh-gia.md) | **Kết quả đánh giá độc lập ngày 07/09: tám lỗi đã xác nhận, hiện trạng sau đính chính** |
-| [05-nho-danh-gia-vong-hai.md](05-nho-danh-gia-vong-hai.md) | **Nhờ đánh giá vòng hai: kiểm bản sửa, và một mâu thuẫn mới lộ ra** |
+| [05-nho-danh-gia-vong-hai.md](05-nho-danh-gia-vong-hai.md) | Nhờ đánh giá vòng hai: kiểm bản sửa, và một mâu thuẫn mới lộ ra |
+| [06-ket-qua-vong-hai.md](06-ket-qua-vong-hai.md) | **Kết quả vòng hai: định nghĩa "một thao tác", hợp đồng máy chủ, và câu trả lời cho A/B/C** |
 
-**Trạng thái: đã qua một vòng đánh giá độc lập, đang chờ vòng hai.** Người đánh giá đúng ở mọi khẳng định kiểm chứng được; ba lỗi làm sai kết luận trung tâm và một phát hiện mới là lỗ hổng `NULL` trong khóa lạc quan.
+**Trạng thái: đã qua hai vòng đánh giá độc lập. Đủ tiền đề để viết spec.**
 
-**Vòng hai bắt đầu từ [05-nho-danh-gia-vong-hai.md](05-nho-danh-gia-vong-hai.md)**, đọc kèm `04`. Không cần đọc lại `01` `02` `03` trừ khi muốn đối chiếu bản gốc.
+Vòng một tìm ra tám lỗi, ba trong số đó làm sai kết luận trung tâm, cộng một phát hiện mới là lỗ hổng `NULL` trong khóa lạc quan. Vòng hai xác nhận cả ba khẳng định của bản sửa, tìm thêm **hai chỗ bản sửa vẫn sai**, và trả lời câu quan trọng nhất — *"cùng một thao tác" là gì*. Cả hai chỗ sai đã được đính chính, và `proposal.md` đã được viết lại cho nhất quán.
+
+**Muốn nắm hiện trạng thì đọc [06-ket-qua-vong-hai.md](06-ket-qua-vong-hai.md).** Các tài liệu `01` `02` `03` là bản gốc trước đánh giá, giữ lại làm dấu vết quá trình; `04` và `06` là hai lần đính chính.
 
 ## Những chỗ tôi tự biết là chưa chắc
 

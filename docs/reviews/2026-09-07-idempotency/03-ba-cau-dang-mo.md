@@ -3,12 +3,13 @@
 > **CẢNH BÁO — cả ba đề xuất trong tài liệu này đã bị đánh giá độc lập bác một phần.**
 > Câu A: chỉ giữ chuỗi khóa là **chưa đủ**. Câu B: kết luận giữ được nhưng **lập luận phải viết lại**.
 > Câu C: bốn ràng buộc dọn dẹp **đặt trọng tâm sai chỗ**.
-> **Đọc [04-dinh-chinh-sau-danh-gia.md](04-dinh-chinh-sau-danh-gia.md) trước.**
+> **Cả ba câu nay đã có câu trả lời — đọc [06-ket-qua-vong-hai.md](06-ket-qua-vong-hai.md) mục 5.**
+> Câu A và B đã chốt; câu C hoãn có chủ ý vì cần định nghĩa thao tác quá hạn trước.
 > Bản gốc được giữ nguyên có chủ ý để đối chiếu; các chỗ sai đã được đánh dấu tại chỗ.
 
 
 
-Ba câu này **chưa chốt**. Với mỗi câu, tài liệu trình bày cả hai phía và đề xuất hiện tại. Đây là phần cần đánh giá kỹ nhất.
+Ba câu này **chưa chốt** tại thời điểm viết. Với mỗi câu, tài liệu trình bày cả hai phía và đề xuất hiện tại. Đây là phần cần đánh giá kỹ nhất.
 
 ---
 

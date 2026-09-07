@@ -1,5 +1,9 @@
 # 05 — Nhờ đánh giá vòng hai
 
+> **ĐÃ CÓ TRẢ LỜI — xem [06-ket-qua-vong-hai.md](06-ket-qua-vong-hai.md).**
+> Cả ba khẳng định 1a/1b/1c được xác nhận đúng; vòng hai tìm thêm hai chỗ sai và
+> đã trả lời câu *"cùng một thao tác là gì"*.
+
 Lập ngày 07/09/2026, ngay sau khi tiếp thu vòng một.
 
 ## Vòng một đã cho kết quả gì
