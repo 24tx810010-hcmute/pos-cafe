@@ -49,7 +49,7 @@ Tài liệu này chuyển phạm vi hiện hành thành yêu cầu có mã để
 | NFR-04 | Hỗ trợ màn hình vận hành ngang | Desktop, tablet/phone landscape dùng được; portrait hiển thị hướng dẫn xoay | Đã kiểm tra bằng Playwright đa viewport |
 | NFR-05 | Khả năng khôi phục đồng bộ online | Realtime signal kết hợp refetch/polling danh mục đang active | Đã triển khai; không phải SLA cứng |
 | NFR-06 | Build kiểm tra kiểu nghiêm ngặt | `tsc -b` với TypeScript strict và Vite production build phải pass | Đạt tại baseline |
-| NFR-07 | Có bằng chứng kiểm thử nhiều lớp | Unit/component/feature, architecture, mock smoke và cloud E2E tách riêng | Đạt một phần; xem ngày chạy trong [testing.md](testing.md) |
+| NFR-07 | Có bằng chứng kiểm thử nhiều lớp | Sáu tầng kiểm thử, tiêu chí "đủ test" theo loại thay đổi và cổng chất lượng định nghĩa tại [test-strategy.md](test-strategy.md); ngưỡng độ phủ 90% dòng trên phần logic nghiệp vụ thuần | **Đạt** từ 2026-09-07: chiến lược đã viết thành văn, độ phủ đo được 92,77%, kịch bản demo tự động hóa. Kết quả và ngày chạy trong [testing.md](testing.md) |
 | NFR-08 | Deploy web không cần server ứng dụng riêng | Vite build ra `dist`, Vercel SPA rewrite, Supabase làm backend managed | Đã cấu hình; URL live cần xác minh riêng trước khi claim |
 
 ## Ngoài Phạm Vi Hoặc Hoãn

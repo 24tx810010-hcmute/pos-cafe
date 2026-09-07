@@ -38,6 +38,10 @@ Baseline: `main@7183b31`. Môi trường cục bộ: Windows, Chromium do Playwr
 
 Không thêm và không chạy bước dọn dữ liệu. Năm cửa hàng thử được giữ lại theo quyết định của chủ dự án; nghĩa vụ dọn thuộc change `setup-test-data-environment` và phải hoàn tất trước khi kết thúc tuần 9.
 
+**Kiểm chứng độc lập cùng ngày.** Chạy lại toàn bộ trên một worktree khác, cây phụ thuộc cài bằng `npm`: `npm test` 260/260 pass, `npm run test:coverage` dòng 92,77% khớp từng chữ số, `npm run smoke` 35 pass/31 skipped/0 failed, project `demo-runbook` xanh trong **28,2 giây**. TC-TEST-09 tái hiện độc lập: gỡ `data-testid="submit-order-button-footer"` làm script đỏ đúng **Bước 5** với `element(s) not found`, khôi phục xong chạy lại xanh.
+
+Một sai khác duy nhất: lần chạy độc lập báo **3196 module** thay vì 3197. Nguyên nhân là cây phụ thuộc khác nhau — bản gốc chạy ở checkout cài bằng `pnpm`, bản kiểm chứng ở worktree cài bằng `npm`. **Khi đưa số module vào báo cáo phải ghi kèm cách cài**, vì con số phụ thuộc vào đó chứ không phải vào mã nguồn.
+
 ## Độ Phủ Nền, Đo Ngày 2026-09-07
 
 Lần đầu tiên đo được độ phủ, sau khi cài `@vitest/coverage-v8` theo `define-test-strategy`. Baseline: nhánh `claude/hopeful-albattani-42cb20`, xuất phát từ `main@c7f2f4e`.

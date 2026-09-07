@@ -31,7 +31,7 @@ Mười mục, làm tuần tự. Thứ tự dưới đây được xếp lại n
 
 | # | Tuần | Khoảng | Việc | Kết quả kiểm chứng được | Trạng thái |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 1 | 28/08 – 03/09 | Chiến lược kiểm thử, lưới an toàn và môi trường thử nghiệm | Chiến lược kiểm thử viết trọn theo chuẩn bảy artifact và dùng được làm khuôn mẫu; bộ kiểm thử chạy xanh trên baseline hiện tại | `[ ]` |
+| 1 | 1 | 28/08 – 03/09 | Chiến lược kiểm thử, lưới an toàn và môi trường thử nghiệm | Chiến lược kiểm thử viết trọn theo chuẩn bảy artifact và dùng được làm khuôn mẫu; bộ kiểm thử chạy xanh trên baseline hiện tại | `[x]` xong 07/09/2026 |
 | 2 | 2 | 04/09 – 10/09 | Khóa chống trùng cho lời gọi ghi, kèm tái cấu trúc dọn đường cho ba RPC tiền | Gọi hai lần cùng khóa cho kết quả như gọi một lần | `[ ]` |
 | 3 | 3–5 | 11/09 – 01/10 | Tổ chức lại phân quyền | Sáu vai trò, mười bốn quyền, điều hướng suy ra từ quyền, đổi quyền có hiệu lực ngay | `[ ]` |
 | 4 | 6 | 02/10 – 08/10 | Siết quyền xuống tầng dữ liệu, bản thu hẹp | Gọi thẳng vào cơ sở dữ liệu khi thiếu quyền bị từ chối | `[ ]` |
