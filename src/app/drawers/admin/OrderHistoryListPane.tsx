@@ -93,6 +93,9 @@ export function OrderHistoryListPane({
                 type="button"
                 key={order.id}
                 data-testid={`history-row-${order.id}`}
+                data-table-label={order.tableLabel}
+                data-total={order.total}
+                data-status={order.status}
                 onClick={() => onSelect(order.id)}
                 className={clsx(
                   "grid min-h-[76px] grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-[9px] border px-3 py-2 text-left transition-[border-color,background,box-shadow] max-[760px]:min-h-[68px] max-[760px]:px-2 max-[760px]:py-1.5",

@@ -146,7 +146,17 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
   const location = doc.orderType === "takeaway" ? "Mang đi" : doc.tableName ? `Bàn ${doc.tableName}` : "Tại bàn";
 
   return (
-    <div ref={ref} style={s.paper}>
+    <div
+      ref={ref}
+      style={s.paper}
+      data-testid="receipt-document"
+      data-variant={variant}
+      data-order-no={doc.orderNo}
+      data-total={doc.total}
+      data-table-name={doc.tableName ?? ""}
+      data-received-amount={receipt?.receivedAmount ?? ""}
+      data-change-amount={receipt?.changeAmount ?? ""}
+    >
       <div style={s.center}>
         <div style={s.storeName}>{store.name}</div>
         {store.address ? <div style={s.addr}>{store.address}</div> : null}
@@ -269,6 +279,7 @@ export function ReceiptPreviewPopup() {
         </div>
         <button
           type="button"
+          data-testid="receipt-close-header"
           aria-label="Đóng"
           onClick={close}
           className="grid h-8 w-8 place-items-center rounded-[8px] border border-pos-line bg-white text-pos-muted hover:border-pos-primary hover:text-pos-primary"
@@ -286,6 +297,7 @@ export function ReceiptPreviewPopup() {
       <div className="flex items-center justify-end gap-2 border-t border-pos-line px-4 py-3">
         <button
           type="button"
+          data-testid="receipt-close-footer"
           onClick={close}
           className="inline-flex h-9 items-center rounded-[9px] border border-pos-line bg-white px-4 text-sm font-bold text-pos-ink hover:border-pos-primary"
         >

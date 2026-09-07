@@ -103,6 +103,8 @@ export function PaymentCashierPane({
             >
               <input
                 id="payment-received-amount"
+                data-testid="payment-received-amount"
+                data-amount={receivedAmount}
                 value={formatAmountInputValue(receivedAmountInput)}
                 onChange={(event) => onAmountChange(event.target.value)}
                 inputMode="numeric"
@@ -124,6 +126,7 @@ export function PaymentCashierPane({
                 paymentText.body,
               )}
               data-testid="payment-insufficient-warning"
+              data-shortfall={Math.abs(changeAmount)}
             >
               <AlertTriangle size={15} />
               <span>Còn thiếu {formatVnd(Math.abs(changeAmount))}.</span>
@@ -137,6 +140,7 @@ export function PaymentCashierPane({
               <button
                 key={key}
                 type="button"
+                data-testid={`payment-key-${key}`}
                 className={clsx(
                   "min-h-[46px] rounded-pos border border-pos-line bg-white font-black text-pos-ink shadow-sm transition hover:border-pos-primary hover:bg-pos-primarySoft max-[900px]:min-h-[30px]",
                   paymentText.emphasis,
@@ -148,6 +152,7 @@ export function PaymentCashierPane({
             ))}
             <button
               type="button"
+              data-testid="payment-key-delete"
               className="grid min-h-[46px] place-items-center rounded-pos border border-pos-line bg-white text-pos-ink shadow-sm transition hover:border-pos-danger hover:bg-[#fff1f2] max-[900px]:min-h-[30px]"
               onClick={onDeleteDigit}
               aria-label="Xóa một số"

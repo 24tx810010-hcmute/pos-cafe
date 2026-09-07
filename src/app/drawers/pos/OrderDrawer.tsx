@@ -229,7 +229,7 @@ export function OrderDrawer() {
           </p>
         </div>
         <div className="flex min-w-0 flex-[0_1_auto] flex-wrap items-center justify-end gap-2.5 [&>*]:shrink-0 [&_.MuiButton-root]:min-h-9 [&_.MuiButton-root]:whitespace-nowrap max-sm:w-full max-sm:justify-start max-sm:[&_.MuiButton-root]:flex-[1_1_128px] max-[980px]:gap-2 max-[980px]:[&_.MuiButton-root]:min-h-[34px]">
-          <Button variant="outlined" onClick={handleClose}>
+          <Button variant="outlined" data-testid="order-close-button" onClick={handleClose}>
             Đóng
           </Button>
           {orderDetail && draftChanged && primaryAction !== "closed" && (

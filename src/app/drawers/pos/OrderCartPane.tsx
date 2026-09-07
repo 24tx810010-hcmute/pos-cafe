@@ -45,7 +45,14 @@ export function OrderCartPane({
       <div className="grid min-h-0 content-start gap-2 overflow-auto p-2.5">
         {cartLines.length ? (
           cartLines.map((line) => (
-            <div className="grid gap-1.5 rounded-pos border border-pos-line bg-white p-2.5" key={line.id}>
+            <div
+              className="grid gap-1.5 rounded-pos border border-pos-line bg-white p-2.5"
+              data-testid="order-cart-line"
+              data-quantity={line.quantity}
+              data-unit-price={line.quantity > 0 ? line.total / line.quantity : 0}
+              data-line-total={line.total}
+              key={line.id}
+            >
               <div className="flex items-center justify-between gap-2">
                 <strong className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">{line.name}</strong>
                 <strong className="font-black text-pos-primary">{formatCompactVnd(line.total)}</strong>
@@ -57,11 +64,21 @@ export function OrderCartPane({
               )}
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5">
-                  <button className="grid h-7 w-7 place-items-center rounded-[7px] border border-pos-line bg-pos-surface" onClick={() => onAdjustQuantity(line.id, -1)}>
+                  <button
+                    className="grid h-7 w-7 place-items-center rounded-[7px] border border-pos-line bg-pos-surface"
+                    data-testid="order-cart-decrease"
+                    onClick={() => onAdjustQuantity(line.id, -1)}
+                  >
                     <Minus size={14} />
                   </button>
-                  <span className="min-w-[22px] text-center text-sm font-extrabold">{line.quantity}</span>
-                  <button className="grid h-7 w-7 place-items-center rounded-[7px] border border-pos-line bg-pos-surface" onClick={() => onAdjustQuantity(line.id, 1)}>
+                  <span className="min-w-[22px] text-center text-sm font-extrabold" data-testid="order-cart-quantity">
+                    {line.quantity}
+                  </span>
+                  <button
+                    className="grid h-7 w-7 place-items-center rounded-[7px] border border-pos-line bg-pos-surface"
+                    data-testid="order-cart-increase"
+                    onClick={() => onAdjustQuantity(line.id, 1)}
+                  >
                     <Plus size={14} />
                   </button>
                 </span>
@@ -102,7 +119,7 @@ export function OrderCartPane({
         )}
         <div className="flex justify-between gap-2">
           <span>Tạm tính</span>
-          <strong>{formatVnd(total)}</strong>
+          <strong data-testid="order-total-amount" data-amount={total}>{formatVnd(total)}</strong>
         </div>
         <div className="flex justify-between gap-2 text-xl font-black">
           <span>Tổng</span>

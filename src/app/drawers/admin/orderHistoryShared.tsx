@@ -29,15 +29,18 @@ export const IconButton = ({
   disabled = false,
   label,
   onClick,
+  testId,
 }: {
   children: ReactNode;
   disabled?: boolean;
   label: string;
   onClick: () => void;
+  testId?: string;
 }) => (
   <button
     type="button"
     aria-label={label}
+    data-testid={testId}
     title={label}
     disabled={disabled}
     onClick={onClick}

@@ -106,6 +106,9 @@ export function PaymentSummaryPane({
                   <article
                     key={line.orderItemId}
                     data-testid="pay-item-line"
+                    data-unit-total={line.unitTotal}
+                    data-line-quantity={line.quantity}
+                    data-selected-quantity={selected}
                     className={clsx(
                       "rounded-pos border bg-white px-3 py-2 max-[900px]:px-2 max-[900px]:py-1.5",
                       selected > 0 ? "border-pos-primaryLine" : "border-pos-line",
@@ -167,7 +170,14 @@ export function PaymentSummaryPane({
         </div>
       </section>
 
-      <section data-testid="payment-order-summary" className="border-t border-pos-line bg-white p-4 max-[900px]:p-3">
+      <section
+        data-testid="payment-order-summary"
+        data-amount-due={amountDue}
+        data-order-total={orderTotal}
+        data-received-amount={receivedAmount}
+        data-change-amount={changeAmount}
+        className="border-t border-pos-line bg-white p-4 max-[900px]:p-3"
+      >
         {orderClosed && (
           <div
             className="mb-2.5 rounded-pos border border-[#fbbf24] bg-[#fffbeb] px-3 py-2 text-[#92400e] max-[900px]:px-2 max-[900px]:py-1.5"
@@ -208,6 +218,7 @@ export function PaymentSummaryPane({
             <span className={clsx("font-black text-pos-muted", paymentText.secondary)}>Thanh toán lần này</span>
             <strong
               data-testid="payment-amount-due-value"
+              data-amount={amountDue}
               className={clsx("text-right font-black leading-none text-pos-primary", paymentText.emphasis)}
             >
               {formatVnd(amountDue)}

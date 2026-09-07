@@ -154,6 +154,11 @@ export function ReportDrawer() {
   // Cột trái (master): tóm tắt doanh thu + sparkline.
   const revenueSummary = (
     <div
+      data-testid="report-summary"
+      data-revenue={dataset.revenue}
+      data-paid-orders={dataset.paidOrders}
+      data-void-count={dataset.voidCount}
+      data-void-amount={dataset.voidAmount}
       className="relative overflow-hidden rounded-pos p-4 text-white"
       style={{ background: "linear-gradient(135deg,#0f766e,#0b5d57 60%,#0a4f4a)" }}
     >
@@ -188,6 +193,7 @@ export function ReportDrawer() {
         {sections.map((s) => (
           <button
             key={s.key}
+            data-testid={`report-section-${s.key}`}
             className={clsx(
               "flex cursor-pointer items-center justify-between gap-2 rounded-[9px] px-3 py-2.5 text-left text-[13.5px] font-semibold",
               section === s.key ? "bg-pos-primarySoft font-bold text-pos-primary" : "text-pos-muted hover:bg-pos-surface2",
@@ -247,7 +253,7 @@ export function ReportDrawer() {
       <PortalDrawer testId="report" onOutsideClick={closeDrawer}>
         <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-pos-line bg-white/95 px-[18px] py-3 max-[980px]:min-h-[50px] max-[980px]:gap-x-2.5 max-[980px]:gap-y-2 max-[980px]:px-2.5 max-[980px]:py-2">
           <div className="min-w-0 flex-[1_1_240px] grid gap-1 [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-normal [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-normal [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-normal [&_p]:mb-0 [&_p]:mt-1 [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-xs [&_p]:text-pos-muted max-sm:[&_h1]:text-[17px] max-sm:[&_h2]:text-[15px] max-sm:[&_h3]:text-[15px] [&_h2]:overflow-hidden [&_h2]:text-ellipsis [&_h2]:whitespace-nowrap [&_h3]:overflow-hidden [&_h3]:text-ellipsis [&_h3]:whitespace-nowrap"><h2>Báo cáo</h2><p>Chỉ dành cho quản lý</p></div>
-          <Button variant="outlined" onClick={closeDrawer}>Đóng</Button>
+          <Button variant="outlined" data-testid="report-close-button" onClick={closeDrawer}>Đóng</Button>
         </header>
         <div className="min-h-0 overflow-auto bg-pos-bg p-3 max-[980px]:p-2 grid h-full place-items-center content-center gap-2.5 text-center [&_h3]:m-0">
           <ShieldAlert size={42} color="#b45309" />
@@ -311,7 +317,7 @@ export function ReportDrawer() {
               </Button>
             </span>
           </Tooltip>
-          <Button variant="outlined" onClick={closeDrawer}>Đóng</Button>
+          <Button variant="outlined" data-testid="report-close-button" onClick={closeDrawer}>Đóng</Button>
         </div>
       </header>
 
@@ -481,7 +487,13 @@ export function ReportDrawer() {
                     <thead><tr><th>Mã</th><th>Giờ</th><th>Bàn</th><th>Thanh toán</th><th>Tổng</th></tr></thead>
                     <tbody>
                       {dataset.orders.map((o) => (
-                        <tr key={o.id}>
+                        <tr
+                          key={o.id}
+                          data-testid={`report-order-${o.orderNo}`}
+                          data-order-no={o.orderNo}
+                          data-table={o.table}
+                          data-total={o.total}
+                        >
                           <td><strong>#{o.orderNo}</strong></td>
                           <td className="text-pos-muted">{o.time}</td>
                           <td>{o.table}</td>

@@ -66,6 +66,7 @@ export function EmployeeListPane({
         </div>
         <button
           type="button"
+          data-testid="employees-close-button"
           className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-[7px] border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
           aria-label="Đóng quản lý nhân viên"
           onClick={onClose}

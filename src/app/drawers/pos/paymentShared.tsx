@@ -63,6 +63,7 @@ export function PaymentHeader({
       <div className="flex min-w-0 flex-[0_1_auto] flex-wrap items-center justify-end gap-2">
         <Button
           variant="outlined"
+          data-testid="payment-close-button"
           onClick={onClose}
           className={clsx("!min-h-9 !whitespace-nowrap max-[900px]:!min-h-[30px] max-[900px]:!px-2.5", paymentButtonText.body)}
         >

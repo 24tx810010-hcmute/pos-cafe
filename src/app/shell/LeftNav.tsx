@@ -36,6 +36,8 @@ export function LeftNav() {
             aria-label={signedInLabel}
             className="flex min-w-0 items-center gap-2 rounded-[10px] border border-[#dbe4ef] bg-white px-2.5 py-2 shadow-[0_8px_18px_rgb(15_23_42_/_5%)] max-[980px]:justify-center max-[980px]:px-0 max-[980px]:py-1.5"
             data-testid="left-nav-session"
+            data-employee-id={currentEmployee.id}
+            data-role={currentEmployee.role}
             title={signedInLabel}
           >
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-pos-primarySoft text-xs font-black text-pos-primary">{employeeInitial}</span>

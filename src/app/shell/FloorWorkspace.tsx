@@ -205,6 +205,8 @@ export function FloorWorkspace() {
                         isRound ? "rounded-full" : "rounded-pos",
                       )}
                       data-testid={`table-${table.id}`}
+                      data-table-status={occupied ? "occupied" : "empty"}
+                      data-order-total={openOrderSummary?.total ?? 0}
                       key={table.id}
                       style={{
                         ...stageStyle(table.posX, table.posY, table.width, table.height),

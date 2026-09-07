@@ -55,7 +55,12 @@ export function OrderHistoryDetailPane({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <IconButton disabled={!selected || selected.status === "void"} label="In lại hóa đơn" onClick={onReprint}>
+          <IconButton
+            disabled={!selected || selected.status === "void"}
+            label="In lại hóa đơn"
+            onClick={onReprint}
+            testId="history-reprint-button"
+          >
             <Printer size={16} />
           </IconButton>
           <IconButton disabled={!selected} label="Sao chép mã đơn" onClick={onCopyDisplayNo}>
@@ -94,6 +99,8 @@ export function OrderHistoryDetailPane({
                     #{selected.displayNo}
                   </strong>
                   <span
+                    data-testid="history-status-badge"
+                    data-status={selected.status}
                     className={clsx(
                       "shrink-0 rounded-full border px-2 py-1 text-xs font-black max-[760px]:px-1.5 max-[760px]:py-0.5 max-[760px]:text-[10px]",
                       statusClass[selected.status],
@@ -132,6 +139,8 @@ export function OrderHistoryDetailPane({
             {selected.status === "void" && (
               <div
                 data-testid="history-void-info"
+                data-voided-by={voidedByLabel}
+                data-voided-at={detail?.voidedAt ?? ""}
                 className="grid gap-1 rounded-[8px] border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-xs"
               >
                 <div className="flex items-center justify-between gap-2">

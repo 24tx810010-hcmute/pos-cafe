@@ -335,7 +335,7 @@ export function OrderHistoryDrawer() {
           <IconButton label="Làm mới danh sách" onClick={() => void historyQuery.refetch()}>
             <RefreshCw size={17} />
           </IconButton>
-          <IconButton label="Đóng" onClick={closeDrawer}>
+          <IconButton label="Đóng" onClick={closeDrawer} testId="history-close-button">
             <X size={18} />
           </IconButton>
         </div>
