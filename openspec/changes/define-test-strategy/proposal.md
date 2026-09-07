@@ -43,7 +43,7 @@ Không có.
 ## Câu hỏi phải chốt trước khi làm
 
 1. ~~Mục tiêu thật của chiến lược này là gì: bảo vệ code, hay còn làm bằng chứng cho báo cáo?~~ **Đã trả lời ở quyết định 1: cả hai.**
-2. ~~Có đặt ngưỡng độ phủ bằng số không, và đo trên đâu?~~ **Đã trả lời ở quyết định 2: chỉ đặt số trên `domain` và `core`, ngưỡng 90% dòng.**
+2. ~~Có đặt ngưỡng độ phủ bằng số không, và đo trên đâu?~~ **Đã trả lời ở quyết định 2: 90% dòng, đo trên `src/core` và phần không phải hook của `src/features`.**
 3. ~~Cổng chất lượng có được phép chặn merge không, và chặn ở mức nào?~~ **Đã trả lời ở quyết định 3: chặn ở mức chạy được cục bộ.**
 4. ~~E2E chạy trên Supabase thật có được tính là bắt buộc không?~~ **Đã trả lời ở quyết định 4: bắt buộc theo mốc chứ không theo mỗi lần merge, và phạm vi phải gồm các tình huống biên quan trọng.**
 5. ~~Có chấp nhận thêm dependency mới cho kiểm thử không?~~ **Đã trả lời ở quyết định 5: đúng một, là `@vitest/coverage-v8`.**
@@ -67,7 +67,12 @@ Không chọn một trong hai. Hệ quả về mức chi tiết: mọi lựa ch�
 
 Quyết định này là hệ quả trực tiếp của chuẩn chung ở `openspec/SPEC-STANDARD.md`, không phải luật riêng của change này.
 
-**2. Ngưỡng độ phủ chỉ đặt bằng số trên `domain` và `core`, mức 90% dòng. Các tầng còn lại dùng tiêu chí theo loại thay đổi, không đặt số.**
+**2. Ngưỡng độ phủ 90% dòng, đo trên `src/core/**` và các module không phải hook trong `src/features/**`. Các tầng còn lại không đặt số.**
+
+Sửa lại ngày 2026-09-07 sau khi đo kho mã. Bản chốt đầu tiên ghi phạm vi là "`domain` và `core`", và phạm vi đó **sai về mặt sự kiện**:
+
+- `src/domain` gồm 528 dòng nhưng **đúng một khai báo runtime** là `emptyChangeset` trong `changes.ts`, dài 5 dòng. Toàn bộ phần còn lại là `type` và `interface`, biên dịch xong không còn dòng chạy được nào. Đặt ngưỡng phủ trên tầng này không đo được gì; nó hoặc đạt 100% một cách hiển nhiên, hoặc bị công cụ loại vì không có dòng nào để đo.
+- `src/core` chỉ có 219 dòng. Lấy riêng nó làm phạm vi thì con số đúng nhưng bề mặt quá mỏng để làm luận điểm trong báo cáo.
 
 Ba phương án đã cân nhắc:
 
@@ -75,13 +80,26 @@ Ba phương án đã cân nhắc:
 | --- | --- | --- |
 | a | Không đặt số nào, chỉ dùng tiêu chí "loại thay đổi nào bắt buộc loại test nào" | **Loại.** Không có số thì không có gì ép được, và tiêu chí định tính sẽ trôi dần khi tiến độ gấp |
 | b | Đặt số trên toàn bộ `src` | **Loại.** Ép số lên tầng giao diện và tầng adapter đẻ ra test viết cho đủ chỉ tiêu chứ không cho đúng hành vi. Đây là bệnh đã biết của việc lấy độ phủ làm mục tiêu thay vì làm chỉ báo |
-| c | Số chỉ trên `domain` và `core`, phần còn lại dùng tiêu chí theo loại thay đổi | **Chọn** |
+| c | Số chỉ trên phần logic nghiệp vụ thuần, phần còn lại dùng tiêu chí theo loại thay đổi | **Chọn** |
 
-Lý do phương án c hợp với đúng dự án này: `src/architectureBoundaries.test.ts` đã enforce rằng `domain` chỉ import `domain`, `core` chỉ import `core` và `domain`, và cả hai **cấm import `react`**. Nghĩa là hai tầng đó thuần, không I/O, không vòng đời component — thứ khó phủ thì đã bị luật kiến trúc đẩy ra khỏi chúng rồi. Phủ 90% ở nơi như vậy là mục tiêu hợp lý chứ không phải con số cho đẹp.
+**Phạm vi đo, phát biểu thành luật kiểm chứng được thay vì danh sách liệt kê tay:**
 
-Ngược lại, `app` và `adapters` là nơi có I/O thật và giao diện thật. Ở đó thứ đáng đo không phải số dòng chạy qua mà là **loại tình huống đã được kiểm**, nên tiêu chí phải là định tính theo loại thay đổi.
+| Đưa vào đo | Loại khỏi đo |
+| --- | --- |
+| `src/core/**` | `src/domain/**` — tầng chỉ khai kiểu |
+| `src/features/**` trừ các file `use*.ts` | Các hook `use*.ts` trong `features` |
+| | `src/app/**`, `src/adapters/**`, `src/seed/**` |
+| | File `*.test.ts` và `*.test.tsx` |
+
+Cơ sở của luật này, đã kiểm ngày 2026-09-07: **cả 20 module không phải hook trong `src/features` đều không import `react`**. Chúng là logic nghiệp vụ thuần nhận port qua tham số, nên kiểm thử được bằng adapter mock mà không cần hạ tầng thật. Các file `use*.ts` thì ngược lại, chúng gắn với vòng đời component nên bị loại.
+
+Bề mặt đo được sau khi mở rộng: khoảng **2.127 dòng** logic nghiệp vụ, gồm 219 dòng của `core` và khoảng 1.908 dòng của `features`. So với 219 dòng nếu chỉ lấy `core`, đây là khác biệt giữa một con số cho có và một luận điểm đứng được khi bị hỏi.
+
+Lý do loại `app` và `adapters`: đó là nơi có I/O thật và giao diện thật. Ở đó thứ đáng đo không phải số dòng chạy qua mà là **loại tình huống đã được kiểm**, nên tiêu chí phải định tính theo loại thay đổi.
 
 Con số 90% chọn thay vì 100% vì mức tuyệt đối buộc phải viết test cho cả nhánh phòng thủ không bao giờ chạy tới, và chi phí giữ nó vượt lợi ích.
+
+**Cảnh báo: 90% hiện là mục tiêu, chưa phải mức đang đạt.** Chưa đo được vì `@vitest/coverage-v8` chưa cài. Task đầu tiên của change này là cài rồi **đo baseline**. Nếu khoảng cách lớn thì xử lý bằng cách chốt lộ trình theo mốc, **không hạ ngưỡng cho vừa số đo được** — hạ ngưỡng để khớp hiện trạng thì ngưỡng mất hết ý nghĩa.
 
 **4. E2E trên Supabase thật: bắt buộc theo mốc, không bắt buộc theo mỗi lần merge. Phạm vi phải gồm các tình huống biên quan trọng, không chỉ luồng thuận.**
 
@@ -93,7 +111,9 @@ Lý do không bỏ hẳn: đây là **bằng chứng duy nhất** cho hai thứ 
 
 Yêu cầu về phạm vi: bộ E2E trên cloud **MUST** gồm cả tình huống bị từ chối, không chỉ tình huống thành công. Danh sách tình huống biên bắt buộc sẽ chốt ở bước viết `testplan.md`.
 
-**5. Thêm đúng một dependency phát triển: `@vitest/coverage-v8`.**
+**5. Thêm dependency phát triển khi cần, mặc định là `@vitest/coverage-v8`.**
+
+Chủ dự án chốt ngày 2026-09-07: thiếu thư viện thì cài thêm. Nhưng mỗi lần thêm vẫn phải có lý do đứng được, không thêm cho tiện.
 
 Cần nó để đo được ngưỡng ở quyết định 2; không có công cụ đo thì ngưỡng chỉ là lời nói.
 
