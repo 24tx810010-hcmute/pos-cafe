@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "smoke": "playwright test",
     "smoke:supabase": "playwright test -c playwright.supabase.config.ts"
   },
@@ -35,6 +36,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^6.0.2",
+    "@vitest/coverage-v8": "^4.1.11",
     "autoprefixer": "^10.4.19",
     "jsdom": "^24.1.1",
     "postcss": "^8.4.40",
