@@ -15,6 +15,42 @@ Tài liệu này gom bằng chứng kiểm thử hiện hành để dùng trong 
 | Cloud E2E | Playwright | Flow thật qua Supabase, RPC, RLS và realtime khi có env phù hợp |
 
 
+## Độ Phủ Nền, Đo Ngày 2026-09-07
+
+Lần đầu tiên đo được độ phủ, sau khi cài `@vitest/coverage-v8` theo `define-test-strategy`. Baseline: nhánh `claude/hopeful-albattani-42cb20`, xuất phát từ `main@c7f2f4e`.
+
+**Phạm vi đo** là logic nghiệp vụ thuần, không phải toàn bộ `src`: `src/core/**` cộng các module trong `src/features/**` không phải hook. Loại `src/domain` (chỉ khai kiểu), `src/app`, `src/adapters`, các hook `use*.ts`, các barrel `index.ts` và mọi file `.tsx`. Lý do chọn phạm vi này ghi ở quyết định 2 của `openspec/changes/define-test-strategy/proposal.md`.
+
+| Chỉ số | Kết quả | Ngưỡng đang đặt |
+| --- | --- | --- |
+| **Dòng** | **92,77%** (591/637) | **90%**, đã đạt |
+| Câu lệnh | 88,80% (674/759) | không đặt ngưỡng |
+| Nhánh | 80,80% (421/521) | không đặt ngưỡng |
+| Hàm | 95,95% (190/198) | không đặt ngưỡng |
+
+Số file trong phạm vi: **24**. Bộ kiểm thử tại lần đo: 49 file, 260 test, tất cả pass trong 13,9 giây.
+
+**Sáu file thấp nhất theo dòng**
+
+| File | Dòng |
+| --- | --- |
+| `features/admin/menuDraft.ts` | 0% trên 0 dòng — file chỉ khai `interface`, không ảnh hưởng tổng |
+| `features/pos/posInvalidation.ts` | 71,42% |
+| `features/admin/menuEditorDraft.ts` | 80% |
+| `features/admin/floorEditorDraft.ts` | 85,71% |
+| `features/admin/adminFlow.ts` | 86,48% |
+| `features/admin/draftUtils.ts` | 86,66% |
+
+**Ngưỡng đã được kiểm chứng là có tác dụng thật**, không phải chỉ nằm trong file cấu hình:
+
+| Phép thử | Ngưỡng đặt tạm | Kết quả |
+| --- | --- | --- |
+| Ngưỡng phải chặn khi không đạt | 96% | Thoát với mã 1, báo `Coverage for lines (92.77%) does not meet global threshold (96%)` |
+| Điều kiện là lớn hơn **hoặc bằng** | 92,77% | Thoát với mã 0 |
+| File chưa có test phải vào báo cáo với 0% | 90% | Tạo file thử chưa có test nào, file đó xuất hiện ở mức 0% và kéo tổng xuống |
+
+**Ghi chú kỹ thuật.** Reporter `text` **ẩn các file đạt 100% ở cả bốn cột**, nên bảng in ra màn hình chỉ có 16 dòng trong khi phạm vi thật là 24 file. Con số tổng vẫn đúng. Muốn thấy đủ danh sách thì đọc `coverage/coverage-summary.json`; đó là lý do `json-summary` được thêm vào danh sách reporter. Đã cân nhắc provider `istanbul` và loại: nó cho số liệu y hệt nhưng bỏ qua file chỉ khai kiểu và transform chậm hơn khoảng 8 giây.
+
 ## Chạy Lại Ngày 2026-08-21
 
 Chạy lại trên cùng baseline `main@c7f2f4e` để xác nhận số liệu trước khi dùng cho báo cáo:

@@ -8,21 +8,21 @@ Thứ tự dưới đây bắt buộc. Nhóm 1 là cổng: chưa có số đo n�
 
 > **Cổng chặn.** Không được đặt ngưỡng, không được viết tài liệu chiến lược trước khi có số đo thật.
 
-- [ ] 1.1 Cài `@vitest/coverage-v8` vào `devDependencies`
-- [ ] 1.2 Thêm script `test:coverage` vào `package.json`
-- [ ] 1.3 Thêm khối `coverage` vào `vitest.config.ts` với `include` là `src/core/**/*.ts` và `src/features/**/*.ts`, `exclude` là `src/features/**/use*.ts`, `src/domain/**`, và các file test
-- [ ] 1.4 Chạy `npm run test:coverage`, **ghi lại con số phần trăm dòng** kèm mã commit và ngày — TC-TEST-01, TC-TEST-02
-- [ ] 1.5 Kiểm báo cáo có đúng phạm vi: có `core` và `features` không phải hook, không có `domain`, `app`, `adapters`, `seed` — TC-TEST-01, TC-TEST-08
-- [ ] 1.6 Đếm số file trong báo cáo, phải từ 24 trở lên — TC-TEST-11
+- [x] 1.1 Cài `@vitest/coverage-v8` vào `devDependencies`
+- [x] 1.2 Thêm script `test:coverage` vào `package.json`
+- [x] 1.3 Thêm khối `coverage` vào `vitest.config.ts`. Ngoài `exclude` đã dự kiến, thực tế phải loại thêm `**/index.ts` (barrel chỉ re-export) và `**/*.tsx` (thành phần React lọt vào qua `portsContext.tsx`)
+- [x] 1.4 Chạy `npm run test:coverage`, **ghi lại con số phần trăm dòng** kèm mã commit và ngày — TC-TEST-01, TC-TEST-02
+- [x] 1.5 Kiểm báo cáo có đúng phạm vi — TC-TEST-01, TC-TEST-08. **Lưu ý:** reporter `text` ẩn file đạt 100% cả bốn cột nên bảng in ra chỉ có 16 dòng; phải đọc `coverage/coverage-summary.json` mới thấy đủ 24 file
+- [x] 1.6 Đếm số file trong báo cáo, phải từ 24 trở lên — TC-TEST-11
 
 ## 2. Chốt ngưỡng dựa trên số đo được
 
-- [ ] 2.1 Số nền đạt 90% trở lên thì bật ngưỡng 90% ngay
-- [ ] 2.2 Số nền dưới 90% thì bật ngưỡng **bằng đúng số nền** làm mốc chống tụt, và ghi khoảng cách vào mục 2.3
-- [ ] 2.3 Nếu có khoảng cách: liệt kê các file có độ phủ thấp nhất, ước lượng công đóng khoảng cách, và chốt mốc nâng ngưỡng lên 90% với chủ dự án. **Không hạ mục tiêu 90%**
-- [ ] 2.4 Kiểm ngưỡng có tác dụng thật: tạm nâng ngưỡng vượt số hiện đạt, xác nhận lệnh đỏ, rồi trả về — TC-TEST-06
-- [ ] 2.5 Kiểm điều kiện là lớn hơn hoặc bằng: đặt ngưỡng đúng bằng số hiện đạt, xác nhận lệnh xanh — TC-TEST-10
-- [ ] 2.6 Kiểm file mới tự vào phạm vi: tạo file tạm trong `features`, xác nhận nó xuất hiện với 0%, rồi xóa — TC-TEST-07
+- [x] 2.1 Số nền đạt 90% trở lên thì bật ngưỡng 90% ngay
+- [~] 2.2 Không áp dụng: số nền 92,77% đã vượt 90%
+- [~] 2.3 Không áp dụng: không có khoảng cách. Sáu file thấp nhất vẫn được ghi vào `docs/testing.md` để theo dõi
+- [x] 2.4 Kiểm ngưỡng có tác dụng thật: tạm nâng ngưỡng vượt số hiện đạt, xác nhận lệnh đỏ, rồi trả về — TC-TEST-06
+- [x] 2.5 Kiểm điều kiện là lớn hơn hoặc bằng: đặt ngưỡng đúng bằng số hiện đạt, xác nhận lệnh xanh — TC-TEST-10
+- [x] 2.6 Kiểm file mới tự vào phạm vi: tạo file tạm trong `features`, xác nhận nó xuất hiện với 0%, rồi xóa — TC-TEST-07
 
 ## 3. Viết tài liệu chiến lược
 
