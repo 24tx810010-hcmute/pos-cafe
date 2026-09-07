@@ -79,3 +79,9 @@ Bốn change dưới đây mâu thuẫn với các quyết định đang ghi tro
 | `enforce-permissions-at-database` | NFR-02 không đồng nghĩa bảo mật per-employee |
 
 **Ghi chú 2026-08-30.** Riêng `add-offline-data-layer` không thuộc loại lật quyết định. Online-only là hoãn theo ngân sách thời gian của bài tiểu luận chuyên ngành, đúng như `docs/requirements.md` ghi ở mục "Ngoài Phạm Vi Hoặc Hoãn"; ngân sách 16 tuần của đồ án tốt nghiệp làm ràng buộc đó hết hiệu lực. FR-21 và NFR-05 nói về đồng bộ khi online nên vẫn đúng và không phải sửa. Chi tiết ở quyết định số 1 của proposal.
+
+## Chuẩn viết spec
+
+Bộ tài liệu bắt buộc cho mỗi change, cách viết use case và test case, quy cách ma trận truy vết, và vai trò phân tích viên: xem [SPEC-STANDARD.md](SPEC-STANDARD.md). Chốt ngày 2026-09-07, áp cho mọi tính năng từ thời điểm đó trở đi.
+
+Tóm tắt: mỗi change cần bảy file thay vì bốn. Ba file bổ sung là `usecases.md`, `testplan.md` và `traceability.md`.
