@@ -29,8 +29,11 @@ Tập tài liệu này gom **toàn bộ phân tích, bằng chứng mã nguồn 
 | [02-quyet-dinh-da-chot.md](02-quyet-dinh-da-chot.md) | Bốn quyết định đã chốt, kèm phương án bị loại và lý do loại |
 | [03-ba-cau-dang-mo.md](03-ba-cau-dang-mo.md) | Ba câu chưa chốt, hai phía của mỗi câu, và đề xuất hiện tại |
 | [04-dinh-chinh-sau-danh-gia.md](04-dinh-chinh-sau-danh-gia.md) | **Kết quả đánh giá độc lập ngày 07/09: tám lỗi đã xác nhận, hiện trạng sau đính chính** |
+| [05-nho-danh-gia-vong-hai.md](05-nho-danh-gia-vong-hai.md) | **Nhờ đánh giá vòng hai: kiểm bản sửa, và một mâu thuẫn mới lộ ra** |
 
-**Trạng thái: đã qua một vòng đánh giá độc lập.** Kết quả nằm ở tài liệu `04`. Người đánh giá đúng ở mọi khẳng định kiểm chứng được; ba lỗi làm sai kết luận trung tâm và một phát hiện mới là lỗ hổng `NULL` trong khóa lạc quan. Vòng đánh giá tiếp theo nên bắt đầu từ tài liệu `04`.
+**Trạng thái: đã qua một vòng đánh giá độc lập, đang chờ vòng hai.** Người đánh giá đúng ở mọi khẳng định kiểm chứng được; ba lỗi làm sai kết luận trung tâm và một phát hiện mới là lỗ hổng `NULL` trong khóa lạc quan.
+
+**Vòng hai bắt đầu từ [05-nho-danh-gia-vong-hai.md](05-nho-danh-gia-vong-hai.md)**, đọc kèm `04`. Không cần đọc lại `01` `02` `03` trừ khi muốn đối chiếu bản gốc.
 
 ## Những chỗ tôi tự biết là chưa chắc
 
