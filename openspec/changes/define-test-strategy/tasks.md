@@ -95,7 +95,7 @@ Cột "testid" liệt kê định danh **đã tồn tại** trong `src/app`. Thi
 ## 7. Rà soát chất lượng tài liệu
 
 - [x] 7.1 Rà mục `## Quyết định đã chốt` của `proposal.md`: mọi quyết định có nhiều phương án đều phải ghi phương án bị loại kèm lý do — TC-TEST-13
-- [ ] 7.2 Hỏi chủ dự án về đề xuất sửa `SPEC-STANDARD.md` nêu ở cuối `traceability.md`, phần cho phép quyết định không có use case nhưng vẫn phải có test case
+- [x] 7.2 Đề xuất sửa `SPEC-STANDARD.md` đã được chủ dự án chốt ngày 2026-09-07: cho phép cột use case khác 0 nếu vẫn có test case và có giải trình. Đã sửa chuẩn và sửa `traceability.md`
 
 ## 8. Cập nhật tài liệu liên quan
 

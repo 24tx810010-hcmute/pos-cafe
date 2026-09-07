@@ -99,9 +99,20 @@ Một bảng duy nhất, ba cột: requirement, use case, test case.
 
 Kèm ba dòng tổng kết ở cuối:
 
-- Số requirement chưa có use case nào — **phải bằng 0**.
-- Số requirement chưa có test case nào — **phải bằng 0**.
-- Số use case chưa có test case nào — **phải bằng 0**.
+| Chỉ số | Ngưỡng |
+| --- | --- |
+| Số requirement chưa có **test case** nào | **Phải bằng 0. Tuyệt đối không nới.** |
+| Số use case chưa có **test case** nào | **Phải bằng 0. Tuyệt đối không nới.** |
+| Số requirement chưa có **use case** nào | Nên bằng 0. Được phép khác 0 **với điều kiện** ở dưới |
+
+**Điều kiện cho dòng thứ ba.** Sửa ngày 2026-09-07. Một requirement hoặc một quyết định được phép **không có use case** nếu thỏa cả hai:
+
+1. Nó **vẫn có ít nhất một test case**.
+2. Trong `traceability.md` ghi rõ **"không có use case"** kèm **giải trình** vì sao.
+
+Loại ràng buộc rơi vào diện này là thứ không diễn thành thao tác của một tác nhân được: quy tắc viết tài liệu, quy ước đặt tên, ràng buộc kiến trúc. Chúng vẫn kiểm chứng được bằng rà soát nên vẫn có test case, chỉ là không có ai "thực hiện" chúng theo nghĩa một luồng thao tác.
+
+Lý do nới đúng dòng này mà không nới hai dòng kia: một requirement không có test case nghĩa là **không ai biết nó đúng hay sai** — đó là lỗ hổng thật. Còn một requirement không có use case chỉ nghĩa là nó không phải hành vi người dùng, và ép viết use case giả cho nó sẽ làm bẩn tài liệu chứ không thêm bảo đảm nào.
 
 Bảng này phục vụ hai việc: chặn sót lúc làm, và đưa thẳng vào chương kiểm thử của khóa luận làm bằng chứng đã phủ hết yêu cầu.
 

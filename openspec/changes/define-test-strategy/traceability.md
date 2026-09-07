@@ -37,15 +37,17 @@ Change tính năng thì dùng đúng cột requirement như chuẩn quy định.
 
 | Chỉ số | Số | Đạt |
 | --- | --- | --- |
-| Quyết định chưa có use case nào | **1** | Xem giải trình bên dưới |
-| Quyết định chưa có test case nào | **0** | Đạt |
-| Use case chưa có test case nào | **0** | Đạt |
+| Quyết định chưa có **test case** nào | **0** | Đạt |
+| Use case chưa có **test case** nào | **0** | Đạt |
+| Quyết định chưa có **use case** nào | **1** — quyết định 1 | Đạt, theo điều kiện ở `SPEC-STANDARD.md` mục 6 |
 
-**Giải trình dòng thứ nhất.** Quyết định 1 không gắn với một use case cụ thể vì nó là **quy tắc viết áp lên toàn bộ tài liệu**, không phải một thao tác mà tác nhân nào đó thực hiện. Nó vẫn được kiểm chứng bằng TC-TEST-13, nên nó **không** phải một quyết định bị bỏ sót.
+**Giải trình cho dòng thứ ba: quyết định 1 không có use case.**
 
-Đây là một tình huống mà chuẩn ở `SPEC-STANDARD.md` chưa lường tới: chuẩn giả định mọi requirement đều mô tả hành vi, nên đều dẫn ra được use case. Với change quy trình thì có loại ràng buộc chỉ kiểm được bằng rà soát chứ không diễn thành thao tác.
+Quyết định 1 là **quy tắc viết áp lên toàn bộ tài liệu** — mọi lựa chọn có đánh đổi phải ghi phương án bị loại kèm lý do. Nó không phải một thao tác mà tác nhân nào đó thực hiện, nên không diễn thành use case được mà không bịa ra một luồng giả.
 
-**Đề xuất sửa chuẩn:** cho phép một quyết định hoặc requirement không có use case **với điều kiện** nó vẫn có ít nhất một test case và có giải trình viết ra. Điều kiện "không có test case nào" thì tuyệt đối không được nới. Cần chủ dự án xác nhận trước khi sửa `SPEC-STANDARD.md`.
+Nó **vẫn được kiểm chứng** bằng TC-TEST-13, là phép rà soát mục `## Quyết định đã chốt` của `proposal.md`. Vì vậy nó thỏa cả hai điều kiện mà chuẩn đặt ra và **không** phải một quyết định bị bỏ sót.
+
+Chuẩn ban đầu đòi cột use case cũng phải bằng 0. Change này là ca đầu tiên chạm phải giới hạn đó, và chủ dự án đã chốt ngày 2026-09-07 nới đúng dòng này kèm điều kiện. Hai dòng còn lại giữ nguyên là tuyệt đối.
 
 ## Khoảng trống đã biết, bàn giao cho change sau
 
