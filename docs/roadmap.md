@@ -39,7 +39,7 @@ Mười mục, làm tuần tự. Thứ tự dưới đây được xếp lại n
 | 6 | 10 | 30/10 – 05/11 | Khôi phục và vòng đời quyền sở hữu, giai đoạn 2 | Mất Store Key vẫn lấy lại được cửa hàng | `[ ]` |
 | 7 | 11–12 | 06/11 – 19/11 | Kho cục bộ và hàng đợi ý định | Rút mạng vẫn tạo được đơn mới; có mạng lại đơn tự lên máy chủ, không trùng, số bill do database cấp | `[ ]` |
 | 8 | 13 | 20/11 – 26/11 | Hòa giải xung đột và trạng thái kết nối trên giao diện | Sáu tình huống xung đột có chính sách và kiểm thử chạy xanh; nhân viên luôn thấy rõ đang ngoại tuyến và còn bao nhiêu việc chưa gửi | `[ ]` |
-| 9 | 14 | 27/11 – 03/12 | Triển khai thật, làm cứng, sao lưu | Bản chạy thật có địa chỉ truy cập được và có sao lưu định kỳ | `[ ]` |
+| 9 | 14 | 27/11 – 03/12 | Triển khai thật, làm cứng, sao lưu, **và đo tải lúc chạy** | Bản chạy thật có địa chỉ truy cập được, có sao lưu định kỳ, và có số đo tải thật thay cho ước lượng | `[ ]` |
 | 10 | 15–16 | 04/12 – 17/12 | Viết báo cáo, chụp lại ảnh màn hình, đồng bộ tài liệu | Bản thảo báo cáo đầy đủ | `[ ]` |
 
 Bốn ngày từ 18/12 tới 21/12 để nguyên làm đệm và tập demo. Không xếp việc vào đó.
@@ -61,6 +61,7 @@ Chưa dời ngày vì việc dời kéo theo cả mười mục và phải chố
 | 5, 6 | `add-owner-account-and-store-provisioning`, chia hai giai đoạn theo quyết định số 18 của proposal |
 | 7 | `add-offline-data-layer`, phạm vi hẹp theo quyết định 2 và 3 của proposal |
 | 8 | `add-offline-sync-conflict-resolution` và lát mỏng của `add-offline-status-ux` |
+| 9 | `measure-runtime-load` — đo, không sửa |
 
 ### Vì sao thứ tự này
 
@@ -162,10 +163,14 @@ Ngày 2026-08-28, ba đề xuất của tầng này đã được viết chi ti�
 
 - `add-offline-data-layer` → `add-offline-status-ux`, `add-offline-sync-conflict-resolution`
 
-**Tầng F2 — Hiệu năng và phiên chạy dài.** Thêm ngày 07/09/2026 sau khi rà mã: tải của hệ gần như toàn bộ là đọc do polling, không phải ghi. Chưa có số đo nào nên chưa xếp trước sau với các tầng khác.
+**Tầng F2 — Hiệu năng và phiên chạy dài.** Thêm ngày 07/09/2026 sau khi rà mã: tải của hệ gần như toàn bộ là đọc do polling, không phải ghi.
 
-- `measure-runtime-load` → `optimize-runtime-load`
-- `handle-long-running-session`, làm cùng đợt với `measure-runtime-load` vì dùng chung môi trường chạy dài, và nên trước `add-offline-data-layer`
+`measure-runtime-load` **đã được kéo lên giai đoạn 1, mục 9 tuần 14** ngày 07/09/2026. Lý do: nó chỉ đo nên không có rủi ro hồi quy, và tuần 14 là lần đầu tiên có bản chạy thật để đo — đo trên môi trường phát triển sẽ ra số không phản ánh production. Trả lời được câu "hệ chịu tải bao nhiêu" bằng số đo thay vì ước lượng là thứ đáng có trước buổi bảo vệ.
+
+Còn lại ở tầng này:
+
+- `optimize-runtime-load`, **bắt buộc sau** `measure-runtime-load`. Giữ ở giai đoạn 2 vì nó đụng nhịp đồng bộ giữa các máy, tức một năng lực đã đặc tả trong `multi-device-sync`, và đó là loại rủi ro không nên nhận trong 16 tuần đã kín.
+- `handle-long-running-session`. Giữ ở giai đoạn 2 dù proposal của nó ghi "nên trước `add-offline-data-layer`". **Đây là một mâu thuẫn có ý thức:** quan hệ đó là "nên" chứ không phải "bắt buộc", và mục 7–8 tuần 11–13 đã kín cho phần ngoại tuyến. Hệ quả phải chấp nhận: `add-offline-data-layer` thêm một kho dữ liệu sống lâu trên máy trong khi **chưa ai đo phiên chạy dài**, nên nếu về sau phát sinh vấn đề bộ nhớ thì việc truy nguyên sẽ khó hơn vì có hai nghi phạm thay vì một. Đã ghi rủi ro này vào proposal của change đó.
 
 **Tầng G — Ca làm việc.** Chuyển xuống đây ngày 30/08/2026 để nhường ba tuần cho nhóm ngoại tuyến. Vẫn là ứng viên mạnh nhất cho nhóm tính năng kế tiếp.
 

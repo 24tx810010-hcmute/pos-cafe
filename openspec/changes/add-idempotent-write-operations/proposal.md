@@ -63,4 +63,56 @@ Change này **không phụ thuộc chế độ ngoại tuyến** và đáng làm
 
 ## Quyết định đã chốt
 
-Chưa có. Ghi câu trả lời của người dùng vào mục này trước khi bắt đầu implement.
+Ghi ngày 2026-09-07. Đánh số theo câu hỏi ở mục trên. Câu 1, 2, 3 còn đang trao đổi thêm.
+
+**Đính chính phần Why, ghi trước mọi quyết định.** Phần Why viết rằng hậu quả là "hai bản ghi thanh toán cho một lần thu tiền, kéo theo doanh thu sai". Rà mã ngày 2026-09-07 cho thấy **điều đó đã bị chặn sẵn**:
+
+| Lời gọi | Guard đang có | Gọi lại thì sao |
+| --- | --- | --- |
+| `pay_order` | `status <> 'open'` cộng `lock_version` (012) | `ORDER_VERSION_CONFLICT`, không sinh bản ghi thứ hai |
+| `pay_order_items` | như trên, trên đơn nguồn (012:110–112) | Bị chặn |
+| `void_order` | `status <> 'paid'` cộng `lock_version` (011:157–158) | Bị chặn |
+| `submit_order_changes`, đơn đã có | `lock_version` | Bị chặn |
+| **`submit_order_changes`, đơn mới** | **không có** | **Tạo đơn thứ hai** |
+
+Đơn mới thủng vì đơn chưa tồn tại nên không có `lock_version` để đối chiếu, và `orderId` do adapter tự sinh ở `src/adapters/supabase/orderRepo.ts:91` — mỗi lần gọi một UUID khác.
+
+Hại thật hiện nay vì vậy là: **sai dữ liệu chỉ ở luồng tạo đơn mới**; ba luồng còn lại là **trải nghiệm tệ** — thu ngân bấm lại, nhận lỗi khó hiểu, không biết tiền đã vào chưa. Change vẫn đáng làm, nhưng phải mô tả đúng mức thay vì nói quá.
+
+**4. Áp khóa cho bốn lời gọi: `submit_order_changes`, `pay_order`, `pay_order_items`, `void_order`.** Chốt 2026-09-07.
+
+Ba phương án đã cân nhắc:
+
+| | Phạm vi | Lý do chọn hoặc loại |
+| --- | --- | --- |
+| a | Ba lời gọi tiền | **Loại.** Bỏ sót `void_order`, mà hủy đơn đã thanh toán cũng là thao tác đụng tiền |
+| b | Bốn lời gọi trên | **Chọn.** Toàn bộ nhóm đụng tiền và đụng trạng thái đơn — ranh giới tự nhiên, không phải con số chọn bừa |
+| c | Thêm cả thao tác quản trị | **Loại.** Thừa, xem lý do bên dưới |
+
+Lý do loại c: mọi kiểu `*Create` trong `src/domain/changes.ts` đều **mang sẵn `id` do client sinh** — `CategoryCreate`, `MenuItemCreate`, `OptionGroupCreate` và các kiểu còn lại. Gửi lại cùng một changeset là gửi lại cùng khóa chính, nên không sinh bản ghi trùng. Chúng đã **bình thường hóa sẵn**: làm hai lần bằng làm một lần.
+
+Nguyên tắc phân loại, ghi lại để dùng cho change sau: chỉ thao tác **không bình thường hóa** mới cần khóa. Đặt thực đơn thành trạng thái X thì làm mười lần vẫn ra X; tạo một đơn thì làm hai lần ra hai đơn.
+
+Riêng `void_order`: hủy một đơn đã hủy vẫn ra trạng thái đã hủy, nên **về mặt trạng thái nó đã bình thường hóa**. Nó vẫn nằm trong phạm vi vì hai lý do khác: nó ghi dấu vết kiểm toán gồm người hủy, thời điểm và lý do — gọi hai lần thì dấu vết thứ hai là rác; và nó đụng số liệu tiền hủy trong báo cáo.
+
+**6. Không bật tự động thử lại. Giữ người dùng chủ động bấm lại.** Chốt 2026-09-07.
+
+Hiện `src/app/AppProviders.tsx` đặt `retry: false` cho toàn bộ truy vấn, tức hệ đang không tự thử lại gì cả. Quyết định này giữ nguyên trạng đó.
+
+| | Phương án | Lý do chọn hoặc loại |
+| --- | --- | --- |
+| a | Không tự động, người dùng bấm lại | **Chọn** |
+| b | Tự động thử lại vài lần cho lỗi mạng | **Loại.** Phải phân biệt được lỗi mạng với lỗi nghiệp vụ; thử lại một `PAYMENT_AMOUNT_TOO_LOW` là vô nghĩa và làm chậm phản hồi |
+| c | Đẩy sang change riêng | **Loại.** Không cần một change để nói "giữ nguyên hiện trạng" |
+
+Lý do chọn a: bật tự động thử lại là thêm một hành vi **chạy ngầm vào đúng luồng tiền**, trong tuần đang trễ lịch. Và vấn đề gốc đã được giải rồi — có khóa chống trùng thì việc bấm lại thủ công không còn nguy hiểm nữa; phần còn lại chỉ là tiện lợi, không phải đúng sai.
+
+Ranh giới giữ nguyên như mục "Ngoài phạm vi" đang ghi: change này bảo đảm **thử lại là an toàn**, không quyết định **khi nào thử lại**.
+
+**7. Có ghi nhật ký lần gửi lặp, nhưng chỉ đếm.** Chốt 2026-09-07.
+
+Một cột đếm số lần lặp trên chính hàng khóa, không sinh bản ghi riêng cho mỗi lần lặp. Đủ để biết mạng có vấn đề mà không đẻ thêm bảng, và không biến một việc vốn không có tác dụng gì thành một dòng ghi mới.
+
+**5. Chưa từng phát sinh bản ghi trùng trên dữ liệu thật.** Chốt 2026-09-07.
+
+Chủ dự án xác nhận: hệ chưa được dùng thật và chưa có kiểm thử tải, nên chưa có cơ hội phát sinh. Kết luận này **không làm giảm mức ưu tiên**: change vẫn là nền bắt buộc cho nhóm ngoại tuyến ở tuần 11–13, vì gửi lại hàng đợi chính là gửi trùng có chủ ý.
