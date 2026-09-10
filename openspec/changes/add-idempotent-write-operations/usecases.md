@@ -2,7 +2,7 @@
 
 Thuật ngữ và ký hiệu K, R1, G, F0: xem [bảng thuật ngữ](proposal.md#thuat-ngu).
 
-Ngày 2026-09-09. **Thiết kế, chưa triển khai.** Tên kiểu viết hoa được định nghĩa đầy đủ trong [design.md](design.md); ví dụ số là VND, K/O/L/P/A/B là UUID fixture trong [testplan](testplan.md). Mọi luồng ghi áp dụng ngoại lệ chung dưới đây; UC liệt kê thêm ngoại lệ riêng. Mỗi exception được kiểm bằng TC có mã trong [ma trận](traceability.md).
+Ngày 2026-09-09. **Đã hiện thực theo thiết kế, đã nghiệm thu ngày 2026-09-10; kết quả/SHA tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).** Tên kiểu viết hoa được định nghĩa đầy đủ trong [design.md](design.md); ví dụ số là VND, K/O/L/P/A/B là UUID fixture trong [testplan](testplan.md). Mọi luồng ghi áp dụng ngoại lệ chung dưới đây; UC liệt kê thêm ngoại lệ riêng. Mỗi exception được kiểm bằng TC có mã trong [ma trận](traceability.md).
 
 ## Ngoại lệ chung
 

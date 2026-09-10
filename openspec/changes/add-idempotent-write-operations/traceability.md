@@ -46,4 +46,4 @@ Ngày 2026-09-09. Phủ ở **mức thiết kế**, không phải số test đã
 | Use case chưa có TC | 0 / phải 0 |
 | Requirement chưa có UC | 0 / nên 0 |
 
-33 requirement, 12 UC, 93 TC gốc. Invariant về runner/kiến trúc được kiểm trong ngữ cảnh phục hồi UC 07; không tạo UC giả riêng cho công cụ. Tất cả TC **planned/not run**; ma trận phủ không chứng minh code đã đúng.
+33 requirement, 12 UC, 93 TC gốc. Invariant về runner/kiến trúc được kiểm trong ngữ cảnh phục hồi UC 07; không tạo UC giả riêng cho công cụ. Các TC đã hiện thực; kết quả thực chạy được chốt riêng tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md). Ma trận này chứng minh truy vết thiết kế, không tự chứng minh code đã đúng.

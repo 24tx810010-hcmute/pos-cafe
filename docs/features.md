@@ -1,5 +1,7 @@
 # Features
 
+Cập nhật 2026-09-10 theo `main@3ada48c` đã push và nghiệm thu. Phạm vi/SHA/bằng chứng ở [phase 27](implementation-log/phase-27-idempotent-write-operations.md); chưa triển khai migration lên môi trường thật.
+
 ## Store & Session
 
 - Tạo store mới với tên hiển thị, địa chỉ (tùy chọn), Store Key và Admin PIN.
@@ -7,7 +9,7 @@
 - Nếu seed demo lỗi, store vẫn vào được app; màn kết quả hiện cảnh báo + nút thử lại (cũng seed lại được trong Cài đặt).
 - Ghép store bằng Store Key (màn pairing không prefill key mẫu, chỉ dùng làm placeholder).
 - Lưu session store ở client adapter.
-- Nhập PIN nhân viên để mở app shell.
+- Nhập PIN để server cấp phiên nhân viên 12 giờ, token chỉ trong bộ nhớ. Reload/khóa quay về nhập PIN; server xác minh quyền hiện hành. Nguồn: `014_write_identity_and_ledger.sql:179`, `src/adapters/supabase/employeeRepo.ts:13`.
 - Khóa phiên nhân viên để quay lại passcode.
 
 ## Role & Permission
@@ -29,7 +31,7 @@
 
 - Employees Drawer cho admin bật/tắt quyền hiệu lực từng người. Đổi role reset về default role; lưu quyền đúng default sẽ xóa override. Client giữ snapshot cả role/quyền của nhân viên hiện hành, nên thay đổi trên UI phản ánh đầy đủ sau khi khóa/đăng nhập lại; RPC đọc override live.
 - UI quản lý nhân viên hiện chỉ cho chọn `admin` hoặc `cashier`; row `kitchen` cũ trong database được ẩn khỏi danh sách cho đến khi feature bếp được triển khai.
-- Flow tạo/sửa/hủy đơn mở, full/split payment và hủy đơn paid đều gọi `requirePermission`; Order/Payment Drawer disable nút sớm khi thiếu quyền; migration 012 guardrail lại ba RPC order/payment chính.
+- Flow tạo/sửa/hủy đơn mở, full/split payment và hủy đơn paid đều gọi `requirePermission`; Order/Payment Drawer disable nút sớm khi thiếu quyền; giao thức v1 xác minh employee token và quyền tại server, thu hồi RPC ghi cũ.
 - **Catalog production, chưa phải quyền runtime:** chuyển/gộp bàn; refund; `discount.apply`; `price.override`; `drawer.open`; mở/chốt ca và kiểm két (`shift.*`). Các mã này chỉ là hướng mở rộng, chưa nằm trong `EmployeePermission` và không xuất hiện trong editor vì chưa có tính năng đứng sau. Quản trị menu/sơ đồ/nhân viên/cài đặt/report hiện vẫn theo module + role, chưa chỉnh per-employee.
 
 ## POS Floor
@@ -48,11 +50,22 @@
 - Món **có nhóm tuỳ chọn** → bấm vào hiện popup `ModifierPickerPopup` để chọn modifier (size/topping...); món **không có** nhóm thì thêm thẳng vào giỏ như cũ. Nhóm `single` chọn 1 (radio); nhóm `multi` tick nhiều giá trị, mỗi giá trị có stepper số lượng (mặc định 1). Nhóm bắt buộc thì nút `Thêm vào đơn` khoá đến khi chọn hợp lệ (`validateModifierSelection`).
 - Số lượng món và ghi chú chỉnh ở giỏ; dòng giỏ hiển thị option kèm `×N` khi số lượng > 1. Giá dòng = (giá món + Σ giá_modifier × số_lượng) × số_lượng_món.
 - Submit order lên backend qua RPC; backend quyết định snapshot tên/giá. Tuỳ chọn chỉ hợp lệ khi nhóm của nó được gắn với đúng món.
-- Khi `Gửi đơn`, mở popup `Phiếu gửi bếp` (variant `kitchen`) chỉ liệt kê các món **mới thêm** so với đơn hiện tại — so khớp theo nội dung (món + option + ghi chú) vì draft sinh id mới mỗi lần; chỉ hiện tên + số lượng, không giá. Tính từ dữ liệu local lúc bấm (`diffAddedPrintLines`).
-- Cập nhật query sau submit/pay theo kiểu fire-and-forget (UI/popup hiện ngay, không chờ refetch); máy khác nhận trễ tối đa ~5s qua realtime/poll.
+- Sau lần gửi thành công đầu tiên còn đúng màn/phiên, popup `Phiếu gửi bếp` chỉ gồm phần mới không có `sourceItemId`; draft phần cũ giữ ID. Dữ liệu phiếu lấy từ xác nhận local, chỉ tên/số lượng, không giá; đây vẫn là seam preview, chưa có phiếu bếp bền trên server. Replay/recovery không tự mở lại. Nguồn: `src/features/pos/orderFlow.ts:132`, `src/app/drawers/pos/OrderDrawer.tsx`.
+- Sau thành công, invalidate/refetch dữ liệu; không patch cache. Polling 5 giây khi active là cấu hình hồi phục, không phải cam kết mọi máy hội tụ trong 5 giây.
 - Mở lại order đang mở để chỉnh sửa.
 - Dirty close confirm cho draft/chỉnh sửa chưa lưu.
 - Nếu order đã đóng/stale, UI hiển thị trạng thái không thể thanh toán/chỉnh như order mở.
+
+## Ghi chống trùng và khôi phục
+
+- Chỉ đơn đã được server ghi nhận mới là đơn của hệ thống. Nháp chưa gửi không được hứa khôi phục khi mất local.
+- Khi mất phản hồi, hiện kết quả chưa rõ; “Thử lại cùng lệnh” giữ đúng xác nhận cũ. Polling không được đổi lựa chọn hoặc chuyển split sang pay toàn bộ.
+- Tra cứu thao tác từ server sau đổi máy, reload hoặc hết ca; người tiếp quản cần phiên và quyền của chính mình. R1 lịch sử hiển thị riêng với đơn hiện tại; không tự preview/in lại.
+- Lệnh pending quá 24 giờ không còn thực hiện được; có thể xem đơn và xác nhận lệnh mới. Đơn qua 1–2 ngày vẫn còn, không tự hủy theo hạn lệnh.
+- Phần đã gọi giữ giá/snapshot; thêm món cùng tên với giá mới là phần riêng. Ví dụ 2 × 30.000 + 1 × 40.000 = 100.000 đồng, modifier 0 đồng. Không thêm/sửa modifier vào phần cũ.
+- Đổi giá trong lúc xác nhận hiển thị quote cũ/mới, cần xác nhận mới với K mới. Mất mạng không tự gửi lại.
+
+Nguồn: `src/features/pos/writeOperationFlow.ts:25`, `:84`, `src/features/pos/orderFlow.ts:73`, `:183`, `src/app/drawers/pos/WriteRecoveryDrawer.tsx`; [quyết định và kiểm chứng phase 27](implementation-log/phase-27-idempotent-write-operations.md).
 
 ## Payment
 
@@ -64,14 +77,14 @@
 - **Chọn món để thanh toán** (pane phải): checkbox `Chọn tất cả` **mặc định bật** (= trả nhanh cả bàn, một chạm như cũ). Bỏ chọn rồi tick một dòng sẽ chọn **1 sản phẩm** của dòng đó; chỉnh số lượng bằng chip `đã chọn/tổng` + nút `+` xoay vòng (chạm trần quay về 1). Chỉnh bất kỳ dòng nào dưới mức tối đa → `Chọn tất cả` tự tắt; chọn đủ 100% → tự bật lại.
 - Summary: `Khách đưa`, `Tiền thối`/`Còn thiếu`, `Tổng đơn`, dòng nổi bật `Thanh toán lần này`, checkbox `In hóa đơn sau khi thanh toán` mặc định bật và nút hoàn tất.
 - Chặn hoàn tất khi tiền nhận chưa đủ **so với phần đang chọn**, hoặc khi chưa chọn món nào.
-- Flow tự rẽ nhánh (`payOrderItemsAndPrint`): chọn đủ 100% → RPC `pay_order` (đơn paid, bàn trống, đóng drawer); chọn một phần → RPC `pay_order_items` **tách đơn**: món được chọn thành đơn mới paid ngay (bill riêng, vào report/lịch sử ngay), đơn gốc còn lại trên bàn với phần chưa trả; drawer mở tiếp, toast `Đã tách và thanh toán đơn #N (X). Bàn còn Y.`, selection reset về `Chọn tất cả` phần còn lại.
+- Trước register, flow xác định chọn đủ → `pay_order`, chọn một phần → `pay_order_items`. Đây là kind của payload v1, không gọi RPC ghi cũ. Sau register giữ nguyên kind/selection/version/IDs. Thành công split lần đầu reset lựa chọn về phần còn lại; mất phản hồi giữ xác nhận để tra cứu/thử lại cùng K. Clamp rỗng do polling không tự chọn toàn bộ. Nguồn: `src/features/pos/orderFlow.ts:351`, `src/app/drawers/pos/PaymentDrawer.tsx:48`.
 - **Đánh số theo thứ tự thanh toán**: bill trả trước mang số nhỏ hơn — đơn tách kế thừa `order_no` của đơn gốc, đơn gốc nhận số mới (header drawer đổi số tương ứng sau khi tách).
 - Đơn gốc sau khi tách là đơn bình thường: sửa món, thêm món, thậm chí huỷ đều được (tiền đã thu nằm an toàn ở các đơn tách đã paid).
-- Selection được clamp theo dữ liệu mới nhất khi đơn bị máy khác cập nhật (lock_version đổi) — không thể trả vượt số lượng.
+- Khi chưa có xác nhận đang xử lý, selection được clamp theo dữ liệu đơn mới nhất; clamp rỗng giữ rỗng. Khi K chưa rõ kết quả, bản xác nhận được giữ nguyên và server kiểm version/số lượng; polling không thay payload đang chờ.
 - Có nút `In tạm tính` mở popup phiếu tạm tính (chưa thanh toán) từ đơn hiện tại.
 - Khi checkbox in hóa đơn bật, sau khi thanh toán mở popup hoá đơn thanh toán in-app (PortalPopup); bỏ chọn thì vẫn thanh toán nhưng không mở popup. Phase này in chỉ là preview UI (popup + browser print qua iframe cô lập), chưa nối phần cứng; seam `IPrintPort` giữ nguyên cho adapter ESC/POS tương lai (`BrowserPrintPort` hiện no-op, không còn `window.open`).
 - Bill dựng từ payload receipt trả về ngay trong mutation (không chờ refetch); in lại ở Lịch sử thì lấy từ payment snapshot của đơn đó.
-- Hoá đơn dùng template dùng chung `ReceiptDocument` (khổ 80mm): 2 biến thể `ticket` (phiếu tạm tính) / `receipt` (hoá đơn thanh toán); dòng món kiểu Bách Hoá Xanh (tên + `SL × đơn giá` / thành tiền); header/footer lấy từ store settings.
+- Hoá đơn dùng template `ReceiptDocument` khổ 80mm: `ticket` (tạm tính), `receipt` (thanh toán), `kitchen` (phiếu gửi bếp không giá). Receipt dùng metadata snapshot lúc thanh toán, còn ticket/kitchen lấy settings hiện tại; dữ liệu legacy được đánh dấu. Nguồn: `src/app/components/ReceiptPreview.tsx:150`.
 - Lý do chọn mô hình split-order (và vì sao bỏ mô hình partial-cùng-đơn của migration 009), ưu/nhược điểm: xem ADR "Instant Pay" trong [architecture.md](architecture.md) và phân tích đầy đủ ở [implementation-log/phase-18-instant-pay.md](implementation-log/phase-18-instant-pay.md).
 
 ## Takeaway
@@ -85,7 +98,7 @@
 
 - Mặc định hiển thị các đơn đã kết thúc **gần đây nhất, không giới hạn ngày kinh doanh** (`main@c7f2f4e`). Trước đó mặc định là `Hôm nay`.
 - Chỉ hiển thị đơn đã kết thúc (`Đã thanh toán`, `Đã hủy`); đơn đang mở thuộc màn Bàn/Mang đi.
-- **Instant pay**: mỗi lần tách thanh toán là một ĐƠN độc lập → tự nhiên là một dòng lịch sử riêng, hiện **ngay sau khi thu tiền** (không chờ bàn đóng). Bàn trả 2 lần = 2 đơn không liên kết gì nhau, chỉ cùng nhãn bàn; số đơn tăng theo thứ tự thanh toán.
+- **Instant pay**: mỗi lần tách thanh toán là một ĐƠN độc lập → tự nhiên là một dòng lịch sử riêng, hiện **ngay sau khi thu tiền** (không chờ bàn đóng). Bàn trả 2 lần = 2 đơn độc lập về trạng thái, cùng nhãn bàn; ledger/audit lưu liên kết nguồn/kết quả của lần tách; số đơn tăng theo thứ tự thanh toán.
 - Bộ lọc ngày là một nút `Filter date`, mở popup chọn `Gần đây` (mặc định), `Hôm nay`, `7 ngày`, `Tháng này` hoặc khoảng ngày tùy chọn.
 - **Số hiển thị trong lịch sử KHÔNG phải số bill, và đây là chủ ý.** Vì danh sách trải nhiều ngày mà `order_no` chỉ duy nhất trong phạm vi một `business_date`, hiển thị `order_no` sẽ sinh nhiều dòng trùng số. Nên cả cột trái lẫn cột phải hiển thị `displayNo` — số thứ tự đếm giảm theo tập đơn khớp bộ lọc (`total - (page-1) * pageSize - index`). Đổi bộ lọc thì `displayNo` được tính lại. `order_no` giữ đúng vai trò số bill và **chỉ xuất hiện trên hóa đơn in**; màn lịch sử cố ý không hiển thị nó.
 - Danh sách đơn dùng phân trang để giữ payload ổn định (`PAGE_SIZE = 20`); date/status/type được áp dụng ở repository trước khi cắt trang.
@@ -94,8 +107,8 @@
 - Cột phải hiển thị item snapshot/options/note/quantity, khách hàng fallback `Khách lẻ`, **nhân viên thanh toán** được map từ `payment.employeeId`, phương thức thanh toán và paid time. Không hiển thị thêm ô `Thu ngân` trùng dữ liệu.
 - Summary thanh toán cố định cuối cột phải theo thứ tự `Khách đưa`, `Tiền thừa`, `Tổng tiền`; `Tổng tiền` nổi bật hơn.
 - `OrderDetail` đọc payment snapshot để lịch sử hiển thị đúng `receivedAmount` và `changeAmount`, không tính tạm ở UI.
-- Nút `In lại hóa đơn` dựng lại bill từ order detail đã lưu và mở popup hoá đơn (dùng chung `ReceiptDocument`); đơn chưa có payment thì báo không in được. Đơn `void` không in lại được (nút bị disable).
-- **Hủy đơn đã thanh toán**: nút `Hủy đơn` chỉ hiện với người có quyền `order.voidPaid` (mặc định admin) và đơn đang ở `Đã thanh toán`. Bấm mở popup xác nhận: cảnh báo rõ "đơn <số tiền> sẽ bị loại khỏi doanh thu ngày DD/MM, không thể hoàn tác", chọn 1 trong các lý do ghi sẵn (Nhập sai đơn/sai món, Khách đổi ý/trả món, Hết món/hết nguyên liệu, Đơn bị trùng, Lý do khác) + ô ghi chú (bắt buộc khi chọn "Lý do khác"). Sau khi hủy, đơn chuyển `Đã hủy`, cột chi tiết hiển thị người hủy/thời điểm/lý do, và bị loại khỏi doanh thu (report tự cập nhật). Quyền được chốt ở flow (`requirePermission`) và guardrail lại trong RPC — không tin nút bị ẩn. Trước khi gọi RPC, popup **refetch order detail để lấy `lock_version` tươi** (cache detail sau thanh toán có thể còn version cũ, gây conflict giả); nếu đơn không còn `paid` thì báo tải lại thay vì hủy.
+- Nút `In lại hóa đơn` đọc receipt qua RPC được bảo vệ, kiểm trạng thái đơn hiện tại rồi mở popup dùng chung `ReceiptDocument`; ưu tiên snapshot metadata đã lưu, dữ liệu cũ thiếu snapshot được đánh dấu legacy. Đơn chưa có payment hoặc đã `void` không in lại được. Nguồn: `016_activate_write_protocol.sql:166`, `OrderHistoryDrawer.tsx`.
+- **Hủy đơn đã thanh toán**: nút `Hủy đơn` chỉ hiện với người có quyền `order.voidPaid` (mặc định admin) và đơn đang ở `Đã thanh toán`. Bấm mở popup xác nhận: cảnh báo rõ "đơn <số tiền> sẽ bị loại khỏi doanh thu ngày DD/MM, không thể hoàn tác", chọn 1 trong các lý do ghi sẵn (Nhập sai đơn/sai món, Khách đổi ý/trả món, Hết món/hết nguyên liệu, Đơn bị trùng, Lý do khác) + ô ghi chú (bắt buộc khi chọn "Lý do khác"). Sau khi hủy, đơn chuyển `Đã hủy`, cột chi tiết hiển thị người hủy/thời điểm/lý do, và bị loại khỏi doanh thu (report tự cập nhật). Quyền được chốt ở flow (`requirePermission`) và guardrail lại trong RPC — không tin nút bị ẩn. Trước khi mở popup xác nhận, tải lại order detail. Khi xác nhận dùng đúng version đã hiển thị; đóng màn/khóa/mất mạng vô hiệu phản hồi đọc muộn, không tạo lệnh hủy sau đó. Nguồn: `src/app/drawers/admin/OrderHistoryDrawer.tsx`.
 - Dùng cho cashier và admin (hủy đơn đã thanh toán mặc định chỉ admin, trừ khi cashier được cấp `order.voidPaid`).
 
 ## Employees

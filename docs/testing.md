@@ -2,6 +2,25 @@
 
 Tài liệu này gom bằng chứng kiểm thử hiện hành để dùng trong báo cáo. Kết quả phải được đọc cùng **baseline, ngày chạy và môi trường**; không suy rộng local mock thành cloud production.
 
+## Nghiệm thu giao thức chống trùng — 2026-09-10
+
+Baseline code **main@3ada48c0c9c494d9b34838fd3739bda6091e0bb9**, đã push. Môi trường Windows/Node 24.16, PostgreSQL 16.15/PostgREST 16.2/GoTrue v2.197.0 loopback. Bốn stage dùng cùng fingerprint và report được verifier kiểm trước/sau commit.
+
+| Lệnh / nhóm | Kết quả |
+| --- | --- |
+| test:idempotency:unit | 57 file, 548/548 test PASS |
+| test:contracts | 415/415 PASS, HTTP + observer PostgreSQL thật |
+| test:idempotency:tools | 37/37 PASS, gồm 6 actual source mutants và controls fail-closed |
+| test:idempotency:e2e | 34/34 PASS qua browser/Auth/REST thật, 0 skip/0 flaky |
+| discover + verify-results | 93 TC gốc, 669/669 required, 1.034 discovered/executed, valid: true |
+| build | TypeScript/Vite PASS, 3215 module; JS 1.403,38 KB / gzip 387,60 KB; còn chunk warning |
+| test:coverage | 548 tests PASS; dòng 92,53% (744/804), câu lệnh 88,85%, nhánh 83,14%, hàm 95,07% |
+| smoke (mock hồi quy) | 35 PASS / 31 viewport exclusions / 0 fail / 0 flaky; không thuộc required manifest |
+
+Coverage vẫn giữ phạm vi logic nghiệp vụ thuần của chiến lược; không phải coverage toàn bộ UI/SQL. Runtime mới không có Storage API/Realtime, không dùng kết quả để thay cloud test. Ba reviewer độc lập có expected/actual và giới hạn riêng; [gói bằng chứng](implementation-log/phase-27-evidence/verification.md) ghi đủ 669 execution, provenance/hash và báo cáo. [Tái lập runtime](implementation-log/phase-27-test-runtime.md). Không chạy `smoke:supabase` lên remote và không apply migration thật trong lượt này.
+
+Các mục ngày cũ bên dưới là bằng chứng lịch sử, không được gộp với kết quả mới hoặc dùng số coverage cũ cho baseline mới.
+
 ## Chiến Lược
 
 Chiến lược kiểm thử — sáu tầng, tiêu chí "bao nhiêu là đủ" theo loại thay đổi, cổng chất lượng, ngưỡng độ phủ và quy ước đặt tên — nằm ở [test-strategy.md](test-strategy.md).
@@ -92,7 +111,7 @@ Số liệu bundle cập nhật theo lần build 2026-08-21: một chunk JS duy 
 
 Kết quả mock smoke **34 pass/31 skipped/0 failed** dưới đây là của ngày **2026-08-12** và chưa được xác nhận lại; khi đưa vào báo cáo phải ghi đúng ngày đó, không gộp vào ngày 2026-08-21.
 
-## Baseline Local Hiện Tại
+## Baseline Local Lịch Sử 2026-08-12
 
 Kiểm tra trực tiếp ngày **2026-08-12** trên `main@c7f2f4e`:
 

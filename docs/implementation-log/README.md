@@ -6,7 +6,7 @@ Folder này ghi nhật ký implement theo phase. Mục tiêu là track nhanh nh�
 
 ## Baseline Hiện Hành
 
-- Current truth được audit ngày **2026-07-30** theo `main@b7b7262`.
+- Current truth bổ sung ngày **2026-09-10** theo `main@3ada48c`; các audit nền cũ có ngày riêng trong phase log.
 - Phase log là evidence lịch sử tại checkpoint. Test failure, TODO hoặc giới hạn trong phase cũ có thể đã được phase sau supersede; dùng root docs và [../testing.md](../testing.md) để kết luận trạng thái hiện tại.
 - Không đổi chữ “pass/fail” lịch sử thành current truth. Khi cần làm rõ, thêm ghi chú “đã được phase sau supersede”.
 - Tên file, symbol, commit, migration và lệnh trong phase log chỉ phục vụ truy vết kỹ thuật. AI viết báo cáo phải chuyển chúng thành mô tả mục tiêu, cách tiếp cận, quyết định và kết quả; không sao chép artefact triển khai vào nội dung chính.
@@ -23,6 +23,13 @@ Folder này ghi nhật ký implement theo phase. Mục tiêu là track nhanh nh�
 1. Đọc [../phase-scope.md](../phase-scope.md) để biết scope.
 2. Đọc phase log tương ứng bên dưới.
 3. Nếu cần kiểm chứng sâu, mở commit/branch trong Git hoặc đọc archive spec được link.
+
+## Phase 27 — Đã nghiệm thu code ngày 2026-09-10
+
+- [Ghi POS chống trùng và khôi phục](phase-27-idempotent-write-operations.md): thiết kế đã hiện thực, bằng chứng test và các lỗi review đã sửa.
+- [Rollout](phase-27-idempotency-rollout.md): DB/app, backup và xử lý lỗi; chưa deploy môi trường thật.
+
+Các phase trước là biên bản theo checkpoint, không viết lại để tạo cảm giác đã có giao thức mới từ trước.
 
 ## Phase Logs
 

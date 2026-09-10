@@ -2,7 +2,7 @@
 
 > **Duyệt triển khai 2026-09-10:** chủ dự án xác nhận không còn vấn đề, cho phép push docs trước rồi triển khai code. Code chỉ được push sau khi các kiểm tra bắt buộc đạt. Giữ phạm vi hiện tại; quỹ giờ chưa cố định, lịch ở dưới tiếp tục là kịch bản dự báo và được cập nhật theo tiến độ thực tế, không chặn bắt đầu code. Các đoạn về chờ duyệt bên dưới giữ bối cảnh phân tích trước mốc này.
 
-Ngày lập bộ spec 2026-09-09; cập nhật phân tích lịch 2026-09-10. **Đã soạn bộ spec để rà soát và duyệt; chưa triển khai ứng dụng, chưa chốt lại lịch thực hiện.** Mốc code: main@7183b31. [Proposal trước bộ spec](../../../docs/reviews/2026-09-07-idempotency/evidence/2026-09-09-proposal-truoc-bo-spec.md) được giữ nguyên, gồm 32 mã PRE-IDEM và lịch sử sửa quyết định.
+Ngày lập bộ spec 2026-09-09; cập nhật phân tích lịch 2026-09-10. **Đã duyệt và triển khai; đã nghiệm thu code, chưa deploy môi trường thật.** Kết quả/SHA hiện hành ở [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md). Mốc code: main@7183b31. [Proposal trước bộ spec](../../../docs/reviews/2026-09-07-idempotency/evidence/2026-09-09-proposal-truoc-bo-spec.md) được giữ nguyên, gồm 32 mã PRE-IDEM và lịch sử sửa quyết định.
 
 <a id="thuat-ngu"></a>
 ## Thuật ngữ
@@ -37,7 +37,7 @@ Draft và submit hiện dựng lại giá từ catalog, trong khi chủ dự án
 - Giữ ID và snapshot phần cũ; phần mới, kể cả phần thêm bằng dấu cộng, nhận giá mới đã xác nhận. Không sửa modifier trên phần cũ.
 - Pending có 24 giờ để bắt đầu thực hiện; đơn không hết hạn. Bản đồ án không tự xóa K, payload hoặc kết quả.
 - Ghi người tạo đơn, người khởi tạo/thực hiện/hủy lệnh và người thanh toán. Hóa đơn tính đúng số lượng option; phục hồi không tự in.
-- Thiết kế 33 requirement, 12 use case, 93 testcase gốc và các biến thể về quyền, tranh chấp, lỗi và thời gian. Mỗi ca có kết quả mong đợi và cách quan sát. Test mới **chưa hiện thực, chưa chạy**.
+- Thiết kế 33 requirement, 12 use case, 93 testcase gốc và các biến thể về quyền, tranh chấp, lỗi và thời gian. Mỗi ca có kết quả mong đợi và cách quan sát. Test đã hiện thực; kết quả chỉ được công nhận khi đủ gate cùng fingerprint tại phase 27.
 
 ## Capabilities
 

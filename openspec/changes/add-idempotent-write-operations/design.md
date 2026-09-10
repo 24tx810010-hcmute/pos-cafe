@@ -2,7 +2,7 @@
 
 Thuật ngữ và ký hiệu K, R1, G, F0: xem [bảng thuật ngữ](proposal.md#thuat-ngu).
 
-Ngày 2026-09-09. **Thiết kế để duyệt triển khai, chưa có trong main.** Yêu cầu sản phẩm đã đóng trong proposal; các thông số và cấu trúc dưới đây là lựa chọn kỹ thuật của analyst, không gán thành phát biểu của chủ dự án.
+Ngày 2026-09-09. **Thiết kế đã duyệt và được hiện thực; đã nghiệm thu ngày 2026-09-10.** Bằng chứng code mốc 7183b31 ở mục 1 được giữ để giải thích vấn đề trước sửa; hiện trạng mới tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md). Yêu cầu sản phẩm đã đóng trong proposal; các thông số và cấu trúc dưới đây là lựa chọn kỹ thuật của analyst, không gán thành phát biểu của chủ dự án.
 
 ## 1. Hiện trạng và thay đổi có chủ đích
 

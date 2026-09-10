@@ -1,5 +1,7 @@
 # Lộ Trình Phát Triển
 
+Cập nhật thực hiện 2026-09-10: chủ dự án đã duyệt và bắt đầu mục chống trùng; code/tests đã nghiệm thu và push `main@3ada48c`, docs phê duyệt đã push `0ecf84d`. Tiến độ và cổng cuối tại [phase 27](implementation-log/phase-27-idempotent-write-operations.md). Không tự suy quỹ giờ mỗi ngày từ việc làm hằng ngày; các mốc dự báo dưới đây chưa phải cam kết mới.
+
 Thứ tự thực hiện và tiến độ của dự án. Tài liệu này trả lời câu hỏi **làm gì trước, làm gì sau, và đang ở đâu**.
 
 Nó không chép lại quan hệ phụ thuộc giữa các change — phần đó nằm ở mục "Thứ tự phụ thuộc" trong `openspec/README.md` và ở section `## Phụ thuộc` của từng proposal. Ở đây chỉ có trình tự thực hiện, mốc thời gian và trạng thái.
@@ -118,7 +120,7 @@ Các việc dưới đây không chiếm tuần riêng, nhưng phải xong trư�
 | Việc | Hạn | Trạng thái |
 | --- | --- | --- |
 | Chốt bảy câu hỏi còn lại của `enforce-permissions-at-database` | **trước tuần 6** | `[ ]` |
-| Chốt nghiệp vụ và hoàn thiện bộ spec `add-idempotent-write-operations`; hệ chưa vận hành thật theo chủ dự án, không tuyên bố đã đo/tái hiện sự cố thật | **trước tuần 2** | `[x]` tài liệu 2026-09-09; implementation/test mới chưa làm — xem [rà cuối](reviews/2026-09-07-idempotency/14-bo-spec-hoan-chinh-va-ra-cuoi.md) |
+| Chốt nghiệp vụ và hoàn thiện bộ spec `add-idempotent-write-operations`; hệ chưa vận hành thật theo chủ dự án, không tuyên bố đã đo/tái hiện sự cố thật | **trước tuần 2** | `[x]` tài liệu 2026-09-09; implementation/test đã nghiệm thu ở phase 27; bằng chứng trước code — xem [rà cuối](reviews/2026-09-07-idempotency/14-bo-spec-hoan-chinh-va-ra-cuoi.md) |
 | Dựng đường gửi email ở mức 1: Gmail riêng của dự án, App Password, cấu hình SMTP, gửi thử xác nhận không vào thư rác. Không phải mua gì, không phải chờ duyệt | trước tuần 7 | `[ ]` |
 | ~~Viết ba artifact còn thiếu cho `add-owner-account-and-store-provisioning`~~ | trước tuần 7 | `[x]` xong 2026-08-31 |
 | Chốt và viết spec cho nhóm offline nếu mở lại trong tương lai | Chưa xếp lịch | **Hoãn 2026-09-08** |

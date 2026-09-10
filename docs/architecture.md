@@ -1,5 +1,7 @@
 # Architecture
 
+Cập nhật 2026-09-10 theo `main@3ada48c` đã push và nghiệm thu. Phạm vi/SHA/bằng chứng ở [phase 27](implementation-log/phase-27-idempotent-write-operations.md); chưa triển khai migration lên môi trường thật.
+
 ## Hexagonal Architecture / Ports & Adapters
 
 Dự án áp dụng kiến trúc Ports & Adapters, lấy cảm hứng từ Hexagonal Architecture. Điểm chính là UI và feature flow không phụ thuộc trực tiếp vào Supabase, browser print hay realtime SDK; các phần hạ tầng này được bọc sau `AppPorts`.
@@ -7,7 +9,7 @@ Dự án áp dụng kiến trúc Ports & Adapters, lấy cảm hứng từ Hexag
 Trong dự án này:
 
 - **Inside:** domain types, core guards, money/order helpers và feature flows.
-- **Ports:** interface như `IOrderRepo`, `IPaymentRepo`, `IPrintPort`, `IRealtimePort`.
+- **Ports:** interface như `IWriteOperationRepo`, `IOrderRepo`, `IPaymentRepo`, `IPrintPort`, `IRealtimePort`.
 - **Adapters:** Supabase adapter, mock adapter, browser print adapter và realtime adapter.
 - **Driving side:** React screens/drawers gọi feature hooks/flows.
 - **Driven side:** database/RPC, realtime, print preview và data seed.
@@ -50,7 +52,7 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 
 - App dùng một URL.
 - Pre-login screen state: `landing`, `storePairing`, `createStore`, `passcode`.
-- Logged-in shell dùng `LeftNav` left rail và drawer state: `order`, `payment`, `takeaway`, `menuEditor`, `floorEditor`, `report`, `orderHistory`, `employees`, `settings`, `paymentSettings`. Mỗi key map tới đúng một drawer qua `DRAWER_REGISTRY` (Record có type ràng buộc) trong `AppShell`. `KitchenQueueDrawer` là future scaffold, không đăng ký trong registry hiện tại.
+- Logged-in shell dùng `LeftNav` left rail và drawer state: `order`, `payment`, `takeaway`, `menuEditor`, `floorEditor`, `report`, `orderHistory`, `employees`, `settings`, `paymentSettings`, `writeRecovery`. Mỗi key map tới đúng một drawer qua `DRAWER_REGISTRY` (Record có type ràng buộc) trong `AppShell`. `KitchenQueueDrawer` là future scaffold, không đăng ký trong registry hiện tại.
 - Zustand giữ UI state như current employee, active area/category, drawer context, payment order id và draft items.
 
 ## Server State
@@ -69,41 +71,29 @@ UI không gọi Supabase trực tiếp. Nếu cần đổi backend hoặc thêm 
 
 ## RPC & Transaction Boundary
 
-- Business-critical mutations đi qua RPC để DB quyết định transaction:
-  - `submit_order_changes`
-  - `pay_order`
-  - `pay_order_items` (instant pay: TÁCH các món được chọn ra một đơn mới độc lập và thanh toán đơn đó ngay trong cùng transaction)
-  - `void_order` (hủy đơn đã thanh toán, giữ payment/audit và optimistic lock)
-  - `clear_demo_data`
-- RPC đảm bảo lock/version, order number, snapshot giá/tên/options, status order/table và payment consistency. Mỗi lần tách đơn cũng bump `lock_version` của đơn gốc nên các máy khác nhận tín hiệu như mọi mutation khác.
+Bốn nghiệp vụ tạo/sửa đơn, thu tiền toàn bộ, tách rồi thu tiền và hủy đơn đã thanh toán đi qua giao thức v1. UI gọi port `write`; adapter gọi `register_write_operation` rồi `execute_write_operation`. Register chỉ giữ K/payload, không tạo đơn hay payment. Execute giữ nghiệp vụ, audit và trạng thái terminal/R1 trong một transaction. Hai RPC vẫn là hai transaction riêng; pending đã đăng ký có thể được tiếp tục bằng phiên có quyền khác.
 
-### Bảo đảm ACID
+Nguồn: `src/adapters/supabase/writeOperationRepo.ts:31`, `supabase/migrations/016_activate_write_protocol.sql:12` và `:35`. Migration 016 thu hồi mọi overload RPC ghi cũ và DML tài chính (`:258`); các phương thức adapter cũ còn trong mã để tương thích test cũ, không phải đường fallback của UI v1.
 
-Mỗi RPC là một plpgsql function nên toàn bộ thân hàm chạy trong **một transaction ngầm** — không migration nào có `begin`/`commit` tường minh, và cũng không cần. **Atomicity** và **Durability** đến từ PostgreSQL. Phần dự án chủ động thiết kế là **Isolation** và **Consistency**, làm theo bốn lớp:
+### Transaction, khóa và kết quả bất biến
 
-| Lớp | Cơ chế | Chặn tình huống |
-| --- | --- | --- |
-| Serialize ghi POS | `pg_advisory_xact_lock(hashtext(store_id \|\| ':pos-write'))` | Hai thiết bị cùng ghi POS trong một store chèn nhau |
-| Cấp số đơn | `pg_advisory_xact_lock(hashtext(store_id \|\| ':' \|\| business_date))` | Hai đơn cùng đọc `max(order_no)` rồi cùng ghi một số |
-| Row lock | `select ... for update` trên `orders`, `tables`, `order_items` | Đọc-rồi-ghi trên dòng đang bị transaction khác sửa |
-| Optimistic lock | So `orders.lock_version` với `p_expected_lock_version` | Client gửi thay đổi dựa trên snapshot cũ → `ORDER_VERSION_CONFLICT` |
+| Cơ chế | Quy tắc và tác dụng |
+| --- | --- |
+| Khóa store → K → business rows | Serialize ghi POS trong cùng cửa hàng; thứ tự nhất quán giảm nguy cơ deadlock. Cả void paid cũng đi qua coordinator. |
+| Row locks và OCC | Sau khi đợi khóa, đối chiếu expectedVersion không null với trạng thái thực; snapshot cũ bị từ chối. |
+| Catalog trước statement | Giữ giá/cấu hình ổn định trong thời gian validate và ghi; kiểm quyền, phiên và hạn K lần cuối sau các lần đợi. |
+| Transaction và subtransaction | Lỗi nghiệp vụ đã biết rollback toàn bộ business rồi lưu rejected; lỗi hạ tầng rollback cả transaction, K vẫn pending. |
+| K/payload/R1 | Cùng K khác payload bị từ chối. Replay terminal trả kết quả cũ, chỉ tăng replay count với execute được phép, không thêm hiệu ứng hoặc audit nghiệp vụ. |
 
-**Consistency** dựa vào constraint `unique (store_id, business_date, order_no)` (migration 001). Chính constraint này buộc luồng tách đơn phải đổi `order_no` của đơn gốc **trước** để nhả số cũ cho đơn tách, nếu không sẽ vi phạm unique giữa chừng (migration 010).
+Nguồn: `015_write_business_helpers.sql:66`, `016_activate_write_protocol.sql:35`–`:113`. Pending hết hiệu lực sau 24 giờ kể từ đăng ký đầu tiên; terminal không bị dọn trong release này. Hạn K không phải hạn đơn. Tra cứu R1 và đọc đơn hiện tại là hai việc riêng vì đơn có thể đã được thao tác tiếp.
 
-**Phủ không đồng đều:** `submit_order_changes`, `pay_order` và `pay_order_items` dùng đủ bốn lớp. `void_order` (migration 011) chỉ dùng row lock + optimistic lock, **không** lấy advisory lock — nó chỉ đổi `status` của đúng một đơn `paid` và không cấp `order_no` mới, nên row lock đã đủ, và việc bỏ advisory lock tránh chặn bán hàng khi admin hủy đơn cũ.
+Serialize ở phạm vi store là đánh đổi để dễ chứng minh tính đúng cho quán nhỏ. Chưa đo thời gian giữ khóa hoặc tải sản xuất; không khẳng định không ảnh hưởng tốc độ. Nếu cần tối ưu phải đo rồi mới thu hẹp khóa, giữ nguyên oracle race/OCC/atomicity.
 
-**Điểm nghẽn đã biết:** advisory lock `':pos-write'` dùng **một khóa duy nhất cho mọi thao tác ghi POS của cả store**. Hai thu ngân gửi đơn cho hai bàn khác nhau vẫn phải xếp hàng chờ nhau. Với một quán vài thiết bị thì không cảm nhận được, và đổi lại là mô hình lý luận rất đơn giản: ghi POS trong một store là tuần tự. Cần đo lại thời gian giữ khóa nếu:
-
-- Thêm việc vào trong cùng transaction — ví dụ trừ tồn kho theo định lượng làm kéo dài thời gian giữ khóa.
-- Quán đông với nhiều thiết bị ghi liên tục.
-
-Hướng thu hẹp nếu cần: hạ phạm vi khóa xuống theo `table_id` hoặc `order_id` cho phần ghi đơn, giữ khóa theo `business_date` riêng cho việc cấp `order_no`.
-
-**Ranh giới của bảo đảm:** mọi bảo đảm trên chỉ có **bên trong một lời gọi RPC**. Một chuỗi nhiều RPC từ client không phải một transaction, nên nếu lời gọi thứ hai hỏng thì lời gọi thứ nhất đã commit rồi. Đây cũng là lý do offline-first là thay đổi lớn: khi mất mạng thì không có transaction, không cấp được `order_no` và không so được `lock_version` với sự thật phía server. Phân tích chi tiết ở đề xuất `add-offline-data-layer` và `add-offline-sync-conflict-resolution` trong [../openspec/README.md](../openspec/README.md).
+UI giữ bản xác nhận trong bộ nhớ, timeout 15 giây chuyển thành kết quả chưa rõ; không có outbox, không tự gửi khi mạng trở lại. Thử lại giữ nguyên K, kind, version, ID và số lượng ban đầu. Nguồn: `src/features/pos/writeOperationFlow.ts:25`, `:84`.
 
 ### ADR: Instant Pay — TÁCH ĐƠN ĐỘC LẬP (split-order)
 
-**Quyết định (phase 18, bản chốt):** thanh toán một phần = tách các món được chọn ra một **đơn mới hoàn toàn độc lập** (UUID client cấp) và thanh toán đơn đó ngay trong cùng transaction. Hai đơn không có liên kết dữ liệu nào — chỉ tình cờ chung `table_id` lúc thanh toán. Đơn gốc còn lại trên bàn là đơn `open` bình thường.
+**Quyết định (phase 18, bản chốt):** thanh toán một phần = tách các món được chọn ra một **đơn mới hoàn toàn độc lập** (UUID client cấp) và thanh toán đơn đó ngay trong cùng transaction. Hai đơn tiếp tục độc lập về nghiệp vụ và cùng nhãn bàn; phase 27 bổ sung liên kết nguồn/kết quả trong ledger và audit để tra cứu đúng thao tác, không tạo quan hệ phụ thuộc thanh toán. Đơn gốc còn lại trên bàn là đơn `open` bình thường.
 
 **Lịch sử quyết định:** bản đầu của phase 18 làm theo mô hình "partial payment trên cùng một đơn" (nhiều payments/đơn, `order_items.payment_id`, view `history_entries` — migration 009). Người dùng **không chấp nhận các đánh đổi** của mô hình đó — report lệch két trong ngày, phải ẩn/đóng băng món đã trả, lịch sử phải chế khái niệm "Lần x/y" — nên rework sang split-order (migration 010 dọn toàn bộ 009).
 
@@ -120,7 +110,7 @@ Hướng thu hẹp nếu cần: hạ phạm vi khóa xuống theo `table_id` ho�
 - Realtime nằm trong `IRealtimePort`/feature integration để giữ transport tập trung.
 - **Transport là WebSocket:** `supabase-js` mở WebSocket tới Supabase Realtime (Phoenix channel); app chỉ dùng `client.channel(...)` + `postgres_changes` nên không có code WebSocket thủ công nào trong `src`. Reconnect, auth và lọc `store_id=eq.<id>` do SDK và Realtime server lo. Đánh đổi: app không kiểm soát backoff/heartbeat của socket — đây là một lý do vẫn giữ polling 5s làm lưới an toàn.
 - **Quyết định (phase tiểu luận, online-only): KHÔNG optimistic update / KHÔNG patch cache.** Ưu tiên độ chính xác giữa các máy (server là nguồn sự thật) hơn là cảm giác "tức thì" trên máy đang thao tác. Optimistic guessing dễ gây lệch trạng thái đa thiết bị và phá đường đọc đơn nhất — vốn cũng là seam cho offline-first sau này (đổi nguồn đọc sang bản sao local + outbox mà không phải gỡ cache-patch). Đánh đổi chấp nhận: một nhịp refetch nền trên máy đang thao tác.
-- **Phủ tín hiệu:** publication gồm `orders, payments, tables` + bảng menu/floor. `order_items` cố ý KHÔNG publish vì `submit_order_changes` luôn bump `orders.lock_version` → một event trên `orders` đã đủ (tránh double-refetch). `orders/payments/tables` → invalidate open orders + floor + report; order detail (`["orders","detail",id]`) nằm dưới prefix `["orders"]` nên cũng được refetch theo.
+- **Phủ tín hiệu:** publication gồm `orders, payments, tables` + bảng menu/floor. `order_items` cố ý KHÔNG publish vì nghiệp vụ submit luôn bump `orders.lock_version` → một event trên `orders` đã đủ (tránh double-refetch). `orders/payments/tables` → invalidate open orders + floor + report; order detail (`["orders","detail",id]`) nằm dưới prefix `["orders"]` nên cũng được refetch theo.
 - **Giới hạn hiện tại:** migration 008 đã publish `menu_item_option_groups`, nhưng `SupabaseRealtimePort` chưa subscribe bảng nối này. Thao tác chỉ gắn/bỏ một modifier group khỏi món sẽ không tự invalidate menu trên máy khác; cần refresh/reconnect. Các thay đổi category/item/group/value vẫn realtime như bình thường.
 - **Tự lành khi rớt kết nối:** `channel.subscribe` lắng trạng thái; mỗi lần `SUBSCRIBED` (lần đầu và mỗi lần auto-reconnect resubscribe) sẽ resync toàn bộ (open orders + floor + report + menu) ngay, không chờ poll.
 - **Mục tiêu hội tụ danh nghĩa:** floor plan / open orders / order detail còn poll `refetchInterval` 5s làm lưới an toàn. Đây là khoảng polling khi app online/active, **không phải SLA cứng ≤5s** vì browser throttling, request và mạng có thể làm trễ hơn; E2E cloud quan sát trong timeout rộng hơn.
@@ -144,10 +134,10 @@ Hướng thu hẹp nếu cần: hạ phạm vi khóa xuống theo `table_id` ho�
 
 - Employees Drawer cho admin chỉnh switch theo **quyền hiệu lực**. Save chỉ lưu diff so với default role; diff rỗng xóa override (`null`). Đổi role trong form reset quyền về default role mới; không cho tự khóa tài khoản đang đăng nhập hoặc hạ role/khóa admin active cuối.
 - UI chỉ liệt kê/tạo/sửa role `admin` và `cashier`. Employee `kitchen` cũ bị lọc khỏi Employees Drawer và Passcode; nav/registry không có kitchen module.
-- UI Order/Payment disable action và giải thích khi thiếu quyền, nhưng feature flow mới là chốt client thật. Migration 012 guardrail lại `submit_order_changes`, `pay_order`, `pay_order_items`; `void_order` tiếp tục guard quyền từ migration 011.
+- UI/flow kiểm quyền để hướng dẫn người dùng; server v1 xác minh employee token và quyền hiện hành. Client tự khai actor ID không thay thế token.
 - `currentEmployee` là snapshot memory-only của cả role/quyền tại lúc đăng nhập. Admin đổi hồ sơ hiện hành thì thiết bị nhân viên cần khóa/đăng nhập lại để UI nhận đầy đủ snapshot mới; RPC đọc override live nên có thể từ chối mutation ngay sau khi thu hồi.
-- RLS hiện so `auth.uid()` với `store_id`: nó cô lập **giữa các store**, không tạo identity DB riêng cho từng nhân viên. PIN chỉ chọn actor ở tầng app; client có store session/token hợp lệ có thể giả `p_employee_id` hoặc ghi trực tiếp các bảng mà policy store-level cho phép.
-- Default role → permission lặp ở TypeScript và SQL helper. `core/guards.ts` là source of truth; E2E deny-permission phát hiện drift. Guard RPC là lớp phòng thủ/audit nghiệp vụ, **không phải security boundary chống client độc hại**. Muốn bảo mật per-employee thật cần signed/backend employee context và policy ghi chặt hơn.
+- RLS cô lập store theo `auth.uid()`. Employee session riêng có token 43 ký tự chỉ giữ trong bộ nhớ, hash tại DB và hiệu lực 12 giờ; lock/reset PIN thu hồi phiên. DML tài chính và nguồn quyền bị khóa; nhân viên chỉ ghi qua RPC được bảo vệ. SELECT tài chính vẫn cô lập theo store, chưa có phân quyền đọc đầy đủ theo nhân viên. Nguồn: `014_write_identity_and_ledger.sql:162`, `016_activate_write_protocol.sql:196`–`:277`.
+- Default role → permission còn lặp ở TypeScript và SQL. Bộ contract đối chiếu grant/deny, quyền sau khi chờ khóa và chặn gọi trực tiếp để phát hiện lệch. Chống brute-force PIN và provisioning chủ thật là phần còn hoãn.
 
 ## Print
 

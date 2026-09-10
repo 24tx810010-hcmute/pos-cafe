@@ -1,6 +1,6 @@
 # Requirements & Traceability
 
-Tài liệu này chuyển phạm vi hiện hành thành yêu cầu có mã để dùng trong báo cáo tiểu luận và truy vết sang tính năng, thiết kế và kiểm thử. Baseline được đối chiếu ngày **2026-08-21** là `main@c7f2f4e`.
+Cập nhật 2026-09-10 theo `main@3ada48c` đã push và nghiệm thu. Phạm vi/SHA/bằng chứng ở [phase 27](implementation-log/phase-27-idempotent-write-operations.md); chưa triển khai migration lên môi trường thật.
 
 > Cột **Bằng chứng chính** là traceability nội bộ cho AI/developer. Khi viết báo cáo, không sao chép tên code, file, symbol hoặc migration từ cột này; chỉ dùng chúng để kiểm chứng rồi diễn đạt lại yêu cầu và thiết kế ở mức hệ thống.
 
@@ -19,19 +19,19 @@ Tài liệu này chuyển phạm vi hiện hành thành yêu cầu có mã để
 | --- | --- | --- | --- |
 | FR-01 | Tạo cửa hàng mới với tên, địa chỉ tùy chọn, Admin PIN và lựa chọn seed dữ liệu mẫu | Đã triển khai | [features.md](features.md#store--session), `sessionFlow`, `authRepo`, seed bundle |
 | FR-02 | Ghép thiết bị vào cửa hàng bằng Store Key và lưu session cửa hàng ở client | Đã triển khai | [screens.md](screens.md#2-store-pairing), `sessionFlow`, `storeKey` |
-| FR-03 | Chọn nhân viên hiện hành và xác minh PIN trước khi vào POS | Đã triển khai | [screens.md](screens.md#4-passcode), RPC `verify_employee_pin` |
-| FR-04 | Giới hạn module theo role và 5 thao tác theo quyền hiệu lực từng nhân viên | Đã triển khai | [features.md](features.md#role--permission), `core/guards.ts`, migration 012 |
+| FR-03 | Chọn nhân viên hiện hành và xác minh PIN trước khi vào POS | Đã triển khai | [screens.md](screens.md#4-passcode), RPC `start_employee_session`, migration 014 |
+| FR-04 | Giới hạn module theo role và 5 thao tác theo quyền hiệu lực từng nhân viên | Đã triển khai | [features.md](features.md#role--permission), `core/guards.ts`, phiên server và activation 014–016 |
 | FR-05 | Quản lý nhân viên: lọc, tạo, sửa tên/role/trạng thái, reset PIN và chỉnh quyền | Đã triển khai | [screens.md](screens.md#12-employees-drawer), phase 22 |
 | FR-06 | Xem sơ đồ theo khu/tầng, lọc trạng thái bàn và nhận biết bàn trống/đang phục vụ | Đã triển khai | [features.md](features.md#pos-floor), `FloorWorkspace` |
-| FR-07 | Tạo và cập nhật đơn tại bàn, gồm món, số lượng, ghi chú và modifier | Đã triển khai | [features.md](features.md#order), RPC `submit_order_changes` |
+| FR-07 | Tạo và cập nhật đơn tại bàn, gồm món, số lượng, ghi chú và modifier | Đã triển khai | [features.md](features.md#order), giao thức v1 action create/update, retained/new |
 | FR-08 | Tạo và tiếp tục xử lý đơn mang đi | Đã triển khai | [features.md](features.md#takeaway), `TakeawayDrawer` |
 | FR-09 | Dùng thư viện modifier chung nhiều-nhiều, hỗ trợ single/multi, bắt buộc và số lượng | Đã triển khai | [data-model.md](data-model.md#nhóm-menu), migration 008 |
 | FR-10 | Khi gửi đơn, tạo phiếu gửi bếp từ các dòng mới thêm mà không hiển thị giá | Đã triển khai ở mức preview | Phase 14, `ReceiptPreview`; chưa có kitchen queue hoặc máy in thật |
-| FR-11 | Thanh toán toàn bộ đơn bằng tiền mặt, tính tiền thiếu/thối và trả bàn về trống | Đã triển khai | [features.md](features.md#payment), RPC `pay_order` |
-| FR-12 | Chọn món/số lượng để tách thành đơn độc lập và thanh toán ngay | Đã triển khai | ADR instant pay, RPC `pay_order_items`, migration 010 |
+| FR-11 | Thanh toán toàn bộ đơn bằng tiền mặt, tính tiền thiếu/thối và trả bàn về trống | Đã triển khai | [features.md](features.md#payment), giao thức v1 kind `pay_order` |
+| FR-12 | Chọn món/số lượng để tách thành đơn độc lập và thanh toán ngay | Đã triển khai | ADR instant pay, giao thức v1 kind `pay_order_items`, migration 015 |
 | FR-13 | Preview/in phiếu tạm tính và hóa đơn qua browser | Đã triển khai ở mức web | Phase 13–14, `ReceiptPreview`; không claim tích hợp ESC/POS |
 | FR-14 | Xem lịch sử đơn đã kết thúc, mặc định gần đây không giới hạn ngày, lọc theo khoảng ngày/trạng thái/loại đơn, phân trang và xem chi tiết snapshot | Đã triển khai | [features.md](features.md#order-history), `OrderHistoryDrawer` |
-| FR-15 | Hủy đơn đã thanh toán theo quyền, lý do, audit và optimistic lock | Đã triển khai | Phase 19, RPC `void_order`, migration 011 |
+| FR-15 | Hủy đơn đã thanh toán theo quyền, lý do, audit và optimistic lock | Đã triển khai | giao thức v1 action void_paid, migration 015 |
 | FR-16 | Quản lý menu/category/món/modifier và upload ảnh món JPG/PNG/WebP tối đa 5MB | Đã triển khai | [features.md](features.md#menu-editor), migrations 005–006 |
 | FR-17 | Quản lý khu, bàn, decor; kéo, resize, xoay, khóa và lưu changeset | Đã triển khai | [features.md](features.md#floor-editor), phase 17 và 21 |
 | FR-18 | Chọn asset decor và nền bàn built-in, render đồng nhất ở editor và POS | Đã triển khai | Phase 21 và 23, migration 013 |
@@ -43,14 +43,20 @@ Tài liệu này chuyển phạm vi hiện hành thành yêu cầu có mã để
 
 | Mã | Yêu cầu | Tiêu chí chấp nhận hiện tại | Trạng thái |
 | --- | --- | --- | --- |
-| NFR-01 | Nhất quán giao dịch order/payment | Mutation quan trọng chạy trong RPC; stale update bị chặn bằng `lock_version` | Đã triển khai và có test |
+| NFR-01 | Nhất quán giao dịch order/payment | Transaction v1 nguyên tử, replay K/R1 không ghi lặp; stale update bị chặn bằng expectedVersion bắt buộc | Đã triển khai và có test |
 | NFR-02 | Cô lập dữ liệu giữa cửa hàng | Các bảng nghiệp vụ dùng `store_id`; RLS so khớp `auth.uid()` của store | Đã triển khai; không đồng nghĩa bảo mật per-employee |
 | NFR-03 | Dễ kiểm thử và thay adapter | UI/features phụ thuộc ports; Supabase/mock cùng implement contract | Đã triển khai và có boundary test |
 | NFR-04 | Hỗ trợ màn hình vận hành ngang | Desktop, tablet/phone landscape dùng được; portrait hiển thị hướng dẫn xoay | Đã kiểm tra bằng Playwright đa viewport |
 | NFR-05 | Khả năng khôi phục đồng bộ online | Realtime signal kết hợp refetch/polling danh mục đang active | Đã triển khai; không phải SLA cứng |
 | NFR-06 | Build kiểm tra kiểu nghiêm ngặt | `tsc -b` với TypeScript strict và Vite production build phải pass | Đạt tại baseline |
-| NFR-07 | Có bằng chứng kiểm thử nhiều lớp | Sáu tầng kiểm thử, tiêu chí "đủ test" theo loại thay đổi và cổng chất lượng định nghĩa tại [test-strategy.md](test-strategy.md); ngưỡng độ phủ 90% dòng trên phần logic nghiệp vụ thuần | **Đạt** từ 2026-09-07: chiến lược đã viết thành văn, độ phủ đo được 92,77%, kịch bản demo tự động hóa. Kết quả và ngày chạy trong [testing.md](testing.md) |
+| NFR-07 | Có bằng chứng kiểm thử nhiều lớp | Sáu tầng kiểm thử, tiêu chí "đủ test" theo loại thay đổi và cổng chất lượng định nghĩa tại [test-strategy.md](test-strategy.md); ngưỡng độ phủ 90% dòng trên phần logic nghiệp vụ thuần | **Đạt** tại main@3ada48c ngày 2026-09-10: chiến lược thành văn, độ phủ dòng 92,53%, kịch bản demo tự động hóa và gate chống trùng. Kết quả và ngày chạy trong [testing.md](testing.md) |
 | NFR-08 | Deploy web không cần server ứng dụng riêng | Vite build ra `dist`, Vercel SPA rewrite, Supabase làm backend managed | Đã cấu hình; URL live cần xác minh riêng trước khi claim |
+
+## Bổ sung chống trùng ngày 2026-09-10
+
+Bộ yêu cầu chính thức gồm 33 requirement / 12 use case / 93 TC gốc trong [change](../openspec/changes/add-idempotent-write-operations/proposal.md). Giữ các mã FR/NFR đã chốt tại đó, không tạo một bộ mã cạnh tranh ở trang tổng quan. [Ma trận](../openspec/changes/add-idempotent-write-operations/traceability.md) nối đủ requirement–UC–TC; [testplan](../openspec/changes/add-idempotent-write-operations/testplan.md) ghi expected và nơi hiện thực. Trạng thái nghiệm thu hoàn tất và SHA code tại [phase 27](implementation-log/phase-27-idempotent-write-operations.md).
+
+Các yêu cầu thêm bao gồm K/payload bất biến, server recovery/takeover, phiên nhân viên và chặn bypass, giá theo phần cũ/mới, receipt lịch sử, audit nguyên tử, TTL theo lệnh và UI online không tự gửi lại. Giới hạn tiền mặt, bếp và offline giữ theo quyết định của chủ dự án.
 
 ## Ngoài Phạm Vi Hoặc Hoãn
 

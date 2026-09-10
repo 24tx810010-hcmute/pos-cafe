@@ -2,7 +2,7 @@
 
 Thuật ngữ và ký hiệu K, R1, G, F0: xem [bảng thuật ngữ](proposal.md#thuat-ngu).
 
-Ngày 2026-09-09. **93 testcase gốc đã thiết kế; chưa hiện thực/chưa chạy.** Các ma trận tham số có suffix riêng (mục B); số testcase thực chạy phải lấy từ manifest, không coi 93 là số execution cuối. Mọi vị trí file bên dưới là **dự kiến**, không tuyên bố file test hiện đã tồn tại.
+Ngày 2026-09-09. **93 testcase gốc đã hiện thực; đã nghiệm thu ngày 2026-09-10.** Các ma trận tham số có suffix riêng (mục B); số testcase thực chạy phải lấy từ manifest, không coi 93 là số execution cuối. Các mục Nơi hiện thực đã đối chiếu discovery của runner với file thật; expected giữ nguyên thiết kế trước code.
 
 ## A. Cổng chạy và quan sát
 
@@ -21,7 +21,7 @@ Baseline main@7183b31 đã có báo cáo 63 test/5 file pass tại [evidence cũ
 | Discovery | tests/contracts/caseManifest.ts và artifact JSON | npm run test:idempotency:discover xuất IDs/names/file/backend; đối chiếu Vitest list và Playwright --list trước suite |
 | Tổng kết nghiệm thu | artifact manifest/result JSON + log + raw DB snapshot + DOM/trace cần thiết | npm run test:idempotency:verify-results: thiếu/skip/timeout/unexecuted required ID => exit nonzero |
 
-Các script/config trên là task phải tạo, **chưa chạy được như lệnh mới ở hiện trạng**. Tên test bắt đầu TC-IDEM-xxx, parameter suffix ổn định. Một TC đa lớp có bản kiểm mỗi lớp, ghi suffix /core, /mock, /db, /e2e; không báo DB pass dựa vào /mock.
+Các script/config trên đã hiện thực; chạy bằng Node 24.16.0 với `IDEM_ENV_FILE` riêng. Kết quả chỉ được chấp nhận sau verifier cùng fingerprint nguồn. Tên test bắt đầu TC-IDEM-xxx, parameter suffix ổn định. Một TC đa lớp có bản kiểm mỗi lớp, ghi suffix /core, /mock, /db, /e2e; không báo DB pass dựa vào /mock.
 
 Preflight bắt buộc, fail-closed: mode đúng supabase, URL/key có và hợp lệ, observer DSN của **test DB riêng** có, project/store fixture marker đúng, capabilities v1/migration checksum khớp. Không sử dụng service-role làm caller nghiệp vụ; caller dùng Store JWT+employee token, observer đặc quyền tách riêng chỉ setup/inspect/fault. Không in credential. Missing config/DB paused/migration missing phải fail hoặc ghi BLOCKED trước suite, không skip xanh. Không phụ thuộc RUN_SUPABASE_REALTIME_E2E mặc định skip hiện tại. Không dùng project đang có dữ liệu người dùng để fault/delete fixtures.
 
@@ -102,7 +102,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Cấp phiên; gọi get capabilities; khóa online; thử lại token; đăng nhập rồi reload.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Token 43 ký tự chỉ memory; expiresAt-issuedAt=12 h; revoke được ACK thì token cũ EMPLOYEE_SESSION_REQUIRED; reload về PIN, Store session còn. Mã phải hiện đúng thông báo tại design, mục 7: EMPLOYEE_SESSION_REQUIRED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-002 — PIN sai và employee inactive
 
@@ -113,7 +113,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Gọi start trực tiếp cho mỗi biến thể, gồm positive control A active/PIN đúng.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Sai/inactive trả INVALID_PIN, không cấp token; positive control được phiên. Không trả hash. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_PIN.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-003 — Token không đúng store/thiếu/giả
 
@@ -124,7 +124,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Register pay cho từng biến thể.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** EMPLOYEE_SESSION_REQUIRED; 0 K/0 hiệu ứng nghiệp vụ; employeeId A trong JSON không giúp vượt. Mã phải hiện đúng thông báo tại design, mục 7: EMPLOYEE_SESSION_REQUIRED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writePermissions.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-004 — Store session vắng hoặc sai
 
@@ -135,7 +135,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Gọi capabilities/register với token A thật.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** AUTH_REQUIRED, 0 K/0 hiệu ứng nghiệp vụ. Mã phải hiện đúng thông báo tại design, mục 7: AUTH_REQUIRED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writePermissions.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-005 — Biên hạn phiên và reset PIN
 
@@ -146,7 +146,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute fixture pending hợp lệ tại từng clock, fixture riêng; reset PIN rồi dùng token cũ.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** −1 ms có quyền và applied; =, +1 ms EMPLOYEE_SESSION_REQUIRED/K pending; reset PIN cũng chặn, token mới đăng nhập PIN mới dùng được. Hai race start-session/reset-PIN có suffix riêng: start thắng lock employee thì reset chờ và thu hồi token vừa cấp; reset thắng thì start PIN cũ INVALID_PIN/không token. Observer xác minh không có token PIN cũ sống sau reset commit. Mã phải hiện đúng thông báo tại design, mục 7: EMPLOYEE_SESSION_REQUIRED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeConcurrency.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-006 — Ma trận action × endpoint × actor
 
@@ -157,7 +157,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Gọi trực tiếp từng cell; list phải chỉ trả action được phép; thêm override grants/denies độc lập.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Theo design, mục 2.3 từng cell; B chỉ pay/split, C: 0; deny thắng grant; request cấm FORBIDDEN trừ list lọc; 0 hiệu ứng/0 counter và K pending giữ. Mỗi cell có test ID suffix riêng. Mã phải hiện đúng thông báo tại design, mục 7: FORBIDDEN.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writePermissions.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-007 — Thu hồi quyền lúc execute chờ khóa
 
@@ -168,7 +168,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** B execute chờ O1; admin connection 2 deny B và commit; nhả O1; B tiếp tục.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Checkpoint đọc quyền mới: FORBIDDEN, K pending, 0 payment; A execute sau đó applied 1 payment. Observer xác minh revoke commit trước checkpoint. Mã phải hiện đúng thông báo tại design, mục 7: FORBIDDEN.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeConcurrency.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-008 — Tự nâng quyền/PIN bằng direct DML
 
@@ -179,7 +179,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Gọi REST/SQL role authenticated trực tiếp, từng field/thao tác riêng.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Mọi attempt denied; employees/sessions không đổi. SELECT whitelist thành công nhưng passcode_hash và SELECT * không rò hash. Không dùng service-role làm caller. Mã phải hiện đúng thông báo tại design, mục 7: FORBIDDEN.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writePermissions.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-009 — Bypass bốn RPC và các overload
 
@@ -190,7 +190,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Gọi từng overload với payload valid/employeeId A; thử INSERT/UPDATE/DELETE financial+ledger/audit.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Permission denied mọi đường; no effect. Manifest inventory thiếu overload hoặc function mới chưa audit thì fail. Mã phải hiện đúng thông báo tại design, mục 7: FORBIDDEN.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writePermissions.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-010 — Parent, table status và cross-store bypass
 
@@ -201,7 +201,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Thử trực tiếp token C và admin A với field ngoài allowlist; get K của S2; list S1.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Parent/status/identity write bị chặn; K store khác OPERATION_NOT_FOUND; list không lộ S2; mọi dữ liệu thuộc fixture giữ nguyên. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_NOT_FOUND.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writePermissions.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-011 — Bootstrap, admin và seed không bị phá
 
@@ -212,7 +212,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Với seedDemo=false, sau activation A tạo bàn id UUID mới/store_id=S1 và parent area S1; B/C thử INSERT bàn tương tự.  Tạo Store → bootstrap → PIN → seed; bootstrap lần 2; B/C thử seed/reset PIN; A đổi menu/layout.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Admin INSERT bàn thành công với id đã gửi, store_id=S1, status mặc định empty; đọc/layout-update được, không được UPDATE id/store/status. B/C INSERT bị từ chối.  Lần đầu một store/admin, vào POS được; lần 2 ENTITY_ID_CONFLICT không reset admin; B/C bị chặn; admin layout không đổi status; clear_demo giữ finance/ledger/audit. Mã phải hiện đúng thông báo tại design, mục 7: ENTITY_ID_CONFLICT.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyBootstrap.spec.ts`; `tests/contracts/writeBootstrap.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-012 — Register không tạo đơn
 
@@ -223,7 +223,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Register; đọc DB qua observer mới.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** 1 pending, expires=T+24 h, 0 order/items/options/payment/event; initiator A, count 0.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-013 — Retry register và terminal không gia hạn
 
@@ -234,7 +234,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Register 2 lần; get sau 25 h; register lại cùng K.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Chỉ 1 K; registeredAt/expiry/initiator giữ; get expired; register terminal trả expired, không pending mới/0 hiệu ứng nghiệp vụ.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-014 — Create lần đầu và replay R1
 
@@ -245,7 +245,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Register/execute; assert R1 literal và DB; replay 2 lần.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** 1 order #1/version 0/open 60 k, 2 units/0 payment/B01 occupied; creator A; 1 event; count 2; R1 exact không đổi.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-015 — Khóa object order không làm khác payload
 
@@ -256,7 +256,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Register P1, execute P2.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Equality hợp lệ, 1 applied/total 50 k. Không dựa stringify text để so.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `src/core/writePayload.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-016 — Đảo mảng hai phần tử là mismatch
 
@@ -267,7 +267,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Register P1 rồi execute P2; execute P1 sau đó.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** P2 IDEMPOTENCY_KEY_REUSED, 0 hiệu ứng/count 0; P1 applied 50 k, stored array A, T. Mã phải hiện đúng thông báo tại design, mục 7: IDEMPOTENCY_KEY_REUSED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `src/core/writePayload.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-017 — Absent và null đều valid nhưng khác lệnh
 
@@ -278,7 +278,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Validate hai payload, register absent, execute null.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Cả hai schema hợp lệ; execute mismatch không phải INVALID_WRITE_REQUEST; execute absent thành công. Mã phải hiện đúng thông báo tại design, mục 7: IDEMPOTENCY_KEY_REUSED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `src/core/writePayload.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-018 — Same K khác kind/tiền/lượng/version
 
@@ -289,7 +289,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Register gốc; gửi từng payload thay đổi.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Mỗi biến thể IDEMPOTENCY_KEY_REUSED; K/expiry/actor/count giữ, 0 hiệu ứng; gửi gốc thành công 1 split. Mã phải hiện đúng thông báo tại design, mục 7: IDEMPOTENCY_KEY_REUSED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-019 — Race cùng K/payload
 
@@ -300,7 +300,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Barrier hai register; barrier hai execute; await commit trong 30 s.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Đúng 1 K/1 order/1 event, applied; cả hai execute trả cùng R1 đúng 60 k, count 1. Cả hai lỗi/treo không đạt; PIDs khác.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeConcurrency.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-020 — Race cùng K khác payload
 
@@ -311,7 +311,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Điều khiển P1 thắng register, fixture khác P2 thắng; executor dùng payload thắng.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** 1 pending payload thắng; bên thua IDEMPOTENCY_KEY_REUSED; expiry/initiator của winner; execute đúng 1 order 30 k hoặc 60 k tương ứng. Mã phải hiện đúng thông báo tại design, mục 7: IDEMPOTENCY_KEY_REUSED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeConcurrency.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-021 — Khác K tạo cùng bàn
 
@@ -322,7 +322,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Hai create chạy hai thứ tự thắng bằng barrier.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Đúng 1 applied, 1 rejected TABLE_OCCUPIED; 1 open order 30 k/1 item/B01 occupied/1 event; không orphan bên thua. Mã phải hiện đúng thông báo tại design, mục 7: TABLE_OCCUPIED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeConcurrency.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-022 — Khác K takeaway cùng nội dung
 
@@ -333,7 +333,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Register/execute cạnh tranh.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Cả hai applied; 2 orders 30 k, IDs/số bill khác; không dedupe bằng payload hash.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeConcurrency.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-023 — OCC race khác K cùng version
 
@@ -344,7 +344,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Register 2 K/v5 hoặc paid v6, barrier execute; update fixture chỉ note.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Đúng 1 applied, 1 rejected ORDER_VERSION_CONFLICT. Winner update:150 k/v6/0 payment; pay:paid 150 k/v6/1 payment; split:child 30 k/source 120 k/v6/1 payment; voidOpen:0/void v6/0 payment; voidPaid:150 k/void v7/payment cũ. Không deadlock bị nuốt. Mã phải hiện đúng thông báo tại design, mục 7: ORDER_VERSION_CONFLICT.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeConcurrency.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-024 — Create tranh cấp số với split
 
@@ -355,7 +355,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Buộc create thắng rồi fixture khác split thắng.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Create first:#21 create, source #22, child #12; split first:source #21, create#22, child #12. Mọi (store, date, no) unique; replay không cấp số.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeConcurrency.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-025 — Update giữ snapshot 100 k
 
@@ -366,7 +366,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Gửi update, refetch, replay.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** L1 qty 2/base 30 k/old options/60 k; L2 qty 1/base 40 k/Z 0/40 k; total 100 k/v6/0 payment, 2 active IDs; R1 và DB khớp.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyPricing.spec.ts`; `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-026 — Tăng qua dấu cộng tạo phần giá mới
 
@@ -377,7 +377,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Quan sát draft và payload rồi execute.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Retained L1 qty 2; newLine qty 1 quote 40 k; total 100 k, không L1 qty 3 giá cũ; không định giá lại cũ.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyPricing.spec.ts`; `src/features/pos/writeOperationFlow.test.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-027 — Đổi note giữa dòng khác giá
 
@@ -388,7 +388,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Dirty check; cố pay khi chưa gửi; gửi update; refetch.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Dirty true, không cho thanh toán trước gửi; sau update L30=30 k/null, L35=35 k/ít đá, total 65 k/v6/0 payment.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyPricing.spec.ts`; `src/app/writeRecovery.test.tsx`; `src/features/pos/writeOperationFlow.test.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-028 — Giảm và xóa đúng phần cũ
 
@@ -399,7 +399,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute từng fixture.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Giảm:old 30 k/version 6; old menu 40 k không ảnh hưởng. Xóa+new:raw old status removed/quantity 2/base 30 k/options cũ giữ, result.items chỉ new 1 × 40 k, 0 payment; không hard delete/options orphan.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `src/features/pos/writeOperationFlow.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-029 — Giữ phần cũ khi catalog đổi tên/không còn bán
 
@@ -410,7 +410,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Chỉ sửa note/giảm retained, không thêm mới; refetch.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Phần cũ vẫn base 30 k/Q 5 k qty 2/tên cũ; inactive không chặn retained. Giảm qty 1 total 40 k; no current catalog snapshots.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-030 — Modifier quantity và giá mới từng phần
 
@@ -421,7 +421,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute add; fixture riêng tách new, fixture khác tách 1 old.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Tổng 129 k; tách new paid 49 k/source 80 k; tách old paid 40 k/source 89 k; IDs/options qty/tên cũ-mới đúng, không chỉ assert sum.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyPricing.spec.ts`; `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-031 — Không gộp các cấu trúc cùng tổng giá
 
@@ -432,7 +432,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Tạo/đọc hai portions qua fixture thời gian giá; dirty/selection.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Hai source IDs/options khác, total 70 k; không gộp 2 × 35 k mất components.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/features/pos/writeOperationFlow.test.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-032 — Nguồn retained giả mạo
 
@@ -443,7 +443,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Từng biến thể riêng có admin A/order.update; register schema valid rồi execute.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Mỗi K rejected INVALID_ORDER_ITEMS; DB full snapshot không đổi/0 event. Positive control retained 5 cùng O1 applied. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_ORDER_ITEMS.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeCatalog.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-033 — Không sửa giá/menu/modifier/name phần cũ qua JSON
 
@@ -454,7 +454,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Gọi register trực tiếp từng payload.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** INVALID_WRITE_REQUEST trước ledger; 0 K/0 hiệu ứng; không silently strip rồi accept. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/core/writePayload.test.ts`; `tests/contracts/writePermissions.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-034 — Quote base tăng và giảm
 
@@ -465,7 +465,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** K1 execute; xem UI; replay K1; xác nhận mới K2 current quote.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** K1 rejected PRICE_CHANGED; O 60 k/v5/0 payment; UI proposed 105 k hoặc 95 k; K2 applied total 105 k/95 k/v6; K1 rejection giữ. Mã phải hiện đúng thông báo tại design, mục 7: PRICE_CHANGED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyPricing.spec.ts`; `src/adapters/mock/writeOperationRepo.test.ts`; `src/app/writeRecovery.test.tsx`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-035 — Quote chỉ option đổi
 
@@ -476,7 +476,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute K1, kiểm details và xác nhận K2.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** K1 PRICE_CHANGED/0 hiệu ứng nghiệp vụ; new portion 45 k → 49 k; tổng cũ 80 k → 129 k chỉ sau K2; không dùng orderVersion để bắt menu change. Variant bù giá vẫn PRICE_CHANGED dù tổng 49 k không đổi; details chỉ rõ base 35 → 37 k và option 7 → 6 k, chỉ K mới sau xác nhận được áp dụng. Mã phải hiện đúng thông báo tại design, mục 7: PRICE_CHANGED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyPricing.spec.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-036 — Menu, group và option validation
 
@@ -487,7 +487,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Từng variant riêng; gửi quote chính xác để không lẫn lỗi giá.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Negative: MENU_ITEM_UNAVAILABLE với món; OPTION_VALUE_UNAVAILABLE với option/group; 0 order/payment/event, K rejected bền. Positive: F0 A 30 k chọn Q 5 k và Z 0 thuộc cùng group multi hợp lệ, quantity 1 mỗi value → applied, 1 order 35 k, 2 option snapshots, 0 payment, 1 event. Không áp expected rejection cho positive. Mã lỗi hiển thị theo design, mục 7.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeCatalog.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-037 — Void open giữ lịch sử removed
 
@@ -498,7 +498,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute và replay; inspect all rows.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** O1 void/v6/subtotal 0/total 0/paidAt null; result.items=[], active 0; raw removed L1.quantity 5/items/options cũ không hard-delete; 0 payment/B01 empty; No 12/date/creator giữ; 1 event; replay không đổi updatedAt.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-038 — Full cash và receipt literal
 
@@ -509,7 +509,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute; inspect payment/order/table/R1/DOM; replay.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** 1 payment amount 150 k/received 200 k/change 50 k/employee A; O paid v6/B empty; receipt 150 k. Replay giữ nguyên/no auto print.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-039 — Tiền nhận thấp hơn tổng
 
@@ -520,7 +520,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute fixture riêng cho 2 mức.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** 149999 rejected PAYMENT_AMOUNT_TOO_LOW, 0 payment/O open v5; 150000 applied/change 0. Mã phải hiện đúng thông báo tại design, mục 7: PAYMENT_AMOUNT_TOO_LOW.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-040 — Split partial exact row/number oracle
 
@@ -531,7 +531,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute; raw observer items/options/payments/all orders; replay.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Nguồn L1 qty 4/open 120 k/v6/#21; child L2 qty 1/paid 30 k/v0/#12; 1 payment child/0 payment source/thừa 20 k/B occupied; split IDs/options/1 event giữ sau replay.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-041 — Split nguyên dòng giữ ID
 
@@ -542,7 +542,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute, observer quan hệ items/options.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** L30 move child v0/paid 30 k/#12, L35 source open 35 k/v6/#21; không copy L30; options chuyển cùng; payment 1 thừa 20 k.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-042 — Full selection route trước register
 
@@ -553,7 +553,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Quan sát requests từ click confirm.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** 1 register kind pay_order, 1 execute cùng K; 0 register/execute split; payment 150 k.
-- **Nơi hiện thực:** Chưa có. Dự kiến `src/features/pos/writeOperationFlow.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/features/pos/writeOperationFlow.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-043 — RPC split toàn bộ hoặc selection sai
 
@@ -564,7 +564,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Từng variant riêng qua DB; schema empty array kiểm trước register, remaining valid schema execute.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Empty INVALID_WRITE_REQUEST/0 K; full, over qty, duplicate/outside source INVALID_ORDER_ITEMS/rejected/0 hiệu ứng; positive twin qty 1 applied. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST, INVALID_ORDER_ITEMS.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-044 — Clamp còn đủ sau mất ACK
 
@@ -575,7 +575,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Drop reply sau observer commit; polling 5 s; bấm Thử lại cùng lệnh.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Outbound execute K cũ/payload qty 1/v5, không new register; đúng 1 payment/child, total nguồn 120 k. Không split lần 2 dù selection vẫn có 1.
-- **Nơi hiện thực:** Chưa có. Dự kiến `src/features/pos/writeOperationFlow.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/features/pos/writeOperationFlow.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-045 — Clamp rỗng rồi fallback fullSelection
 
@@ -586,7 +586,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Poll khiến selection L30 rỗng; recover/thử lại.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Chỉ replay K split gốc; 0 outbound pay_order/0 K mới; source 35 k vẫn open; payment 30 k duy nhất. Không fallback thành thanh toán 35 k.
-- **Nơi hiện thực:** Chưa có. Dự kiến `src/features/pos/writeOperationFlow.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/features/pos/writeOperationFlow.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-046 — Void paid không đổi bàn khách mới
 
@@ -597,7 +597,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute/replay; inspect O3/bàn/report.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** O1 void v7/total 150 k/payment/paidAt cũ giữ; B01 occupied/O3 không đổi; void actor A/time một lần; tiền void 150 k không 300 k.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyRecovery.spec.ts`; `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-047 — NULL version cả bốn kind và positive twin
 
@@ -608,7 +608,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Mỗi kind × null/missing riêng; reason/IDs/amount valid; chạy ca đối chứng dương với expectedVersion = 5 hoặc 6 trong fixture khác.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** NULL/missing INVALID_WRITE_REQUEST/0 K; positive cùng fixture applied. Không test void trên open rồi kết luận đã chặn NULL. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/core/writePayload.test.ts`; `tests/contracts/writeSchema.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-048 — Stale version, sai trạng thái và không thấy order
 
@@ -619,7 +619,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Từng kind/variant register valid rồi execute.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Version/status ORDER_VERSION_CONFLICT; missing/cross-store order NOT_FOUND; K rejected, 0 hiệu ứng; không dùng mismatch payload che OCC. Mã phải hiện đúng thông báo tại design, mục 7: ORDER_VERSION_CONFLICT, NOT_FOUND.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-049 — Lý do hủy other và enum
 
@@ -630,7 +630,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute valid schema other không note; validate enum; positive có note.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Other blank VOID_REASON_REQUIRED/rejected; invalid enum INVALID_WRITE_REQUEST/0 K; 5 reason hợp lệ (other note Nhập nhầm) applied fixture riêng. Mã phải hiện đúng thông báo tại design, mục 7: VOID_REASON_REQUIRED, INVALID_WRITE_REQUEST.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyRecovery.spec.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-050 — Receipt option quantity lần đầu/replay/in lại
 
@@ -641,7 +641,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Kiểm R1 literal; menu đổi tên/giá; replay; history preview; click In.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Full 80 k/unit 40 k/change 20 k; split 40 k/change 10 k/source 40 k; Q × 2 hiển thị; tên cũ; mọi đường cùng components và tổng; window.print 1 lần chỉ sau click.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/app/components/ReceiptPreview.test.tsx`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-051 — Tắt in, replay và current void cấm in lại
 
@@ -652,7 +652,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Pay tắt in; replay/later ACK/reconnect; mở R1 sau void; bấm In lại; open order chưa pay variant.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** 0 auto preview/0 window.print; paid manual preview được; void/open in lại RECEIPT_UNAVAILABLE; R1 vẫn đọc lịch sử, không vượt guard bằng R1. Mã phải hiện đúng thông báo tại design, mục 7: RECEIPT_UNAVAILABLE.
-- **Nơi hiện thực:** Chưa có. Dự kiến `src/features/pos/writeOperationFlow.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/adapters/mock/writeOperationRepo.test.ts`; `src/features/pos/writeOperationFlow.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-052 — ACK applied mất sau commit và đến muộn
 
@@ -663,7 +663,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Chặn response đã commit, chờ timeout 15 s, read K; thả response muộn; chủ động replay.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** UI WRITE_RESULT_UNKNOWN trước read; DB 1 payment/R1 đúng 150 k; late ACK 0 new register/execute/cancel/preview/print; replay cùng K/R1. Mã phải hiện đúng thông báo tại design, mục 7: WRITE_RESULT_UNKNOWN.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/features/pos/writeOperationFlow.test.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-053 — Register ACK muộn không tự execute
 
@@ -674,7 +674,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Timeout, offline → online/focus hoặc đóng drawer/khóa phiên; thả ACK; read/list.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** 1 pending/0 order; 0 execute/0 cancel tự phát, 0 preview; người đăng nhập lại mới chọn pending và bấm tiếp tục. Mã phải hiện đúng thông báo tại design, mục 7: WRITE_RESULT_UNKNOWN.
-- **Nơi hiện thực:** Chưa có. Dự kiến `src/features/pos/writeOperationFlow.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/app/writeRecovery.test.tsx`; `src/features/pos/writeOperationFlow.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-054 — Offline không có outbox hoặc auto-resume
 
@@ -685,7 +685,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Thử click offline; reconnect/focus/reload; quan sát mọi RPC writes và storages.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Offline không gửi/queue ghi; reconnect 0 register/execute/cancel mới; chỉ read được phép. Mạng rớt giữa lượt báo chưa rõ, không tự cho thất bại.
-- **Nơi hiện thực:** Chưa có. Dự kiến `src/features/pos/writeOperationFlow.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/features/pos/writeOperationFlow.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-055 — Mất toàn bộ local, tìm đúng hai K
 
@@ -696,7 +696,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Xóa cookies/localStorage/sessionStorage/IndexedDB của browser 1; dùng browser 2 context mới, ghép store/nhập PIN B; list chọn K1 rồi chọn K2 execute.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** K1 lịch sử 120 k v6 giữ; K2 applied source 90 k v7#9/child #8; đúng 2 payments/tổng 60 k; không K3; read R1 không patch current 90 k thành 120 k.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyRecovery.spec.ts`; `src/app/writeRecovery.test.tsx`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-056 — Takeover giữ đúng actor và creator
 
@@ -707,7 +707,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Thực hiện từng bước rồi dùng observer/context mới đọc ledger/events/payment.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** creator A, lastModified E, initiator A, executor B, payment B; replay C không đổi actor/time; legacy null không đoán A.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyRecovery.spec.ts`; `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-057 — Tìm kiếm/phân trang/quyền sau local wipe
 
@@ -718,7 +718,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** List limit 50 → cursor → cursor; lọc order/kind/status/date; quyền B pay only; invalid cursor.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Không duplicate/missing IDs theo tuple(timestamp, id); limit 50/50/1 cho A; B chỉ authorized; expired được lọc đúng sau lazy expiry; S2 không lộ; cursor invalid INVALID_WRITE_REQUEST. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyRecovery.spec.ts`; `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-058 — Execute không implicit register và unknown cancel
 
@@ -729,7 +729,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute/cancel/get K; sau đó register muộn; UI chưa execute.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** OPERATION_NOT_FOUND, 0 order; UI không nói đã hủy; late register 1 pending 0 order, cần manual cancel hoặc expiry. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_NOT_FOUND.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyRecovery.spec.ts`; `src/adapters/mock/writeOperationRepo.test.ts`; `src/features/pos/writeOperationFlow.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-059 — Cancel chủ động pending
 
@@ -740,7 +740,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Cancel, đọc lại, execute/replay cùng payload.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** cancelled/cancelledBy B/decidedAt fixed; 0 payment/O open; execute chỉ OPERATION_CANCELLED và count 1; cancel retry không count/thay actor. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_CANCELLED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyRecovery.spec.ts`; `src/adapters/mock/writeOperationRepo.test.ts`; `src/app/writeRecovery.test.tsx`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-060 — Race cancel thắng hoặc execute thắng
 
@@ -751,7 +751,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Barrier ép cancel trước, fixture khác execute commit trước.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Cancel win:cancelled/0 payment; execute win:applied/1 payment 150 k, cancel trả applied. Không cả hai hiệu ứng; race hoàn tất ≤ 30 s.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeConcurrency.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-061 — Cancel quá hạn không đổi đơn
 
@@ -762,7 +762,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Cancel, execute/read lại.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** expired/0 payment/O open 150 k v5/B occupied; không cancelled, không void order. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_EXPIRED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-062 — TTL đúng −1 ms/0/+1 ms tại checkpoint
 
@@ -773,7 +773,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Thêm hai suffix gate sau validation/trước checkpoint: validation_k_expiry (K đăng ký T, phiên cấp T+20 h, validation lúc T+24 h−1 ms, nhả gate T+24 h+1 ms); validation_session_expiry (K và phiên cấp T, validation T+12 h−1 ms, nhả gate T+12 h+1 ms).  Execute ba fixture với clock controlled tại checkpoint.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** validation_k_expiry trả expired/0 hiệu ứng dù check trước validation còn hạn; validation_session_expiry trả EMPLOYEE_SESSION_REQUIRED, K vẫn pending/0 hiệu ứng vì K chưa hết 24 h.  −1 ms applied 1 payment; =, +1 ms expired/0 hiệu ứng; không dùng now()đầu transaction; hạn registered không đổi. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_EXPIRED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/features/pos/writeClock.test.ts`; `tests/contracts/writeConcurrency.contract.test.ts`; `tests/contracts/writeFaults.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-063 — TTL qua các khóa K/store/order/table
 
@@ -784,7 +784,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute trước expiry, observer chứng minh wait, clock qua expiry rồi nhả khóa.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Mỗi case expired/0 hiệu ứng nghiệp vụ/0 event/No 12/total 150 k/v5; checkpoint timestamp ≥ expiry. Không pass nếu chỉ test wait K. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_EXPIRED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeConcurrency.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-064 — Clock production wiring sau chờ thật
 
@@ -795,7 +795,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Dùng transaction đã bắt đầu trước expiry, giữ row tới DB clock>expiry, release; so điểm kiểm với clock_timestamp.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** expired dù transaction_timestamp()<expiry; test fail nếu implementation dùng now/current_timestamp/transaction timestamp. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_EXPIRED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeFaults.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-065 — Bắt đầu hợp lệ trước hạn, commit sau hạn
 
@@ -806,7 +806,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Giữ gate qua 24 h; cancel phải chờ; release commit.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** applied 1 payment, commitAt>expiry; cancel trả applied; không rollback transaction hợp lệ vì check TTL lần 2 sau hiệu ứng.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeFaults.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-066 — Đơn 48 h thanh toán với K mới
 
@@ -817,7 +817,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Read K cũ, xác nhận pay K new, xem history/report.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** O paid v6/150 k/payment 1/paidAt 2026-09-10; report ngày 2026-09-08 tăng 150 k, ngày 2026-09-10 tăng 0 từ O1; B empty. K cũ expired vẫn còn.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyRecovery.spec.ts`; `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-067 — Applied 48 h không bị TTL ghi đè
 
@@ -828,7 +828,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Get/list/execute/cancel và duplicate register cùng payload.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Mọi view applied/R1 gốc; only execute count 1; 0 new payment; registered/expiry/decidedAt unchanged.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeOperations.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-068 — ACK lost cho mọi terminal
 
@@ -839,7 +839,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Commit terminal observer xác minh rồi drop ACK; clock+48 h; context mới read/replay.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Đúng terminal/error/R1 cũ từng fixture; không reopen, không đổi rejected/cancelled thành expired; 0 hiệu ứng mới. Không chỉ test applied.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyRecovery.spec.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-069 — Fault rollback tại mọi điểm giữa business
 
@@ -850,7 +850,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Test-only throw infra từng checkpoint riêng, await rollback; observer fresh; remove fault và retry cùng K.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Mọi orders/items removed/options/payment/table/number/event/result quay snapshot trước; K pending payload/expiry giữ; retry một applied/hiệu ứng đúng fixture. Không chỉ đếm payment. Mã phải hiện đúng thông báo tại design, mục 7: WRITE_TEMPORARILY_UNAVAILABLE.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeFaults.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-070 — Fault sau lưu applied trước commit
 
@@ -861,7 +861,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Throw SQL exception, observer transaction mới; retry chủ động.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Applied/result/event và business đều rollback; K pending không R1; retry đúng 1 payment. Không cho R1 sống mà business rollback. Mã phải hiện đúng thông báo tại design, mục 7: WRITE_TEMPORARILY_UNAVAILABLE.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeFaults.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-071 — Business error muộn rollback nhưng giữ rejected
 
@@ -872,7 +872,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute, await commit; inspect full DB; bỏ hook/sửa menu để hợp lệ; replay cùng K.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Business raw snapshot giữ 60 k v5; K rejected cùng code bền; replay vẫn cùng rejection 0 hiệu ứng; chỉ K new có xác nhận mới được ghi. Mã phải hiện đúng thông báo tại design, mục 7: OPTION_VALUE_UNAVAILABLE.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeFaults.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-072 — Infrastructure error không poison K
 
@@ -883,7 +883,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Inject hạ tầng, trả mapping adapter; read K fresh; sau đó chủ động retry.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** WRITE_TEMPORARILY_UNAVAILABLE hoặc WRITE_RESULT_UNKNOWN tùy biết rollback; K không rejected giả; no auto retry; cuối 1 payment. Mã phải hiện đúng thông báo tại design, mục 7: WRITE_TEMPORARILY_UNAVAILABLE, WRITE_RESULT_UNKNOWN.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeFaults.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-073 — Replay counter chính xác và độc lập R1
 
@@ -894,7 +894,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Chạy 2 replay đồng thời rồi từng non-count action; biến thể terminal rejected/cancelled/expired.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** count 2 và giữ nguyên sau các non-count actions; R1/error/actor/time không đổi; rolled back replay không count; first terminal decision count 0.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeConcurrency.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writeFaults.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-074 — JSON required/type/null và unknown fields
 
@@ -905,7 +905,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Validate core và register DB bằng cùng literal fixture không share validator.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** INVALID_WRITE_REQUEST/0 K cho invalid; positive twin register pending; không SQL cast UNKNOWN hoặc coalesce quantity null thành 1. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/supabase/writeOperationRepo.test.ts`; `src/core/writePayload.test.ts`; `tests/contracts/writeSchema.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-075 — UUID collision của thực thể
 
@@ -916,7 +916,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Gọi từng variant riêng; IDs valid UUID; không dùng K collision thay thế.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** ENTITY_ID_CONFLICT/rejected cho collision DB; duplicate new ID trong payload INVALID_WRITE_REQUEST trước register; 0 partial writes/0 event. Mã phải hiện đúng thông báo tại design, mục 7: ENTITY_ID_CONFLICT, INVALID_WRITE_REQUEST.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/core/writePayload.test.ts`; `tests/contracts/writePermissions.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-076 — Money min/max và overflow business
 
@@ -927,7 +927,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Register/execute fixture riêng; catalog price 0 hoặc max có admin setup.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** 0/max hợp lệ khi tạo đơn và tổng trong range; thanh toán riêng phần tổng 0 vẫn bị chặn như TC 092; ngoài range/type INVALID_WRITE_REQUEST trước register; sum overflow rejected INVALID_WRITE_REQUEST/0 hiệu ứng, không âm/wrap. Variant quote cũ 1 × qty 2, catalog tăng 2147483647: proposed 4294967294 bị INVALID_WRITE_REQUEST trước dựng PRICE_CHANGED, không response money ngoài miền. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `src/core/writePayload.test.ts`; `tests/contracts/writeCatalog.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-077 — Quantity line và option min/max
 
@@ -938,7 +938,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Từng variant validate/register/execute với group multi cho phép số lượng option.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Line 1/999 và option 1/99 hợp lệ; 0/>max INVALID_WRITE_REQUEST/0 K; qty source tăng quá nguồn là INVALID_ORDER_ITEMS ở execute, không schema. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/core/writePayload.test.ts`; `tests/contracts/writeCatalog.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-078 — Array empty/max và payload bytes
 
@@ -949,7 +949,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Dựng catalog 201 món và 21 options có actual price=quote=0, names/notes ASCII padding có kiểm byte; submit 200 đơn giá 0; gọi RPC.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** 0 create/201/21/>bytes bị chặn INVALID_WRITE_REQUEST; 1/200/20/byte đúng max pass schema. Fixture 262144 phải đạt thật bằng observer pgsize, không ước lượng HTTP. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/core/writePayload.test.ts`; `tests/contracts/writeCatalog.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-079 — Note unicode, optional và reason boundary
 
@@ -960,7 +960,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Đếm Unicode codepoints bằng literal fixture độc lập; register và execute.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** ≤ 500 valid, 501 INVALID_WRITE_REQUEST; other empty/whitespace VOID_REASON_REQUIRED; equality absent/null vẫn khác; DB/UI không đếm UTF16 units lệch. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST, VOID_REASON_REQUIRED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/core/writePayload.test.ts`; `src/features/pos/writeOperationFlow.test.ts`; `tests/contracts/writeSchema.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-080 — List input và version overflow
 
@@ -971,7 +971,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Gọi list biến thể; register update version max rồi execute.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Limit 1/100 valid, 0/101/type bad INVALID_WRITE_REQUEST; version increment overflow rejected INVALID_WRITE_REQUEST/0 hiệu ứng, không wrap hoặc K pending vĩnh viễn. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-081 — Cash-only và dữ liệu tiền nhận thiếu
 
@@ -982,7 +982,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Register từng variant có IDs/version/selection valid.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** INVALID_WRITE_REQUEST/0 K/0 payment; cash integer 150 k positive twin pay applied. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/core/writePayload.test.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-082 — Kiểm toàn bộ ledger/event giữ bền
 
@@ -993,7 +993,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Migration fixture legacy; list/read; thử clear_demo/admin parent delete; inspect rows.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** K/payload/result/error/event không bị xóa; creator legacy null hiển thị không xác định; price/payment/date cũ giữ; clear_demo không đụng finance.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeBootstrap.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-083 — R1 lịch sử sau child void và sửa nguồn
 
@@ -1004,7 +1004,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Read/replay K1 từ context mới; xem current separate; thử in lại child.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** R1 paid child 30 k/source v6 giữ; current child void/source v7; payment 1 vẫn ghi; không cascade hủy nguồn; in lại bị chặn RECEIPT_UNAVAILABLE. Mã phải hiện đúng thông báo tại design, mục 7: RECEIPT_UNAVAILABLE.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotencyRecovery.spec.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-084 — Capability và adapter fail closed
 
@@ -1015,7 +1015,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Khởi động và thử ghi; spy old RPC/mock construction.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** WRITE_PROTOCOL_UNSUPPORTED khi version wrong; runtime config fail rõ khi thiếu config; 0 oldRPC/0 mock fallback/0 hiệu ứng nghiệp vụ. Mã phải hiện đúng thông báo tại design, mục 7: WRITE_PROTOCOL_UNSUPPORTED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `src/features/pos/writeOperationFlow.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/adapters/supabase/writeOperationRepo.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-085 — Migration/grant/search_path audit
 
@@ -1026,7 +1026,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Apply migration test DB, inventory functions/grants/RLS, thử shadow helper trong schema user writable.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Fixed search_path/schema qualified; no exposed private/test hooks; mọi old overload revoked; snapshots legacy nguyên; onboarding/POS functional. Thiếu bất kỳ inventory row fail.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeFaults.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-086 — Runner discovery manifest
 
@@ -1037,7 +1037,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Chạy list tests với config explicit; đối chiếu names+paths; deliberately move one file ngoài include.
 - **Bước 3:** Chờ runner kết thúc, kiểm exit code/discovery/skip và assertion failure mong đợi; không coi không chạy được là pass.
 - **Kết quả mong đợi:** Thiếu TC/file/suffix làm gate fail nonzero; số test cũ pass không bù được. Khôi phục config thì discovery đủ, không ghi đã pass behavior.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/caseManifest.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/gates.tool.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-087 — Supabase preflight không giả xanh
 
@@ -1048,7 +1048,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Chạy DB/E2E preflight từng variant; positive đúng URL/Auth/RPC marker.
 - **Bước 3:** Chờ runner kết thúc, kiểm exit code/discovery/skip và assertion failure mong đợi; không coi không chạy được là pass.
 - **Kết quả mong đợi:** Mỗi invalid exit nonzero trước suite; nêu config thiếu không in secret; skip bắt buộc bị gate fail; positive observer thấy writeProtocol v1 và real DB UUID.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/caseManifest.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/gates.tool.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-088 — Oracle độc lập và mutation sensitivity
 
@@ -1059,7 +1059,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Chạy các TC liên quan từng mutant trên branch test isolated; không đưa mutant vào main.
 - **Bước 3:** Chờ runner kết thúc, kiểm exit code/discovery/skip và assertion failure mong đợi; không coi không chạy được là pass.
 - **Kết quả mong đợi:** Mỗi mutant bị ít nhất 1 TC phát hiện; expected literal/DB raw không dùng buildReceipt/calc total/formatVnd của SUT. Pass do 0 operation không được chấp nhận.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/caseManifest.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/mutations.tool.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-089 — Regression seams và báo cáo baseline
 
@@ -1070,7 +1070,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Chạy test cũ+build+mock smoke; DB/E2E cases mới; đối chiếu manifests/artifact SHA.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Không boundary violation; PIN/admin/floor/payment/history/print dùng được. Variant dirty-exit: đóng draft chưa gửi phải xác nhận bỏ, chọn ở lại giữ draft, 0 register/execute/cancel; variant empty-selection: chặn hoàn tất, 0 write; variant tạm tính: mở preview đúng snapshot/0 payment; variant pay-then-void: tải version 6 trước xác nhận hủy mới, void thành version 7, retry giữ K/version 6; 63 test baseline cũ không được gắn nhãn idempotency passed; báo đúng executed/skip/fail.
-- **Nơi hiện thực:** Chưa có. Dự kiến `src/features/pos/writeOperationFlow.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/app/writeRecovery.test.tsx`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-090 — Nút kết quả và request schema không lộ credential
 
@@ -1081,7 +1081,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Kiểm payload, result, error, logger và storages; đối chiếu network header redaction.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Không PIN/token/hash trong payload/R1/error/log/local; credential chỉ header request được redact trong artifact; initiator/executor UUID đúng; không serialize whole employee hash.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts` và `tests/supabase/idempotency.spec.ts` (UI/server thật); runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/adapters/supabase/writeOperationRepo.test.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-091 — Bàn không tồn tại hoặc tombstone
 
@@ -1092,7 +1092,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Register create riêng cho 3 fixture; execute.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** K rejected TABLE_NOT_FOUND; 0 order/items/payment; không lộ table S2; positive B01 active applied. Mã phải hiện đúng thông báo tại design, mục 7: TABLE_NOT_FOUND.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-092 — Split tiền thiếu và tổng bằng không
 
@@ -1103,7 +1103,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute từng fixture.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** Nhận 29.999 cho phần 30.000 trả PAYMENT_AMOUNT_TOO_LOW, không ghi; nhận 30.000 thành công/thừa 0. Đơn tổng 0 hoặc chỉ chọn dòng 0 trong đơn[A 0, T 20 k] bị INVALID_ORDER_ITEMS, không payment, kiểm cả core/UI/DB. Chọn cả hai dòng tổng 20 k thì paid 20 k với 1 payment. Selection rỗng chặn trước register; phần 0 qua DB bị rejected, không tạo payment 0. Giữ giới hạn hiện hành, không thêm tính năng thanh toán 0 đ.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writeOperations.contract.test.ts`, `src/features/pos/writeOperationFlow.test.ts`, `tests/supabase/idempotency.spec.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `tests/supabase/idempotency.spec.ts`; `src/features/pos/writeOperationFlow.test.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-093 — Terminal không bị unauthorized/mismatch sửa
 
@@ -1114,7 +1114,7 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Bước 2:** Execute/get/cancel theo quyền; mismatch bằng token A.
 - **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
 - **Kết quả mong đợi:** C FORBIDDEN, A mismatch IDEMPOTENCY_KEY_REUSED; result/error/status/actor/count/timestamps giữ. K terminal không mở lại hoặc đổi loại. Mã phải hiện đúng thông báo tại design, mục 7: FORBIDDEN, IDEMPOTENCY_KEY_REUSED.
-- **Nơi hiện thực:** Chưa có. Dự kiến `tests/contracts/writePermissions.contract.test.ts`; runner ở mục A2.
+- **Nơi hiện thực:** `src/adapters/mock/writeOperationRepo.test.ts`; `tests/contracts/writePermissions.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ## D. Tiêu chí nghiệm thu và gói bằng chứng
 

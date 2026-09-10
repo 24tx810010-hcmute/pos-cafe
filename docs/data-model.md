@@ -1,5 +1,7 @@
 # Data Model
 
+Cập nhật 2026-09-10 theo `main@3ada48c` đã push và nghiệm thu. Phạm vi/SHA/bằng chứng ở [phase 27](implementation-log/phase-27-idempotent-write-operations.md); chưa triển khai migration lên môi trường thật.
+
 Data model dùng PostgreSQL/Supabase với **15 bảng nghiệp vụ chính**, thiết kế theo store-scoped multi-tenant: hầu hết bảng nghiệp vụ có `store_id`, UUID primary key, `created_at`, `updated_at`, và một số bảng editor có `deleted_at` để xóa mềm.
 
 > **Quy tắc dùng cho báo cáo:** file này mô tả trạng thái dữ liệu cuối cùng. Tên migration, tên file SQL và symbol code chỉ là nguồn kiểm chứng nội bộ, không đưa vào báo cáo. Báo cáo tập trung vào ERD, bảng, trường, kiểu dữ liệu, PK/FK, quan hệ, constraint và quy tắc nghiệp vụ.
@@ -32,7 +34,7 @@ erDiagram
 - `store_settings.store_id` là PK/FK nên mỗi store có tối đa một settings row; create-store flow luôn tạo row này, nhưng schema riêng lẻ vẫn cho phép store có 0 settings.
 - `menu_items.category_id` thuộc cùng store; modifier dùng bảng nối nhiều-nhiều `menu_item_option_groups`.
 - `tables` và `floor_decor_items` thuộc một `floor_area`; order dine-in có `table_id`, takeaway để `null`.
-- `order_items`/`order_item_options` là snapshot để lịch sử không đổi khi menu sửa sau này. Bất biến này chỉ chắc chắn với đơn **đã chốt** (`paid`/`void`); đơn còn `open` sẽ bị định giá lại theo menu hiện tại ở lần sửa kế tiếp — xem [limitations.md](limitations.md#giá-và-ghi-nhận-doanh-thu).
+- `order_items`/`order_item_options` giữ snapshot cả khi đơn còn `open`: retained giữ giá/options, chỉ phần mới lấy giá hiện hành. Đơn `paid`/`void` và receipt giữ lịch sử đã ghi — xem [limitations.md](limitations.md#giá-và-ghi-nhận-doanh-thu) và `015_write_business_helpers.sql`.
 - `order_no` unique theo `(store_id, business_date, order_no)`; `lock_version` bảo vệ update cạnh tranh.
 - App/RPC hiện tạo tối đa một payment cho một order paid, nhưng schema **không có unique constraint** trên `payments.order_id`; đây là invariant nghiệp vụ, không phải ràng buộc DB tuyệt đối.
 
@@ -67,7 +69,7 @@ erDiagram
 - UI hiện hành chỉ hỗ trợ `admin` và `cashier`. Giá trị `kitchen` vẫn tồn tại trong enum/database/core như seam tương lai, nhưng bị lọc khỏi màn PIN, Employees Drawer và app navigation.
 - `employees.permission_overrides` là **quyền theo hành động** tách khỏi quyền vào module: shape `{"grants": [...], "denies": [...]}`. Quyền hiệu lực = (default theo role ∪ grants) − denies (denies luôn thắng). Mặc định `null` (mọi người theo role). Employees Drawer chỉnh switch quyền hiệu lực và persist diff tối thiểu; `undefined` trong update DTO nghĩa là không đụng field, `null` nghĩa là xóa override.
 - Catalog runtime hiện có đúng 5 mã được enforce: `order.create`, `order.update`, `order.voidOpen`, `payment.take`, `order.voidPaid`. Mapper Supabase lọc bỏ mã ngoài catalog.
-- Permission vẫn là app-layer authorization; RPC check chỉ để phòng thủ/audit, **không** phải DB-secured — employee id vẫn spoof được với session store hợp lệ.
+- Employee session v1 do server cấp sau PIN; token được hash tại `private.employee_sessions`, hết hạn sau 12 giờ. RPC kiểm người gọi từ token và quyền hiện hành; DML sửa nhân viên/PIN/override cần admin đã xác minh. Nguồn: `014_write_identity_and_ledger.sql:162`–`:319`.
 - `store_settings.qr_info` là seam schema cho QR/bank sau này; drawer Payment Settings hiện là preview/local UI, chưa persist field này qua `settingsRepo`.
 
 ## Nhóm Menu
@@ -84,7 +86,7 @@ erDiagram
 - Nhóm `single` cho chọn tối đa 1 giá trị; `multi` cho chọn nhiều giá trị, mỗi giá trị có số lượng riêng (xem `order_item_options.quantity`). Nhóm `is_required` bắt buộc chọn ≥ 1.
 - Menu editor lưu thay đổi bằng changeset (gồm cả changeset cho `menu_item_option_groups`).
 - Các bảng menu dùng xóa mềm để giữ đường mở rộng sync/offline.
-- Khi submit order, backend lấy tên/giá hiện tại từ DB để tạo snapshot; client không quyết định giá cuối. Tuỳ chọn chỉ hợp lệ khi nhóm của nó **có liên kết với đúng món** qua `menu_item_option_groups`.
+- Với phần mới, server kiểm quote từng thành phần theo catalog hiện hành và snapshot tên/giá; khác quote thì PRICE_CHANGED trước khi ghi, không tự chấp nhận giá mới. Tuỳ chọn mới phải thuộc nhóm liên kết đúng món. Phần retained giữ snapshot cũ và source ID, không bị định giá lại theo catalog. Nguồn: `015_write_business_helpers.sql`, `src/features/pos/orderFlow.ts:73` và `:234`.
 
 ## Nhóm Floor
 
@@ -113,36 +115,48 @@ erDiagram
 - `business_date` lấy theo timezone của store, không theo timezone máy.
 - `order_no` unique theo `(store_id, business_date, order_no)`.
 - `lock_version` dùng để phát hiện stale/conflict khi nhiều máy cùng thao tác (tách đơn instant pay cũng bump version đơn gốc).
-- Replace order lines không hard-delete item cũ; item cũ được mark `removed`. Dòng mới luôn lấy lại tên/giá từ menu hiện tại, nên mỗi lần sửa đơn mở là một lần re-snapshot **toàn bộ** đơn chứ không chỉ dòng thay đổi.
+- Update khai rõ retainedLines và newLines. Dòng retained giữ ID, unit_price và options; giảm số lượng/sửa note giữ giá; xóa giữ raw quantity/options và mark removed. Tăng phần cũ tạo dòng mới theo giá/cấu hình hiện tại. Thiếu, trùng hoặc giả source ID bị từ chối, không tìm dòng bằng tên/giá để đoán.
 - `business_date` chốt lúc tạo đơn và không đổi khi sửa; đơn mở qua ngày vẫn thuộc business date cũ.
-- Hủy đơn có 2 đường khác nhau: (1) đơn `open` bị hủy trước thanh toán = submit toàn bộ quantity 0 (đặt `total=0`, trả bàn, `paid_at` vẫn null); (2) đơn `paid` bị hủy = RPC `void_order` — **giữ nguyên** `total`/`order_no`/`business_date`/`paid_at` và payment row (audit + report tính đúng), chỉ đổi `status='void'`, ghi metadata hủy, bump `lock_version`, không đụng bàn. Dấu `paid_at is not null` phân biệt đơn "hủy sau khi đã thu tiền" với đơn "hủy trước thanh toán".
+- Hủy đơn có 2 đường khác nhau: (1) đơn `open` bị hủy trước thanh toán = submit toàn bộ quantity 0 (đặt `total=0`, trả bàn, `paid_at` vẫn null); (2) đơn `paid` bị hủy = action `void_paid` của giao thức v1 — **giữ nguyên** `total`/`order_no`/`business_date`/`paid_at` và payment row (audit + report tính đúng), chỉ đổi `status='void'`, ghi metadata hủy, bump `lock_version`, không đụng bàn. Dấu `paid_at is not null` phân biệt đơn "hủy sau khi đã thu tiền" với đơn "hủy trước thanh toán".
 
 ## Nhóm Payment & Report
 
-- `payments`: payment theo order, employee, method, amount, received amount, change amount, paid_at. Flow RPC hiện hành tạo một payment cho mỗi đơn paid; schema vẫn cho phép nhiều row cùng `order_id` nếu bị ghi ngoài flow.
+- `payments`: payment theo order, employee, method, amount, received amount, change amount, paid_at. Flow RPC hiện hành tạo một payment cho mỗi đơn paid; DML client bị thu hồi; schema không thêm unique trên `order_id` trong release này.
 - Report không có bảng riêng trong MVP; report query tính từ order/payment đã thanh toán.
 
 Ý nghĩa:
 
 - Phase này payment UI dùng cash-only.
-- **Instant pay (split-order)**: thanh toán một phần = tách các món được chọn ra một **đơn mới độc lập** và thanh toán đơn đó ngay trong cùng transaction. Hai đơn không liên kết dữ liệu — chỉ chung bàn tại thời điểm thanh toán. Đơn gốc còn lại trên bàn là đơn mở bình thường; bàn chỉ trống khi phần còn lại được thanh toán.
+- **Instant pay (split-order)**: thanh toán một phần = tách các món được chọn ra một **đơn mới độc lập** và thanh toán đơn đó ngay trong cùng transaction. Hai đơn độc lập về nghiệp vụ, cùng nhãn bàn; ledger và event v1 giữ ID nguồn/kết quả để truy vết lần tách. Đơn gốc còn lại trên bàn là đơn mở bình thường; bàn chỉ trống khi phần còn lại được thanh toán.
 - **Quy tắc đánh số**: bill trả trước mang `order_no` nhỏ hơn — đơn tách kế thừa số của đơn gốc, đơn gốc nhận số mới (max+1 theo `business_date`). Bàn #12 trả 2 lần → bill #12, phần còn lại thành #13, bill #13. **Lưu ý khi đối chiếu UI:** từ `main@c7f2f4e`, màn Lịch sử đơn không hiển thị `order_no` mà hiển thị số thứ tự theo bộ lọc; `order_no` thật chỉ còn thấy trên hóa đơn in.
 - Trả một phần số lượng của một dòng (vd 1 trong 2 Cà phê sữa) → tách dòng: dòng mới (UUID client cấp qua `splitItemId`) thuộc **đơn tách**; dòng gốc giảm quantity. Options của dòng tách là snapshot copy (id server cấp).
 - Report tính order `paid` theo `business_date` — **mỗi lần thu vào report NGAY** vì đơn tách paid tức thì (không có trạng thái "tiền đã thu nhưng chưa ghi nhận"). Không có bảng tổng hợp lưu sẵn nên khi một đơn chuyển `paid → void`, doanh thu ngày/tháng tự loại đơn đó ra (không cần bút toán điều chỉnh).
 - `CoreReport` bổ sung `voidCount`/`voidAmount` = số đơn và tổng tiền của các đơn **paid-rồi-hủy** (`status='void'` và `paid_at is not null`) theo `business_date`; đơn open-bị-hủy (`paid_at` null, `total` 0) không tính vào đây.
-- Order history là order-centric: mỗi bill (đơn tách hoặc đơn thường) một dòng, không có liên kết giữa các đơn tách từ cùng một bàn. Đơn `void` hiển thị trong history (filter "Đã hủy") kèm người hủy/thời điểm/lý do.
+- Order history là order-centric: mỗi bill (đơn tách hoặc đơn thường) một dòng, không có màn tổng hợp cả phiên bàn; liên kết thao tác nằm ở ledger/audit. Đơn `void` hiển thị trong history (filter "Đã hủy") kèm người hủy/thời điểm/lý do.
+
+## Ledger, phiên và audit v1
+
+| Bảng / trường mới | Vai trò |
+| --- | --- |
+| `private.employee_sessions` | Hash token, store/employee, thời điểm cấp, hạn và thu hồi; client không đọc trực tiếp. |
+| `write_operations` | Khóa chính (store_id, operation_id), payload bất biến, kind/action, quyền cần, pending/applied/rejected/cancelled/expired, R1, actor và replay count. |
+| `order_events` | Liên kết K với đơn nguồn/kết quả/payment, người khởi tạo/thực hiện và version trước/sau; chỉ ghi cùng transaction thành công. |
+| `orders.created_by_employee_id`, `last_modified_by_employee_id` | Tách người tạo khỏi người sửa; legacy không rõ creator để null. |
+| `payments.receipt_snapshot` | Receipt tài chính và metadata tại thời điểm thanh toán; in lại không lấy tên/giá menu mới. |
+
+Nguồn: `014_write_identity_and_ledger.sql:162`, `:322`, `:330`, `:355`. Ledger/R1/audit không có GC trong release này; clear demo giữ nguyên tài chính và lịch sử, chỉ tombstone dữ liệu mẫu phù hợp.
 
 ## RPC Chính
 
-> Phần này là traceability kỹ thuật cho developer/AI triển khai. Khi viết báo cáo, phải chuyển thành mô tả transaction và quy tắc nghiệp vụ; không liệt kê tên hàm, chữ ký hoặc error code nội bộ.
+- `start_employee_session` / `revoke_employee_session`: cấp/thu hồi employee token sau PIN.
+- `bootstrap_store` cùng RPC quản trị nhân viên: tạo admin một lần, seed/cập nhật/reset bằng quyền server phù hợp.
+- `register_write_operation` / `execute_write_operation`: đóng băng ý định, thực hiện tạo/sửa, pay, split, void trong transaction.
+- `get_write_operation`, `list_write_operations`, `cancel_write_operation`: tra cứu và xử lý pending theo quyền hiện hành; list lọc tenant và quyền trước phân trang.
+- `get_write_capabilities`: client chỉ mở ghi khi server hỗ trợ đúng phiên bản.
+- `get_payment_receipt`: in lại receipt của đơn paid hiện tại; void bị chặn, R1 lịch sử vẫn giữ.
+- `clear_demo_data`: admin xác minh, chặn khi còn đơn mở; không xóa ledger/payment/audit.
 
-- `has_employee_permission`: helper SQL áp default theo role + grants/denies. Bảng default bị lặp với TypeScript source-of-truth, nên E2E deny-permission dùng để phát hiện drift.
-- `submit_order_changes`: tạo/cập nhật order mở, snapshot giá/tên/options, cập nhật table occupied/empty và yêu cầu quyền phù hợp theo nhánh tạo/sửa/hủy đơn mở.
-- `pay_order`: tạo payment, set order paid, set table empty, trả payload receipt và yêu cầu quyền thanh toán.
-- `pay_order_items`: instant pay tách đơn — validate từng dòng + tính tiền phía server, đổi số đơn theo thứ tự thanh toán, move/tách dòng sang đơn mới, tạo payment và set đơn mới paid ngay, tính lại tổng + bump `lock_version` đơn gốc.
-- `void_order`: hủy một đơn đã thanh toán; kiểm tra quyền/lý do/version, khóa đơn, ghi metadata hủy và giữ nguyên dữ liệu thanh toán để audit.
-- `verify_employee_pin`: xác minh PIN và trả dữ liệu cần để client dựng quyền của nhân viên đang đăng nhập.
-- `clear_demo_data`: admin-only, block nếu còn open orders, xóa mềm dữ liệu seed và giữ admin.
+Nguồn activation/grants: `016_activate_write_protocol.sql`. RPC ghi cũ bị thu hồi mọi overload, helpers private không public. Tên các DTO cũ dưới đây còn phục vụ tương thích source; hợp đồng ghi UI hiện hành nằm trong `src/domain/writeOperations.ts` và port `IWriteOperationRepo`.
 
 ## Domain Types Trong App
 
