@@ -12,11 +12,11 @@ export function CartSnapshotList({ order }: { order: OrderDetail | undefined }) 
         <div className="grid gap-1.5 rounded-pos border border-pos-line bg-white px-3.5 py-3" key={item.id}>
           <div className="flex items-start justify-between gap-3 text-sm">
             <strong>{item.itemName}</strong>
-            <strong>{formatVnd(item.quantity * (item.unitPrice + item.options.reduce((sum, option) => sum + option.priceDelta, 0)))}</strong>
+            <strong>{formatVnd(item.quantity * (item.unitPrice + item.options.reduce((sum, option) => sum + option.priceDelta * option.quantity, 0)))}</strong>
           </div>
           <span className="text-pos-muted">
             x{item.quantity}
-            {item.options.length ? ` · ${item.options.map((option) => option.optionName).join(", ")}` : ""}
+            {item.options.length ? ` · ${item.options.map((option) => option.quantity > 1 ? `${option.optionName} × ${option.quantity}` : option.optionName).join(", ")}` : ""}
           </span>
         </div>
       ))}

@@ -22,7 +22,10 @@ export function useOrderModifierPicker(
 
   const confirm = (options: SubmitOrderDraftOption[]) => {
     if (modifierItem) {
-      setDraftItems(addDraftMenuItem(draftItems, modifierItem, options));
+      setDraftItems(addDraftMenuItem(draftItems, modifierItem, options.map((option) => {
+        const value = menu?.optionValues.find((candidate) => candidate.id === option.optionValueId);
+        return { ...option, quotedPriceDelta: value?.priceDelta, snapshotName: value?.name };
+      })));
     }
     setModifierItem(null);
   };

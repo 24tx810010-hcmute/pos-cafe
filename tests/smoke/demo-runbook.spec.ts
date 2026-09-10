@@ -23,20 +23,20 @@ test("kịch bản demo chính chạy liền mạch qua 14 bước", async ({ pa
 
   await test.step("Bước 3 — đăng nhập quản lý bằng PIN", async () => {
     await loginAsAdmin(page);
-    await expect(page.getByTestId("left-nav-session")).toHaveAttribute("data-employee-id", "emp-admin");
+    await expect(page.getByTestId("left-nav-session")).toHaveAttribute("data-employee-id", "6b7bd350-7db2-4160-8471-cca2668c070d");
   });
 
   await test.step("Bước 4 — mở bàn B01 đang trống", async () => {
     await waitForStageFit(page, "floor-stage");
-    const table = page.getByTestId("table-tbl-b01");
+    const table = page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58");
     await expect(table).toHaveAttribute("data-table-status", "empty");
     await table.click();
     await expect(page.getByTestId("order-drawer")).toBeVisible();
   });
 
   await test.step("Bước 5 — tạo đơn ba Cà phê sữa Size L, tổng 108.000đ", async () => {
-    await page.getByTestId("menu-item-mi-ca-phe-sua").click();
-    await page.getByTestId("modifier-value-ov-size-l").click();
+    await page.getByTestId("menu-item-3e43bb8c-198f-443f-83ab-18696983edaa").click();
+    await page.getByTestId("modifier-value-62ca9453-5d44-47f4-8f85-a943d526348d").click();
     await page.getByTestId("modifier-confirm").click();
 
     const cartLine = page.getByTestId("order-cart-line");
@@ -59,13 +59,13 @@ test("kịch bản demo chính chạy liền mạch qua 14 bước", async ({ pa
   await test.step("Bước 6 — quay lại sơ đồ và thấy B01 đang phục vụ", async () => {
     await page.getByTestId("receipt-close-header").click();
     await waitForTransientOverlays(page);
-    const table = page.getByTestId("table-tbl-b01");
+    const table = page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58");
     await expect(table).toHaveAttribute("data-table-status", "occupied");
     await expect(table).toHaveAttribute("data-order-total", "108000");
   });
 
   await test.step("Bước 7 — mở lại đơn và chuyển sang thanh toán", async () => {
-    await page.getByTestId("table-tbl-b01").click();
+    await page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").click();
     await expect(page.getByTestId("order-drawer")).toBeVisible();
     await expect(page.getByTestId("order-total-amount")).toHaveAttribute("data-amount", "108000");
     await page.getByTestId("submit-order-button-footer").click();
@@ -101,7 +101,7 @@ test("kịch bản demo chính chạy liền mạch qua 14 bước", async ({ pa
 
   await test.step("Bước 9 — kiểm tra tiền thiếu rồi thanh toán 36.000đ còn lại", async () => {
     await page.getByTestId("report-close-button").click();
-    const table = page.getByTestId("table-tbl-b01");
+    const table = page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58");
     await expect(table).toHaveAttribute("data-table-status", "occupied");
     await expect(table).toHaveAttribute("data-order-total", "36000");
     await table.click();
@@ -133,7 +133,7 @@ test("kịch bản demo chính chạy liền mạch qua 14 bước", async ({ pa
     await page.getByTestId("receipt-close-header").click();
     await expect(page.getByTestId("receipt-preview")).toBeHidden();
     await expect(page.getByTestId("payment-drawer")).toBeHidden();
-    const table = page.getByTestId("table-tbl-b01");
+    const table = page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58");
     await expect(table).toHaveAttribute("data-table-status", "empty");
     await expect(table).toHaveAttribute("data-order-total", "0");
   });
@@ -191,7 +191,7 @@ test("kịch bản demo chính chạy liền mạch qua 14 bước", async ({ pa
   await test.step("Bước 14 — bỏ quyền thanh toán, kiểm tạo/sửa đơn, rồi khôi phục quyền", async () => {
     await page.getByTestId("report-close-button").click();
     await page.getByTestId("nav-employees").click();
-    await page.getByTestId("employee-row-emp-cashier-1").click();
+    await page.getByTestId("employee-row-22828322-623b-42e7-8a28-a2bdf367c364").click();
     const paymentPermission = page.getByTestId("employee-permission-payment.take");
     await expect(paymentPermission).toBeChecked();
     await paymentPermission.uncheck();
@@ -200,28 +200,28 @@ test("kịch bản demo chính chạy liền mạch qua 14 bước", async ({ pa
 
     await page.getByTestId("employees-close-button").click();
     await page.getByTestId("nav-lock").click();
-    await page.getByTestId("employee-emp-cashier-1").click();
+    await page.getByTestId("employee-22828322-623b-42e7-8a28-a2bdf367c364").click();
     for (const digit of ["1", "1", "1", "1", "1", "1"]) {
       await page.getByTestId(`pin-${digit}`).click();
     }
     await page.getByTestId("unlock-button").click();
-    await expect(page.getByTestId("left-nav-session")).toHaveAttribute("data-employee-id", "emp-cashier-1");
+    await expect(page.getByTestId("left-nav-session")).toHaveAttribute("data-employee-id", "22828322-623b-42e7-8a28-a2bdf367c364");
 
-    await page.getByTestId("table-tbl-b01").click();
-    await page.getByTestId("menu-item-mi-americano").click();
+    await page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").click();
+    await page.getByTestId("menu-item-80cfbd5a-a538-4da6-888d-2f732b7b8e2d").click();
     await expect(page.getByTestId("order-cart-line")).toHaveAttribute("data-line-total", "35000");
     await page.getByTestId("submit-order-button-footer").click();
     await expect(page.getByTestId("receipt-document")).toHaveAttribute("data-total", "35000");
     await page.getByTestId("receipt-close-header").click();
 
-    await page.getByTestId("table-tbl-b01").click();
+    await page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").click();
     await page.getByTestId("order-cart-increase").click();
     await expect(page.getByTestId("order-total-amount")).toHaveAttribute("data-amount", "70000");
     await page.getByTestId("submit-order-button-footer").click();
     await expect(page.getByTestId("receipt-preview")).toBeVisible();
     await page.getByTestId("receipt-close-header").click();
 
-    await page.getByTestId("table-tbl-b01").click();
+    await page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").click();
     const paymentAction = page.getByTestId("submit-order-button-footer");
     await expect(paymentAction).toBeDisabled();
     await expect(paymentAction).toHaveAttribute("title", /.+/);
@@ -230,7 +230,7 @@ test("kịch bản demo chính chạy liền mạch qua 14 bước", async ({ pa
     await page.getByTestId("nav-lock").click();
     await loginAsAdmin(page);
     await page.getByTestId("nav-employees").click();
-    await page.getByTestId("employee-row-emp-cashier-1").click();
+    await page.getByTestId("employee-row-22828322-623b-42e7-8a28-a2bdf367c364").click();
     await expect(paymentPermission).not.toBeChecked();
     await paymentPermission.check();
     await page.getByTestId("save-employee-button").click();

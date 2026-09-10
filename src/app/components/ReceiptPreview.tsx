@@ -4,6 +4,9 @@ import type { CSSProperties } from "react";
 import { formatVnd } from "@/core/money";
 import type { OrderDetail, PrintReceipt, PrintTicket } from "@/domain";
 import { useStoreSettingsQuery } from "@/features/admin";
+import { receiptToPrint } from "@/features/pos/orderFlow";
+import { usePorts } from "@/features/shared/portsContext";
+import { notifyUiError } from "../appErrors";
 import { PortalPopup } from "./PortalPopup";
 import { useAppStore } from "../useAppStore";
 
@@ -11,13 +14,13 @@ import { useAppStore } from "../useAppStore";
 
 const linesFromItems = (items: OrderDetail["items"]): PrintTicket["lines"] =>
   items.map((item) => {
-    const optionDelta = item.options.reduce((sum, option) => sum + option.priceDelta, 0);
+    const optionDelta = item.options.reduce((sum, option) => sum + option.priceDelta * option.quantity, 0);
     return {
       name: item.itemName,
       quantity: item.quantity,
       unitPrice: item.unitPrice + optionDelta,
       options: [
-        ...item.options.map((option) => option.optionName),
+        ...item.options.map((option) => option.quantity > 1 ? `${option.optionName} × ${option.quantity}` : option.optionName),
         ...(item.note ? [`Ghi chú: ${item.note}`] : []),
       ],
     };
@@ -32,7 +35,8 @@ export const ticketFromOrderDetail = (order: OrderDetail, tableName: string | nu
 });
 
 export const receiptFromOrderDetail = (order: OrderDetail, tableName: string | null): PrintReceipt | null => {
-  if (!order.payment) return null;
+  if (order.status !== "paid" || !order.payment) return null;
+  if (order.receiptSnapshot) return receiptToPrint(order.receiptSnapshot, order.orderType);
   return {
     ...ticketFromOrderDetail(order, tableName),
     receivedAmount: order.payment.receivedAmount,
@@ -143,6 +147,7 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
   const isReceipt = variant === "receipt";
   const isKitchen = variant === "kitchen";
   const receipt = isReceipt ? (doc as PrintReceipt) : null;
+  const historicalStore = receipt?.snapshot ? { name: receipt.snapshot.storeName, address: receipt.snapshot.address, footer: receipt.snapshot.footer } : store;
   const location = doc.orderType === "takeaway" ? "Mang đi" : doc.tableName ? `Bàn ${doc.tableName}` : "Tại bàn";
 
   return (
@@ -158,8 +163,8 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
       data-change-amount={receipt?.changeAmount ?? ""}
     >
       <div style={s.center}>
-        <div style={s.storeName}>{store.name}</div>
-        {store.address ? <div style={s.addr}>{store.address}</div> : null}
+        <div style={s.storeName}>{historicalStore.name}</div>
+        {historicalStore.address ? <div style={s.addr}>{historicalStore.address}</div> : null}
       </div>
 
       <div style={s.divider} />
@@ -178,6 +183,7 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
         <span style={s.metaKey}>{isReceipt ? "Thanh toán" : "Thời gian"}</span>
         <span>{formatDateTime(receipt?.paidAt ?? null)}</span>
       </div>
+      {receipt?.snapshot && <div style={s.metaRow}><span style={s.metaKey}>Thu ngân</span><span>{receipt.snapshot.employeeName}</span></div>}
 
       <div style={{ ...s.divider, marginBottom: 6 }} />
       <div style={s.thead}>
@@ -233,7 +239,7 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
       ) : null}
 
       <div style={s.divider} />
-      {isKitchen ? null : <div style={s.footer}>{store.footer}</div>}
+      {isKitchen ? null : <div style={s.footer}>{historicalStore.footer}</div>}
       {isReceipt ? null : (
         <div style={s.stamp}>
           {isKitchen ? "(Phiếu gửi bếp — báo chế biến)" : "(Phiếu tạm tính — chưa thanh toán)"}
@@ -247,6 +253,7 @@ ReceiptDocument.displayName = "ReceiptDocument";
 // ---- Popup wrapper (in-app print simulation) ---------------------------------
 
 export function ReceiptPreviewPopup() {
+  const ports = usePorts();
   const preview = useAppStore((state) => state.receiptPreview);
   const close = useAppStore((state) => state.closeReceiptPreview);
   const settings = useStoreSettingsQuery().data;
@@ -289,6 +296,7 @@ export function ReceiptPreviewPopup() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto bg-[#eef2f6] p-4">
+        {preview.variant === "receipt" && preview.legacyMetadata && <p className="text-xs text-amber-800">Hóa đơn cũ: tên cửa hàng và thu ngân dùng thông tin hiện có, vì hệ thống chưa lưu các thông tin này tại lần thanh toán.</p>}
         <div className="mx-auto w-fit shadow-[0_8px_24px_-12px_rgba(15,23,42,0.4)]">
           <ReceiptDocument ref={docRef} variant={preview.variant} doc={preview.doc} store={store} />
         </div>
@@ -306,7 +314,17 @@ export function ReceiptPreviewPopup() {
         <button
           type="button"
           data-testid="receipt-print-button"
-          onClick={() => docRef.current && printDocElement(docRef.current)}
+          onClick={() => {
+            const currentPreview = preview;
+            void (async () => {
+              try {
+                if (currentPreview.variant === "receipt" && (currentPreview.doc.snapshot || currentPreview.orderId)) {
+                  await ports.order.getReceipt(currentPreview.doc.snapshot?.orderId ?? currentPreview.orderId!);
+                }
+                if (useAppStore.getState().receiptPreview === currentPreview && docRef.current) printDocElement(docRef.current);
+              } catch (error) { notifyUiError(error); }
+            })();
+          }}
           className="inline-flex h-9 items-center gap-2 rounded-[9px] bg-pos-primary px-4 text-sm font-bold text-white hover:brightness-110"
         >
           <Printer size={15} /> In

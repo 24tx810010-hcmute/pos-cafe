@@ -9,7 +9,7 @@ import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 
-const admin: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
 
 const resetAppStore = (override: Partial<ReturnType<typeof useAppStore.getState>> = {}) => {
   useAppStore.setState({
@@ -25,13 +25,14 @@ const resetAppStore = (override: Partial<ReturnType<typeof useAppStore.getState>
   });
 };
 
-const renderAppWithPorts = (
+const renderAppWithPorts = async (
   override: Partial<ReturnType<typeof useAppStore.getState>> = {},
   configure?: (ports: ReturnType<typeof createMockPorts>, state: ReturnType<typeof createSeededMockState>) => void,
 ) => {
   const state = createSeededMockState();
-  state.session = { storeId: "store-demo-001", storeNo: 1 };
+  state.session = { storeId: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", storeNo: 1 };
   const ports = createMockPorts(state);
+  await ports.employee.startSession("6b7bd350-7db2-4160-8471-cca2668c070d", state.pins["6b7bd350-7db2-4160-8471-cca2668c070d"]);
   configure?.(ports, state);
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -78,7 +79,7 @@ afterEach(() => {
 
 describe("Demo hardening", () => {
   it("does not allow clear-demo while open orders are still being checked", async () => {
-    renderAppWithPorts({}, (ports) => {
+    await renderAppWithPorts({}, (ports) => {
       vi.spyOn(ports.order, "listOpenOrders").mockReturnValue(new Promise<OrderSummary[]>(() => {}));
     });
 
@@ -91,7 +92,7 @@ describe("Demo hardening", () => {
   it("keeps clear-demo disabled when open-order check fails and can retry", async () => {
     let listSpy: ReturnType<typeof vi.spyOn>;
     let rejectOpenOrders: (error: unknown) => void = () => {};
-    renderAppWithPorts({}, (ports) => {
+    await renderAppWithPorts({}, (ports) => {
       listSpy = vi
         .spyOn(ports.order, "listOpenOrders")
         .mockImplementationOnce(
@@ -118,7 +119,7 @@ describe("Demo hardening", () => {
   });
 
   it("shows a payment error state instead of a zero-value bill when the order cannot load", async () => {
-    const { ports } = renderAppWithPorts({ drawer: "payment", paymentOrderId: "missing-order" });
+    const { ports } = await renderAppWithPorts({ drawer: "payment", paymentOrderId: "missing-order" });
     vi.spyOn(ports.order, "getOrder").mockRejectedValue(new AppError("NOT_FOUND", "Không tìm thấy đơn."));
 
     expect(await screen.findByTestId("payment-error-state")).toBeInTheDocument();
@@ -127,9 +128,9 @@ describe("Demo hardening", () => {
 
   it("refetches the payment order after an order conflict", async () => {
     const user = userEvent.setup();
-    const { ports } = renderAppWithPorts({ drawer: "payment", paymentOrderId: "ord-b02" });
+    const { ports } = await renderAppWithPorts({ drawer: "payment", paymentOrderId: "7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c" });
     const getOrderSpy = vi.spyOn(ports.order, "getOrder");
-    const paySpy = vi.spyOn(ports.payment, "payOrder").mockRejectedValue(
+    const paySpy = vi.spyOn(ports.write, "execute").mockRejectedValue(
       new AppError("ORDER_VERSION_CONFLICT", "Dữ liệu đã thay đổi, vui lòng tải lại."),
     );
 
@@ -143,8 +144,8 @@ describe("Demo hardening", () => {
   });
 
   it("disables payment when the order was already paid on another device", async () => {
-    renderAppWithPorts({ drawer: "payment", paymentOrderId: "ord-b02" }, (_ports, state) => {
-      const order = state.orders.find((candidate) => candidate.id === "ord-b02");
+    await renderAppWithPorts({ drawer: "payment", paymentOrderId: "7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c" }, (_ports, state) => {
+      const order = state.orders.find((candidate) => candidate.id === "7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
       if (order) {
         order.status = "paid";
         order.paidAt = new Date().toISOString();
@@ -158,7 +159,7 @@ describe("Demo hardening", () => {
   });
 
   it("renders the cashier payment console with balanced payment summary", async () => {
-    renderAppWithPorts({ drawer: "payment", paymentOrderId: "ord-b02" });
+    await renderAppWithPorts({ drawer: "payment", paymentOrderId: "7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c" });
 
     const drawer = await screen.findByTestId("payment-drawer");
     expect(await within(drawer).findByTestId("payment-cashier-console")).toBeInTheDocument();

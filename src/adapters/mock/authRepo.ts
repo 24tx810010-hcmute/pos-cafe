@@ -3,6 +3,7 @@ import type { CreateStoreInput, CreateStoreResult, StoreSession } from "@/domain
 import { mockStoreId } from "./mockData";
 import { applyDemoSeed } from "./demoSeedHelpers";
 import { clone, type MockState } from "./mockState";
+import type { MockEmployeeCredential } from "./writeState";
 
 const parseStoreNo = (storeKey: string): number => {
   const [storeNo] = storeKey.split("-");
@@ -11,13 +12,15 @@ const parseStoreNo = (storeKey: string): number => {
 };
 
 export class MockAuthRepo implements IAuthRepo {
-  constructor(private readonly state: MockState) {}
+  constructor(private readonly state: MockState, private readonly credential: MockEmployeeCredential = {token:null}) {}
 
   async pairStore(storeKey: string): Promise<void> {
+    this.credential.token = null;
     this.state.session = { storeId: mockStoreId, storeNo: parseStoreNo(storeKey) };
   }
 
   async createStore(input: CreateStoreInput): Promise<CreateStoreResult> {
+    this.credential.token = null;
     this.state.session = { storeId: mockStoreId, storeNo: 1 };
     this.state.settings = {
       ...this.state.settings,
@@ -40,6 +43,7 @@ export class MockAuthRepo implements IAuthRepo {
   }
 
   async unpairStore(): Promise<void> {
+    this.credential.token = null;
     this.state.session = null;
   }
 

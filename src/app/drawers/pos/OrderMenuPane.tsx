@@ -49,7 +49,7 @@ export function OrderMenuPane({
               )}
               onClick={() => onSelectCategory(cat.id)}
             >
-              <span className={clsx("mr-1 inline-block h-2 w-2 shrink-0 rounded-full align-middle", cat.id === "cat-coffee" && "bg-[#7c3aed]", cat.id === "cat-tea" && "bg-[#0891b2]", cat.id === "cat-blended" && "bg-[#0d9488]", cat.id === "cat-snack" && "bg-[#d97706]", cat.id !== "cat-coffee" && cat.id !== "cat-tea" && cat.id !== "cat-blended" && cat.id !== "cat-snack" && "bg-[#64748b]")} />
+              <span className={clsx("mr-1 inline-block h-2 w-2 shrink-0 rounded-full align-middle", cat.id === "c68d7fbd-c06a-42a4-8140-476da8ebbf74" && "bg-[#7c3aed]", cat.id === "1ebf92aa-cf30-4e0d-8279-2b6fe3f8fb54" && "bg-[#0891b2]", cat.id === "0e2b2b01-1e52-436b-8130-428e82585276" && "bg-[#0d9488]", cat.id === "d8e03f30-1979-44b1-8fae-dc3cf6756680" && "bg-[#d97706]", cat.id !== "c68d7fbd-c06a-42a4-8140-476da8ebbf74" && cat.id !== "1ebf92aa-cf30-4e0d-8279-2b6fe3f8fb54" && cat.id !== "0e2b2b01-1e52-436b-8130-428e82585276" && cat.id !== "d8e03f30-1979-44b1-8fae-dc3cf6756680" && "bg-[#64748b]")} />
               {cat.name}
             </button>
           ))}

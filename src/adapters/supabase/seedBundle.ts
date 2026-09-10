@@ -1,19 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FloorDecorItem, FloorTable, MenuItem, MenuItemOptionGroup, OptionGroup, OptionValue } from "@/domain";
 import { AppError } from "@/core/appError";
+import { writeError } from "@/core/writeErrors";
 import { demoFloorPlan, demoMenuCatalog } from "@/seed/demoSeedData";
+import { legacySeedAliases } from "@/seed/legacySeedAliases";
 import { deterministicUuid } from "./deterministicId";
-import { mapSupabaseError, requireData, throwIfError } from "./errors";
+import { mapSupabaseError, throwIfError } from "./errors";
 
 type SupabaseAnyClient = SupabaseClient;
 type Row = Record<string, unknown>;
 
-const seedKey = (kind: string, sourceId: string): string => `demo.${kind}.${sourceId}`;
-
-const hashPin = async (client: SupabaseAnyClient, pin: string): Promise<string> => {
-  const { data, error } = await client.rpc("hash_employee_pin", { p_pin: pin });
-  return requireData<string>(data as string | null, error);
-};
+const seedKey = (kind: string, sourceId: string): string => `demo.${kind}.${legacySeedAliases[sourceId] ?? sourceId}`;
 
 // `revive` chỉ dùng cho các bảng có cột tombstone (deleted_at/deleted_by_employee_id):
 // categories, menu_items, option_groups, option_values, floor_areas, tables,
@@ -30,9 +27,24 @@ const upsertRows = async (
 
   // Hồi sinh các row đã bị clear_demo_data tombstone: clear deleted_at để re-seed
   // sau khi clear hiển thị lại dữ liệu mẫu (idempotent).
-  const payload = options?.revive
+  const payload: Row[] = options?.revive
     ? rows.map((row) => ({ deleted_at: null, deleted_by_employee_id: null, ...row }))
     : rows;
+  if (table === "tables") {
+    for (const row of payload) {
+      const { data: existing, error: readError } = await client.from("tables").select("id").eq("id", row.id).maybeSingle();
+      throwIfError(readError);
+      if (existing) {
+        const { id, store_id: _storeId, ...layout } = row;
+        const { error } = await client.from("tables").update(layout).eq("id", id);
+        throwIfError(error);
+      } else {
+        const { error } = await client.from("tables").insert(row);
+        throwIfError(error);
+      }
+    }
+    return;
+  }
   const { error } = await client.from(table).upsert(payload, { onConflict: "id" });
   throwIfError(error);
 };
@@ -129,7 +141,6 @@ const tableRows = (
     rotation: table.rotation,
     seats: table.seats,
     sort_order: table.sortOrder,
-    status: "empty",
     seed_key: seedKey("table", table.id),
   }));
 
@@ -167,19 +178,11 @@ export const seedDemoData = async (client: SupabaseAnyClient, storeId: string): 
     const tableIds = await buildIdMap(storeId, "table", demoFloorPlan.tables.map((table) => table.id));
     const decorIds = await buildIdMap(storeId, "decor", demoFloorPlan.decorItems.map((decor) => decor.id));
     const cashierId = await deterministicUuid(storeId, seedKey("employee", "cashier"));
-    const cashierHash = await hashPin(client, "111111");
-
-    await upsertRows(client, "employees", [
-      {
-        id: cashierId,
-        store_id: storeId,
-        name: "Thu ngân demo",
-        role: "cashier",
-        passcode_hash: cashierHash,
-        is_active: true,
-        seed_key: seedKey("employee", "cashier"),
-      },
-    ]);
+    const { data: employeeData, error: employeeError } = await client.rpc("seed_employee", {
+      p_employee_id: cashierId, p_name: "Thu ngân demo", p_role: "cashier", p_pin: "111111", p_seed_key: seedKey("employee", "cashier"),
+    });
+    throwIfError(employeeError);
+    if (employeeData?.ok === false) throw writeError(employeeData.error.code);
 
     await upsertRows(
       client,

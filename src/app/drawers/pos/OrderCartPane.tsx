@@ -57,6 +57,7 @@ export function OrderCartPane({
                 <strong className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">{line.name}</strong>
                 <strong className="font-black text-pos-primary">{formatCompactVnd(line.total)}</strong>
               </div>
+              <div className="text-xs text-pos-muted">{draftItems.find((draft) => draft.id === line.id)?.sourceItemId ? "Phần đã lưu" : "Phần gọi thêm"} · {formatVnd(line.total / line.quantity)} / món</div>
               {line.optionText && (
                 <div className="flex items-center justify-between gap-2 text-xs text-pos-muted">
                   <span>{line.optionText}</span>

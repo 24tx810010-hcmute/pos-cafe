@@ -1,7 +1,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "@/core/appError";
-import { requireData, throwIfError } from "./errors";
+import { throwIfError } from "./errors";
 
 export type SupabaseAnyClient = SupabaseClient;
 export type TableRow = Record<string, unknown>;
@@ -20,11 +20,6 @@ export const requireStoreId = async (client: SupabaseAnyClient): Promise<string>
   }
 
   return storeId;
-};
-
-export const hashPin = async (client: SupabaseAnyClient, pin: string): Promise<string> => {
-  const { data, error } = await client.rpc("hash_employee_pin", { p_pin: pin });
-  return requireData<string>(data as string | null, error);
 };
 
 export const insertRows = async (client: SupabaseAnyClient, table: string, rows: TableRow[]): Promise<void> => {

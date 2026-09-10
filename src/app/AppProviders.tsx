@@ -4,6 +4,7 @@ import { useMemo, type ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
 import { PortsContext } from "@/features/shared/portsContext";
 import { createAppPortsFromViteEnv } from "./runtimePorts";
+import { WriteLifecycle } from "./WriteLifecycle";
 
 const theme = createTheme({
   palette: {
@@ -29,6 +30,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     () =>
       new QueryClient({
         defaultOptions: {
+          mutations: { retry: false, networkMode: "always" },
           queries: {
             staleTime: 30_000,
             retry: false,
@@ -43,6 +45,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <CssBaseline />
       <PortsContext.Provider value={ports}>
         <QueryClientProvider client={queryClient}>
+          <WriteLifecycle />
           {children}
           <Toaster
             position="bottom-right"

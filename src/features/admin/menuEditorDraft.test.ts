@@ -35,11 +35,11 @@ describe("buildMenuChangesFromDrafts", () => {
       ...baseMenu,
       menuItems: [
         {
-          id: "mi-latte",
+          id: "d50ff72b-d0bc-4832-8888-183c19f5a158",
           categoryId: "cat-1",
           name: "Latte",
           price: 45000,
-          imageAssetKey: "menu-item-images/store-a/menu-items/mi-latte/old.webp",
+          imageAssetKey: "menu-item-images/store-a/menu-items/d50ff72b-d0bc-4832-8888-183c19f5a158/old.webp",
           sortOrder: 1,
           isAvailable: true,
         },
@@ -51,13 +51,13 @@ describe("buildMenuChangesFromDrafts", () => {
       categories: menuWithItem.categories,
       items: [
         {
-          id: "mi-latte",
+          id: "d50ff72b-d0bc-4832-8888-183c19f5a158",
           categoryId: "cat-1",
           name: "Latte",
           price: 45000,
           sortOrder: 1,
           isAvailable: true,
-          imageAssetKey: "menu-item-images/store-a/menu-items/mi-latte/new.webp",
+          imageAssetKey: "menu-item-images/store-a/menu-items/d50ff72b-d0bc-4832-8888-183c19f5a158/new.webp",
         } as any,
         {
           id: "mi-espresso",
@@ -84,8 +84,8 @@ describe("buildMenuChangesFromDrafts", () => {
     ]);
     expect(changes.menuItems.updated).toEqual([
       {
-        id: "mi-latte",
-        imageAssetKey: "menu-item-images/store-a/menu-items/mi-latte/new.webp",
+        id: "d50ff72b-d0bc-4832-8888-183c19f5a158",
+        imageAssetKey: "menu-item-images/store-a/menu-items/d50ff72b-d0bc-4832-8888-183c19f5a158/new.webp",
       },
     ]);
   });
@@ -99,7 +99,7 @@ describe("buildMenuChangesFromDrafts", () => {
       ],
       menuItems: [
         {
-          id: "mi-latte",
+          id: "d50ff72b-d0bc-4832-8888-183c19f5a158",
           categoryId: "cat-1",
           name: "Latte",
           price: 45000,
@@ -115,7 +115,7 @@ describe("buildMenuChangesFromDrafts", () => {
       categories: menuWithItem.categories,
       items: [
         {
-          id: "mi-latte",
+          id: "d50ff72b-d0bc-4832-8888-183c19f5a158",
           categoryId: "cat-2",
           name: "Latte",
           price: 45000,
@@ -132,7 +132,7 @@ describe("buildMenuChangesFromDrafts", () => {
 
     expect(changes.menuItems.updated).toEqual([
       {
-        id: "mi-latte",
+        id: "d50ff72b-d0bc-4832-8888-183c19f5a158",
         categoryId: "cat-2",
         sortOrder: 13,
       },

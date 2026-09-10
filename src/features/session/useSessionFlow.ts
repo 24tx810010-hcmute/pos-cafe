@@ -39,6 +39,8 @@ export const usePairStoreMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: false,
+    networkMode: "always",
     mutationFn: (storeKey: string) => pairStoreForSession(ports, storeKey),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: sessionQueryKeys.storeSession });
@@ -52,6 +54,8 @@ export const useCreateStoreMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: false,
+    networkMode: "always",
     mutationFn: (input: CreateStoreInput) => createStoreForSession(ports, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: sessionQueryKeys.storeSession });
@@ -65,6 +69,8 @@ export const useRetrySeedMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: false,
+    networkMode: "always",
     mutationFn: async () => {
       const bootstrap = await loadStoreSession(ports);
 
@@ -84,6 +90,8 @@ export const useVerifyEmployeeMutation = () => {
   const ports = usePorts();
 
   return useMutation({
+    retry: false,
+    networkMode: "always",
     mutationFn: ({ employeeId, pin }: { employeeId: string; pin: string }) =>
       verifyEmployeeForSession(ports, employeeId, pin),
   });
@@ -94,6 +102,8 @@ export const useUnpairStoreMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: false,
+    networkMode: "always",
     mutationFn: () => unpairStoreSession(ports),
     onSuccess: () => {
       queryClient.clear();

@@ -12,17 +12,21 @@ import { MockReportRepo } from "./reportRepo";
 import { MockSeedRepo } from "./seedRepo";
 import { MockSettingsRepo } from "./settingsRepo";
 import { createMockState, type MockState } from "./mockState";
+import { MockWriteOperationRepo } from "./writeOperationRepo";
 
 export { createMockState, createSeededMockState } from "./mockState";
 export type { MockState } from "./mockState";
 
-export const createMockPorts = (state: MockState = createMockState()): AppPorts => ({
-  auth: new MockAuthRepo(state),
-  employee: new MockEmployeeRepo(state),
+export const createMockPorts = (state: MockState = createMockState()): AppPorts => {
+  const credential = { token: null as string | null };
+  return ({
+  write: new MockWriteOperationRepo(state, credential),
+  auth: new MockAuthRepo(state, credential),
+  employee: new MockEmployeeRepo(state, credential),
   menu: new MockMenuRepo(state),
   menuImages: new MockMenuImagePort(),
   floorPlan: new MockFloorPlanRepo(state),
-  order: new MockOrderRepo(state),
+  order: new MockOrderRepo(state, credential),
   payment: new MockPaymentRepo(state),
   report: new MockReportRepo(state),
   settings: new MockSettingsRepo(state),
@@ -30,3 +34,4 @@ export const createMockPorts = (state: MockState = createMockState()): AppPorts 
   print: new MockPrintPort(state),
   realtime: new MockRealtimePort(),
 });
+};

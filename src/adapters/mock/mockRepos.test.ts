@@ -18,44 +18,48 @@ const businessDateInTimezone = (date: Date, timeZone: string): string => {
 describe("mock repositories", () => {
   it("keeps inactive employees visible to admin list but hidden from passcode list", async () => {
     const ports = createMockPorts(createSeededMockState());
+    await ports.auth.pairStore("0001-DEMO");
+    await ports.employee.startSession("6b7bd350-7db2-4160-8471-cca2668c070d", "123456");
 
-    await ports.employee.updateEmployee({ id: "emp-cashier-1", isActive: false });
+    await ports.employee.updateEmployee({ id: "22828322-623b-42e7-8a28-a2bdf367c364", isActive: false });
 
     await expect(ports.employee.listEmployees()).resolves.toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: "emp-cashier-1", isActive: false }),
+        expect.objectContaining({ id: "22828322-623b-42e7-8a28-a2bdf367c364", isActive: false }),
       ]),
     );
     await expect(ports.employee.listActiveEmployees()).resolves.not.toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: "emp-cashier-1" }),
+        expect.objectContaining({ id: "22828322-623b-42e7-8a28-a2bdf367c364" }),
       ]),
     );
     await expect(ports.employee.verifyPin("missing", "0000")).rejects.toMatchObject({ code: "INVALID_PIN" });
-    await expect(ports.employee.resetPin("missing", "0000")).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(ports.employee.resetPin("missing", "123456")).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("sets, preserves, and clears employee permission overrides", async () => {
     const ports = createMockPorts(createSeededMockState());
+    await ports.auth.pairStore("0001-DEMO");
+    await ports.employee.startSession("6b7bd350-7db2-4160-8471-cca2668c070d", "123456");
 
     await expect(
       ports.employee.updateEmployee({
-        id: "emp-cashier-1",
+        id: "22828322-623b-42e7-8a28-a2bdf367c364",
         permissionOverrides: { grants: ["order.voidPaid"], denies: ["payment.take"] },
       }),
     ).resolves.toMatchObject({
       permissionOverrides: { grants: ["order.voidPaid"], denies: ["payment.take"] },
     });
-    await expect(ports.employee.updateEmployee({ id: "emp-cashier-1", name: "Thu ngân mới" })).resolves.toMatchObject({
+    await expect(ports.employee.updateEmployee({ id: "22828322-623b-42e7-8a28-a2bdf367c364", name: "Thu ngân mới" })).resolves.toMatchObject({
       permissionOverrides: { grants: ["order.voidPaid"], denies: ["payment.take"] },
     });
-    const cleared = await ports.employee.updateEmployee({ id: "emp-cashier-1", permissionOverrides: null });
+    const cleared = await ports.employee.updateEmployee({ id: "22828322-623b-42e7-8a28-a2bdf367c364", permissionOverrides: null });
     expect(cleared.permissionOverrides).toBeUndefined();
   });
 
   it("submits open order changes with expected lock version and rejects stale version", async () => {
     const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const draft = order.items.map((item) => ({
       id: item.id,
       menuItemId: item.menuItemId,
@@ -68,7 +72,7 @@ describe("mock repositories", () => {
       orderId: order.id,
       tableId: order.tableId,
       orderType: order.orderType,
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       expectedVersion: order.lockVersion,
       items: draft,
     });
@@ -80,7 +84,7 @@ describe("mock repositories", () => {
         orderId: order.id,
         tableId: order.tableId,
         orderType: order.orderType,
-        employeeId: "emp-admin",
+        employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
         expectedVersion: order.lockVersion,
         items: draft,
       }),
@@ -89,13 +93,13 @@ describe("mock repositories", () => {
 
   it("blocks payment when received amount is lower than order total", async () => {
     const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
 
     await expect(
       ports.payment.payOrder({
         paymentId: "payment-1",
         orderId: order.id,
-        employeeId: "emp-admin",
+        employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
         method: "cash",
         expectedVersion: order.lockVersion,
         receivedAmount: order.total - 1,
@@ -105,12 +109,12 @@ describe("mock repositories", () => {
 
   it("stores payment snapshot on paid mock orders", async () => {
     const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
 
     const result = await ports.payment.payOrder({
       paymentId: "payment-ok",
       orderId: order.id,
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       method: "cash",
       expectedVersion: order.lockVersion,
       receivedAmount: order.total + 5000,
@@ -120,7 +124,7 @@ describe("mock repositories", () => {
     expect(result.changeAmount).toBe(5000);
     expect(paidOrder.payment).toMatchObject({
       id: "payment-ok",
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       method: "cash",
       amount: order.total,
       receivedAmount: order.total + 5000,
@@ -130,7 +134,7 @@ describe("mock repositories", () => {
 
   it("paginates recent completed orders across business dates without overlap", async () => {
     const state = createSeededMockState();
-    const baseOrder = state.orders.find((order) => order.id === "ord-paid-1")!;
+    const baseOrder = state.orders.find((order) => order.id === "3f6c6266-12b8-4f8b-8564-44d00d9210f8")!;
     state.orders = Array.from({ length: 45 }, (_, index) => {
       const isMostRecentBusinessDate = index < 12;
       return {
@@ -159,13 +163,13 @@ describe("mock repositories", () => {
 
   it("keeps newly paid mock orders visible in today's order history", async () => {
     const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const today = businessDateInTimezone(new Date(), "Asia/Saigon");
 
     await ports.payment.payOrder({
       paymentId: "payment-today",
       orderId: order.id,
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       method: "cash",
       expectedVersion: order.lockVersion,
       receivedAmount: order.total,
@@ -193,20 +197,20 @@ describe("mock repositories", () => {
     });
 
     expect(history.items.map((item) => item.id)).not.toEqual(
-      expect.arrayContaining(["ord-b02", "ord-b05", "ord-takeaway-1"]),
+      expect.arrayContaining(["7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c", "3bb9652e-e153-45dd-8f41-2d41a1f7b04b", "86b29e38-e02e-4e9d-877a-5cebdd394c1d"]),
     );
     expect(history.items.every((item) => item.status !== "open")).toBe(true);
   });
 
   it("voids an open order when all lines are removed through submitOrderChanges", async () => {
     const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
 
     const result = await ports.order.submitOrderChanges({
       orderId: order.id,
       tableId: order.tableId,
       orderType: order.orderType,
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       expectedVersion: order.lockVersion,
       items: [],
     });
@@ -228,9 +232,9 @@ describe("mock repositories", () => {
     const report = await ports.report.getCoreReport({ businessDate: "2026-06-11" });
 
     expect(takeawayOrders).toEqual([
-      expect.objectContaining({ id: "ord-takeaway-1", orderType: "takeaway", status: "open", tableId: null }),
+      expect.objectContaining({ id: "86b29e38-e02e-4e9d-877a-5cebdd394c1d", orderType: "takeaway", status: "open", tableId: null }),
     ]);
-    expect(history.items.map((order) => order.id)).toContain("ord-paid-1");
+    expect(history.items.map((order) => order.id)).toContain("3f6c6266-12b8-4f8b-8564-44d00d9210f8");
     expect(report).toMatchObject({
       revenue: 77000,
       paidOrders: 1,
@@ -242,7 +246,7 @@ describe("mock repositories", () => {
 
   it("throws menu and option unavailable errors from mock submit flow", async () => {
     const state = createSeededMockState();
-    const latte = state.menu.menuItems.find((item) => item.id === "mi-latte");
+    const latte = state.menu.menuItems.find((item) => item.id === "d50ff72b-d0bc-4832-8888-183c19f5a158");
     if (latte) {
       latte.isAvailable = false;
     }
@@ -251,11 +255,11 @@ describe("mock repositories", () => {
     await expect(
       ports.order.submitOrderChanges({
         orderId: null,
-        tableId: "tbl-b01",
+        tableId: "7b035353-73d6-44bc-8ec4-1ab9951f7a58",
         orderType: "dine_in",
-        employeeId: "emp-admin",
+        employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
         expectedVersion: null,
-        items: [{ id: "draft-1", menuItemId: "mi-latte", quantity: 1, note: null, options: [] }],
+        items: [{ id: "draft-1", menuItemId: "d50ff72b-d0bc-4832-8888-183c19f5a158", quantity: 1, note: null, options: [] }],
       }),
     ).rejects.toMatchObject({ code: "MENU_ITEM_UNAVAILABLE" });
 
@@ -263,17 +267,17 @@ describe("mock repositories", () => {
     await expect(
       freshPorts.order.submitOrderChanges({
         orderId: null,
-        tableId: "tbl-b01",
+        tableId: "7b035353-73d6-44bc-8ec4-1ab9951f7a58",
         orderType: "dine_in",
-        employeeId: "emp-admin",
+        employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
         expectedVersion: null,
         items: [
           {
             id: "draft-2",
-            menuItemId: "mi-latte",
+            menuItemId: "d50ff72b-d0bc-4832-8888-183c19f5a158",
             quantity: 1,
             note: null,
-            options: [{ id: "draft-option-1", optionValueId: "ov-tran-chau", quantity: 1 }],
+            options: [{ id: "draft-option-1", optionValueId: "dbbecac5-7b06-42c8-8a53-44e08e8d61c3", quantity: 1 }],
           },
         ],
       }),
@@ -285,8 +289,8 @@ describe("mock repositories", () => {
     const changes: MenuChanges = {
       categories: {
         created: [{ id: "cat-new", name: "Món mới", sortOrder: 99 }],
-        updated: [{ id: "cat-coffee", name: "Cà phê mới" }],
-        deleted: [{ id: "cat-blended", deletedByEmployeeId: "emp-admin" }],
+        updated: [{ id: "c68d7fbd-c06a-42a4-8140-476da8ebbf74", name: "Cà phê mới" }],
+        deleted: [{ id: "0e2b2b01-1e52-436b-8130-428e82585276", deletedByEmployeeId: "6b7bd350-7db2-4160-8471-cca2668c070d" }],
       },
       menuItems: {
         created: [
@@ -300,8 +304,8 @@ describe("mock repositories", () => {
             isAvailable: true,
           },
         ],
-        updated: [{ id: "mi-latte", price: 47000 }],
-        deleted: [{ id: "mi-cold-brew", deletedByEmployeeId: "emp-admin" }],
+        updated: [{ id: "d50ff72b-d0bc-4832-8888-183c19f5a158", price: 47000 }],
+        deleted: [{ id: "9491e262-856d-4408-82b7-c9d7f7ac3f27", deletedByEmployeeId: "6b7bd350-7db2-4160-8471-cca2668c070d" }],
       },
       optionGroups: { created: [], updated: [], deleted: [] },
       optionValues: { created: [], updated: [], deleted: [] },
@@ -312,10 +316,10 @@ describe("mock repositories", () => {
     const menu = await ports.menu.getMenu();
 
     expect(menu.categories).toEqual(expect.arrayContaining([expect.objectContaining({ id: "cat-new" })]));
-    expect(menu.categories.find((category) => category.id === "cat-coffee")?.name).toBe("Cà phê mới");
-    expect(menu.categories.some((category) => category.id === "cat-blended")).toBe(false);
-    expect(menu.menuItems.find((item) => item.id === "mi-latte")?.price).toBe(47000);
-    expect(menu.menuItems.some((item) => item.id === "mi-cold-brew")).toBe(false);
+    expect(menu.categories.find((category) => category.id === "c68d7fbd-c06a-42a4-8140-476da8ebbf74")?.name).toBe("Cà phê mới");
+    expect(menu.categories.some((category) => category.id === "0e2b2b01-1e52-436b-8130-428e82585276")).toBe(false);
+    expect(menu.menuItems.find((item) => item.id === "d50ff72b-d0bc-4832-8888-183c19f5a158")?.price).toBe(47000);
+    expect(menu.menuItems.some((item) => item.id === "9491e262-856d-4408-82b7-c9d7f7ac3f27")).toBe(false);
   });
 
   it("returns browser object URLs for uploaded mock menu item images", async () => {
@@ -326,7 +330,7 @@ describe("mock repositories", () => {
     const ports = createMockPorts(createSeededMockState());
     const file = new File(["image"], "latte.webp", { type: "image/webp" });
 
-    const uploaded = await ports.menuImages.uploadMenuItemImage({ itemId: "mi-latte", file });
+    const uploaded = await ports.menuImages.uploadMenuItemImage({ itemId: "d50ff72b-d0bc-4832-8888-183c19f5a158", file });
 
     expect(URL.createObjectURL).toHaveBeenCalledWith(file);
     expect(ports.menuImages.getImageUrl(uploaded.assetKey)).toBe("blob:mock-menu-image");
@@ -335,7 +339,7 @@ describe("mock repositories", () => {
   it("applies mock floor-plan changesets without overwriting table status", async () => {
     const ports = createMockPorts(createSeededMockState());
     const before = await ports.floorPlan.getFloorPlan();
-    const originalStatus = before.tables.find((table) => table.id === "tbl-b02")?.status;
+    const originalStatus = before.tables.find((table) => table.id === "a254abd0-b883-4d5c-85c1-89f660409e02")?.status;
     const changes: FloorPlanChanges = {
       areas: { created: [{ id: "area-rooftop", name: "Sân thượng", sortOrder: 3 }], updated: [], deleted: [] },
       tables: {
@@ -355,7 +359,7 @@ describe("mock repositories", () => {
             sortOrder: 1,
           },
         ],
-        updated: [{ id: "tbl-b02", posX: 540, posY: 240 }],
+        updated: [{ id: "a254abd0-b883-4d5c-85c1-89f660409e02", posX: 540, posY: 240 }],
         deleted: [],
       },
       decorItems: { created: [], updated: [], deleted: [] },
@@ -363,7 +367,7 @@ describe("mock repositories", () => {
 
     await ports.floorPlan.saveFloorPlan(changes);
     const floorPlan = await ports.floorPlan.getFloorPlan();
-    const movedTable = floorPlan.tables.find((table) => table.id === "tbl-b02");
+    const movedTable = floorPlan.tables.find((table) => table.id === "a254abd0-b883-4d5c-85c1-89f660409e02");
 
     expect(floorPlan.areas).toEqual(expect.arrayContaining([expect.objectContaining({ id: "area-rooftop" })]));
     expect(floorPlan.tables).toEqual(expect.arrayContaining([expect.objectContaining({ id: "tbl-r01", status: "empty" })]));
@@ -377,7 +381,7 @@ describe("mock repositories", () => {
     await expect(
       ports.order.voidOrder({
         orderId: "does-not-exist",
-        employeeId: "emp-admin",
+        employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
         expectedVersion: 0,
         reasonCode: "wrong_order",
         reasonNote: null,
@@ -385,11 +389,11 @@ describe("mock repositories", () => {
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     // Đơn đang mở (chưa thanh toán) không đi đường này.
-    const open = await ports.order.getOrder("ord-b02");
+    const open = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     await expect(
       ports.order.voidOrder({
-        orderId: "ord-b02",
-        employeeId: "emp-admin",
+        orderId: "7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c",
+        employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
         expectedVersion: open.lockVersion,
         reasonCode: "wrong_order",
         reasonNote: null,
@@ -397,11 +401,11 @@ describe("mock repositories", () => {
     ).rejects.toMatchObject({ code: "ORDER_VERSION_CONFLICT" });
 
     // Thu ngân không có quyền.
-    const paid = await ports.order.getOrder("ord-paid-1");
+    const paid = await ports.order.getOrder("3f6c6266-12b8-4f8b-8564-44d00d9210f8");
     await expect(
       ports.order.voidOrder({
-        orderId: "ord-paid-1",
-        employeeId: "emp-cashier-1",
+        orderId: "3f6c6266-12b8-4f8b-8564-44d00d9210f8",
+        employeeId: "22828322-623b-42e7-8a28-a2bdf367c364",
         expectedVersion: paid.lockVersion,
         reasonCode: "wrong_order",
         reasonNote: null,
@@ -415,18 +419,18 @@ describe("mock instant pay (payOrderItems - tách đơn độc lập)", () => {
   // ord-b02 (#24, lockVersion 3): Cà phê sữa ×2 (29k) + Bạc xỉu ×1 (32k) + Croissant ×1 (35k) = 125k.
   // Seeded nextOrderNo = 30.
   const paySplit = async (ports: ReturnType<typeof createMockPorts>) => {
-    const order = await ports.order.getOrder("ord-b02");
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     return ports.payment.payOrderItems({
       paymentId: "pay-split-1",
       orderId: order.id,
       newOrderId: "ord-split-1",
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       method: "cash",
       expectedVersion: order.lockVersion,
       receivedAmount: 61000,
       items: [
-        { orderItemId: "oi-b02-1", quantity: 1, splitItemId: "oi-b02-1-split" },
-        { orderItemId: "oi-b02-2", quantity: 1, splitItemId: "oi-b02-2-split" },
+        { orderItemId: "3c00b7a3-016f-45a3-8f96-664314c26b4a", quantity: 1, splitItemId: "oi-b02-1-split" },
+        { orderItemId: "64a0c267-a3e2-47ca-878b-c5b47c7452e5", quantity: 1, splitItemId: "oi-b02-2-split" },
       ],
     });
   };
@@ -442,7 +446,7 @@ describe("mock instant pay (payOrderItems - tách đơn độc lập)", () => {
       status: "paid",
       total: 61000,
       changeAmount: 0,
-      sourceOrderId: "ord-b02",
+      sourceOrderId: "7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c",
       sourceOrderNo: 30,
       sourceTotal: 64000,
     });
@@ -458,19 +462,19 @@ describe("mock instant pay (payOrderItems - tách đơn độc lập)", () => {
     const splitOrder = await ports.order.getOrder("ord-split-1");
     expect(splitOrder.status).toBe("paid");
     expect(splitOrder.total).toBe(61000);
-    expect(splitOrder.payment).toMatchObject({ id: "pay-split-1", amount: 61000, employeeId: "emp-admin" });
+    expect(splitOrder.payment).toMatchObject({ id: "pay-split-1", amount: 61000, employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d" });
     expect(splitOrder.items).toHaveLength(2);
 
     // Đơn gốc: vẫn mở, chỉ còn phần chưa trả (1 Cà phê sữa + Croissant), bàn vẫn occupied.
-    const source = await ports.order.getOrder("ord-b02");
+    const source = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     expect(source.status).toBe("open");
     expect(source.orderNo).toBe(30);
     expect(source.total).toBe(64000);
     expect(source.items).toHaveLength(2);
-    expect(source.items.find((item) => item.id === "oi-b02-1")?.quantity).toBe(1);
+    expect(source.items.find((item) => item.id === "3c00b7a3-016f-45a3-8f96-664314c26b4a")?.quantity).toBe(1);
 
     const floorPlan = await ports.floorPlan.getFloorPlan();
-    expect(floorPlan.tables.find((table) => table.id === "tbl-b02")?.status).toBe("occupied");
+    expect(floorPlan.tables.find((table) => table.id === "a254abd0-b883-4d5c-85c1-89f660409e02")?.status).toBe("occupied");
   });
 
   it("shows the split order in history and report immediately, while the source stays out", async () => {
@@ -485,7 +489,7 @@ describe("mock instant pay (payOrderItems - tách đơn độc lập)", () => {
       pageSize: 20,
     });
     expect(history.items.map((item) => item.id)).toContain("ord-split-1");
-    expect(history.items.map((item) => item.id)).not.toContain("ord-b02");
+    expect(history.items.map((item) => item.id)).not.toContain("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
 
     // Tiền đã thu vào report NGAY (đơn tách là đơn paid) — không chờ đơn gốc đóng.
     const report = await ports.report.getCoreReport({ businessDate: today });
@@ -498,39 +502,39 @@ describe("mock instant pay (payOrderItems - tách đơn độc lập)", () => {
     const billNos: number[] = [];
 
     // Lần 1: tách 1 Cà phê sữa.
-    let order = await ports.order.getOrder("ord-b02");
+    let order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const first = await ports.payment.payOrderItems({
       paymentId: "pay-1",
       orderId: order.id,
       newOrderId: "ord-split-a",
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       method: "cash",
       expectedVersion: order.lockVersion,
       receivedAmount: 29000,
-      items: [{ orderItemId: "oi-b02-1", quantity: 1, splitItemId: "split-a" }],
+      items: [{ orderItemId: "3c00b7a3-016f-45a3-8f96-664314c26b4a", quantity: 1, splitItemId: "split-a" }],
     });
     billNos.push(first.orderNo);
 
     // Lần 2: tách Bạc xỉu.
-    order = await ports.order.getOrder("ord-b02");
+    order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const second = await ports.payment.payOrderItems({
       paymentId: "pay-2",
       orderId: order.id,
       newOrderId: "ord-split-b",
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       method: "cash",
       expectedVersion: order.lockVersion,
       receivedAmount: 32000,
-      items: [{ orderItemId: "oi-b02-2", quantity: 1, splitItemId: "split-b" }],
+      items: [{ orderItemId: "64a0c267-a3e2-47ca-878b-c5b47c7452e5", quantity: 1, splitItemId: "split-b" }],
     });
     billNos.push(second.orderNo);
 
     // Lần 3: trả nốt phần còn lại bằng payOrder (đơn gốc đóng với số hiện tại).
-    order = await ports.order.getOrder("ord-b02");
+    order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     await ports.payment.payOrder({
       paymentId: "pay-3",
       orderId: order.id,
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       method: "cash",
       expectedVersion: order.lockVersion,
       receivedAmount: order.total,
@@ -543,20 +547,20 @@ describe("mock instant pay (payOrderItems - tách đơn độc lập)", () => {
     expect(billNos[1]).toBeLessThan(billNos[2]);
 
     const floorPlan = await ports.floorPlan.getFloorPlan();
-    expect(floorPlan.tables.find((table) => table.id === "tbl-b02")?.status).toBe("empty");
+    expect(floorPlan.tables.find((table) => table.id === "a254abd0-b883-4d5c-85c1-89f660409e02")?.status).toBe("empty");
   });
 
   it("keeps the source order editable and voidable after a split", async () => {
     const ports = createMockPorts(createSeededMockState());
     await paySplit(ports);
-    const source = await ports.order.getOrder("ord-b02");
+    const source = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
 
     // Đơn gốc là đơn bình thường: huỷ toàn bộ phần còn lại -> void, bàn trống.
     const result = await ports.order.submitOrderChanges({
       orderId: source.id,
       tableId: source.tableId,
       orderType: source.orderType,
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       expectedVersion: source.lockVersion,
       items: [],
     });
@@ -571,14 +575,14 @@ describe("mock instant pay (payOrderItems - tách đơn độc lập)", () => {
 
   it("rejects over-quantity, duplicates, empty/full selections, low cash, and stale versions", async () => {
     const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const base = {
       orderId: order.id,
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       method: "cash" as const,
       expectedVersion: order.lockVersion,
     };
-    const line = { orderItemId: "oi-b02-1", quantity: 1, splitItemId: "split-x" };
+    const line = { orderItemId: "3c00b7a3-016f-45a3-8f96-664314c26b4a", quantity: 1, splitItemId: "split-x" };
 
     await expect(
       ports.payment.payOrderItems({ ...base, paymentId: "p1", newOrderId: "n1", receivedAmount: 999000, items: [{ ...line, quantity: 3 }] }),
@@ -603,9 +607,9 @@ describe("mock instant pay (payOrderItems - tách đơn độc lập)", () => {
         newOrderId: "n6",
         receivedAmount: 999000,
         items: [
-          { orderItemId: "oi-b02-1", quantity: 2, splitItemId: "s1" },
-          { orderItemId: "oi-b02-2", quantity: 1, splitItemId: "s2" },
-          { orderItemId: "oi-b02-3", quantity: 1, splitItemId: "s3" },
+          { orderItemId: "3c00b7a3-016f-45a3-8f96-664314c26b4a", quantity: 2, splitItemId: "s1" },
+          { orderItemId: "64a0c267-a3e2-47ca-878b-c5b47c7452e5", quantity: 1, splitItemId: "s2" },
+          { orderItemId: "923bfabf-cffd-4d90-84a8-50bd47b0fd09", quantity: 1, splitItemId: "s3" },
         ],
       }),
     ).rejects.toMatchObject({ code: "INVALID_ORDER_ITEMS" });

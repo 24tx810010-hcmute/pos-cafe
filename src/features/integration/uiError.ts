@@ -1,3 +1,4 @@
+import { writeErrorMessages } from "@/core/writeErrors";
 import type { AppErrorCode } from "@/core/appError";
 import { AppError, isAppError } from "@/core/appError";
 
@@ -10,7 +11,9 @@ export type UiErrorAction =
   | "refreshMenu"
   | "reloadOrder"
   | "requestAdmin"
-  | "retry";
+  | "retry"
+  | "recoverWrite"
+  | "enterPin";
 
 export type UiError = {
   code: AppErrorCode;
@@ -21,7 +24,7 @@ export type UiError = {
   action: UiErrorAction;
 };
 
-const UI_ERROR_BY_CODE: Record<AppErrorCode, UiError> = {
+const LEGACY_UI_ERROR_BY_CODE = {
   AUTH_REQUIRED: {
     code: "AUTH_REQUIRED",
     title: "Cần kết nối cửa hàng",
@@ -143,6 +146,18 @@ const UI_ERROR_BY_CODE: Record<AppErrorCode, UiError> = {
     action: "retry",
   },
 };
+
+const UI_ERROR_BY_CODE: Record<AppErrorCode, UiError> = {
+  ...LEGACY_UI_ERROR_BY_CODE,
+  ...Object.fromEntries(Object.entries(writeErrorMessages).map(([code, message]) => [code, {
+    code, message, title: (LEGACY_UI_ERROR_BY_CODE as Partial<Record<AppErrorCode, UiError>>)[code as AppErrorCode]?.title ?? (code === "EMPLOYEE_SESSION_REQUIRED" ? "Cần nhập PIN" : "Thông báo thao tác"),
+    severity: "warning", blocking: (LEGACY_UI_ERROR_BY_CODE as Partial<Record<AppErrorCode, UiError>>)[code as AppErrorCode]?.blocking ?? true,
+    action: code === "EMPLOYEE_SESSION_REQUIRED" ? "enterPin" : code === "AUTH_REQUIRED" ? "pairStore"
+      : code === "PRICE_CHANGED" || code === "MENU_ITEM_UNAVAILABLE" || code === "OPTION_VALUE_UNAVAILABLE" ? "refreshMenu"
+      : code === "ORDER_VERSION_CONFLICT" ? "reloadOrder" : code === "PAYMENT_AMOUNT_TOO_LOW" ? "collectMoreCash"
+      : code === "FORBIDDEN" ? "requestAdmin" : code.startsWith("WRITE_") || code.startsWith("OPERATION_") || code === "IDEMPOTENCY_KEY_REUSED" ? "recoverWrite" : "retry",
+  }])),
+} as Record<AppErrorCode, UiError>;
 
 export const mapAppErrorToUiError = (error: AppError): UiError => ({
   ...UI_ERROR_BY_CODE[error.code],

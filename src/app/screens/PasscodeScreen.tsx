@@ -1,5 +1,5 @@
 import { Button } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { isEmployeeRoleEnabledInUi } from "@/core/guards";
 import { useActiveEmployeesQuery, useStoreSessionQuery, useUnpairStoreMutation, useVerifyEmployeeMutation } from "@/features/session";
@@ -21,6 +21,8 @@ export function PasscodeScreen() {
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [shaking, setShaking] = useState(false);
+  const loginGeneration = useRef(0);
+  useEffect(() => () => { loginGeneration.current += 1; }, []);
 
   const roleLabel: Record<string, string> = { admin: "Quản lý", cashier: "Thu ngân", kitchen: "Bếp" };
 
@@ -36,14 +38,19 @@ export function PasscodeScreen() {
   }, [selectedEmployeeId, visibleEmployees]);
 
   const verifyPin = () => {
+    if (verifyMutation.isPending || !navigator.onLine || !/^[0-9]{6}$/.test(pin)) return;
+    const generation = ++loginGeneration.current;
     verifyMutation.mutate(
       { employeeId: selectedEmployeeId, pin },
       {
         onSuccess: (employee) => {
+          if (generation !== loginGeneration.current) return;
+          setPin("");
           setCurrentEmployee(employee);
           toast.success(`Xin chào ${employee.name}`);
         },
         onError: (error) => {
+          if (generation !== loginGeneration.current) return;
           const msg = toToastError(error);
           setPinError(msg);
           setPin("");
@@ -55,6 +62,7 @@ export function PasscodeScreen() {
   };
 
   const unpair = () => {
+    loginGeneration.current += 1;
     unpairMutation.mutate(undefined, {
       onSuccess: () => {
         setCurrentEmployee(null);
@@ -137,6 +145,7 @@ export function PasscodeScreen() {
                         : "border-pos-line bg-pos-surface text-pos-ink",
                     )}
                     data-testid={`employee-${employee.id}`}
+                    disabled={verifyMutation.isPending}
                     onClick={() => { setSelectedEmployeeId(employee.id); setPinError(""); setPin(""); }}
                   >
                     <strong className="truncate text-[clamp(15px,1.1vw,24px)] font-extrabold leading-[1.2] text-pos-ink">{employee.name}</strong>
@@ -172,7 +181,7 @@ export function PasscodeScreen() {
               <Button
                 variant="contained"
                 data-testid="unlock-button"
-                disabled={!selectedEmployeeId || pin.length < 4 || verifyMutation.isPending}
+                disabled={!selectedEmployeeId || pin.length !== 6 || verifyMutation.isPending || !navigator.onLine}
                 onClick={verifyPin}
                 className="!min-h-0 !rounded-pos !text-[clamp(14px,1.3vw,24px)] !font-bold"
               >

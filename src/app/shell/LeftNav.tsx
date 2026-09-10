@@ -54,6 +54,7 @@ export function LeftNav() {
         <div className="grid gap-1.5">
           <span className="px-3 text-[10px] font-black uppercase tracking-[0.05em] text-[#64748b] max-[980px]:sr-only">Vận hành</span>
           <RailButton active={!drawer} icon={<LayoutDashboard size={18} />} label="Bàn" onClick={closeDrawer} testId="nav-floor" />
+          <RailButton active={drawer === "writeRecovery"} icon={<ClipboardList size={18} />} label="Tra cứu thao tác" onClick={() => openDrawer("writeRecovery")} testId="nav-write-recovery" />
           <RailButton
             active={drawer === "takeaway"}
             icon={<ClipboardList size={18} />}
@@ -131,8 +132,8 @@ export function LeftNav() {
           label="Khoá"
           testId="nav-lock"
           onClick={() => {
-            closeDrawer();
             setCurrentEmployee(null);
+            closeDrawer();
             setScreen("passcode");
           }}
         />

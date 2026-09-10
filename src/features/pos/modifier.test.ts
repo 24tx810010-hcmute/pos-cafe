@@ -10,16 +10,16 @@ import { buildCartLines, getItemModifierGroups } from "./orderFlow";
 
 describe("getItemModifierGroups", () => {
   it("returns shared groups linked to the item, with their values", () => {
-    const groups = getItemModifierGroups(mockMenuCatalog, "mi-latte");
+    const groups = getItemModifierGroups(mockMenuCatalog, "d50ff72b-d0bc-4832-8888-183c19f5a158");
     const ids = groups.map((g) => g.group.id);
-    expect(ids).toContain("og-coffee-size");
-    expect(ids).toContain("og-latte-shot");
-    const size = groups.find((g) => g.group.id === "og-coffee-size");
-    expect(size?.values.map((v) => v.id)).toEqual(["ov-size-m", "ov-size-l"]);
+    expect(ids).toContain("054f9798-4ba4-49f3-8e40-8ca109eeb95e");
+    expect(ids).toContain("8048edd4-a555-4cea-874d-40beb45b21e3");
+    const size = groups.find((g) => g.group.id === "054f9798-4ba4-49f3-8e40-8ca109eeb95e");
+    expect(size?.values.map((v) => v.id)).toEqual(["a5f986a6-ea67-4dd3-866e-42a0be8a0497", "62ca9453-5d44-47f4-8f85-a943d526348d"]);
   });
 
   it("returns empty list for items without any linked group", () => {
-    expect(getItemModifierGroups(mockMenuCatalog, "mi-croissant")).toEqual([]);
+    expect(getItemModifierGroups(mockMenuCatalog, "91bbd9ab-1397-4275-8e49-620b70f45b55")).toEqual([]);
   });
 });
 
@@ -60,10 +60,10 @@ describe("pricing with modifier quantity", () => {
     const items = snapshotDraftItems(mockMenuCatalog, [
       {
         id: "draft-1",
-        menuItemId: "mi-tra-sua-truyen-thong", // 39000
+        menuItemId: "f6dec6d1-792d-4ccd-8892-86c3f3f550fc", // 39000
         quantity: 1,
         note: null,
-        options: [{ id: "o1", optionValueId: "ov-tran-chau", quantity: 2 }], // +7000 each
+        options: [{ id: "o1", optionValueId: "dbbecac5-7b06-42c8-8a53-44e08e8d61c3", quantity: 2 }], // +7000 each
       },
     ]);
     // 39000 + 7000*2 = 53000
@@ -75,10 +75,10 @@ describe("pricing with modifier quantity", () => {
     const lines = buildCartLines(mockMenuCatalog, [
       {
         id: "draft-1",
-        menuItemId: "mi-tra-sua-truyen-thong",
+        menuItemId: "f6dec6d1-792d-4ccd-8892-86c3f3f550fc",
         quantity: 1,
         note: null,
-        options: [{ id: "o1", optionValueId: "ov-tran-chau", quantity: 2 }],
+        options: [{ id: "o1", optionValueId: "dbbecac5-7b06-42c8-8a53-44e08e8d61c3", quantity: 2 }],
       },
     ]);
     expect(lines[0].optionText).toBe("Trân châu ×2");

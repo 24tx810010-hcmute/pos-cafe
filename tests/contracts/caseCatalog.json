@@ -1,0 +1,1111 @@
+[
+  {
+    "id": "TC-IDEM-001",
+    "title": "Đăng nhập, khóa và reload",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "Token 43 ký tự chỉ memory; expiresAt-issuedAt=12 h; revoke được ACK thì token cũ EMPLOYEE_SESSION_REQUIRED; reload về PIN, Store session còn. Mã phải hiện đúng thông báo tại design, mục 7: EMPLOYEE_SESSION_REQUIRED.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-002",
+    "title": "PIN sai và employee inactive",
+    "backends": [
+      "db"
+    ],
+    "expected": "Sai/inactive trả INVALID_PIN, không cấp token; positive control được phiên. Không trả hash. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_PIN.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-003",
+    "title": "Token không đúng store/thiếu/giả",
+    "backends": [
+      "db"
+    ],
+    "expected": "EMPLOYEE_SESSION_REQUIRED; 0 K/0 hiệu ứng nghiệp vụ; employeeId A trong JSON không giúp vượt. Mã phải hiện đúng thông báo tại design, mục 7: EMPLOYEE_SESSION_REQUIRED.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-004",
+    "title": "Store session vắng hoặc sai",
+    "backends": [
+      "db"
+    ],
+    "expected": "AUTH_REQUIRED, 0 K/0 hiệu ứng nghiệp vụ. Mã phải hiện đúng thông báo tại design, mục 7: AUTH_REQUIRED.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-005",
+    "title": "Biên hạn phiên và reset PIN",
+    "backends": [
+      "db"
+    ],
+    "expected": "−1 ms có quyền và applied; =, +1 ms EMPLOYEE_SESSION_REQUIRED/K pending; reset PIN cũng chặn, token mới đăng nhập PIN mới dùng được. Hai race start-session/reset-PIN có suffix riêng: start thắng lock employee thì reset chờ và thu hồi token vừa cấp; reset thắng thì start PIN cũ INVALID_PIN/không token. Observer xác minh không có token PIN cũ sống sau reset commit. Mã phải hiện đúng thông báo tại design, mục 7: EMPLOYEE_SESSION_REQUIRED.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-006",
+    "title": "Ma trận action × endpoint × actor",
+    "backends": [
+      "db"
+    ],
+    "expected": "Theo design, mục 2.3 từng cell; B chỉ pay/split, C: 0; deny thắng grant; request cấm FORBIDDEN trừ list lọc; 0 hiệu ứng/0 counter và K pending giữ. Mỗi cell có test ID suffix riêng. Mã phải hiện đúng thông báo tại design, mục 7: FORBIDDEN.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-007",
+    "title": "Thu hồi quyền lúc execute chờ khóa",
+    "backends": [
+      "db"
+    ],
+    "expected": "Checkpoint đọc quyền mới: FORBIDDEN, K pending, 0 payment; A execute sau đó applied 1 payment. Observer xác minh revoke commit trước checkpoint. Mã phải hiện đúng thông báo tại design, mục 7: FORBIDDEN.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-008",
+    "title": "Tự nâng quyền/PIN bằng direct DML",
+    "backends": [
+      "db"
+    ],
+    "expected": "Mọi attempt denied; employees/sessions không đổi. SELECT whitelist thành công nhưng passcode_hash và SELECT * không rò hash. Không dùng service-role làm caller. Mã phải hiện đúng thông báo tại design, mục 7: FORBIDDEN.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-009",
+    "title": "Bypass bốn RPC và các overload",
+    "backends": [
+      "db"
+    ],
+    "expected": "Permission denied mọi đường; no effect. Manifest inventory thiếu overload hoặc function mới chưa audit thì fail. Mã phải hiện đúng thông báo tại design, mục 7: FORBIDDEN.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-010",
+    "title": "Parent, table status và cross-store bypass",
+    "backends": [
+      "db"
+    ],
+    "expected": "Parent/status/identity write bị chặn; K store khác OPERATION_NOT_FOUND; list không lộ S2; mọi dữ liệu thuộc fixture giữ nguyên. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_NOT_FOUND.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-011",
+    "title": "Bootstrap, admin và seed không bị phá",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "Admin INSERT bàn thành công với id đã gửi, store_id=S1, status mặc định empty; đọc/layout-update được, không được UPDATE id/store/status. B/C INSERT bị từ chối.  Lần đầu một store/admin, vào POS được; lần 2 ENTITY_ID_CONFLICT không reset admin; B/C bị chặn; admin layout không đổi status; clear_demo giữ finance/ledger/audit. Mã phải hiện đúng thông báo tại design, mục 7: ENTITY_ID_CONFLICT.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-012",
+    "title": "Register không tạo đơn",
+    "backends": [
+      "db",
+      "mock"
+    ],
+    "expected": "1 pending, expires=T+24 h, 0 order/items/options/payment/event; initiator A, count 0.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-013",
+    "title": "Retry register và terminal không gia hạn",
+    "backends": [
+      "db",
+      "mock"
+    ],
+    "expected": "Chỉ 1 K; registeredAt/expiry/initiator giữ; get expired; register terminal trả expired, không pending mới/0 hiệu ứng nghiệp vụ.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-014",
+    "title": "Create lần đầu và replay R1",
+    "backends": [
+      "db",
+      "mock"
+    ],
+    "expected": "1 order #1/version 0/open 60 k, 2 units/0 payment/B01 occupied; creator A; 1 event; count 2; R1 exact không đổi.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-015",
+    "title": "Khóa object order không làm khác payload",
+    "backends": [
+      "core",
+      "db"
+    ],
+    "expected": "Equality hợp lệ, 1 applied/total 50 k. Không dựa stringify text để so.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-016",
+    "title": "Đảo mảng hai phần tử là mismatch",
+    "backends": [
+      "core",
+      "db"
+    ],
+    "expected": "P2 IDEMPOTENCY_KEY_REUSED, 0 hiệu ứng/count 0; P1 applied 50 k, stored array A, T. Mã phải hiện đúng thông báo tại design, mục 7: IDEMPOTENCY_KEY_REUSED.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-017",
+    "title": "Absent và null đều valid nhưng khác lệnh",
+    "backends": [
+      "core",
+      "db"
+    ],
+    "expected": "Cả hai schema hợp lệ; execute mismatch không phải INVALID_WRITE_REQUEST; execute absent thành công. Mã phải hiện đúng thông báo tại design, mục 7: IDEMPOTENCY_KEY_REUSED.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-018",
+    "title": "Same K khác kind/tiền/lượng/version",
+    "backends": [
+      "db"
+    ],
+    "expected": "Mỗi biến thể IDEMPOTENCY_KEY_REUSED; K/expiry/actor/count giữ, 0 hiệu ứng; gửi gốc thành công 1 split. Mã phải hiện đúng thông báo tại design, mục 7: IDEMPOTENCY_KEY_REUSED.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-019",
+    "title": "Race cùng K/payload",
+    "backends": [
+      "db"
+    ],
+    "expected": "Đúng 1 K/1 order/1 event, applied; cả hai execute trả cùng R1 đúng 60 k, count 1. Cả hai lỗi/treo không đạt; PIDs khác.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-020",
+    "title": "Race cùng K khác payload",
+    "backends": [
+      "db"
+    ],
+    "expected": "1 pending payload thắng; bên thua IDEMPOTENCY_KEY_REUSED; expiry/initiator của winner; execute đúng 1 order 30 k hoặc 60 k tương ứng. Mã phải hiện đúng thông báo tại design, mục 7: IDEMPOTENCY_KEY_REUSED.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-021",
+    "title": "Khác K tạo cùng bàn",
+    "backends": [
+      "db"
+    ],
+    "expected": "Đúng 1 applied, 1 rejected TABLE_OCCUPIED; 1 open order 30 k/1 item/B01 occupied/1 event; không orphan bên thua. Mã phải hiện đúng thông báo tại design, mục 7: TABLE_OCCUPIED.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-022",
+    "title": "Khác K takeaway cùng nội dung",
+    "backends": [
+      "db"
+    ],
+    "expected": "Cả hai applied; 2 orders 30 k, IDs/số bill khác; không dedupe bằng payload hash.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-023",
+    "title": "OCC race khác K cùng version",
+    "backends": [
+      "db"
+    ],
+    "expected": "Đúng 1 applied, 1 rejected ORDER_VERSION_CONFLICT. Winner update:150 k/v6/0 payment; pay:paid 150 k/v6/1 payment; split:child 30 k/source 120 k/v6/1 payment; voidOpen:0/void v6/0 payment; voidPaid:150 k/void v7/payment cũ. Không deadlock bị nuốt. Mã phải hiện đúng thông báo tại design, mục 7: ORDER_VERSION_CONFLICT.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-024",
+    "title": "Create tranh cấp số với split",
+    "backends": [
+      "db"
+    ],
+    "expected": "Create first:#21 create, source #22, child #12; split first:source #21, create#22, child #12. Mọi (store, date, no) unique; replay không cấp số.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-025",
+    "title": "Update giữ snapshot 100 k",
+    "backends": [
+      "db",
+      "mock",
+      "e2e"
+    ],
+    "expected": "L1 qty 2/base 30 k/old options/60 k; L2 qty 1/base 40 k/Z 0/40 k; total 100 k/v6/0 payment, 2 active IDs; R1 và DB khớp.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-026",
+    "title": "Tăng qua dấu cộng tạo phần giá mới",
+    "backends": [
+      "core",
+      "db",
+      "e2e"
+    ],
+    "expected": "Retained L1 qty 2; newLine qty 1 quote 40 k; total 100 k, không L1 qty 3 giá cũ; không định giá lại cũ.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-027",
+    "title": "Đổi note giữa dòng khác giá",
+    "backends": [
+      "core",
+      "db",
+      "e2e"
+    ],
+    "expected": "Dirty true, không cho thanh toán trước gửi; sau update L30=30 k/null, L35=35 k/ít đá, total 65 k/v6/0 payment.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-028",
+    "title": "Giảm và xóa đúng phần cũ",
+    "backends": [
+      "db",
+      "mock"
+    ],
+    "expected": "Giảm:old 30 k/version 6; old menu 40 k không ảnh hưởng. Xóa+new:raw old status removed/quantity 2/base 30 k/options cũ giữ, result.items chỉ new 1 × 40 k, 0 payment; không hard delete/options orphan.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-029",
+    "title": "Giữ phần cũ khi catalog đổi tên/không còn bán",
+    "backends": [
+      "db"
+    ],
+    "expected": "Phần cũ vẫn base 30 k/Q 5 k qty 2/tên cũ; inactive không chặn retained. Giảm qty 1 total 40 k; no current catalog snapshots.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-030",
+    "title": "Modifier quantity và giá mới từng phần",
+    "backends": [
+      "db",
+      "mock",
+      "e2e"
+    ],
+    "expected": "Tổng 129 k; tách new paid 49 k/source 80 k; tách old paid 40 k/source 89 k; IDs/options qty/tên cũ-mới đúng, không chỉ assert sum.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-031",
+    "title": "Không gộp các cấu trúc cùng tổng giá",
+    "backends": [
+      "core",
+      "db"
+    ],
+    "expected": "Hai source IDs/options khác, total 70 k; không gộp 2 × 35 k mất components.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-032",
+    "title": "Nguồn retained giả mạo",
+    "backends": [
+      "db"
+    ],
+    "expected": "Mỗi K rejected INVALID_ORDER_ITEMS; DB full snapshot không đổi/0 event. Positive control retained 5 cùng O1 applied. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_ORDER_ITEMS.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-033",
+    "title": "Không sửa giá/menu/modifier/name phần cũ qua JSON",
+    "backends": [
+      "core",
+      "db"
+    ],
+    "expected": "INVALID_WRITE_REQUEST trước ledger; 0 K/0 hiệu ứng; không silently strip rồi accept. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-034",
+    "title": "Quote base tăng và giảm",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "K1 rejected PRICE_CHANGED; O 60 k/v5/0 payment; UI proposed 105 k hoặc 95 k; K2 applied total 105 k/95 k/v6; K1 rejection giữ. Mã phải hiện đúng thông báo tại design, mục 7: PRICE_CHANGED.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-035",
+    "title": "Quote chỉ option đổi",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "K1 PRICE_CHANGED/0 hiệu ứng nghiệp vụ; new portion 45 k → 49 k; tổng cũ 80 k → 129 k chỉ sau K2; không dùng orderVersion để bắt menu change. Variant bù giá vẫn PRICE_CHANGED dù tổng 49 k không đổi; details chỉ rõ base 35 → 37 k và option 7 → 6 k, chỉ K mới sau xác nhận được áp dụng. Mã phải hiện đúng thông báo tại design, mục 7: PRICE_CHANGED.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-036",
+    "title": "Menu, group và option validation",
+    "backends": [
+      "db"
+    ],
+    "expected": "Negative: MENU_ITEM_UNAVAILABLE với món; OPTION_VALUE_UNAVAILABLE với option/group; 0 order/payment/event, K rejected bền. Positive: F0 A 30 k chọn Q 5 k và Z 0 thuộc cùng group multi hợp lệ, quantity 1 mỗi value → applied, 1 order 35 k, 2 option snapshots, 0 payment, 1 event. Không áp expected rejection cho positive. Mã lỗi hiển thị theo design, mục 7.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-037",
+    "title": "Void open giữ lịch sử removed",
+    "backends": [
+      "db",
+      "mock"
+    ],
+    "expected": "O1 void/v6/subtotal 0/total 0/paidAt null; result.items=[], active 0; raw removed L1.quantity 5/items/options cũ không hard-delete; 0 payment/B01 empty; No 12/date/creator giữ; 1 event; replay không đổi updatedAt.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-038",
+    "title": "Full cash và receipt literal",
+    "backends": [
+      "db",
+      "mock",
+      "e2e"
+    ],
+    "expected": "1 payment amount 150 k/received 200 k/change 50 k/employee A; O paid v6/B empty; receipt 150 k. Replay giữ nguyên/no auto print.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-039",
+    "title": "Tiền nhận thấp hơn tổng",
+    "backends": [
+      "db",
+      "mock"
+    ],
+    "expected": "149999 rejected PAYMENT_AMOUNT_TOO_LOW, 0 payment/O open v5; 150000 applied/change 0. Mã phải hiện đúng thông báo tại design, mục 7: PAYMENT_AMOUNT_TOO_LOW.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-040",
+    "title": "Split partial exact row/number oracle",
+    "backends": [
+      "db",
+      "mock"
+    ],
+    "expected": "Nguồn L1 qty 4/open 120 k/v6/#21; child L2 qty 1/paid 30 k/v0/#12; 1 payment child/0 payment source/thừa 20 k/B occupied; split IDs/options/1 event giữ sau replay.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-041",
+    "title": "Split nguyên dòng giữ ID",
+    "backends": [
+      "db"
+    ],
+    "expected": "L30 move child v0/paid 30 k/#12, L35 source open 35 k/v6/#21; không copy L30; options chuyển cùng; payment 1 thừa 20 k.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-042",
+    "title": "Full selection route trước register",
+    "backends": [
+      "core",
+      "e2e"
+    ],
+    "expected": "1 register kind pay_order, 1 execute cùng K; 0 register/execute split; payment 150 k.",
+    "plannedFiles": [
+      "src/features/pos/writeOperationFlow.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-043",
+    "title": "RPC split toàn bộ hoặc selection sai",
+    "backends": [
+      "db"
+    ],
+    "expected": "Empty INVALID_WRITE_REQUEST/0 K; full, over qty, duplicate/outside source INVALID_ORDER_ITEMS/rejected/0 hiệu ứng; positive twin qty 1 applied. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST, INVALID_ORDER_ITEMS.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-044",
+    "title": "Clamp còn đủ sau mất ACK",
+    "backends": [
+      "e2e"
+    ],
+    "expected": "Outbound execute K cũ/payload qty 1/v5, không new register; đúng 1 payment/child, total nguồn 120 k. Không split lần 2 dù selection vẫn có 1.",
+    "plannedFiles": [
+      "src/features/pos/writeOperationFlow.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-045",
+    "title": "Clamp rỗng rồi fallback fullSelection",
+    "backends": [
+      "e2e"
+    ],
+    "expected": "Chỉ replay K split gốc; 0 outbound pay_order/0 K mới; source 35 k vẫn open; payment 30 k duy nhất. Không fallback thành thanh toán 35 k.",
+    "plannedFiles": [
+      "src/features/pos/writeOperationFlow.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-046",
+    "title": "Void paid không đổi bàn khách mới",
+    "backends": [
+      "db",
+      "mock",
+      "e2e"
+    ],
+    "expected": "O1 void v7/total 150 k/payment/paidAt cũ giữ; B01 occupied/O3 không đổi; void actor A/time một lần; tiền void 150 k không 300 k.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-047",
+    "title": "NULL version cả bốn kind và positive twin",
+    "backends": [
+      "db"
+    ],
+    "expected": "NULL/missing INVALID_WRITE_REQUEST/0 K; positive cùng fixture applied. Không test void trên open rồi kết luận đã chặn NULL. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-048",
+    "title": "Stale version, sai trạng thái và không thấy order",
+    "backends": [
+      "db"
+    ],
+    "expected": "Version/status ORDER_VERSION_CONFLICT; missing/cross-store order NOT_FOUND; K rejected, 0 hiệu ứng; không dùng mismatch payload che OCC. Mã phải hiện đúng thông báo tại design, mục 7: ORDER_VERSION_CONFLICT, NOT_FOUND.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-049",
+    "title": "Lý do hủy other và enum",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "Other blank VOID_REASON_REQUIRED/rejected; invalid enum INVALID_WRITE_REQUEST/0 K; 5 reason hợp lệ (other note Nhập nhầm) applied fixture riêng. Mã phải hiện đúng thông báo tại design, mục 7: VOID_REASON_REQUIRED, INVALID_WRITE_REQUEST.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-050",
+    "title": "Receipt option quantity lần đầu/replay/in lại",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "Full 80 k/unit 40 k/change 20 k; split 40 k/change 10 k/source 40 k; Q × 2 hiển thị; tên cũ; mọi đường cùng components và tổng; window.print 1 lần chỉ sau click.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-051",
+    "title": "Tắt in, replay và current void cấm in lại",
+    "backends": [
+      "e2e"
+    ],
+    "expected": "0 auto preview/0 window.print; paid manual preview được; void/open in lại RECEIPT_UNAVAILABLE; R1 vẫn đọc lịch sử, không vượt guard bằng R1. Mã phải hiện đúng thông báo tại design, mục 7: RECEIPT_UNAVAILABLE.",
+    "plannedFiles": [
+      "src/features/pos/writeOperationFlow.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-052",
+    "title": "ACK applied mất sau commit và đến muộn",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "UI WRITE_RESULT_UNKNOWN trước read; DB 1 payment/R1 đúng 150 k; late ACK 0 new register/execute/cancel/preview/print; replay cùng K/R1. Mã phải hiện đúng thông báo tại design, mục 7: WRITE_RESULT_UNKNOWN.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-053",
+    "title": "Register ACK muộn không tự execute",
+    "backends": [
+      "e2e"
+    ],
+    "expected": "1 pending/0 order; 0 execute/0 cancel tự phát, 0 preview; người đăng nhập lại mới chọn pending và bấm tiếp tục. Mã phải hiện đúng thông báo tại design, mục 7: WRITE_RESULT_UNKNOWN.",
+    "plannedFiles": [
+      "src/features/pos/writeOperationFlow.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-054",
+    "title": "Offline không có outbox hoặc auto-resume",
+    "backends": [
+      "e2e"
+    ],
+    "expected": "Offline không gửi/queue ghi; reconnect 0 register/execute/cancel mới; chỉ read được phép. Mạng rớt giữa lượt báo chưa rõ, không tự cho thất bại.",
+    "plannedFiles": [
+      "src/features/pos/writeOperationFlow.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-055",
+    "title": "Mất toàn bộ local, tìm đúng hai K",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "K1 lịch sử 120 k v6 giữ; K2 applied source 90 k v7#9/child #8; đúng 2 payments/tổng 60 k; không K3; read R1 không patch current 90 k thành 120 k.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-056",
+    "title": "Takeover giữ đúng actor và creator",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "creator A, lastModified E, initiator A, executor B, payment B; replay C không đổi actor/time; legacy null không đoán A.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-057",
+    "title": "Tìm kiếm/phân trang/quyền sau local wipe",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "Không duplicate/missing IDs theo tuple(timestamp, id); limit 50/50/1 cho A; B chỉ authorized; expired được lọc đúng sau lazy expiry; S2 không lộ; cursor invalid INVALID_WRITE_REQUEST. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-058",
+    "title": "Execute không implicit register và unknown cancel",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "OPERATION_NOT_FOUND, 0 order; UI không nói đã hủy; late register 1 pending 0 order, cần manual cancel hoặc expiry. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_NOT_FOUND.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-059",
+    "title": "Cancel chủ động pending",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "cancelled/cancelledBy B/decidedAt fixed; 0 payment/O open; execute chỉ OPERATION_CANCELLED và count 1; cancel retry không count/thay actor. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_CANCELLED.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-060",
+    "title": "Race cancel thắng hoặc execute thắng",
+    "backends": [
+      "db"
+    ],
+    "expected": "Cancel win:cancelled/0 payment; execute win:applied/1 payment 150 k, cancel trả applied. Không cả hai hiệu ứng; race hoàn tất ≤ 30 s.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-061",
+    "title": "Cancel quá hạn không đổi đơn",
+    "backends": [
+      "db"
+    ],
+    "expected": "expired/0 payment/O open 150 k v5/B occupied; không cancelled, không void order. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_EXPIRED.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-062",
+    "title": "TTL đúng −1 ms/0/+1 ms tại checkpoint",
+    "backends": [
+      "core",
+      "db"
+    ],
+    "expected": "validation_k_expiry trả expired/0 hiệu ứng dù check trước validation còn hạn; validation_session_expiry trả EMPLOYEE_SESSION_REQUIRED, K vẫn pending/0 hiệu ứng vì K chưa hết 24 h.  −1 ms applied 1 payment; =, +1 ms expired/0 hiệu ứng; không dùng now()đầu transaction; hạn registered không đổi. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_EXPIRED.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-063",
+    "title": "TTL qua các khóa K/store/order/table",
+    "backends": [
+      "db"
+    ],
+    "expected": "Mỗi case expired/0 hiệu ứng nghiệp vụ/0 event/No 12/total 150 k/v5; checkpoint timestamp ≥ expiry. Không pass nếu chỉ test wait K. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_EXPIRED.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-064",
+    "title": "Clock production wiring sau chờ thật",
+    "backends": [
+      "db"
+    ],
+    "expected": "expired dù transaction_timestamp()<expiry; test fail nếu implementation dùng now/current_timestamp/transaction timestamp. Mã phải hiện đúng thông báo tại design, mục 7: OPERATION_EXPIRED.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-065",
+    "title": "Bắt đầu hợp lệ trước hạn, commit sau hạn",
+    "backends": [
+      "db"
+    ],
+    "expected": "applied 1 payment, commitAt>expiry; cancel trả applied; không rollback transaction hợp lệ vì check TTL lần 2 sau hiệu ứng.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-066",
+    "title": "Đơn 48 h thanh toán với K mới",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "O paid v6/150 k/payment 1/paidAt 2026-09-10; report ngày 2026-09-08 tăng 150 k, ngày 2026-09-10 tăng 0 từ O1; B empty. K cũ expired vẫn còn.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-067",
+    "title": "Applied 48 h không bị TTL ghi đè",
+    "backends": [
+      "db"
+    ],
+    "expected": "Mọi view applied/R1 gốc; only execute count 1; 0 new payment; registered/expiry/decidedAt unchanged.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-068",
+    "title": "ACK lost cho mọi terminal",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "Đúng terminal/error/R1 cũ từng fixture; không reopen, không đổi rejected/cancelled thành expired; 0 hiệu ứng mới. Không chỉ test applied.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-069",
+    "title": "Fault rollback tại mọi điểm giữa business",
+    "backends": [
+      "db"
+    ],
+    "expected": "Mọi orders/items removed/options/payment/table/number/event/result quay snapshot trước; K pending payload/expiry giữ; retry một applied/hiệu ứng đúng fixture. Không chỉ đếm payment. Mã phải hiện đúng thông báo tại design, mục 7: WRITE_TEMPORARILY_UNAVAILABLE.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-070",
+    "title": "Fault sau lưu applied trước commit",
+    "backends": [
+      "db"
+    ],
+    "expected": "Applied/result/event và business đều rollback; K pending không R1; retry đúng 1 payment. Không cho R1 sống mà business rollback. Mã phải hiện đúng thông báo tại design, mục 7: WRITE_TEMPORARILY_UNAVAILABLE.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-071",
+    "title": "Business error muộn rollback nhưng giữ rejected",
+    "backends": [
+      "db"
+    ],
+    "expected": "Business raw snapshot giữ 60 k v5; K rejected cùng code bền; replay vẫn cùng rejection 0 hiệu ứng; chỉ K new có xác nhận mới được ghi. Mã phải hiện đúng thông báo tại design, mục 7: OPTION_VALUE_UNAVAILABLE.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-072",
+    "title": "Infrastructure error không poison K",
+    "backends": [
+      "db",
+      "mock"
+    ],
+    "expected": "WRITE_TEMPORARILY_UNAVAILABLE hoặc WRITE_RESULT_UNKNOWN tùy biết rollback; K không rejected giả; no auto retry; cuối 1 payment. Mã phải hiện đúng thông báo tại design, mục 7: WRITE_TEMPORARILY_UNAVAILABLE, WRITE_RESULT_UNKNOWN.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-073",
+    "title": "Replay counter chính xác và độc lập R1",
+    "backends": [
+      "db",
+      "mock"
+    ],
+    "expected": "count 2 và giữ nguyên sau các non-count actions; R1/error/actor/time không đổi; rolled back replay không count; first terminal decision count 0.",
+    "plannedFiles": [
+      "tests/contracts/writeConcurrency.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-074",
+    "title": "JSON required/type/null và unknown fields",
+    "backends": [
+      "core",
+      "db"
+    ],
+    "expected": "INVALID_WRITE_REQUEST/0 K cho invalid; positive twin register pending; không SQL cast UNKNOWN hoặc coalesce quantity null thành 1. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-075",
+    "title": "UUID collision của thực thể",
+    "backends": [
+      "db"
+    ],
+    "expected": "ENTITY_ID_CONFLICT/rejected cho collision DB; duplicate new ID trong payload INVALID_WRITE_REQUEST trước register; 0 partial writes/0 event. Mã phải hiện đúng thông báo tại design, mục 7: ENTITY_ID_CONFLICT, INVALID_WRITE_REQUEST.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-076",
+    "title": "Money min/max và overflow business",
+    "backends": [
+      "core",
+      "db"
+    ],
+    "expected": "0/max hợp lệ khi tạo đơn và tổng trong range; thanh toán riêng phần tổng 0 vẫn bị chặn như TC 092; ngoài range/type INVALID_WRITE_REQUEST trước register; sum overflow rejected INVALID_WRITE_REQUEST/0 hiệu ứng, không âm/wrap. Variant quote cũ 1 × qty 2, catalog tăng 2147483647: proposed 4294967294 bị INVALID_WRITE_REQUEST trước dựng PRICE_CHANGED, không response money ngoài miền. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-077",
+    "title": "Quantity line và option min/max",
+    "backends": [
+      "core",
+      "db"
+    ],
+    "expected": "Line 1/999 và option 1/99 hợp lệ; 0/>max INVALID_WRITE_REQUEST/0 K; qty source tăng quá nguồn là INVALID_ORDER_ITEMS ở execute, không schema. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-078",
+    "title": "Array empty/max và payload bytes",
+    "backends": [
+      "core",
+      "db"
+    ],
+    "expected": "0 create/201/21/>bytes bị chặn INVALID_WRITE_REQUEST; 1/200/20/byte đúng max pass schema. Fixture 262144 phải đạt thật bằng observer pgsize, không ước lượng HTTP. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-079",
+    "title": "Note unicode, optional và reason boundary",
+    "backends": [
+      "core",
+      "db"
+    ],
+    "expected": "≤ 500 valid, 501 INVALID_WRITE_REQUEST; other empty/whitespace VOID_REASON_REQUIRED; equality absent/null vẫn khác; DB/UI không đếm UTF16 units lệch. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST, VOID_REASON_REQUIRED.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-080",
+    "title": "List input và version overflow",
+    "backends": [
+      "db"
+    ],
+    "expected": "Limit 1/100 valid, 0/101/type bad INVALID_WRITE_REQUEST; version increment overflow rejected INVALID_WRITE_REQUEST/0 hiệu ứng, không wrap hoặc K pending vĩnh viễn. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-081",
+    "title": "Cash-only và dữ liệu tiền nhận thiếu",
+    "backends": [
+      "core",
+      "db"
+    ],
+    "expected": "INVALID_WRITE_REQUEST/0 K/0 payment; cash integer 150 k positive twin pay applied. Mã phải hiện đúng thông báo tại design, mục 7: INVALID_WRITE_REQUEST.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-082",
+    "title": "Kiểm toàn bộ ledger/event giữ bền",
+    "backends": [
+      "db"
+    ],
+    "expected": "K/payload/result/error/event không bị xóa; creator legacy null hiển thị không xác định; price/payment/date cũ giữ; clear_demo không đụng finance.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-083",
+    "title": "R1 lịch sử sau child void và sửa nguồn",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "R1 paid child 30 k/source v6 giữ; current child void/source v7; payment 1 vẫn ghi; không cascade hủy nguồn; in lại bị chặn RECEIPT_UNAVAILABLE. Mã phải hiện đúng thông báo tại design, mục 7: RECEIPT_UNAVAILABLE.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-084",
+    "title": "Capability và adapter fail closed",
+    "backends": [
+      "core",
+      "e2e"
+    ],
+    "expected": "WRITE_PROTOCOL_UNSUPPORTED khi version wrong; runtime config fail rõ khi thiếu config; 0 oldRPC/0 mock fallback/0 hiệu ứng nghiệp vụ. Mã phải hiện đúng thông báo tại design, mục 7: WRITE_PROTOCOL_UNSUPPORTED.",
+    "plannedFiles": [
+      "src/features/pos/writeOperationFlow.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-085",
+    "title": "Migration/grant/search_path audit",
+    "backends": [
+      "db"
+    ],
+    "expected": "Fixed search_path/schema qualified; no exposed private/test hooks; mọi old overload revoked; snapshots legacy nguyên; onboarding/POS functional. Thiếu bất kỳ inventory row fail.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-086",
+    "title": "Runner discovery manifest",
+    "backends": [
+      "tool"
+    ],
+    "expected": "Thiếu TC/file/suffix làm gate fail nonzero; số test cũ pass không bù được. Khôi phục config thì discovery đủ, không ghi đã pass behavior.",
+    "plannedFiles": [
+      "tests/contracts/caseManifest.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-087",
+    "title": "Supabase preflight không giả xanh",
+    "backends": [
+      "tool"
+    ],
+    "expected": "Mỗi invalid exit nonzero trước suite; nêu config thiếu không in secret; skip bắt buộc bị gate fail; positive observer thấy writeProtocol v1 và real DB UUID.",
+    "plannedFiles": [
+      "tests/contracts/caseManifest.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-088",
+    "title": "Oracle độc lập và mutation sensitivity",
+    "backends": [
+      "tool"
+    ],
+    "expected": "Mỗi mutant bị ít nhất 1 TC phát hiện; expected literal/DB raw không dùng buildReceipt/calc total/formatVnd của SUT. Pass do 0 operation không được chấp nhận.",
+    "plannedFiles": [
+      "tests/contracts/caseManifest.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-089",
+    "title": "Regression seams và báo cáo baseline",
+    "backends": [
+      "core",
+      "e2e"
+    ],
+    "expected": "Không boundary violation; PIN/admin/floor/payment/history/print dùng được. Variant dirty-exit: đóng draft chưa gửi phải xác nhận bỏ, chọn ở lại giữ draft, 0 register/execute/cancel; variant empty-selection: chặn hoàn tất, 0 write; variant tạm tính: mở preview đúng snapshot/0 payment; variant pay-then-void: tải version 6 trước xác nhận hủy mới, void thành version 7, retry giữ K/version 6; 63 test baseline cũ không được gắn nhãn idempotency passed; báo đúng executed/skip/fail.",
+    "plannedFiles": [
+      "src/features/pos/writeOperationFlow.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-090",
+    "title": "Nút kết quả và request schema không lộ credential",
+    "backends": [
+      "db",
+      "e2e"
+    ],
+    "expected": "Không PIN/token/hash trong payload/R1/error/log/local; credential chỉ header request được redact trong artifact; initiator/executor UUID đúng; không serialize whole employee hash.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-091",
+    "title": "Bàn không tồn tại hoặc tombstone",
+    "backends": [
+      "db"
+    ],
+    "expected": "K rejected TABLE_NOT_FOUND; 0 order/items/payment; không lộ table S2; positive B01 active applied. Mã phải hiện đúng thông báo tại design, mục 7: TABLE_NOT_FOUND.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-092",
+    "title": "Split tiền thiếu và tổng bằng không",
+    "backends": [
+      "core",
+      "db",
+      "e2e"
+    ],
+    "expected": "Nhận 29.999 cho phần 30.000 trả PAYMENT_AMOUNT_TOO_LOW, không ghi; nhận 30.000 thành công/thừa 0. Đơn tổng 0 hoặc chỉ chọn dòng 0 trong đơn[A 0, T 20 k] bị INVALID_ORDER_ITEMS, không payment, kiểm cả core/UI/DB. Chọn cả hai dòng tổng 20 k thì paid 20 k với 1 payment. Selection rỗng chặn trước register; phần 0 qua DB bị rejected, không tạo payment 0. Giữ giới hạn hiện hành, không thêm tính năng thanh toán 0 đ.",
+    "plannedFiles": [
+      "tests/contracts/writeOperations.contract.test.ts",
+      "src/features/pos/writeOperationFlow.test.ts",
+      "tests/supabase/idempotency.spec.ts"
+    ]
+  },
+  {
+    "id": "TC-IDEM-093",
+    "title": "Terminal không bị unauthorized/mismatch sửa",
+    "backends": [
+      "db"
+    ],
+    "expected": "C FORBIDDEN, A mismatch IDEMPOTENCY_KEY_REUSED; result/error/status/actor/count/timestamps giữ. K terminal không mở lại hoặc đổi loại. Mã phải hiện đúng thông báo tại design, mục 7: FORBIDDEN, IDEMPOTENCY_KEY_REUSED.",
+    "plannedFiles": [
+      "tests/contracts/writePermissions.contract.test.ts"
+    ]
+  }
+]

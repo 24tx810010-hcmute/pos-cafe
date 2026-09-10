@@ -7,7 +7,7 @@ import { PortsContext } from "@/features/shared/portsContext";
 import { useAppStore } from "../useAppStore";
 import { FloorWorkspace } from "./FloorWorkspace";
 
-const admin: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
 
 const renderWorkspace = (configureState?: (state: ReturnType<typeof createSeededMockState>) => void) => {
   const state = createSeededMockState();
@@ -60,7 +60,7 @@ describe("FloorWorkspace", () => {
       state.floorPlan.tables[0].backgroundAssetKey = "/floor-assets/tables/table-bg-11.png";
     });
 
-    const table = await screen.findByTestId("table-tbl-b01");
+    const table = await screen.findByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58");
     expect(table.getAttribute("style")).toContain('/floor-assets/tables/table-bg-11.png');
     expect(table).toHaveClass("border-[#86efac]");
   });

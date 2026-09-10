@@ -9,7 +9,7 @@ import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 
-const admin: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
 
 const resetAppStoreForMenuEditor = () => {
   useAppStore.setState({
@@ -24,11 +24,12 @@ const resetAppStoreForMenuEditor = () => {
   });
 };
 
-const renderMenuEditor = (configureState?: (state: MockState) => void) => {
+const renderMenuEditor = async (configureState?: (state: MockState) => void) => {
   const state = createSeededMockState();
-  state.session = { storeId: "store-demo-001", storeNo: 1 };
+  state.session = { storeId: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", storeNo: 1 };
   configureState?.(state);
   const ports = createMockPorts(state);
+  await ports.employee.startSession("6b7bd350-7db2-4160-8471-cca2668c070d", state.pins["6b7bd350-7db2-4160-8471-cca2668c070d"]);
   const saveSpy = vi.spyOn(ports.menu, "saveMenuChanges");
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -67,7 +68,7 @@ afterEach(() => {
 describe("MenuEditorDrawer", () => {
   it("saves new menu items through menu changesets", async () => {
     const user = userEvent.setup();
-    const { saveSpy, state } = renderMenuEditor();
+    const { saveSpy, state } = await renderMenuEditor();
 
     const addItemButton = await screen.findByTestId("add-item-button");
     expect(addItemButton.closest("aside")).toHaveTextContent("Chi tiết danh mục");
@@ -97,7 +98,7 @@ describe("MenuEditorDrawer", () => {
 
   it("sends tombstones for deleted existing categories", async () => {
     const user = userEvent.setup();
-    const { saveSpy, state } = renderMenuEditor();
+    const { saveSpy, state } = await renderMenuEditor();
     const deletedCategoryId = state.menu.categories[0].id;
 
     await user.click(await screen.findByRole("button", { name: "Xoá danh mục" }));
@@ -121,15 +122,15 @@ describe("MenuEditorDrawer", () => {
       configurable: true,
       value: vi.fn(),
     });
-    const { ports, saveSpy } = renderMenuEditor();
+    const { ports, saveSpy } = await renderMenuEditor();
     const uploadSpy = vi
       .spyOn(ports.menuImages, "uploadMenuItemImage")
       .mockResolvedValue({
-        assetKey: "menu-item-images/store-demo-001/menu-items/mi-latte/new.webp",
-        publicUrl: "https://assets.local/mi-latte/new.webp",
+        assetKey: "menu-item-images/e572ea5f-9adf-493c-8d84-dca3cd86e1eb/menu-items/d50ff72b-d0bc-4832-8888-183c19f5a158/new.webp",
+        publicUrl: "https://assets.local/d50ff72b-d0bc-4832-8888-183c19f5a158/new.webp",
       });
 
-    await user.click(await screen.findByTestId("menu-edit-card-mi-latte"));
+    await user.click(await screen.findByTestId("menu-edit-card-d50ff72b-d0bc-4832-8888-183c19f5a158"));
     const imageInput = await screen.findByLabelText("Chọn ảnh món");
     const file = new File(["image"], "latte.webp", { type: "image/webp" });
     await user.upload(imageInput, file);
@@ -137,17 +138,17 @@ describe("MenuEditorDrawer", () => {
     const previews = await screen.findAllByAltText("Ảnh Latte");
     expect(previews.length).toBeGreaterThan(0);
     expect(previews.every((previewImage) => previewImage.getAttribute("src") === "blob:latte-preview")).toBe(true);
-    const cardImage = within(screen.getByTestId("menu-edit-card-mi-latte")).getByAltText("Ảnh Latte");
+    const cardImage = within(screen.getByTestId("menu-edit-card-d50ff72b-d0bc-4832-8888-183c19f5a158")).getByAltText("Ảnh Latte");
     expect(cardImage).toHaveClass("object-cover");
 
     await user.click(screen.getByTestId("save-menu-button"));
 
     await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
-    expect(uploadSpy).toHaveBeenCalledWith(expect.objectContaining({ itemId: "mi-latte", file }));
+    expect(uploadSpy).toHaveBeenCalledWith(expect.objectContaining({ itemId: "d50ff72b-d0bc-4832-8888-183c19f5a158", file }));
     expect(saveSpy.mock.calls[0][0].menuItems.updated).toEqual([
       {
-        id: "mi-latte",
-        imageAssetKey: "menu-item-images/store-demo-001/menu-items/mi-latte/new.webp",
+        id: "d50ff72b-d0bc-4832-8888-183c19f5a158",
+        imageAssetKey: "menu-item-images/e572ea5f-9adf-493c-8d84-dca3cd86e1eb/menu-items/d50ff72b-d0bc-4832-8888-183c19f5a158/new.webp",
       },
     ]);
   });
@@ -158,10 +159,10 @@ describe("MenuEditorDrawer", () => {
       configurable: true,
       value: vi.fn(() => "blob:oversized-preview"),
     });
-    const { ports } = renderMenuEditor();
+    const { ports } = await renderMenuEditor();
     const uploadSpy = vi.spyOn(ports.menuImages, "uploadMenuItemImage");
 
-    await user.click(await screen.findByTestId("menu-edit-card-mi-latte"));
+    await user.click(await screen.findByTestId("menu-edit-card-d50ff72b-d0bc-4832-8888-183c19f5a158"));
     expect(screen.getByText("JPG, PNG hoặc WebP. Tối đa 5MB.")).toBeInTheDocument();
 
     const oversizedFile = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "latte.webp", {
@@ -176,12 +177,12 @@ describe("MenuEditorDrawer", () => {
   });
 
   it("shows sold out treatment on unavailable edit menu cards without status pills", async () => {
-    renderMenuEditor((state) => {
-      const latte = state.menu.menuItems.find((item) => item.id === "mi-latte");
+    await renderMenuEditor((state) => {
+      const latte = state.menu.menuItems.find((item) => item.id === "d50ff72b-d0bc-4832-8888-183c19f5a158");
       if (latte) latte.isAvailable = false;
     });
 
-    const card = await screen.findByTestId("menu-edit-card-mi-latte");
+    const card = await screen.findByTestId("menu-edit-card-d50ff72b-d0bc-4832-8888-183c19f5a158");
 
     expect(within(card).getByText("Đã bán hết")).toBeInTheDocument();
     expect(within(card).queryByText("Đang bán")).not.toBeInTheDocument();
@@ -190,22 +191,22 @@ describe("MenuEditorDrawer", () => {
 
   it("moves a menu item to the selected category from the detail select", async () => {
     const user = userEvent.setup();
-    const { saveSpy } = renderMenuEditor();
+    const { saveSpy } = await renderMenuEditor();
 
-    await user.click(await screen.findByTestId("menu-edit-card-mi-latte"));
+    await user.click(await screen.findByTestId("menu-edit-card-d50ff72b-d0bc-4832-8888-183c19f5a158"));
     await user.click(screen.getByRole("combobox", { name: "Danh mục" }));
     await user.click(await screen.findByRole("option", { name: "Trà & trà sữa" }));
 
     expect(screen.getByTestId("menu-dirty-badge")).toBeInTheDocument();
-    expect(screen.getByTestId("menu-edit-card-mi-latte")).toBeInTheDocument();
+    expect(screen.getByTestId("menu-edit-card-d50ff72b-d0bc-4832-8888-183c19f5a158")).toBeInTheDocument();
 
     await user.click(screen.getByTestId("save-menu-button"));
 
     await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
     expect(saveSpy.mock.calls[0][0].menuItems.updated).toEqual([
       {
-        id: "mi-latte",
-        categoryId: "cat-tea",
+        id: "d50ff72b-d0bc-4832-8888-183c19f5a158",
+        categoryId: "1ebf92aa-cf30-4e0d-8279-2b6fe3f8fb54",
         sortOrder: 13,
       },
     ]);
@@ -213,9 +214,9 @@ describe("MenuEditorDrawer", () => {
 
   it("swaps menu item positions from switch mode", async () => {
     const user = userEvent.setup();
-    const { saveSpy } = renderMenuEditor();
+    const { saveSpy } = await renderMenuEditor();
 
-    await user.click(await screen.findByTestId("menu-edit-card-mi-ca-phe-sua"));
+    await user.click(await screen.findByTestId("menu-edit-card-3e43bb8c-198f-443f-83ab-18696983edaa"));
     const detailPane = screen.getByTestId("menu-editor-detail-pane");
     const swapSwitch = within(detailPane).getByRole("checkbox", { name: "Đổi vị trí" });
     await user.click(swapSwitch);
@@ -227,11 +228,11 @@ describe("MenuEditorDrawer", () => {
     expect(within(detailPane).getByRole("combobox", { name: "Danh mục" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByRole("button", { name: /Trà & trà sữa/ })).toBeDisabled();
     expect(within(detailPane).getByRole("button", { name: "Tạm hết" })).toBeDisabled();
-    await user.click(screen.getByTestId("menu-edit-card-mi-latte"));
+    await user.click(screen.getByTestId("menu-edit-card-d50ff72b-d0bc-4832-8888-183c19f5a158"));
 
     const cardOrder = screen.getAllByTestId(/menu-edit-card-/).map((card) => card.getAttribute("data-testid"));
-    expect(cardOrder[0]).toBe("menu-edit-card-mi-latte");
-    expect(cardOrder[3]).toBe("menu-edit-card-mi-ca-phe-sua");
+    expect(cardOrder[0]).toBe("menu-edit-card-d50ff72b-d0bc-4832-8888-183c19f5a158");
+    expect(cardOrder[3]).toBe("menu-edit-card-3e43bb8c-198f-443f-83ab-18696983edaa");
     expect(screen.getByTestId("menu-item-name-input")).toHaveValue("Cà phê sữa");
     expect(swapSwitch).not.toBeChecked();
     expect(screen.getByTestId("menu-item-name-input")).toBeEnabled();
@@ -242,8 +243,8 @@ describe("MenuEditorDrawer", () => {
 
     await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
     expect(saveSpy.mock.calls[0][0].menuItems.updated).toEqual([
-      { id: "mi-ca-phe-sua", sortOrder: 4 },
-      { id: "mi-latte", sortOrder: 1 },
+      { id: "3e43bb8c-198f-443f-83ab-18696983edaa", sortOrder: 4 },
+      { id: "d50ff72b-d0bc-4832-8888-183c19f5a158", sortOrder: 1 },
     ]);
   });
 });

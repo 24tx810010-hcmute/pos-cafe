@@ -13,9 +13,33 @@ import { requirePermission } from "@/core/guards";
 import { calculateSnapshotTotal, snapshotDraftItems } from "@/core/orderDraft";
 import { clone, getTodayBusinessDate, type MockState } from "./mockState";
 import { makeTicket, toSummary } from "./mockRepoShared";
+import { mockActor, type MockEmployeeCredential } from "./writeState";
+import { writeError } from "@/core/writeErrors";
+import type { ReceiptSnapshot } from "@/domain";
 
 export class MockOrderRepo implements IOrderRepo {
-  constructor(private readonly state: MockState) {}
+  constructor(private readonly state: MockState, private readonly credential: MockEmployeeCredential = {token:null}) {}
+
+  async getReceipt(orderId: string): Promise<{receipt: ReceiptSnapshot; legacyMetadata: boolean}> {
+    const actor = mockActor(this.state, this.credential);
+    requirePermission(actor, "payment.take");
+    const order = this.state.orders.find(o => o.id === orderId);
+    if (!order || order.status !== "paid" || !order.payment || !order.paidAt) throw writeError("RECEIPT_UNAVAILABLE");
+    if (order.receiptSnapshot) return { receipt: clone(order.receiptSnapshot), legacyMetadata: false };
+    const payment = order.payment;
+    return { legacyMetadata: true, receipt: {
+      schemaVersion:1, orderId, paymentId:payment.id, orderNo:order.orderNo, businessDate:order.businessDate,
+      storeName:this.state.settings.displayName,address:this.state.settings.address,footer:this.state.settings.billFooter,
+      tableName:this.state.floorPlan.tables.find(t=>t.id===order.tableId)?.name??null,paidAt:order.paidAt,
+      employeeName:this.state.employees.find(e=>e.id===payment.employeeId)?.name??"Không xác định (dữ liệu cũ)",
+      total:order.total,receivedAmount:payment.receivedAmount,changeAmount:payment.changeAmount,
+      lines:order.items.map(i=>{
+        const unitTotal=i.unitPrice+i.options.reduce((n,o)=>n+o.priceDelta*o.quantity,0);
+        return { orderItemId:i.id,menuItemId:i.menuItemId,name:i.itemName,quantity:i.quantity,baseUnitPrice:i.unitPrice,note:i.note??null,
+          options:i.options.map(o=>({name:o.optionName,optionValueId:o.optionValueId,priceDelta:o.priceDelta,quantity:o.quantity})),unitTotal,lineTotal:i.quantity*unitTotal };
+      }),
+    }};
+  }
 
   async listOpenOrders(): Promise<OrderSummary[]> {
     return this.state.orders.filter((order) => order.status === "open").map(toSummary);

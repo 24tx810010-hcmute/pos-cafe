@@ -61,7 +61,11 @@ export const verifyEmployeeForSession = async (
   ports: AppPorts,
   employeeId: string,
   pin: string,
-): Promise<Employee> => ports.employee.verifyPin(employeeId, pin);
+): Promise<Employee> => {
+  if (!/^[0-9]{6}$/.test(pin)) throw new AppError("INVALID_PIN", "PIN không đúng hoặc nhân viên không còn hoạt động.");
+  const session = await ports.employee.startSession(employeeId, pin);
+  return session.employee;
+};
 
 export const unpairStoreSession = async (ports: AppPorts): Promise<void> => {
   await ports.auth.unpairStore();

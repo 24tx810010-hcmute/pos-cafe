@@ -147,12 +147,18 @@ export type FloorPlan = {
 };
 
 export type SubmitOrderDraftOption = {
+  quotedPriceDelta?: number;
+  snapshotName?: string;
   id: string;
   optionValueId: string;
   quantity: number;
 };
 
 export type SubmitOrderDraftItem = {
+  sourceItemId?: string;
+  sourceQuantity?: number;
+  snapshotName?: string;
+  quotedBasePrice?: number;
   id: string;
   menuItemId: string;
   quantity: number;
@@ -200,6 +206,11 @@ export type OrderPaymentSnapshot = {
 };
 
 export type OrderDetail = OrderSummary & {
+  receiptSnapshot?: import("./writeOperations").ReceiptSnapshot | null;
+  createdAt?: string;
+  updatedAt?: string;
+  createdByEmployeeId?: string | null;
+  lastModifiedByEmployeeId?: string | null;
   items: OrderItemSnapshot[];
   paidAt: string | null;
   payment: OrderPaymentSnapshot | null;
@@ -225,6 +236,7 @@ export type PrintTicket = {
 };
 
 export type PrintReceipt = PrintTicket & {
+  snapshot?: import("./writeOperations").ReceiptSnapshot;
   receivedAmount: number;
   changeAmount: number;
   paidAt: string;

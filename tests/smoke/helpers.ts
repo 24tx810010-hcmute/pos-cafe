@@ -11,7 +11,7 @@ export async function loginAsAdmin(page: Page) {
     await page.getByTestId("go-passcode").click();
   }
   await page.getByTestId("passcode-screen").waitFor();
-  await page.getByTestId("employee-emp-admin").click();
+  await page.getByTestId("employee-6b7bd350-7db2-4160-8471-cca2668c070d").click();
   for (const digit of ["1", "2", "3", "4", "5", "6"]) {
     await page.getByTestId(`pin-${digit}`).click();
   }

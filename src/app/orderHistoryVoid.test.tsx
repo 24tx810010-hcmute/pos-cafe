@@ -8,8 +8,8 @@ import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 
-const admin: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true };
-const cashier: Employee = { id: "emp-cashier-1", name: "Thu ngân 1", role: "cashier", isActive: true };
+const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
+const cashier: Employee = { id: "22828322-623b-42e7-8a28-a2bdf367c364", name: "Thu ngân 1", role: "cashier", isActive: true };
 
 class ResizeObserverMock {
   observe() {}
@@ -54,24 +54,25 @@ const resetStore = (actor: Employee) => {
   });
 };
 
-const renderDrawer = (options: { actor?: Employee; voidPaidOrder?: boolean } = {}) => {
+const renderDrawer = async (options: { actor?: Employee; voidPaidOrder?: boolean } = {}) => {
   const actor = options.actor ?? admin;
   const state = createSeededMockState();
-  state.session = { storeId: "store-demo-001", storeNo: 1 };
+  state.session = { storeId: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", storeNo: 1 };
   const businessDate = businessDateForTest();
   seedOrdersForToday(state, businessDate);
 
   if (options.voidPaidOrder) {
-    const paid = state.orders.find((order) => order.id === "ord-paid-1")!;
+    const paid = state.orders.find((order) => order.id === "3f6c6266-12b8-4f8b-8564-44d00d9210f8")!;
     paid.status = "void";
     paid.voidedAt = `${businessDate}T10:00:00.000Z`;
-    paid.voidedByEmployeeId = "emp-admin";
+    paid.voidedByEmployeeId = "6b7bd350-7db2-4160-8471-cca2668c070d";
     paid.voidReasonCode = "customer_request";
     paid.voidReasonNote = "Khách đổi ý";
   }
 
   const ports = createMockPorts(state);
-  const voidSpy = vi.spyOn(ports.order, "voidOrder");
+  await ports.employee.startSession(actor.id, state.pins[actor.id]);
+  const voidSpy = vi.spyOn(ports.write, "execute");
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -105,9 +106,9 @@ afterEach(() => {
 describe("Order history — void paid order", () => {
   it("lets an admin void a paid order through the order port", async () => {
     const user = userEvent.setup();
-    const { voidSpy } = renderDrawer();
+    const { voidSpy } = await renderDrawer();
 
-    await user.click(await screen.findByTestId("history-row-ord-paid-1"));
+    await user.click(await screen.findByTestId("history-row-3f6c6266-12b8-4f8b-8564-44d00d9210f8"));
     const voidButton = await screen.findByTestId("history-void-order");
     await waitFor(() => expect(voidButton).not.toBeDisabled());
     await user.click(voidButton);
@@ -119,10 +120,11 @@ describe("Order history — void paid order", () => {
 
     await waitFor(() =>
       expect(voidSpy).toHaveBeenCalledWith(
+        expect.any(String),
         expect.objectContaining({
-          orderId: "ord-paid-1",
-          employeeId: "emp-admin",
-          reasonCode: "duplicate",
+          orderId: "3f6c6266-12b8-4f8b-8564-44d00d9210f8",
+          kind: "void_order",
+          reason: "duplicate",
         }),
       ),
     );
@@ -130,18 +132,18 @@ describe("Order history — void paid order", () => {
 
   it("hides the void action from a cashier without the permission", async () => {
     const user = userEvent.setup();
-    renderDrawer({ actor: cashier });
+    await renderDrawer({ actor: cashier });
 
-    await user.click(await screen.findByTestId("history-row-ord-paid-1"));
+    await user.click(await screen.findByTestId("history-row-3f6c6266-12b8-4f8b-8564-44d00d9210f8"));
     await screen.findByTestId("history-payment-summary");
     expect(screen.queryByTestId("history-void-order")).not.toBeInTheDocument();
   });
 
   it("disables confirm when reason is other and note is empty", async () => {
     const user = userEvent.setup();
-    renderDrawer();
+    await renderDrawer();
 
-    await user.click(await screen.findByTestId("history-row-ord-paid-1"));
+    await user.click(await screen.findByTestId("history-row-3f6c6266-12b8-4f8b-8564-44d00d9210f8"));
     const voidButton = await screen.findByTestId("history-void-order");
     await waitFor(() => expect(voidButton).not.toBeDisabled());
     await user.click(voidButton);
@@ -155,9 +157,9 @@ describe("Order history — void paid order", () => {
 
   it("shows who voided the order and disables reprint for a voided order", async () => {
     const user = userEvent.setup();
-    renderDrawer({ voidPaidOrder: true });
+    await renderDrawer({ voidPaidOrder: true });
 
-    await user.click(await screen.findByTestId("history-row-ord-paid-1"));
+    await user.click(await screen.findByTestId("history-row-3f6c6266-12b8-4f8b-8564-44d00d9210f8"));
 
     const voidInfo = await screen.findByTestId("history-void-info");
     expect(voidInfo).toHaveTextContent("Quản lý");

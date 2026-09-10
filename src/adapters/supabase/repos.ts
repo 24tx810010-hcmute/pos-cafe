@@ -13,11 +13,13 @@ import { SupabaseReportRepo } from "./reportRepo";
 import { SupabaseSeedRepo } from "./seedRepo";
 import { SupabaseSettingsRepo } from "./settingsRepo";
 import type { SupabaseAnyClient } from "./repoShared";
+import { SupabaseWriteOperationRepo } from "./writeOperationRepo";
 
 export const createSupabasePorts = (client: SupabaseAnyClient): AppPorts => {
   const seed = new SupabaseSeedRepo(client);
 
   return {
+    write: new SupabaseWriteOperationRepo(client),
     auth: new SupabaseAuthRepo(client, seed),
     employee: new SupabaseEmployeeRepo(client),
     menu: new SupabaseMenuRepo(client),

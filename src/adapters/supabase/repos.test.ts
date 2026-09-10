@@ -6,7 +6,7 @@ import { mapEmployee, mapOrderDetail } from "./mappers";
 const submitResult = {
   orderId: "ord-1",
   status: "open",
-  tableId: "tbl-b01",
+  tableId: "7b035353-73d6-44bc-8ec4-1ab9951f7a58",
   tableStatus: "occupied",
   orderNo: 31,
   businessDate: "2026-06-12",
@@ -56,7 +56,7 @@ const createMutationClient = () => {
   const client = {
     auth: {
       getSession: vi.fn(async () => ({
-        data: { session: { user: { id: "store-demo-001" } } },
+        data: { session: { user: { id: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb" } } },
         error: null,
       })),
     },
@@ -82,7 +82,7 @@ const createMutationClient = () => {
 };
 
 const createEmployeeQueryClient = () => {
-  const data = [{ id: "emp-cashier-1", name: "Thu ngân", role: "cashier", is_active: false }];
+  const data = [{ id: "22828322-623b-42e7-8a28-a2bdf367c364", name: "Thu ngân", role: "cashier", is_active: false }];
   const order = vi.fn(async () => ({ data, error: null }));
   const eq = vi.fn(() => ({ order }));
   const select = vi.fn(() => ({ eq, order }));
@@ -95,7 +95,7 @@ const createEmployeeQueryClient = () => {
 
 const createEmployeeUpdateClient = () => {
   const row = {
-    id: "emp-cashier-1",
+    id: "22828322-623b-42e7-8a28-a2bdf367c364",
     name: "Thu ngân",
     role: "cashier",
     is_active: true,
@@ -134,7 +134,7 @@ describe("Supabase adapter ports", () => {
     const ports = createSupabasePorts(client as never);
 
     await expect(ports.employee.listEmployees()).resolves.toEqual([
-      expect.objectContaining({ id: "emp-cashier-1", isActive: false }),
+      expect.objectContaining({ id: "22828322-623b-42e7-8a28-a2bdf367c364", isActive: false }),
     ]);
     expect(client.from).toHaveBeenCalledWith("employees");
     expect(select).toHaveBeenCalledWith("id,name,role,is_active,permission_overrides");
@@ -149,18 +149,18 @@ describe("Supabase adapter ports", () => {
     const { client, update } = createEmployeeUpdateClient();
     const ports = createSupabasePorts(client as never);
 
-    await ports.employee.updateEmployee({ id: "emp-cashier-1", name: "Thu ngân mới" });
+    await ports.employee.updateEmployee({ id: "22828322-623b-42e7-8a28-a2bdf367c364", name: "Thu ngân mới" });
     expect(update).toHaveBeenLastCalledWith({ name: "Thu ngân mới" });
 
     await ports.employee.updateEmployee({
-      id: "emp-cashier-1",
+      id: "22828322-623b-42e7-8a28-a2bdf367c364",
       permissionOverrides: { grants: ["order.voidPaid"], denies: ["payment.take"] },
     });
     expect(update).toHaveBeenLastCalledWith({
       permission_overrides: { grants: ["order.voidPaid"], denies: ["payment.take"] },
     });
 
-    await ports.employee.updateEmployee({ id: "emp-cashier-1", permissionOverrides: null });
+    await ports.employee.updateEmployee({ id: "22828322-623b-42e7-8a28-a2bdf367c364", permissionOverrides: null });
     expect(update).toHaveBeenLastCalledWith({ permission_overrides: null });
   });
 
@@ -170,27 +170,27 @@ describe("Supabase adapter ports", () => {
     const items = [
       {
         id: "draft-1",
-        menuItemId: "mi-latte",
+        menuItemId: "d50ff72b-d0bc-4832-8888-183c19f5a158",
         quantity: 1,
         note: "Ít đá",
-        options: [{ id: "draft-option-1", optionValueId: "ov-them-shot", quantity: 1 }],
+        options: [{ id: "draft-option-1", optionValueId: "a4b5f811-749a-4634-8def-b0cb4b080a05", quantity: 1 }],
       },
     ];
 
     const result = await ports.order.submitOrderChanges({
       orderId: "ord-1",
-      tableId: "tbl-b01",
+      tableId: "7b035353-73d6-44bc-8ec4-1ab9951f7a58",
       orderType: "dine_in",
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       expectedVersion: 0,
       items,
     });
 
     expect(client.rpc).toHaveBeenCalledWith("submit_order_changes", {
       p_order_id: "ord-1",
-      p_table_id: "tbl-b01",
+      p_table_id: "7b035353-73d6-44bc-8ec4-1ab9951f7a58",
       p_order_type: "dine_in",
-      p_employee_id: "emp-admin",
+      p_employee_id: "6b7bd350-7db2-4160-8471-cca2668c070d",
       p_expected_lock_version: 0,
       p_items: items,
     });
@@ -221,7 +221,7 @@ describe("Supabase adapter ports", () => {
       orderId: null,
       tableId: null,
       orderType: "takeaway",
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       expectedVersion: null,
       items: [],
     });
@@ -230,7 +230,7 @@ describe("Supabase adapter ports", () => {
       p_order_id: null,
       p_table_id: null,
       p_order_type: "takeaway",
-      p_employee_id: "emp-admin",
+      p_employee_id: "6b7bd350-7db2-4160-8471-cca2668c070d",
       p_expected_lock_version: null,
       p_items: [],
     });
@@ -243,22 +243,22 @@ describe("Supabase adapter ports", () => {
     const result = await ports.payment.payOrder({
       paymentId: "pay-1",
       orderId: "ord-1",
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       method: "cash",
       expectedVersion: 1,
       receivedAmount: 50000,
     });
-    await ports.settings.clearDemoData("emp-admin");
+    await ports.settings.clearDemoData("6b7bd350-7db2-4160-8471-cca2668c070d");
 
     expect(client.rpc).toHaveBeenCalledWith("pay_order", {
       p_payment_id: "pay-1",
       p_order_id: "ord-1",
-      p_employee_id: "emp-admin",
+      p_employee_id: "6b7bd350-7db2-4160-8471-cca2668c070d",
       p_method: "cash",
       p_expected_lock_version: 1,
       p_received_amount: 50000,
     });
-    expect(client.rpc).toHaveBeenCalledWith("clear_demo_data", { p_employee_id: "emp-admin" });
+    expect(client.rpc).toHaveBeenCalledWith("clear_demo_data", { p_employee_id: "6b7bd350-7db2-4160-8471-cca2668c070d" });
     expect(result.receipt.changeAmount).toBe(5000);
   });
 
@@ -275,7 +275,7 @@ describe("Supabase adapter ports", () => {
 
     const result = await ports.order.voidOrder({
       orderId: "ord-1",
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       expectedVersion: 2,
       reasonCode: "wrong_order",
       reasonNote: null,
@@ -283,7 +283,7 @@ describe("Supabase adapter ports", () => {
 
     expect(client.rpc).toHaveBeenCalledWith("void_order", {
       p_order_id: "ord-1",
-      p_employee_id: "emp-admin",
+      p_employee_id: "6b7bd350-7db2-4160-8471-cca2668c070d",
       p_expected_lock_version: 2,
       p_reason_code: "wrong_order",
       p_reason_note: null,
@@ -304,12 +304,12 @@ describe("Supabase adapter ports", () => {
         status: "void",
         total: 45000,
         lock_version: 3,
-        table_id: "tbl-b01",
+        table_id: "7b035353-73d6-44bc-8ec4-1ab9951f7a58",
         order_type: "dine_in",
         business_date: "2026-06-12",
         paid_at: "2026-06-12T08:30:00.000Z",
         voided_at: "2026-06-12T09:00:00.000Z",
-        voided_by_employee_id: "emp-admin",
+        voided_by_employee_id: "6b7bd350-7db2-4160-8471-cca2668c070d",
         void_reason_code: "customer_request",
         void_reason_note: "Khách đổi ý",
       },
@@ -319,7 +319,7 @@ describe("Supabase adapter ports", () => {
     );
 
     expect(detail.voidedAt).toBe("2026-06-12T09:00:00.000Z");
-    expect(detail.voidedByEmployeeId).toBe("emp-admin");
+    expect(detail.voidedByEmployeeId).toBe("6b7bd350-7db2-4160-8471-cca2668c070d");
     expect(detail.voidReasonCode).toBe("customer_request");
     expect(detail.voidReasonNote).toBe("Khách đổi ý");
   });
@@ -364,16 +364,16 @@ describe("Supabase adapter ports", () => {
         status: "paid",
         total: 45000,
         lock_version: 2,
-        table_id: "tbl-b01",
+        table_id: "7b035353-73d6-44bc-8ec4-1ab9951f7a58",
         order_type: "dine_in",
         business_date: "2026-06-12",
         paid_at: "2026-06-12T08:30:00.000Z",
       },
-      [{ id: "oi-1", menu_item_id: "mi-latte", item_name: "Latte", quantity: 1, unit_price: 45000, note: null }],
+      [{ id: "oi-1", menu_item_id: "d50ff72b-d0bc-4832-8888-183c19f5a158", item_name: "Latte", quantity: 1, unit_price: 45000, note: null }],
       [],
       {
         id: "pay-1",
-        employee_id: "emp-admin",
+        employee_id: "6b7bd350-7db2-4160-8471-cca2668c070d",
         method: "cash",
         amount: 45000,
         received_amount: 50000,
@@ -384,7 +384,7 @@ describe("Supabase adapter ports", () => {
 
     expect(detail.payment).toEqual({
       id: "pay-1",
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       method: "cash",
       amount: 45000,
       receivedAmount: 50000,
@@ -423,12 +423,12 @@ describe("Supabase adapter ports", () => {
       status: "paid",
       orderType: "dine_in",
       search: "#31",
-      tableIds: ["tbl-b01"],
+      tableIds: ["7b035353-73d6-44bc-8ec4-1ab9951f7a58"],
     });
 
     expect(chain.in).toHaveBeenCalledWith("status", ["paid"]);
     expect(chain.eq).toHaveBeenCalledWith("order_type", "dine_in");
-    expect(chain.or).toHaveBeenCalledWith("order_no.eq.31,id.ilike.%#31%,table_id.ilike.%#31%,table_id.in.(tbl-b01)");
+    expect(chain.or).toHaveBeenCalledWith("order_no.eq.31,id.ilike.%#31%,table_id.ilike.%#31%,table_id.in.(7b035353-73d6-44bc-8ec4-1ab9951f7a58)");
     expect(chain.range).toHaveBeenCalledWith(0, 7);
   });
 
@@ -455,7 +455,7 @@ describe("Supabase adapter ports", () => {
       paymentId: "pay-1",
       orderId: "ord-1",
       newOrderId: "ord-split",
-      employeeId: "emp-admin",
+      employeeId: "6b7bd350-7db2-4160-8471-cca2668c070d",
       method: "cash",
       expectedVersion: 3,
       receivedAmount: 30000,
@@ -466,7 +466,7 @@ describe("Supabase adapter ports", () => {
       p_payment_id: "pay-1",
       p_order_id: "ord-1",
       p_new_order_id: "ord-split",
-      p_employee_id: "emp-admin",
+      p_employee_id: "6b7bd350-7db2-4160-8471-cca2668c070d",
       p_method: "cash",
       p_expected_lock_version: 3,
       p_received_amount: 30000,
@@ -483,8 +483,8 @@ describe("Supabase adapter ports", () => {
     const changes: MenuChanges = {
       categories: {
         created: [{ id: "cat-new", name: "Mới", sortOrder: 9 }],
-        updated: [{ id: "cat-coffee", name: "Cà phê mới" }],
-        deleted: [{ id: "cat-old", deletedByEmployeeId: "emp-admin" }],
+        updated: [{ id: "c68d7fbd-c06a-42a4-8140-476da8ebbf74", name: "Cà phê mới" }],
+        deleted: [{ id: "cat-old", deletedByEmployeeId: "6b7bd350-7db2-4160-8471-cca2668c070d" }],
       },
       menuItems: { created: [], updated: [], deleted: [] },
       optionGroups: { created: [], updated: [], deleted: [] },
@@ -497,7 +497,7 @@ describe("Supabase adapter ports", () => {
     expect(calls).toContainEqual({
       table: "categories",
       action: "insert",
-      payload: [{ id: "cat-new", store_id: "store-demo-001", name: "Mới", sort_order: 9 }],
+      payload: [{ id: "cat-new", store_id: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", name: "Mới", sort_order: 9 }],
       filters: [],
     });
     expect(calls).toEqual(
@@ -506,12 +506,12 @@ describe("Supabase adapter ports", () => {
           table: "categories",
           action: "update",
           payload: { name: "Cà phê mới" },
-          filters: [{ column: "id", value: "cat-coffee" }],
+          filters: [{ column: "id", value: "c68d7fbd-c06a-42a4-8140-476da8ebbf74" }],
         }),
         expect.objectContaining({
           table: "categories",
           action: "update",
-          payload: expect.objectContaining({ deleted_by_employee_id: "emp-admin" }),
+          payload: expect.objectContaining({ deleted_by_employee_id: "6b7bd350-7db2-4160-8471-cca2668c070d" }),
           filters: [{ column: "id", value: "cat-old" }],
         }),
       ]),
@@ -525,7 +525,7 @@ describe("Supabase adapter ports", () => {
       areas: { created: [], updated: [], deleted: [] },
       tables: {
         created: [],
-        updated: [{ id: "tbl-b01", posX: 320, posY: 220, name: "B01" }],
+        updated: [{ id: "7b035353-73d6-44bc-8ec4-1ab9951f7a58", posX: 320, posY: 220, name: "B01" }],
         deleted: [],
       },
       decorItems: { created: [], updated: [], deleted: [] },
@@ -536,6 +536,6 @@ describe("Supabase adapter ports", () => {
     const tableUpdate = calls.find((call) => call.table === "tables" && call.action === "update");
     expect(tableUpdate?.payload).toEqual({ name: "B01", pos_x: 320, pos_y: 220 });
     expect(tableUpdate?.payload).not.toHaveProperty("status");
-    expect(tableUpdate?.filters).toEqual([{ column: "id", value: "tbl-b01" }]);
+    expect(tableUpdate?.filters).toEqual([{ column: "id", value: "7b035353-73d6-44bc-8ec4-1ab9951f7a58" }]);
   });
 });

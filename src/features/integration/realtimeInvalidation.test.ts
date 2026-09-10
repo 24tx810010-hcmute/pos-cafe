@@ -16,14 +16,14 @@ const createQueryClientDouble = (): QueryClient =>
 describe("realtimeInvalidation", () => {
   it("builds focused invalidation handlers for realtime events", () => {
     const queryClient = createQueryClientDouble();
-    const input = createRealtimeInvalidationInput(queryClient, "store-demo-001");
+    const input = createRealtimeInvalidationInput(queryClient, "e572ea5f-9adf-493c-8d84-dca3cd86e1eb");
 
     input.invalidateMenu();
     input.invalidateFloorPlan();
     input.invalidateOpenOrders();
     input.invalidateReport();
 
-    expect(input.storeId).toBe("store-demo-001");
+    expect(input.storeId).toBe("e572ea5f-9adf-493c-8d84-dca3cd86e1eb");
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: posQueryKeys.menu });
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: posQueryKeys.floorPlan });
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: posQueryKeys.ordersRoot });
@@ -40,10 +40,10 @@ describe("realtimeInvalidation", () => {
     const cleanup = vi.fn();
     const startSpy = vi.spyOn(ports.realtime, "startStoreInvalidation").mockReturnValue(cleanup);
 
-    const returnedCleanup = startRealtimeInvalidation(ports, queryClient, "store-demo-001");
+    const returnedCleanup = startRealtimeInvalidation(ports, queryClient, "e572ea5f-9adf-493c-8d84-dca3cd86e1eb");
 
     expect(startSpy).toHaveBeenCalledOnce();
-    expect(startSpy.mock.calls[0][0].storeId).toBe("store-demo-001");
+    expect(startSpy.mock.calls[0][0].storeId).toBe("e572ea5f-9adf-493c-8d84-dca3cd86e1eb");
     expect(returnedCleanup).toBe(cleanup);
   });
 });

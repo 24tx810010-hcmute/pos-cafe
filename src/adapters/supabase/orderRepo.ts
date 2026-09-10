@@ -19,17 +19,27 @@ import {
   type Row,
 } from "./mappers";
 import type { SupabaseAnyClient } from "./repoShared";
+import { writeError } from "@/core/writeErrors";
+import type { ReceiptSnapshot } from "@/domain";
 
 const orderFields =
-  "id,table_id,order_type,order_no,business_date,status,total,lock_version,paid_at,voided_at,voided_by_employee_id,void_reason_code,void_reason_note";
+  "id,table_id,order_type,order_no,business_date,status,total,lock_version,paid_at,voided_at,voided_by_employee_id,void_reason_code,void_reason_note,created_at,updated_at,created_by_employee_id,last_modified_by_employee_id";
 const orderItemFields = "id,menu_item_id,item_name,quantity,unit_price,note,status,sort_order";
 const orderItemOptionFields = "id,order_item_id,option_value_id,option_name,price_delta,quantity";
-const paymentFields = "id,employee_id,method,amount,received_amount,change_amount,paid_at";
+const paymentFields = "id,employee_id,method,amount,received_amount,change_amount,paid_at,receipt_snapshot";
 
 const sanitizeOrValue = (value: string): string => value.replace(/[%,()]/g, "").trim();
 
 export class SupabaseOrderRepo implements IOrderRepo {
   constructor(private readonly client: SupabaseAnyClient) {}
+
+  async getReceipt(orderId: string): Promise<{receipt: ReceiptSnapshot; legacyMetadata: boolean}> {
+    const { data, error } = await this.client.rpc("get_payment_receipt", { p_order_id: orderId });
+    throwIfError(error, "RECEIPT_UNAVAILABLE");
+    if (data?.ok === false) throw writeError(data.error.code);
+    if (data?.ok !== true || data.receipt?.schemaVersion !== 1) throw writeError("WRITE_PROTOCOL_UNSUPPORTED");
+    return { receipt: data.receipt, legacyMetadata: data.legacyMetadata === true };
+  }
 
   async listOpenOrders(): Promise<OrderSummary[]> {
     const { data, error } = await this.client
@@ -83,7 +93,13 @@ export class SupabaseOrderRepo implements IOrderRepo {
       paymentRow = (payment ?? null) as Row | null;
     }
 
-    return mapOrderDetail(order, items, optionRows, paymentRow);
+    return {
+      ...mapOrderDetail(order, items, optionRows, paymentRow),
+      receiptSnapshot: paymentRow?.receipt_snapshot as OrderDetail["receiptSnapshot"] ?? null,
+      createdAt: String(order.created_at), updatedAt: String(order.updated_at),
+      createdByEmployeeId: order.created_by_employee_id as string | null,
+      lastModifiedByEmployeeId: order.last_modified_by_employee_id as string | null,
+    };
   }
 
   async submitOrderChanges(input: SubmitOrderChangesInput): Promise<SubmitOrderChangesResult> {

@@ -1,12 +1,13 @@
 import { create } from "zustand";
 import type { Employee, OrderType, PrintReceipt, PrintTicket, SubmitOrderDraftItem } from "@/domain";
+import { clearDrawerExitGuard, requestDrawerExit } from "./drawerNavigation";
 
 export type ReceiptPreview =
   | { variant: "ticket"; doc: PrintTicket }
   | { variant: "kitchen"; doc: PrintTicket }
-  | { variant: "receipt"; doc: PrintReceipt };
+  | { variant: "receipt"; doc: PrintReceipt; orderId?: string; legacyMetadata?: boolean };
 
-export type DrawerModule = "order" | "payment" | "takeaway" | "menuEditor" | "floorEditor" | "report" | "orderHistory" | "employees" | "settings" | "paymentSettings" | null;
+export type DrawerModule = "order" | "payment" | "takeaway" | "writeRecovery" | "menuEditor" | "floorEditor" | "report" | "orderHistory" | "employees" | "settings" | "paymentSettings" | null;
 export type AppScreen = "landing" | "storePairing" | "createStore" | "passcode";
 
 export type OrderDrawerContext = {
@@ -48,14 +49,14 @@ export const useAppStore = create<AppState>((set) => ({
   paymentOrderId: null,
   draftItems: [],
   receiptPreview: null,
-  setCurrentEmployee: (employee) => set({ currentEmployee: employee }),
+  setCurrentEmployee: (employee) => { if (!employee) clearDrawerExitGuard(); set({ currentEmployee: employee }); },
   setScreen: (screen) => set({ screen }),
   setActiveAreaId: (areaId) => set({ activeAreaId: areaId }),
   setActiveCategoryId: (categoryId) => set({ activeCategoryId: categoryId }),
-  openDrawer: (drawer) => set({ drawer, orderContext: null, paymentOrderId: null }),
-  closeDrawer: () => set({ drawer: null, orderContext: null, paymentOrderId: null }),
-  openOrder: (context) => set({ drawer: "order", orderContext: context, paymentOrderId: null }),
-  openPayment: (orderId) => set({ drawer: "payment", paymentOrderId: orderId }),
+  openDrawer: (drawer) => requestDrawerExit(() => set({ drawer, orderContext: null, paymentOrderId: null })),
+  closeDrawer: () => requestDrawerExit(() => set({ drawer: null, orderContext: null, paymentOrderId: null })),
+  openOrder: (context) => requestDrawerExit(() => set({ drawer: "order", orderContext: context, paymentOrderId: null })),
+  openPayment: (orderId) => requestDrawerExit(() => set({ drawer: "payment", paymentOrderId: orderId })),
   setDraftItems: (items) => set({ draftItems: items }),
   openReceiptPreview: (preview) => set({ receiptPreview: preview }),
   closeReceiptPreview: () => set({ receiptPreview: null }),

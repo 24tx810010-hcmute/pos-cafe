@@ -14,12 +14,12 @@ export const statusClass: Record<OrderStatus, string> = {
 };
 
 export const itemLineTotal = (item: OrderItemSnapshot): number => {
-  const optionDelta = item.options.reduce((sum, option) => sum + option.priceDelta, 0);
+  const optionDelta = item.options.reduce((sum, option) => sum + option.priceDelta * option.quantity, 0);
   return (item.unitPrice + optionDelta) * item.quantity;
 };
 
 export const itemMeta = (item: OrderItemSnapshot): string => {
-  const options = item.options.map((option) => option.optionName);
+  const options = item.options.map((option) => option.quantity > 1 ? `${option.optionName} × ${option.quantity}` : option.optionName);
   const note = item.note ? [`ghi chú: ${item.note}`] : [];
   return [...options, ...note].join(" · ");
 };

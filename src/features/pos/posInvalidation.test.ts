@@ -10,7 +10,7 @@ describe("posInvalidation", () => {
       refetchQueries: vi.fn().mockResolvedValue(undefined),
     } as unknown as QueryClient;
 
-    await invalidateAfterOrderMutation(queryClient, "ord-b02");
+    await invalidateAfterOrderMutation(queryClient, "7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
 
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
       queryKey: posQueryKeys.ordersRoot,
@@ -22,7 +22,7 @@ describe("posInvalidation", () => {
       queryKey: posQueryKeys.reportsRoot,
     });
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
-      queryKey: posQueryKeys.order("ord-b02"),
+      queryKey: posQueryKeys.order("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c"),
     });
     expect(queryClient.refetchQueries).toHaveBeenCalledWith({
       queryKey: posQueryKeys.openOrders,

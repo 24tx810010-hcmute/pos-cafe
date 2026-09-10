@@ -6,7 +6,10 @@ import { deterministicUuid } from "./deterministicId";
 import { requireData, throwIfError } from "./errors";
 import type { Row } from "./mappers";
 import { formatStoreKey, generateStoreSecret, parseStoreKey, storeEmailForNo } from "./storeKey";
-import { hashPin, insertRows, upsertRows, type SupabaseAnyClient } from "./repoShared";
+import type { SupabaseAnyClient } from "./repoShared";
+import { SupabaseEmployeeRepo } from "./employeeRepo";
+import { clearEmployeeCredential } from "./employeeCredential";
+import { writeError } from "@/core/writeErrors";
 
 const selectStoreSessionFields = "id,store_no";
 
@@ -17,6 +20,7 @@ export class SupabaseAuthRepo implements IAuthRepo {
   ) {}
 
   async pairStore(storeKey: string): Promise<void> {
+    clearEmployeeCredential(this.client);
     const parsed = parseStoreKey(storeKey);
     const { error } = await this.client.auth.signInWithPassword({
       email: storeEmailForNo(parsed.storeNo),
@@ -54,52 +58,28 @@ export class SupabaseAuthRepo implements IAuthRepo {
     const address = input.address?.trim() ?? "";
     const adminPin = "123456";
     const adminId = await deterministicUuid(storeId, "admin.primary");
-    const adminHash = await hashPin(this.client, adminPin);
-
-    await insertRows(this.client, "stores", [
-      {
-        id: storeId,
-        store_no: storeNo,
-        name: displayName,
-        email: null,
-        seed_status: "pending",
-      },
-    ]);
-    await insertRows(this.client, "store_settings", [
-      {
-        store_id: storeId,
-        display_name: displayName,
-        address,
-        currency: "VND",
-        timezone: "Asia/Saigon",
-        bill_footer: "",
-      },
-    ]);
-    await upsertRows(this.client, "employees", [
-      {
-        id: adminId,
-        store_id: storeId,
-        name: "Quản lý",
-        role: "admin",
-        passcode_hash: adminHash,
-        is_active: true,
-        seed_key: null,
-      },
-    ]);
+    const { data: bootstrapData, error: bootstrapError } = await this.client.rpc("bootstrap_store", {
+      p_admin_id: adminId, p_store_no: storeNo, p_display_name: displayName, p_address: address,
+    });
+    throwIfError(bootstrapError);
+    if (bootstrapData?.ok === false) throw writeError(bootstrapData.error.code);
+    const employee = new SupabaseEmployeeRepo(this.client);
 
     let seedStatus: CreateStoreResult["seedStatus"] = "seeded";
     let canRetrySeed = false;
 
-    if (input.seedDemo) {
-      try {
-        await this.seed.seedDemo(storeId);
-      } catch {
-        seedStatus = "failed";
-        canRetrySeed = true;
-      }
-    } else {
-      // Store trống: chỉ đánh dấu đã seed, không tạo menu/floor/cashier demo.
-      await this.seed.seedBlank(storeId);
+    try {
+      await employee.startSession(adminId, adminPin);
+      if (input.seedDemo) await this.seed.seedDemo(storeId);
+      else await this.seed.seedBlank(storeId);
+    } catch {
+      // Bootstrap succeeded: preserve the only returned Store Key even if seed failed.
+      seedStatus = "failed";
+      canRetrySeed = Boolean(input.seedDemo);
+    } finally {
+      // Memory clears before sending revoke. A lost ACK does not undo store creation
+      // and the UI does not claim that the server session was revoked.
+      await employee.revokeSession().catch(() => undefined);
     }
 
     return {
@@ -113,6 +93,7 @@ export class SupabaseAuthRepo implements IAuthRepo {
   }
 
   async unpairStore(): Promise<void> {
+    clearEmployeeCredential(this.client);
     const { error } = await this.client.auth.signOut();
     throwIfError(error, "AUTH_REQUIRED");
   }

@@ -8,7 +8,7 @@ import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 
-const admin: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
 
 class ResizeObserverMock {
   observe() {}
@@ -64,7 +64,7 @@ const renderDrawer = (
   configureState?: (state: MockState, businessDate: string) => void,
 ) => {
   const state = createSeededMockState();
-  state.session = { storeId: "store-demo-001", storeNo: 1 };
+  state.session = { storeId: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", storeNo: 1 };
   const businessDate = businessDateForTest();
   seedOrdersForToday(state, businessDate);
   configureState?.(state, businessDate);
@@ -118,16 +118,16 @@ describe("Report and history drawers", () => {
     );
     expect(screen.getByTestId("history-date-filter-button")).toHaveTextContent("Thời gian: Gần đây");
 
-    await user.click(await screen.findByTestId("history-row-ord-paid-1"));
+    await user.click(await screen.findByTestId("history-row-3f6c6266-12b8-4f8b-8564-44d00d9210f8"));
 
-    await waitFor(() => expect(detailSpy).toHaveBeenCalledWith("ord-paid-1"));
+    await waitFor(() => expect(detailSpy).toHaveBeenCalledWith("3f6c6266-12b8-4f8b-8564-44d00d9210f8"));
     expect(await screen.findByText(/Latte/)).toBeInTheDocument();
   });
 
   it("renders unique presentation numbers for repeated daily order numbers and keeps UUID selection", async () => {
     const user = userEvent.setup();
     const { detailSpy } = renderDrawer("orderHistory", (state, businessDate) => {
-      const baseOrder = state.orders.find((order) => order.id === "ord-paid-1")!;
+      const baseOrder = state.orders.find((order) => order.id === "3f6c6266-12b8-4f8b-8564-44d00d9210f8")!;
       state.orders = [
         { ...structuredClone(baseOrder), id: "ord-history-new", orderNo: 2, status: "void" },
         { ...structuredClone(baseOrder), id: "ord-history-middle", orderNo: 1 },
@@ -160,7 +160,7 @@ describe("Report and history drawers", () => {
     const user = userEvent.setup();
     renderDrawer("orderHistory");
 
-    await user.click(await screen.findByTestId("history-row-ord-paid-1"));
+    await user.click(await screen.findByTestId("history-row-3f6c6266-12b8-4f8b-8564-44d00d9210f8"));
 
     expect(await screen.findByTestId("history-payment-employee")).toHaveTextContent("Thu ngân 1");
     expect(screen.getByText("Nhân viên thanh toán")).toBeInTheDocument();
@@ -177,10 +177,10 @@ describe("Report and history drawers", () => {
   it("keeps open orders out of the order history view", async () => {
     renderDrawer("orderHistory");
 
-    expect(await screen.findByTestId("history-row-ord-paid-1")).toBeInTheDocument();
-    expect(screen.queryByTestId("history-row-ord-b02")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("history-row-ord-b05")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("history-row-ord-takeaway-1")).not.toBeInTheDocument();
+    expect(await screen.findByTestId("history-row-3f6c6266-12b8-4f8b-8564-44d00d9210f8")).toBeInTheDocument();
+    expect(screen.queryByTestId("history-row-7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("history-row-3bb9652e-e153-45dd-8f41-2d41a1f7b04b")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("history-row-86b29e38-e02e-4e9d-877a-5cebdd394c1d")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Đang mở" })).not.toBeInTheDocument();
   });
 

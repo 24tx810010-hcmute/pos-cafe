@@ -8,7 +8,7 @@ import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 
-const admin: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
 
 const resetAppStoreForFloorEditor = () => {
   useAppStore.setState({
@@ -23,10 +23,11 @@ const resetAppStoreForFloorEditor = () => {
   });
 };
 
-const renderFloorEditor = () => {
+const renderFloorEditor = async () => {
   const state = createSeededMockState();
-  state.session = { storeId: "store-demo-001", storeNo: 1 };
+  state.session = { storeId: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", storeNo: 1 };
   const ports = createMockPorts(state);
+  await ports.employee.startSession("6b7bd350-7db2-4160-8471-cca2668c070d", state.pins["6b7bd350-7db2-4160-8471-cca2668c070d"]);
   const saveSpy = vi.spyOn(ports.floorPlan, "saveFloorPlan");
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -85,7 +86,7 @@ afterEach(() => {
 describe("FloorEditorDrawer", () => {
   it("adds wall textures and decoration images from the complete asset picker", async () => {
     const user = userEvent.setup();
-    const { saveSpy, state } = renderFloorEditor();
+    const { saveSpy, state } = await renderFloorEditor();
 
     await user.click(await screen.findByTestId("add-wall-asset"));
     expect(screen.getByTestId("floor-decor-asset-picker")).toBeVisible();
@@ -129,9 +130,9 @@ describe("FloorEditorDrawer", () => {
 
   it("replaces an existing decor image with another catalog asset", async () => {
     const user = userEvent.setup();
-    const { saveSpy } = renderFloorEditor();
+    const { saveSpy } = await renderFloorEditor();
 
-    await user.click(await screen.findByTestId("fe-decor-decor-plant"));
+    await user.click(await screen.findByTestId("fe-decor-e7ae25fd-6e51-432a-85aa-6c3829e5b9f8"));
     await user.click(screen.getByTestId("change-decor-asset"));
     await user.click(screen.getByTestId("decor-asset-tree-03"));
     await user.click(screen.getByTestId("confirm-decor-asset"));
@@ -140,7 +141,7 @@ describe("FloorEditorDrawer", () => {
     await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
     expect(saveSpy.mock.calls[0][0].decorItems.updated).toEqual([
       {
-        id: "decor-plant",
+        id: "e7ae25fd-6e51-432a-85aa-6c3829e5b9f8",
         label: "Cây 03",
         assetKey: "/floor-assets/decor/deco-tree-03.png",
       },
@@ -149,9 +150,9 @@ describe("FloorEditorDrawer", () => {
 
   it("selects one of 11 table backgrounds and persists the asset key", async () => {
     const user = userEvent.setup();
-    const { saveSpy } = renderFloorEditor();
+    const { saveSpy } = await renderFloorEditor();
 
-    await user.click(await screen.findByTestId("fe-table-tbl-b01"));
+    await user.click(await screen.findByTestId("fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58"));
     await user.click(screen.getByTestId("change-table-background"));
 
     expect(screen.getByTestId("floor-table-background-picker")).toBeVisible();
@@ -161,7 +162,7 @@ describe("FloorEditorDrawer", () => {
     await user.click(screen.getByTestId("table-background-asset-table-bg-11"));
     await user.click(screen.getByTestId("confirm-table-background"));
 
-    expect(screen.getByTestId("fe-table-tbl-b01").getAttribute("style")).toContain(
+    expect(screen.getByTestId("fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").getAttribute("style")).toContain(
       '/floor-assets/tables/table-bg-11.png',
     );
     await user.click(screen.getByTestId("save-floor-button"));
@@ -169,7 +170,7 @@ describe("FloorEditorDrawer", () => {
     await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
     expect(saveSpy.mock.calls[0][0].tables.updated).toEqual([
       {
-        id: "tbl-b01",
+        id: "7b035353-73d6-44bc-8ec4-1ab9951f7a58",
         backgroundAssetKey: "/floor-assets/tables/table-bg-11.png",
       },
     ]);
@@ -177,7 +178,7 @@ describe("FloorEditorDrawer", () => {
 
   it("saves new tables through floor changesets without table status", async () => {
     const user = userEvent.setup();
-    const { saveSpy, state } = renderFloorEditor();
+    const { saveSpy, state } = await renderFloorEditor();
 
     await user.click(await screen.findByTestId("add-table-round"));
     await user.click(screen.getByTestId("save-floor-button"));
@@ -200,9 +201,9 @@ describe("FloorEditorDrawer", () => {
 
   it("saves logical table updates without overwriting status", async () => {
     const user = userEvent.setup();
-    const { saveSpy } = renderFloorEditor();
+    const { saveSpy } = await renderFloorEditor();
 
-    await user.click(await screen.findByTestId("fe-table-tbl-b01"));
+    await user.click(await screen.findByTestId("fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58"));
     await user.clear(screen.getByTestId("fe-table-name-input"));
     await user.type(screen.getByTestId("fe-table-name-input"), "B01A");
     await user.click(screen.getByRole("button", { name: /Nâng cao/ }));
@@ -213,68 +214,68 @@ describe("FloorEditorDrawer", () => {
     await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
     const changes = saveSpy.mock.calls[0][0];
 
-    expect(changes.tables.updated).toEqual([{ id: "tbl-b01", name: "B01A", posX: 300 }]);
+    expect(changes.tables.updated).toEqual([{ id: "7b035353-73d6-44bc-8ec4-1ab9951f7a58", name: "B01A", posX: 300 }]);
     expect(changes.tables.updated[0]).not.toHaveProperty("status");
   });
 
   it("sends tombstones for deleted tables and decor", async () => {
     const user = userEvent.setup();
-    const { saveSpy } = renderFloorEditor();
+    const { saveSpy } = await renderFloorEditor();
 
-    await user.click(await screen.findByTestId("fe-table-tbl-b01"));
+    await user.click(await screen.findByTestId("fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58"));
     await user.click(screen.getByRole("button", { name: "Xoá bàn" }));
-    await user.click(screen.getByTestId("fe-decor-decor-counter"));
+    await user.click(screen.getByTestId("fe-decor-ac030d47-f87b-4d2b-8017-d8a71259c71e"));
     await user.click(screen.getByRole("button", { name: "Xoá trang trí" }));
     await user.click(screen.getByTestId("save-floor-button"));
 
     await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
     const changes = saveSpy.mock.calls[0][0];
 
-    expect(changes.tables.deleted).toEqual([{ id: "tbl-b01", deletedByEmployeeId: admin.id }]);
-    expect(changes.decorItems.deleted).toEqual([{ id: "decor-counter", deletedByEmployeeId: admin.id }]);
+    expect(changes.tables.deleted).toEqual([{ id: "7b035353-73d6-44bc-8ec4-1ab9951f7a58", deletedByEmployeeId: admin.id }]);
+    expect(changes.decorItems.deleted).toEqual([{ id: "ac030d47-f87b-4d2b-8017-d8a71259c71e", deletedByEmployeeId: admin.id }]);
   });
 
   it("shows transform handles only for the selected unlocked floor object", async () => {
     const user = userEvent.setup();
-    renderFloorEditor();
+    await renderFloorEditor();
 
-    expect(screen.queryByTestId("fe-object-rotate-handle-tbl-b01")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("fe-object-resize-handle-tbl-b01")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("fe-object-rotate-handle-7b035353-73d6-44bc-8ec4-1ab9951f7a58")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("fe-object-resize-handle-7b035353-73d6-44bc-8ec4-1ab9951f7a58")).not.toBeInTheDocument();
 
-    await user.click(await screen.findByTestId("fe-table-tbl-b01"));
-    expect(screen.getByTestId("fe-object-rotate-handle-tbl-b01")).toBeVisible();
-    expect(screen.getByTestId("fe-object-resize-handle-tbl-b01")).toBeVisible();
+    await user.click(await screen.findByTestId("fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58"));
+    expect(screen.getByTestId("fe-object-rotate-handle-7b035353-73d6-44bc-8ec4-1ab9951f7a58")).toBeVisible();
+    expect(screen.getByTestId("fe-object-resize-handle-7b035353-73d6-44bc-8ec4-1ab9951f7a58")).toBeVisible();
 
     await user.click(within(screen.getByTestId("floor-editor-inspector")).getByRole("button", { name: /Xo.*b/ }));
-    expect(screen.queryByTestId("fe-object-rotate-handle-tbl-b01")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("fe-object-resize-handle-tbl-b01")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("fe-object-rotate-handle-7b035353-73d6-44bc-8ec4-1ab9951f7a58")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("fe-object-resize-handle-7b035353-73d6-44bc-8ec4-1ab9951f7a58")).not.toBeInTheDocument();
 
-    await user.click(screen.getByTestId("fe-decor-decor-plant"));
-    expect(screen.getByTestId("fe-object-rotate-handle-decor-plant")).toBeVisible();
-    expect(screen.getByTestId("fe-object-resize-handle-decor-plant")).toBeVisible();
-    expect(screen.queryByTestId("fe-object-rotate-handle-tbl-b01")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("fe-decor-e7ae25fd-6e51-432a-85aa-6c3829e5b9f8"));
+    expect(screen.getByTestId("fe-object-rotate-handle-e7ae25fd-6e51-432a-85aa-6c3829e5b9f8")).toBeVisible();
+    expect(screen.getByTestId("fe-object-resize-handle-e7ae25fd-6e51-432a-85aa-6c3829e5b9f8")).toBeVisible();
+    expect(screen.queryByTestId("fe-object-rotate-handle-7b035353-73d6-44bc-8ec4-1ab9951f7a58")).not.toBeInTheDocument();
 
-    await user.click(screen.getByTestId("fe-decor-decor-counter"));
-    expect(screen.queryByTestId("fe-object-rotate-handle-decor-counter")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("fe-object-resize-handle-decor-counter")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("fe-decor-ac030d47-f87b-4d2b-8017-d8a71259c71e"));
+    expect(screen.queryByTestId("fe-object-rotate-handle-ac030d47-f87b-4d2b-8017-d8a71259c71e")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("fe-object-resize-handle-ac030d47-f87b-4d2b-8017-d8a71259c71e")).not.toBeInTheDocument();
 
     firePointer(screen.getByTestId("floor-editor-stage"), "pointerdown");
-    expect(screen.queryByTestId("fe-object-rotate-handle-decor-counter")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("fe-object-rotate-handle-ac030d47-f87b-4d2b-8017-d8a71259c71e")).not.toBeInTheDocument();
   });
 
   it("saves table resize and rotation from selected object handles", async () => {
     const user = userEvent.setup();
-    const { saveSpy } = renderFloorEditor();
+    const { saveSpy } = await renderFloorEditor();
     const stage = await mockFloorEditorStageRect();
 
-    await user.click(await screen.findByTestId("fe-table-tbl-b01"));
+    await user.click(await screen.findByTestId("fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58"));
 
-    const resizeHandle = screen.getByTestId("fe-object-resize-handle-tbl-b01");
+    const resizeHandle = screen.getByTestId("fe-object-resize-handle-7b035353-73d6-44bc-8ec4-1ab9951f7a58");
     firePointer(resizeHandle, "pointerdown", { x: 320, y: 228 });
     firePointer(resizeHandle, "pointermove", { x: 340, y: 250 });
     firePointer(resizeHandle, "pointerup");
 
-    const rotateHandle = screen.getByTestId("fe-object-rotate-handle-tbl-b01");
+    const rotateHandle = screen.getByTestId("fe-object-rotate-handle-7b035353-73d6-44bc-8ec4-1ab9951f7a58");
     firePointer(rotateHandle, "pointerdown", { x: 200, y: 228 });
     firePointer(rotateHandle, "pointermove", { x: 260, y: 290 });
     firePointer(rotateHandle, "pointerup");
@@ -285,24 +286,24 @@ describe("FloorEditorDrawer", () => {
     await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
     const changes = saveSpy.mock.calls[0][0];
 
-    expect(changes.tables.updated).toEqual([{ id: "tbl-b01", width: 160, height: 120, rotation: 90 }]);
+    expect(changes.tables.updated).toEqual([{ id: "7b035353-73d6-44bc-8ec4-1ab9951f7a58", width: 160, height: 120, rotation: 90 }]);
   });
 
   it("keeps transform handles horizontally below the unrotated object bounds", async () => {
     const user = userEvent.setup();
-    renderFloorEditor();
+    await renderFloorEditor();
     await mockFloorEditorStageRect();
 
-    await user.click(await screen.findByTestId("fe-table-tbl-b01"));
-    const rotateHandle = screen.getByTestId("fe-object-rotate-handle-tbl-b01");
+    await user.click(await screen.findByTestId("fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58"));
+    const rotateHandle = screen.getByTestId("fe-object-rotate-handle-7b035353-73d6-44bc-8ec4-1ab9951f7a58");
     firePointer(rotateHandle, "pointerdown", { x: 200, y: 228 });
     firePointer(rotateHandle, "pointermove", { x: 260, y: 290 });
     firePointer(rotateHandle, "pointerup");
 
-    expect(screen.getByTestId("fe-table-tbl-b01").getAttribute("style")).toContain("rotate(90deg)");
+    expect(screen.getByTestId("fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").getAttribute("style")).toContain("rotate(90deg)");
 
-    const rotateStyle = screen.getByTestId("fe-object-rotate-handle-tbl-b01").getAttribute("style") ?? "";
-    const resizeStyle = screen.getByTestId("fe-object-resize-handle-tbl-b01").getAttribute("style") ?? "";
+    const rotateStyle = screen.getByTestId("fe-object-rotate-handle-7b035353-73d6-44bc-8ec4-1ab9951f7a58").getAttribute("style") ?? "";
+    const resizeStyle = screen.getByTestId("fe-object-resize-handle-7b035353-73d6-44bc-8ec4-1ab9951f7a58").getAttribute("style") ?? "";
 
     expect(rotateStyle).toContain("left: 200px");
     expect(rotateStyle).toContain("top: 240px");
@@ -314,17 +315,17 @@ describe("FloorEditorDrawer", () => {
 
   it("saves decor resize and rotation from selected object handles", async () => {
     const user = userEvent.setup();
-    const { saveSpy } = renderFloorEditor();
+    const { saveSpy } = await renderFloorEditor();
     await mockFloorEditorStageRect();
 
-    await user.click(await screen.findByTestId("fe-decor-decor-plant"));
+    await user.click(await screen.findByTestId("fe-decor-e7ae25fd-6e51-432a-85aa-6c3829e5b9f8"));
 
-    const resizeHandle = screen.getByTestId("fe-object-resize-handle-decor-plant");
+    const resizeHandle = screen.getByTestId("fe-object-resize-handle-e7ae25fd-6e51-432a-85aa-6c3829e5b9f8");
     firePointer(resizeHandle, "pointerdown", { x: 360, y: 820 });
     firePointer(resizeHandle, "pointermove", { x: 380, y: 840 });
     firePointer(resizeHandle, "pointerup");
 
-    const rotateHandle = screen.getByTestId("fe-object-rotate-handle-decor-plant");
+    const rotateHandle = screen.getByTestId("fe-object-rotate-handle-e7ae25fd-6e51-432a-85aa-6c3829e5b9f8");
     firePointer(rotateHandle, "pointerdown", { x: 240, y: 786 });
     firePointer(rotateHandle, "pointermove", { x: 300, y: 860 });
     firePointer(rotateHandle, "pointerup");
@@ -334,13 +335,13 @@ describe("FloorEditorDrawer", () => {
     await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
     const changes = saveSpy.mock.calls[0][0];
 
-    expect(changes.decorItems.updated).toEqual([{ id: "decor-plant", width: 160, height: 160, rotation: 90 }]);
+    expect(changes.decorItems.updated).toEqual([{ id: "e7ae25fd-6e51-432a-85aa-6c3829e5b9f8", width: 160, height: 160, rotation: 90 }]);
   });
 
   it("renders table geometry as logical pixels inside the scaled stage", async () => {
-    renderFloorEditor();
+    await renderFloorEditor();
 
-    const table = await screen.findByTestId("fe-table-tbl-b01");
+    const table = await screen.findByTestId("fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58");
     const style = table.getAttribute("style") ?? "";
     const label = table.querySelector("[data-floor-label='name']");
 
@@ -353,7 +354,7 @@ describe("FloorEditorDrawer", () => {
   });
 
   it("omits manual zoom controls because the stage auto-fits its container", async () => {
-    renderFloorEditor();
+    await renderFloorEditor();
 
     await screen.findByTestId("floor-editor-stage");
 

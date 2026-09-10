@@ -1,14 +1,15 @@
 import { Button } from "@mui/material";
 import clsx from "clsx";
 import { CalendarDays, ChevronDown, RefreshCw, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { hasPermission } from "@/core/guards";
 import { formatVndShort } from "@/core/money";
-import type { VoidReasonCode } from "@/domain";
+import type { OrderDetail, VoidReasonCode } from "@/domain";
 import { useFloorPlanQuery, useOrderDetailQuery, useOrderHistoryQuery, useVoidOrderMutation } from "@/features/pos";
 import { useAdminEmployeesQuery, useStoreSettingsQuery } from "@/features/admin";
 import { useAppStore } from "../../useAppStore";
+import { useViewLifetime } from "../../useViewLifetime";
 import {
   DEFAULT_TIMEZONE,
   PAY_METHOD_LABEL,
@@ -24,10 +25,13 @@ import {
   type HistoryOrderTypeFilter,
   type HistoryStatusFilter,
 } from "@/features/pos/historyHelpers";
-import { toToastError } from "../../appErrors";
+import { notifyUiError, toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { PortalPopup } from "../../components/PortalPopup";
-import { receiptFromOrderDetail } from "../../components/ReceiptPreview";
+import { receiptToPrint } from "@/features/pos/orderFlow";
+import { usePorts } from "@/features/shared/portsContext";
+import { WriteAttemptNotice } from "../pos/WriteAttemptNotice";
+import { useWriteAttempt } from "@/features/pos/useWriteAttempt";
 import { OrderHistoryDetailPane } from "./OrderHistoryDetailPane";
 import { OrderHistoryListPane } from "./OrderHistoryListPane";
 import { IconButton } from "./orderHistoryShared";
@@ -57,6 +61,8 @@ const orderTypeOptions: Array<{ key: HistoryOrderTypeFilter; label: string }> = 
 ];
 
 export function OrderHistoryDrawer() {
+  const ports = usePorts();
+  const { blocked } = useWriteAttempt();
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const openReceiptPreview = useAppStore((state) => state.openReceiptPreview);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
@@ -74,6 +80,10 @@ export function OrderHistoryDrawer() {
   const [voidReasonCode, setVoidReasonCode] = useState<VoidReasonCode>("wrong_order");
   const [voidReasonNote, setVoidReasonNote] = useState("");
   const [isVoiding, setIsVoiding] = useState(false);
+  const [voidSnapshot, setVoidSnapshot] = useState<OrderDetail | null>(null);
+  const voidGeneration = useRef(0);
+  const captureView = useViewLifetime(selectedId);
+  const closeVoidConfirm = () => { voidGeneration.current += 1; setVoidConfirmOpen(false); setIsVoiding(false); };
 
   const canVoid = hasPermission(currentEmployee, "order.voidPaid");
 
@@ -178,18 +188,17 @@ export function OrderHistoryDrawer() {
     toast.success(`Đã sao chép ${text}`);
   };
 
-  const reprintReceipt = () => {
-    if (!selectedDetail) {
-      toast("Đang tải chi tiết đơn, thử lại sau giây lát.");
-      return;
-    }
-    const tableName = selectedDetail.tableId ? tables.get(selectedDetail.tableId) ?? null : null;
-    const receipt = receiptFromOrderDetail(selectedDetail, tableName);
-    if (!receipt) {
-      toast("Đơn này chưa có thông tin thanh toán để in lại.");
-      return;
-    }
-    openReceiptPreview({ variant: "receipt", doc: receipt });
+  const reprintReceipt = async () => {
+    if (!selectedDetail) return;
+    const id = selectedDetail.id;
+    const stillHere = captureView();
+    try {
+      const fresh = await ports.order.getOrder(id);
+      if (!stillHere()) return;
+      const document = await ports.order.getReceipt(id);
+      if (!stillHere()) return;
+      openReceiptPreview({ variant: "receipt", doc: receiptToPrint(document.receipt, fresh.orderType), orderId: id, legacyMetadata: document.legacyMetadata });
+    } catch (error) { notifyUiError(error); }
   };
 
   const clearFilters = () => {
@@ -199,34 +208,35 @@ export function OrderHistoryDrawer() {
     resetList();
   };
 
-  const openVoidConfirm = () => {
-    setVoidReasonCode("wrong_order");
-    setVoidReasonNote("");
-    setVoidConfirmOpen(true);
+  const openVoidConfirm = async () => {
+    if (!currentEmployee || !selected || !selectedDetail || isVoiding || blocked) return;
+    const stillHere = captureView();
+    const generation = ++voidGeneration.current;
+    setIsVoiding(true);
+    try {
+      // Show the current server snapshot BEFORE the operator confirms it.
+      const fresh = await detailQuery.refetch();
+      if (!stillHere() || generation !== voidGeneration.current) return;
+      if (fresh.error) throw fresh.error;
+      if (fresh.data?.id !== selectedDetail.id || fresh.data.status !== "paid") {
+        toast.error("Đơn đã thay đổi trạng thái, vui lòng tải lại."); return;
+      }
+      setVoidSnapshot(structuredClone(fresh.data));
+      setVoidReasonCode("wrong_order"); setVoidReasonNote(""); setVoidConfirmOpen(true);
+    } catch (error) {
+      if (stillHere() && generation === voidGeneration.current) notifyUiError(error);
+    } finally {
+      if (generation === voidGeneration.current) setIsVoiding(false);
+    }
   };
 
-  const confirmVoid = async () => {
-    if (!currentEmployee || !selected || !selectedDetail || isVoiding) return;
+  const confirmVoid = () => {
+    if (!currentEmployee || !selected || !voidSnapshot || voidSnapshot.id !== selectedId || isVoiding || blocked) return;
     setIsVoiding(true);
-    // Lấy lock_version tươi ngay trước khi hủy: cache order detail có thể còn phiên bản
-    // cũ (vd version lúc đơn còn mở, trước khi thanh toán) và gây conflict giả.
-    let order = selectedDetail;
-    try {
-      const fresh = await detailQuery.refetch();
-      if (fresh.data?.id === selectedDetail.id) order = fresh.data;
-    } catch {
-      // Giữ selectedDetail nếu refetch lỗi; server vẫn kiểm tra lock_version.
-    }
-    if (order.status !== "paid") {
-      toast.error("Đơn đã thay đổi trạng thái, vui lòng tải lại.");
-      setVoidConfirmOpen(false);
-      setIsVoiding(false);
-      return;
-    }
     voidMutation.mutate(
       {
         actor: currentEmployee,
-        order,
+        order: voidSnapshot,
         reasonCode: voidReasonCode,
         reasonNote: voidReasonNote,
       },
@@ -252,6 +262,7 @@ export function OrderHistoryDrawer() {
 
   return (
     <PortalDrawer testId="order-history-drawer" onOutsideClick={closeDrawer}>
+      <WriteAttemptNotice />
       <header className="flex min-h-[68px] items-center justify-between gap-3 border-b border-pos-line bg-white px-4 py-3 max-[900px]:min-h-[58px] max-[900px]:gap-2 max-[900px]:px-3 max-[900px]:py-2">
         <div className="min-w-0">
           <h2 className="m-0 truncate text-[22px] font-black leading-tight text-pos-ink max-[760px]:text-[17px]">
@@ -430,12 +441,12 @@ export function OrderHistoryDrawer() {
           placement="Centered"
           viewport="workspace"
           overlayClassName="bg-slate-900/50"
-          onOutsideClick={() => setVoidConfirmOpen(false)}
+          onOutsideClick={closeVoidConfirm}
         >
           <div className="grid w-[min(420px,92vw)] gap-3 rounded-pos bg-pos-surface p-6 shadow-[0_20px_60px_rgb(0_0_0_/_25%)] max-[760px]:p-4">
             <h3 className="m-0 text-lg font-black text-pos-ink">Hủy đơn #{selected.displayNo}</h3>
             <p className="m-0 rounded-[8px] border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-sm font-semibold text-[#991b1b]">
-              Đơn {formatVndShort(selectedDetail?.total ?? selected.total)} sẽ bị loại khỏi doanh thu ngày {selected.createdAt}. Thao tác không thể hoàn tác.
+              Đơn {formatVndShort(voidSnapshot?.total ?? selected.total)} sẽ bị loại khỏi doanh thu ngày {selected.createdAt}. Thao tác không thể hoàn tác.
             </p>
 
             <label className="grid gap-1 text-xs font-bold text-pos-muted">
@@ -467,7 +478,7 @@ export function OrderHistoryDrawer() {
             </label>
 
             <div className="flex flex-wrap justify-end gap-2.5 [&_.MuiButton-root]:min-w-24">
-              <Button variant="outlined" onClick={() => setVoidConfirmOpen(false)}>
+              <Button variant="outlined" onClick={closeVoidConfirm}>
                 Đóng
               </Button>
               <Button

@@ -10,6 +10,7 @@ import { ReportDrawer } from "../drawers/admin/ReportDrawer";
 import { OrderDrawer } from "../drawers/pos/OrderDrawer";
 import { PaymentDrawer } from "../drawers/pos/PaymentDrawer";
 import { TakeawayDrawer } from "../drawers/pos/TakeawayDrawer";
+import { WriteRecoveryDrawer } from "../drawers/pos/WriteRecoveryDrawer";
 import { ReceiptPreviewPopup } from "../components/ReceiptPreview";
 import { FloorWorkspace } from "./FloorWorkspace";
 import { LeftNav } from "./LeftNav";
@@ -18,6 +19,7 @@ const DRAWER_REGISTRY: Record<NonNullable<DrawerModule>, ComponentType> = {
   order: OrderDrawer,
   payment: PaymentDrawer,
   takeaway: TakeawayDrawer,
+  writeRecovery: WriteRecoveryDrawer,
   menuEditor: MenuEditorDrawer,
   floorEditor: FloorEditorDrawer,
   report: ReportDrawer,

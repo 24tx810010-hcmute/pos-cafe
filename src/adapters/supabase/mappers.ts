@@ -79,6 +79,11 @@ export const mapEmployee = (row: Row): Employee => {
   };
 };
 
+/** RPCs expose camelCase DTOs, but overrides still need the same normalization as rows. */
+export const mapRpcEmployee = (row: Row): Employee => mapEmployee({
+  id: row.id, name: row.name, role: row.role, is_active: row.isActive, permission_overrides: row.permissionOverrides,
+});
+
 export const mapSettings = (row: Row): StoreSettings => ({
   storeId: asString(row.store_id),
   displayName: asString(row.display_name),

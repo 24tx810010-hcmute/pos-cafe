@@ -1,4 +1,6 @@
-export type AppErrorCode =
+import type { WriteErrorCode } from "@/domain/writeOperations";
+
+export type AppErrorCode = WriteErrorCode
   | "AUTH_REQUIRED"
   | "FORBIDDEN"
   | "INVALID_PIN"

@@ -2,7 +2,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, Info, Store } from "lucid
 import { Button, Checkbox, FormControlLabel, TextField } from "@mui/material";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useCreateStoreMutation, useRetrySeedMutation } from "@/features/session";
+import { useCreateStoreMutation } from "@/features/session";
 import { useAppStore } from "../useAppStore";
 import { toToastError } from "../appErrors";
 
@@ -13,7 +13,6 @@ export function CreateStoreScreen() {
   const [seedDemo, setSeedDemo] = useState(false);
   const [nameError, setNameError] = useState("");
   const createStoreMutation = useCreateStoreMutation();
-  const retrySeedMutation = useRetrySeedMutation();
   const [result, setResult] = useState<{ storeKey: string; adminPin: string; seedStatus: string; canRetrySeed: boolean } | null>(null);
 
   const handleCreate = () => {
@@ -43,16 +42,6 @@ export function CreateStoreScreen() {
   };
 
   const loading = createStoreMutation.isPending;
-
-  const handleRetrySeed = () => {
-    retrySeedMutation.mutate(undefined, {
-      onSuccess: () => {
-        setResult((prev) => (prev ? { ...prev, seedStatus: "seeded", canRetrySeed: false } : prev));
-        toast.success("Đã khởi tạo dữ liệu mẫu");
-      },
-      onError: (error) => toast.error(toToastError(error)),
-    });
-  };
 
   const copyText = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(
@@ -109,16 +98,15 @@ export function CreateStoreScreen() {
               <div className="box-border m-0 grid w-full gap-2 rounded-md border border-[#fde68a] bg-[#fffbeb] px-3 py-2.5 text-[13px] leading-[1.5] text-pos-ink" data-testid="seed-failed-warning">
                 <span className="flex items-start gap-2">
                   <AlertTriangle size={15} className="shrink-0 text-[#b45309] mt-0.5" />
-                  Khởi tạo dữ liệu mẫu chưa thành công. Bạn vẫn vào được quán; có thể thử lại bên dưới hoặc trong Cài đặt.
+                  Khởi tạo dữ liệu mẫu chưa thành công. Hãy lưu Store Key, nhập PIN quản lý rồi mở Cài đặt → Khởi tạo dữ liệu mẫu để thử lại.
                 </span>
                 <Button
                   variant="outlined"
                   size="small"
                   className="justify-self-start"
-                  disabled={retrySeedMutation.isPending}
-                  onClick={handleRetrySeed}
+                  onClick={() => setScreen("passcode")}
                 >
-                  {retrySeedMutation.isPending ? "Đang thử lại..." : "Thử khởi tạo lại"}
+                  Nhập PIN để tiếp tục
                 </Button>
               </div>
             )}

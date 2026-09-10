@@ -39,10 +39,10 @@ describe("useRealtimeInvalidation", () => {
     const ports = createMockPorts();
     const cleanup = vi.fn();
     const startSpy = vi.spyOn(ports.realtime, "startStoreInvalidation").mockReturnValue(cleanup);
-    const view = renderProbe(ports, "store-demo-001");
+    const view = renderProbe(ports, "e572ea5f-9adf-493c-8d84-dca3cd86e1eb");
 
     expect(startSpy).toHaveBeenCalledOnce();
-    expect(startSpy.mock.calls[0][0].storeId).toBe("store-demo-001");
+    expect(startSpy.mock.calls[0][0].storeId).toBe("e572ea5f-9adf-493c-8d84-dca3cd86e1eb");
 
     view.rerender(
       <PortsContext.Provider value={ports}>

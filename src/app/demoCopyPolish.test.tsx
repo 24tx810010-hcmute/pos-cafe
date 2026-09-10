@@ -8,7 +8,7 @@ import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 
-const admin: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
 
 const implementationCopyPatterns = [
   /mock/i,
@@ -60,7 +60,7 @@ const renderApp = (
 ) => {
   const state = createSeededMockState();
   if (options.paired ?? true) {
-    state.session = { storeId: "store-demo-001", storeNo: 1 };
+    state.session = { storeId: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", storeNo: 1 };
   }
   const ports = createMockPorts(state);
   const queryClient = new QueryClient({
@@ -137,15 +137,15 @@ describe("demo copy polish", () => {
   it("keeps the future kitchen role out of the employee PIN screen", async () => {
     renderApp({ screen: "passcode", currentEmployee: null });
 
-    expect(await screen.findByTestId("employee-emp-admin")).toBeInTheDocument();
-    expect(screen.getByTestId("employee-emp-cashier-1")).toBeInTheDocument();
-    expect(screen.queryByTestId("employee-emp-kitchen")).not.toBeInTheDocument();
+    expect(await screen.findByTestId("employee-6b7bd350-7db2-4160-8471-cca2668c070d")).toBeInTheDocument();
+    expect(screen.getByTestId("employee-22828322-623b-42e7-8a28-a2bdf367c364")).toBeInTheDocument();
+    expect(screen.queryByTestId("employee-b1885ef9-c9c0-4a02-8757-875a44e8c814")).not.toBeInTheDocument();
   });
 
   it("keeps order UI free of database and draft wording", async () => {
     const { container } = renderApp({
       drawer: "order",
-      orderContext: { orderId: null, tableId: "tbl-b01", orderType: "dine_in" },
+      orderContext: { orderId: null, tableId: "7b035353-73d6-44bc-8ec4-1ab9951f7a58", orderType: "dine_in" },
     });
 
     expect(await screen.findByTestId("order-drawer")).toBeInTheDocument();

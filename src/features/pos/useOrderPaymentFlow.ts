@@ -17,6 +17,8 @@ export const useSubmitOrderMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: false,
+    networkMode: "always",
     mutationFn: (input: SubmitOrderFlowInput) => submitOrderAndPrint(ports, input),
     // Fire-and-forget: cập nhật UI ngay (đóng drawer, mở popup gửi bếp), đồng bộ
     // các query nền song song; máy khác nhận trễ tối đa ~5s (poll/realtime).
@@ -31,6 +33,8 @@ export const usePayOrderMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: false,
+    networkMode: "always",
     mutationFn: (input: PayOrderFlowInput) => payOrderAndPrint(ports, input),
     onSuccess: (result) => {
       void invalidateAfterOrderMutation(queryClient, result.orderId).catch(() => {});
@@ -44,6 +48,8 @@ export const usePayOrderItemsMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: false,
+    networkMode: "always",
     mutationFn: (input: PayOrderItemsFlowInput) => payOrderItemsAndPrint(ports, input),
     onSuccess: (result) => {
       // Tách đơn: đơn gốc trên bàn cũng đổi (order_no mới, tổng mới) -> invalidate cả hai.
@@ -58,6 +64,8 @@ export const useVoidOrderMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: false,
+    networkMode: "always",
     mutationFn: (input: VoidPaidOrderFlowInput) => voidPaidOrder(ports, input),
     onSuccess: (result) => {
       // Đơn chuyển 'void': history + order detail + report đều cần cập nhật.

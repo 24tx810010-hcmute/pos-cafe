@@ -30,7 +30,7 @@ describe("demo floor decor", () => {
 
   it("keeps the initial mock floor varied across both areas", () => {
     expect(mockFloorPlan.decorItems).toHaveLength(13);
-    expect(new Set(mockFloorPlan.decorItems.map((item) => item.areaId))).toEqual(new Set(["area-ground", "area-first"]));
+    expect(new Set(mockFloorPlan.decorItems.map((item) => item.areaId))).toEqual(new Set(["045eee43-5266-442f-8e87-978c1cc30d0c", "ba1df31a-34f3-4ed7-8808-207160e8ae73"]));
     expect(new Set(mockFloorPlan.decorItems.map((item) => item.assetKey)).size).toBeGreaterThanOrEqual(10);
     expect(mockFloorPlan.decorItems.every((item) => getFloorDecorAsset(item.assetKey))).toBe(true);
     expectDecorDoesNotCoverTables(mockFloorPlan);

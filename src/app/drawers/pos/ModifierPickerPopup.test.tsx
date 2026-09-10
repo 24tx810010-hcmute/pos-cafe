@@ -5,8 +5,8 @@ import type { ItemModifierGroup } from "@/features/pos";
 import { ModifierPickerPopup } from "./ModifierPickerPopup";
 
 const menuItem: MenuItem = {
-  id: "mi-latte",
-  categoryId: "cat-coffee",
+  id: "d50ff72b-d0bc-4832-8888-183c19f5a158",
+  categoryId: "c68d7fbd-c06a-42a4-8140-476da8ebbf74",
   name: "Latte",
   price: 45000,
   imageAssetKey: null,
@@ -24,7 +24,7 @@ const groups: ItemModifierGroup[] = [
   },
   {
     group: { id: "og-topping", name: "Topping", selectType: "multi", isRequired: false, sortOrder: 2 },
-    values: [{ id: "ov-tran-chau", optionGroupId: "og-topping", name: "Trân châu", priceDelta: 7000, sortOrder: 1 }],
+    values: [{ id: "dbbecac5-7b06-42c8-8a53-44e08e8d61c3", optionGroupId: "og-topping", name: "Trân châu", priceDelta: 7000, sortOrder: 1 }],
   },
 ];
 
@@ -42,11 +42,11 @@ describe("ModifierPickerPopup", () => {
     render(<ModifierPickerPopup menuItem={menuItem} groups={groups} onConfirm={onConfirm} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByTestId("modifier-value-ov-m"));
-    fireEvent.click(screen.getByTestId("modifier-value-ov-tran-chau"));
+    fireEvent.click(screen.getByTestId("modifier-value-dbbecac5-7b06-42c8-8a53-44e08e8d61c3"));
     // Mặc định số lượng 1, tăng lên 2.
-    expect(screen.getByTestId("modifier-qty-ov-tran-chau")).toHaveTextContent("1");
-    fireEvent.click(screen.getByTestId("modifier-qty-inc-ov-tran-chau"));
-    expect(screen.getByTestId("modifier-qty-ov-tran-chau")).toHaveTextContent("2");
+    expect(screen.getByTestId("modifier-qty-dbbecac5-7b06-42c8-8a53-44e08e8d61c3")).toHaveTextContent("1");
+    fireEvent.click(screen.getByTestId("modifier-qty-inc-dbbecac5-7b06-42c8-8a53-44e08e8d61c3"));
+    expect(screen.getByTestId("modifier-qty-dbbecac5-7b06-42c8-8a53-44e08e8d61c3")).toHaveTextContent("2");
 
     fireEvent.click(screen.getByTestId("modifier-confirm"));
 
@@ -55,7 +55,7 @@ describe("ModifierPickerPopup", () => {
     expect(options).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ optionValueId: "ov-m", quantity: 1 }),
-        expect.objectContaining({ optionValueId: "ov-tran-chau", quantity: 2 }),
+        expect.objectContaining({ optionValueId: "dbbecac5-7b06-42c8-8a53-44e08e8d61c3", quantity: 2 }),
       ]),
     );
     expect(options).toHaveLength(2);

@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { hasPermission } from "@/core/guards";
 import { formatVnd } from "@/core/money";
 import type { PaymentSelection } from "@/features/pos";
+import type { OrderDetail } from "@/domain";
 import {
   buildPayableLines,
   clampSelection,
@@ -15,6 +16,7 @@ import {
   useFloorPlanQuery,
   useOrderDetailQuery,
   usePayOrderItemsMutation,
+  useWriteAttempt,
 } from "@/features/pos";
 import { notifyUiError, toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
@@ -22,6 +24,7 @@ import { ticketFromOrderDetail } from "../../components/ReceiptPreview";
 import { useAppStore } from "../../useAppStore";
 import { PaymentCashierPane } from "./PaymentCashierPane";
 import { PaymentSummaryPane } from "./PaymentSummaryPane";
+import { WriteAttemptNotice } from "./WriteAttemptNotice";
 import {
   PaymentHeader,
   PaymentState,
@@ -38,7 +41,9 @@ export function PaymentDrawer() {
   const floorPlanQuery = useFloorPlanQuery();
   const orderQuery = useOrderDetailQuery(paymentOrderId);
   const payMutation = usePayOrderItemsMutation();
-  const order = orderQuery.data;
+  const { blocked, attempt } = useWriteAttempt();
+  const confirmedOrder = useRef<OrderDetail | null>(null);
+  const order = attempt && attempt.status !== "settled" && confirmedOrder.current ? confirmedOrder.current : orderQuery.data;
   const [receivedAmountInput, setReceivedAmountInput] = useState("0");
   const [printReceipt, setPrintReceipt] = useState(true);
 
@@ -53,10 +58,9 @@ export function PaymentDrawer() {
     const sameOrder = lastStampRef.current?.startsWith(`${order.id}:`) ?? false;
     lastStampRef.current = orderStamp;
     setSelection((previous) => {
-      // Đơn đổi phiên bản (máy khác sửa / vừa trả một phần): kẹp selection về dữ
-      // liệu mới; nếu không còn gì hợp lệ thì quay về mặc định "Chọn tất cả".
+      // Refetch never turns an empty prior choice into a new full-payment intent.
       const next = sameOrder ? clampSelection(payableLines, previous) : fullSelection(payableLines);
-      return Object.keys(next).length > 0 ? next : fullSelection(payableLines);
+      return next;
     });
   }, [order, orderStamp, payableLines]);
 
@@ -84,6 +88,7 @@ export function PaymentDrawer() {
     insufficient ||
     nothingSelected ||
     paymentPermissionDenied ||
+    blocked ||
     payMutation.isPending;
   const paymentButtonLabel = orderClosed
     ? order.status === "paid"
@@ -144,10 +149,12 @@ export function PaymentDrawer() {
   };
 
   const toggleSelectAll = (checked: boolean) => {
+    if (blocked) return;
     setSelection(checked ? fullSelection(payableLines) : {});
   };
 
   const toggleLine = (orderItemId: string) => {
+    if (blocked) return;
     setSelection((previous) => {
       const next = { ...previous };
       if (next[orderItemId]) {
@@ -162,6 +169,7 @@ export function PaymentDrawer() {
 
   // Nút "+": tăng số lượng trả lần này, chạm trần thì quay về 1 (một nút, hợp tablet).
   const cycleLineQuantity = (orderItemId: string) => {
+    if (blocked) return;
     const line = payableLines.find((candidate) => candidate.orderItemId === orderItemId);
     if (!line) return;
     setSelection((previous) => {
@@ -172,7 +180,8 @@ export function PaymentDrawer() {
   };
 
   const payOrder = () => {
-    if (!order || !currentEmployee) return;
+    if (!order || !currentEmployee || paymentDisabled) return;
+    confirmedOrder.current = structuredClone(order);
 
     if (orderClosed) {
       toast("Đơn này đã được cập nhật trên thiết bị khác.");
@@ -184,7 +193,7 @@ export function PaymentDrawer() {
       {
         onSuccess: (result) => {
           // In bill từ payload trả về ngay trong mutation (không chờ refetch).
-          if (printReceipt) {
+          if (printReceipt && result.initialSuccess) {
             openReceiptPreview({ variant: "receipt", doc: result.receipt });
           }
           if (result.mode === "full") {
@@ -196,7 +205,7 @@ export function PaymentDrawer() {
           toast.success(
             `Đã tách và thanh toán đơn #${result.orderNo} (${formatVnd(result.total)}). Bàn còn ${formatVnd(result.sourceTotal)}.`,
           );
-          // Xoá selection để effect đồng bộ đưa về mặc định "Chọn tất cả" phần còn lại.
+          // A new payment requires a new deliberate selection after this success.
           setSelection({});
           void orderQuery.refetch();
         },
@@ -224,6 +233,7 @@ export function PaymentDrawer() {
 
   return (
     <PortalDrawer testId="payment-drawer" onOutsideClick={closeDrawer}>
+      <WriteAttemptNotice />
       <PaymentHeader
         title={`Thanh toán · Đơn #${order?.orderNo ?? "..."}`}
         meta={headerMeta.join(" · ")}

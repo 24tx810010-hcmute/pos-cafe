@@ -4,7 +4,9 @@ import { Button } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { hasPermission } from "@/core/guards";
-import type { EmployeePermission } from "@/domain";
+import type { EmployeePermission, PriceChangedDetails } from "@/domain";
+import { AppError } from "@/core/appError";
+import { PriceChangedNotice } from "./PriceChangedNotice";
 import {
   adjustDraftQuantity,
   buildCartLines,
@@ -14,21 +16,24 @@ import {
   getOrderPrimaryAction,
   getSubmitOrderPermission,
   isDraftChangedFromOrder,
-  orderDetailToDraft,
   useOrderModifierPicker,
   useFloorPlanQuery,
   useMenuQuery,
   useOrderDetailQuery,
   useSubmitOrderMutation,
+  useWriteAttempt,
 } from "@/features/pos";
 import { usePorts } from "@/features/shared/portsContext";
 import { notifyUiError, toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
-import { PortalPopup } from "../../components/PortalPopup";
+import { DiscardDraftDialog } from "./DiscardDraftDialog";
 import { useAppStore } from "../../useAppStore";
 import { ModifierPickerPopup } from "./ModifierPickerPopup";
 import { OrderCartPane } from "./OrderCartPane";
 import { OrderMenuPane } from "./OrderMenuPane";
+import { useServerOrderDraft } from "./useServerOrderDraft";
+import { WriteAttemptNotice } from "./WriteAttemptNotice";
+import { clearDrawerExitGuard, registerDrawerExitGuard } from "../../drawerNavigation";
 
 export function OrderDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
@@ -43,25 +48,23 @@ export function OrderDrawer() {
   const ports = usePorts();
 
   const [search, setSearch] = useState("");
-  const [confirmClose, setConfirmClose] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const [noteOpenId, setNoteOpenId] = useState<string | null>(null);
 
   const menuQuery = useMenuQuery();
   const floorPlanQuery = useFloorPlanQuery();
   const orderQuery = useOrderDetailQuery(context?.orderId ?? null);
   const submitMutation = useSubmitOrderMutation();
+  const { blocked, coordinator } = useWriteAttempt();
+  const { editingOrder, remoteConflict, acceptCurrent } = useServerOrderDraft(context, orderQuery.data);
+  const priceChanged = submitMutation.error instanceof AppError && submitMutation.error.code === "PRICE_CHANGED"
+    ? submitMutation.error.cause as PriceChangedDetails | undefined : undefined;
 
   useEffect(() => {
     const firstCategory = menuQuery.data?.categories[0]?.id;
     if (!activeCategoryId && firstCategory) setActiveCategoryId(firstCategory);
   }, [activeCategoryId, menuQuery.data, setActiveCategoryId]);
 
-  useEffect(() => {
-    if (context?.orderId && orderQuery.data) {
-      setDraftItems(orderDetailToDraft(orderQuery.data));
-    }
-    if (context && !context.orderId) setDraftItems([]);
-  }, [context, orderQuery.data, setDraftItems]);
 
   const menu = menuQuery.data;
   const picker = useOrderModifierPicker(menu, draftItems, setDraftItems);
@@ -70,12 +73,16 @@ export function OrderDrawer() {
   const items = search
     ? (menu?.menuItems.filter((item) => item.name.toLowerCase().includes(search.toLowerCase())) ?? [])
     : allCategoryItems;
-  const orderDetail = orderQuery.data ?? null;
+  const orderDetail = editingOrder;
   const table = context?.tableId ? floorPlanQuery.data?.tables.find((candidate) => candidate.id === context.tableId) : null;
   const cartLines = useMemo(() => (menu ? buildCartLines(menu, draftItems) : []), [draftItems, menu]);
   const total = calculateCartTotal(cartLines);
-  const isDirty = draftItems.length > 0;
   const draftChanged = isDraftChangedFromOrder(orderDetail, draftItems);
+  useEffect(() => registerDrawerExitGuard((navigate) => {
+    const attempt = coordinator.snapshot();
+    if (draftChanged && (!attempt || attempt.status === "settled")) setPendingNavigation(() => navigate);
+    else navigate();
+  }), [draftChanged, coordinator]);
   const primaryAction = getOrderPrimaryAction(orderDetail, draftItems);
   const requiredPermission: EmployeePermission = primaryAction === "payment"
     ? "payment.take" : getSubmitOrderPermission(context ?? { orderId: null }, draftItems);
@@ -95,7 +102,7 @@ export function OrderDrawer() {
       : primaryAction === "payment"
         ? !orderDetail || submitMutation.isPending
         : submitDisabled;
-  const primaryDisabledWithPermission = primaryDisabled || permissionDenied;
+  const primaryDisabledWithPermission = primaryDisabled || permissionDenied || blocked || remoteConflict || !!priceChanged;
   const primaryActionLabel = submitMutation.isPending
     ? "Đang gửi..."
     : primaryAction === "closed"
@@ -106,16 +113,11 @@ export function OrderDrawer() {
         ? "Thanh toán"
         : "In/Gửi đơn";
 
-  const handleClose = () => {
-    if (isDirty && !orderDetail) {
-      setConfirmClose(true);
-      return;
-    }
-    closeDrawer();
-  };
+  const handleClose = closeDrawer;
 
   const adjustQuantity = (id: string, delta: number) => {
-    setDraftItems(adjustDraftQuantity(draftItems, id, delta));
+    try { setDraftItems(adjustDraftQuantity(draftItems, id, delta, menu)); }
+    catch (error) { notifyUiError(error); }
   };
 
   const handleSubmitError = (error: unknown) => {
@@ -132,7 +134,7 @@ export function OrderDrawer() {
   };
 
   const submitOrder = () => {
-    if (!context || !currentEmployee) return;
+    if (!context || !currentEmployee || primaryDisabledWithPermission) return;
 
     // Chốt các món MỚI THÊM ngay tại thời điểm bấm gửi (dữ liệu trên máy) để in
     // phiếu gửi bếp — không phụ thuộc payload/refetch từ server.
@@ -144,10 +146,11 @@ export function OrderDrawer() {
         actor: currentEmployee,
         expectedVersion: orderDetail?.lockVersion ?? null,
         items: draftItems,
+        menu,
       },
       {
         onSuccess: (result) => {
-          if (result.status !== "void" && addedLines.length > 0) {
+          if (result.initialSuccess && result.status !== "void" && addedLines.length > 0) {
             openReceiptPreview({
               variant: "kitchen",
               doc: {
@@ -160,6 +163,7 @@ export function OrderDrawer() {
             });
           }
           toast.success(result.status === "void" ? "Đã huỷ đơn mở." : "Đã in/gửi đơn.");
+          clearDrawerExitGuard();
           closeDrawer();
         },
         onError: handleSubmitError,
@@ -189,30 +193,14 @@ export function OrderDrawer() {
   const titleLabel = orderDetail ? `${orderTypeLabel} · Đơn #${orderDetail.orderNo}` : `${orderTypeLabel} · Đơn mới`;
 
   return (
-    <PortalDrawer testId="order-drawer" onOutsideClick={closeDrawer}>
-      {confirmClose && (
-        <PortalPopup placement="Centered" viewport="workspace" overlayClassName="bg-slate-900/50">
-          <div className="grid w-[min(360px,90vw)] gap-3 rounded-pos bg-pos-surface p-6 shadow-[0_20px_60px_rgb(0_0_0_/_25%)] [&_h3]:m-0 [&_p]:m-0 [&_p]:text-sm [&_p]:text-pos-muted">
-            <h3>Bỏ đơn chưa gửi?</h3>
-            <p>Các món vừa chọn sẽ không được lưu.</p>
-            <div className="flex flex-wrap justify-end gap-2.5 [&_.MuiButton-root]:min-w-24">
-              <Button variant="outlined" onClick={() => setConfirmClose(false)}>
-                Tiếp tục chỉnh sửa
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={() => {
-                  setConfirmClose(false);
-                  closeDrawer();
-                }}
-              >
-                Bỏ đơn
-              </Button>
-            </div>
-          </div>
-        </PortalPopup>
-      )}
+    <PortalDrawer testId="order-drawer" onOutsideClick={handleClose}>
+      <WriteAttemptNotice />
+      {remoteConflict && <div role="alert" className="m-3 rounded border border-amber-400 p-3"><p>Đơn đã thay đổi trên server. Phần đang chỉnh sửa vẫn được giữ để bạn kiểm tra.</p><Button onClick={() => {
+        acceptCurrent();
+        coordinator.leave();
+      }}>Bỏ bản đang sửa và dùng đơn trên server</Button></div>}
+      {priceChanged && <PriceChangedNotice priceChanged={priceChanged} draftItems={draftItems} menu={menu} setDraftItems={setDraftItems} onReviewed={() => { submitMutation.reset(); coordinator.leave(); }} />}
+      {pendingNavigation && <DiscardDraftDialog onKeep={() => setPendingNavigation(null)} onDiscard={() => { const navigate = pendingNavigation; setPendingNavigation(null); navigate(); }} />}
 
       <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-pos-line bg-white/95 px-[18px] py-3 max-[980px]:min-h-[50px] max-[980px]:gap-x-2.5 max-[980px]:gap-y-2 max-[980px]:px-2.5 max-[980px]:py-2">
         <div className="min-w-0 flex-[1_1_240px] grid gap-1 [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-normal [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-normal [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-normal [&_p]:mb-0 [&_p]:mt-1 [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-xs [&_p]:text-pos-muted max-sm:[&_h1]:text-[17px] max-sm:[&_h2]:text-[15px] max-sm:[&_h3]:text-[15px] [&_h2]:overflow-hidden [&_h2]:text-ellipsis [&_h2]:whitespace-nowrap [&_h3]:overflow-hidden [&_h3]:text-ellipsis [&_h3]:whitespace-nowrap">

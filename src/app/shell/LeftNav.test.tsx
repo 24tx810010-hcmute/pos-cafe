@@ -4,7 +4,7 @@ import type { Employee } from "@/domain";
 import { useAppStore } from "../useAppStore";
 import { LeftNav } from "./LeftNav";
 
-const admin: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
 
 afterEach(() => {
   cleanup();

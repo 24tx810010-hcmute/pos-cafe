@@ -21,26 +21,34 @@ import {
   submitOrderAndPrint,
 } from "./orderFlow";
 
-const adminActor: Employee = { id: "emp-admin", name: "Quản lý", role: "admin", isActive: true };
+const adminActor: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
+
+const pairedMockPorts = async () => {
+  const state = createSeededMockState();
+  state.session = { storeId: state.settings.storeId, storeNo: 1 };
+  const ports = createMockPorts(state);
+  await ports.employee.startSession(adminActor.id, "123456");
+  return ports;
+};
 
 const getMockOrder = async (): Promise<OrderDetail> => {
-  const ports = createMockPorts(createSeededMockState());
-  return ports.order.getOrder("ord-b02");
+  const ports = await pairedMockPorts();
+  return ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
 };
 
 describe("orderFlow", () => {
-  it("converts order snapshots to draft items without display-only price/name fields", async () => {
+  it("preserves source identity and immutable price/name snapshots in drafts", async () => {
     const order = await getMockOrder();
     const draft = orderDetailToDraft(order);
 
     expect(draft[0]).toMatchObject({
-      menuItemId: "mi-ca-phe-sua",
+      menuItemId: "3e43bb8c-198f-443f-83ab-18696983edaa",
       quantity: 2,
       note: "Ít đá",
-      options: [expect.objectContaining({ optionValueId: "ov-size-m" })],
+      options: [expect.objectContaining({ optionValueId: "a5f986a6-ea67-4dd3-866e-42a0be8a0497" })],
     });
-    expect(draft[0].id).not.toBe("oi-b02-1");
-    expect(draft[0].options[0].id).not.toBe("oio-b02-1");
+    expect(draft[0].id).toBe("3c00b7a3-016f-45a3-8f96-664314c26b4a");
+    expect(draft[0].options[0].id).toBe("a23319a4-5efa-4e59-8207-57e881d5d631");
     expect(draft[0]).not.toHaveProperty("itemName");
     expect(draft[0]).not.toHaveProperty("unitPrice");
   });
@@ -53,13 +61,13 @@ describe("orderFlow", () => {
     expect(diffAddedPrintLines(mockMenuCatalog, order, base)).toEqual([]);
 
     // Thêm 1 Latte -> phiếu bếp chỉ có Latte x1.
-    const withLatte = addDraftMenuItem(base, { id: "mi-latte" });
+    const withLatte = addDraftMenuItem(base, { id: "d50ff72b-d0bc-4832-8888-183c19f5a158" });
     expect(diffAddedPrintLines(mockMenuCatalog, order, withLatte)).toEqual([
       expect.objectContaining({ name: "Latte", quantity: 1, options: [] }),
     ]);
 
     // Tăng số lượng món đã có -> delta = phần tăng thêm.
-    const moreCoffee = adjustDraftQuantity(base, base[0].id, 1);
+    const moreCoffee = adjustDraftQuantity(base, base[0].id, 1, mockMenuCatalog);
     expect(diffAddedPrintLines(mockMenuCatalog, order, moreCoffee)).toEqual([
       expect.objectContaining({ name: "Cà phê sữa", quantity: 1 }),
     ]);
@@ -71,11 +79,11 @@ describe("orderFlow", () => {
   it("builds cart lines from menu catalog and option deltas", () => {
     const draft: SubmitOrderDraftItem[] = [
       {
-        id: "draft-1",
-        menuItemId: "mi-latte",
+        id: "10000000-0000-4000-8000-000000000001",
+        menuItemId: "d50ff72b-d0bc-4832-8888-183c19f5a158",
         quantity: 2,
         note: null,
-        options: [{ id: "draft-option-1", optionValueId: "ov-them-shot", quantity: 1 }],
+        options: [{ id: "draft-option-1", optionValueId: "a4b5f811-749a-4634-8def-b0cb4b080a05", quantity: 1 }],
       },
     ];
 
@@ -83,7 +91,7 @@ describe("orderFlow", () => {
 
     expect(lines).toEqual([
       {
-        id: "draft-1",
+        id: "10000000-0000-4000-8000-000000000001",
         name: "Latte",
         quantity: 2,
         optionText: "Thêm shot",
@@ -95,14 +103,14 @@ describe("orderFlow", () => {
 
   it("increments simple menu lines and removes zero quantity lines", () => {
     const draft: SubmitOrderDraftItem[] = [
-      { id: "draft-1", menuItemId: "mi-latte", quantity: 1, note: null, options: [] },
+      { id: "10000000-0000-4000-8000-000000000001", menuItemId: "d50ff72b-d0bc-4832-8888-183c19f5a158", quantity: 1, note: null, options: [] },
     ];
 
-    const incremented = addDraftMenuItem(draft, { id: "mi-latte" });
-    const removed = adjustDraftQuantity(incremented, "draft-1", -2);
+    const incremented = addDraftMenuItem(draft, { id: "d50ff72b-d0bc-4832-8888-183c19f5a158" });
+    const removed = adjustDraftQuantity(incremented, "10000000-0000-4000-8000-000000000001", -2);
 
     expect(incremented).toEqual([
-      { id: "draft-1", menuItemId: "mi-latte", quantity: 2, note: null, options: [] },
+      { id: "10000000-0000-4000-8000-000000000001", menuItemId: "d50ff72b-d0bc-4832-8888-183c19f5a158", quantity: 2, note: null, options: [] },
     ]);
     expect(removed).toEqual([]);
   });
@@ -129,25 +137,27 @@ describe("orderFlow", () => {
     expect(getOrderPrimaryAction(paidOrder, draft)).toBe("closed");
   });
 
-  it("submits order changes through the order port and prints the returned ticket", async () => {
-    const ports = createMockPorts(createSeededMockState());
+  it("registers and executes an order without automatically printing", async () => {
+    const ports = await pairedMockPorts();
     const printSpy = vi.spyOn(ports.print, "renderOrderTicket");
 
     const result = await submitOrderAndPrint(ports, {
-      context: { orderId: null, tableId: "tbl-b01", orderType: "dine_in" },
+      context: { orderId: null, tableId: "7b035353-73d6-44bc-8ec4-1ab9951f7a58", orderType: "dine_in" },
       actor: adminActor,
       expectedVersion: null,
-      items: [{ id: "draft-1", menuItemId: "mi-latte", quantity: 1, note: null, options: [] }],
+      menu: mockMenuCatalog,
+      items: [{ id: "10000000-0000-4000-8000-000000000001", menuItemId: "d50ff72b-d0bc-4832-8888-183c19f5a158", quantity: 1, note: null, options: [] }],
     });
 
     expect(result.status).toBe("open");
     expect(result.tableStatus).toBe("occupied");
-    expect(printSpy).toHaveBeenCalledWith(result.ticket);
+    expect(printSpy).not.toHaveBeenCalled();
+    expect(result.initialSuccess).toBe(true);
   });
 
   it("blocks insufficient cash before calling payment port", async () => {
-    const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+    const ports = await pairedMockPorts();
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const paymentSpy = vi.spyOn(ports.payment, "payOrder");
 
     await expect(
@@ -155,39 +165,40 @@ describe("orderFlow", () => {
         order,
         actor: adminActor,
         receivedAmount: order.total - 1,
-        paymentId: "pay-low",
+        paymentId: "10000000-0000-4000-8000-000000000003",
       }),
     ).rejects.toMatchObject({ code: "PAYMENT_AMOUNT_TOO_LOW" });
     expect(paymentSpy).not.toHaveBeenCalled();
   });
 
-  it("pays through the payment port and prints the returned receipt", async () => {
-    const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+  it("registers and executes payment and returns its immutable receipt", async () => {
+    const ports = await pairedMockPorts();
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const printSpy = vi.spyOn(ports.print, "renderReceipt");
 
     const result = await payOrderAndPrint(ports, {
       order,
       actor: adminActor,
       receivedAmount: order.total + 5000,
-      paymentId: "pay-ok",
+      paymentId: "10000000-0000-4000-8000-000000000004",
     });
 
     expect(result.status).toBe("paid");
     expect(result.changeAmount).toBe(5000);
-    expect(printSpy).toHaveBeenCalledWith(result.receipt);
+    expect(printSpy).not.toHaveBeenCalled();
+    expect(result.initialSuccess).toBe(true);
   });
 
   it("can complete payment without printing the receipt", async () => {
-    const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+    const ports = await pairedMockPorts();
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const printSpy = vi.spyOn(ports.print, "renderReceipt");
 
     const result = await payOrderAndPrint(ports, {
       order,
       actor: adminActor,
       receivedAmount: order.total,
-      paymentId: "pay-no-print",
+      paymentId: "10000000-0000-4000-8000-000000000005",
       printReceipt: false,
     });
 
@@ -198,9 +209,9 @@ describe("orderFlow", () => {
 
 describe("orderFlow action permissions", () => {
   it("requires the permission for the exact new, update, and void-open branch", async () => {
-    const ports = createMockPorts(createSeededMockState());
+    const ports = await pairedMockPorts();
     const submitSpy = vi.spyOn(ports.order, "submitOrderChanges");
-    const existing = await ports.order.getOrder("ord-b02");
+    const existing = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const cashierDeniedCreate: Employee = {
       id: "emp-cashier-create-denied",
       name: "Thu ngân",
@@ -211,10 +222,11 @@ describe("orderFlow action permissions", () => {
 
     await expect(
       submitOrderAndPrint(ports, {
-        context: { orderId: null, tableId: "tbl-b01", orderType: "dine_in" },
+        context: { orderId: null, tableId: "7b035353-73d6-44bc-8ec4-1ab9951f7a58", orderType: "dine_in" },
         actor: cashierDeniedCreate,
         expectedVersion: null,
-        items: [{ id: "draft-new", menuItemId: "mi-latte", quantity: 1, note: null, options: [] }],
+        menu: mockMenuCatalog,
+        items: [{ id: "10000000-0000-4000-8000-000000000002", menuItemId: "d50ff72b-d0bc-4832-8888-183c19f5a158", quantity: 1, note: null, options: [] }],
       }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
@@ -258,28 +270,32 @@ describe("orderFlow action permissions", () => {
   });
 
   it("allows a kitchen employee granted order.create without granting other order rights", async () => {
-    const ports = createMockPorts(createSeededMockState());
+    const ports = await pairedMockPorts();
     const kitchenWithCreate: Employee = {
-      id: "emp-kitchen-create",
+      id: "b1885ef9-c9c0-4a02-8757-875a44e8c814-create",
       name: "Bếp tạo đơn",
       role: "kitchen",
       isActive: true,
       permissionOverrides: { grants: ["order.create"], denies: [] },
     };
 
+    await ports.employee.createEmployee({ id: kitchenWithCreate.id, name: kitchenWithCreate.name, role: "kitchen", pin: "222222" });
+    await ports.employee.updateEmployee({ id: kitchenWithCreate.id, permissionOverrides: kitchenWithCreate.permissionOverrides });
+    await ports.employee.startSession(kitchenWithCreate.id, "222222");
     await expect(
       submitOrderAndPrint(ports, {
-        context: { orderId: null, tableId: "tbl-b01", orderType: "dine_in" },
+        context: { orderId: null, tableId: "7b035353-73d6-44bc-8ec4-1ab9951f7a58", orderType: "dine_in" },
         actor: kitchenWithCreate,
         expectedVersion: null,
-        items: [{ id: "draft-new", menuItemId: "mi-latte", quantity: 1, note: null, options: [] }],
+        menu: mockMenuCatalog,
+        items: [{ id: "10000000-0000-4000-8000-000000000002", menuItemId: "d50ff72b-d0bc-4832-8888-183c19f5a158", quantity: 1, note: null, options: [] }],
       }),
     ).resolves.toMatchObject({ status: "open" });
   });
 
   it("blocks both full and split payments before either payment port is called", async () => {
-    const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+    const ports = await pairedMockPorts();
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const paySpy = vi.spyOn(ports.payment, "payOrder");
     const payItemsSpy = vi.spyOn(ports.payment, "payOrderItems");
     const cashierDeniedPayment: Employee = {
@@ -302,7 +318,7 @@ describe("orderFlow action permissions", () => {
         order,
         actor: cashierDeniedPayment,
         receivedAmount: 29000,
-        selection: { "oi-b02-1": 1 },
+        selection: { "3c00b7a3-016f-45a3-8f96-664314c26b4a": 1 },
       }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
@@ -312,15 +328,15 @@ describe("orderFlow action permissions", () => {
 });
 
 describe("instant pay selection", () => {
-  // ord-b02: Cà phê sữa ×2 (29k, đã gồm option) + Bạc xỉu ×1 (32k) + Croissant ×1 (35k) = 125k.
+  // 7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c: Cà phê sữa ×2 (29k, đã gồm option) + Bạc xỉu ×1 (32k) + Croissant ×1 (35k) = 125k.
   it("builds payable lines with per-unit totals", async () => {
     const order = await getMockOrder();
     const lines = buildPayableLines(order);
 
     expect(lines).toEqual([
-      expect.objectContaining({ orderItemId: "oi-b02-1", name: "Cà phê sữa", quantity: 2, unitTotal: 29000 }),
-      expect.objectContaining({ orderItemId: "oi-b02-2", unitTotal: 32000 }),
-      expect.objectContaining({ orderItemId: "oi-b02-3", unitTotal: 35000 }),
+      expect.objectContaining({ orderItemId: "3c00b7a3-016f-45a3-8f96-664314c26b4a", name: "Cà phê sữa", quantity: 2, unitTotal: 29000 }),
+      expect.objectContaining({ orderItemId: "64a0c267-a3e2-47ca-878b-c5b47c7452e5", unitTotal: 32000 }),
+      expect.objectContaining({ orderItemId: "923bfabf-cffd-4d90-84a8-50bd47b0fd09", unitTotal: 35000 }),
     ]);
   });
 
@@ -332,19 +348,19 @@ describe("instant pay selection", () => {
     expect(selectionAmount(lines, all)).toBe(125000);
     expect(isFullSelection(lines, all)).toBe(true);
 
-    const partial = { "oi-b02-1": 1, "oi-b02-2": 1 };
+    const partial = { "3c00b7a3-016f-45a3-8f96-664314c26b4a": 1, "64a0c267-a3e2-47ca-878b-c5b47c7452e5": 1 };
     expect(selectionAmount(lines, partial)).toBe(61000);
     expect(isFullSelection(lines, partial)).toBe(false);
 
     // Clamp: vượt số lượng -> hạ về còn lại; dòng lạ -> loại bỏ; qty 0 -> loại bỏ.
-    expect(clampSelection(lines, { "oi-b02-1": 9, "oi-missing": 1, "oi-b02-3": 0 })).toEqual({
-      "oi-b02-1": 2,
+    expect(clampSelection(lines, { "3c00b7a3-016f-45a3-8f96-664314c26b4a": 9, "oi-missing": 1, "923bfabf-cffd-4d90-84a8-50bd47b0fd09": 0 })).toEqual({
+      "3c00b7a3-016f-45a3-8f96-664314c26b4a": 2,
     });
   });
 
   it("routes a partial selection through payOrderItems: split order paid, source stays open", async () => {
-    const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+    const ports = await pairedMockPorts();
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const payOrderSpy = vi.spyOn(ports.payment, "payOrder");
     const printSpy = vi.spyOn(ports.print, "renderReceipt");
 
@@ -352,8 +368,8 @@ describe("instant pay selection", () => {
       order,
       actor: adminActor,
       receivedAmount: 61000,
-      selection: { "oi-b02-1": 1, "oi-b02-2": 1 },
-      paymentId: "pay-part",
+      selection: { "3c00b7a3-016f-45a3-8f96-664314c26b4a": 1, "64a0c267-a3e2-47ca-878b-c5b47c7452e5": 1 },
+      paymentId: "10000000-0000-4000-8000-000000000006",
     });
 
     expect(payOrderSpy).not.toHaveBeenCalled();
@@ -363,18 +379,19 @@ describe("instant pay selection", () => {
       status: "paid",
       orderNo: 24,
       total: 61000,
-      sourceOrderId: "ord-b02",
+      sourceOrderId: "7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c",
       sourceTotal: 64000,
     });
-    expect(printSpy).toHaveBeenCalledWith(result.receipt);
+    expect(printSpy).not.toHaveBeenCalled();
+    expect(result.initialSuccess).toBe(true);
 
-    const source = await ports.order.getOrder("ord-b02");
+    const source = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     expect(source.status).toBe("open");
   });
 
   it("routes a full selection through payOrder so the table is freed in one call", async () => {
-    const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+    const ports = await pairedMockPorts();
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const payItemsSpy = vi.spyOn(ports.payment, "payOrderItems");
 
     const result = await payOrderItemsAndPrint(ports, {
@@ -382,7 +399,7 @@ describe("instant pay selection", () => {
       actor: adminActor,
       receivedAmount: 125000,
       selection: fullSelection(buildPayableLines(order)),
-      paymentId: "pay-full",
+      paymentId: "10000000-0000-4000-8000-000000000007",
     });
 
     expect(payItemsSpy).not.toHaveBeenCalled();
@@ -390,8 +407,8 @@ describe("instant pay selection", () => {
   });
 
   it("rejects empty selections and low cash before calling the payment port", async () => {
-    const ports = createMockPorts(createSeededMockState());
-    const order = await ports.order.getOrder("ord-b02");
+    const ports = await pairedMockPorts();
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const payItemsSpy = vi.spyOn(ports.payment, "payOrderItems");
 
     await expect(
@@ -402,24 +419,24 @@ describe("instant pay selection", () => {
         order,
         actor: adminActor,
         receivedAmount: 28000,
-        selection: { "oi-b02-1": 1 },
+        selection: { "3c00b7a3-016f-45a3-8f96-664314c26b4a": 1 },
       }),
     ).rejects.toMatchObject({ code: "PAYMENT_AMOUNT_TOO_LOW" });
     expect(payItemsSpy).not.toHaveBeenCalled();
   });
 
   it("keeps the source order draft-able like a normal order after a split", async () => {
-    const ports = createMockPorts(createSeededMockState());
-    const before = await ports.order.getOrder("ord-b02");
+    const ports = await pairedMockPorts();
+    const before = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     await payOrderItemsAndPrint(ports, {
       order: before,
       actor: adminActor,
       receivedAmount: 61000,
-      selection: { "oi-b02-1": 1, "oi-b02-2": 1 },
+      selection: { "3c00b7a3-016f-45a3-8f96-664314c26b4a": 1, "64a0c267-a3e2-47ca-878b-c5b47c7452e5": 1 },
       printReceipt: false,
     });
 
-    const order = await ports.order.getOrder("ord-b02");
+    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const draft = orderDetailToDraft(order);
 
     // Đơn gốc là đơn thường: draft = phần còn lại (1 Cà phê sữa + 1 Croissant).
@@ -428,8 +445,8 @@ describe("instant pay selection", () => {
     expect(getOrderPrimaryAction(order, draft)).toBe("payment");
 
     // Thêm 1 Cà phê sữa nữa: phiếu bếp chỉ in phần chênh so với đơn gốc hiện tại.
-    const coffeeLine = draft.find((item) => item.menuItemId === "mi-ca-phe-sua");
-    const moreCoffee = adjustDraftQuantity(draft, coffeeLine!.id, 1);
+    const coffeeLine = draft.find((item) => item.menuItemId === "3e43bb8c-198f-443f-83ab-18696983edaa");
+    const moreCoffee = adjustDraftQuantity(draft, coffeeLine!.id, 1, mockMenuCatalog);
     expect(diffAddedPrintLines(mockMenuCatalog, order, moreCoffee)).toEqual([
       expect.objectContaining({ name: "Cà phê sữa", quantity: 1 }),
     ]);

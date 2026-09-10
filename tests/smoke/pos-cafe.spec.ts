@@ -65,7 +65,7 @@ async function expectVisuallyRound(locator: Locator) {
 }
 
 async function openB02PaymentDrawer(page: Page) {
-  await page.getByTestId("table-tbl-b02").click();
+  await page.getByTestId("table-a254abd0-b883-4d5c-85c1-89f660409e02").click();
   await page.getByTestId("submit-order-button-footer").click();
   await expect(page.getByTestId("payment-drawer")).toBeVisible();
 }
@@ -107,7 +107,7 @@ test("portrait pre-login flow keeps primary actions reachable", async ({ page },
 
   await expect(page.getByTestId("passcode-screen")).toBeVisible();
   await expect(page.getByTestId("unlock-button")).toBeInViewport();
-  await page.getByTestId("employee-emp-admin").click();
+  await page.getByTestId("employee-6b7bd350-7db2-4160-8471-cca2668c070d").click();
   for (const digit of ["1", "2", "3", "4", "5", "6"]) {
     await page.getByTestId(`pin-${digit}`).click();
   }
@@ -122,9 +122,9 @@ test("POS mock flow keeps primary actions visible on landscape viewports", async
   await expect(page.getByTestId("landing-screen")).toBeVisible();
   await loginAsAdmin(page);
 
-  await page.getByTestId("table-tbl-b01").click();
+  await page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").click();
   await expect(page.getByTestId("order-drawer")).toBeVisible();
-  await page.getByTestId("menu-item-mi-ca-phe-sua").click();
+  await page.getByTestId("menu-item-3e43bb8c-198f-443f-83ab-18696983edaa").click();
   await expect(page.getByTestId("submit-order-button")).toBeVisible();
 });
 
@@ -133,14 +133,14 @@ test("ordering an item with modifiers opens the picker and adds the choice to th
   await page.goto("/");
   await loginAsAdmin(page);
 
-  await page.getByTestId("table-tbl-b01").click();
+  await page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").click();
   await expect(page.getByTestId("order-drawer")).toBeVisible();
 
   // Cà phê sữa có nhóm tuỳ chọn (Size/Đá) → bấm vào phải hiện popup chọn modifier.
-  await page.getByTestId("menu-item-mi-ca-phe-sua").click();
+  await page.getByTestId("menu-item-3e43bb8c-198f-443f-83ab-18696983edaa").click();
   await expect(page.getByTestId("modifier-confirm")).toBeVisible();
 
-  await page.getByTestId("modifier-value-ov-size-l").click();
+  await page.getByTestId("modifier-value-62ca9453-5d44-47f4-8f85-a943d526348d").click();
   await page.getByTestId("modifier-confirm").click();
 
   await expect(page.getByTestId("modifier-confirm")).toBeHidden();
@@ -152,30 +152,30 @@ test("floor plan stage keeps demo layout readable across landscape viewports", a
   await page.goto("/");
   await loginAsAdmin(page);
 
-  await expectNodeCenterKeepsLogicalRatio(page, "floor-stage", "table-tbl-b01", { x: 260, y: 190 });
-  await expectNodeCenterKeepsLogicalRatio(page, "floor-stage", "table-tbl-b08", { x: 1180, y: 520 });
-  await expectNodeCenterKeepsLogicalRatio(page, "floor-stage", "decor-decor-door", { x: 1480, y: 88 });
-  await expectNodeCenterKeepsLogicalRatio(page, "floor-stage", "decor-decor-plant", { x: 300, y: 760 });
-  for (const nodeTestId of ["table-tbl-b01", "table-tbl-b02", "table-tbl-b08", "decor-decor-door", "decor-decor-plant"]) {
+  await expectNodeCenterKeepsLogicalRatio(page, "floor-stage", "table-7b035353-73d6-44bc-8ec4-1ab9951f7a58", { x: 260, y: 190 });
+  await expectNodeCenterKeepsLogicalRatio(page, "floor-stage", "table-5d2847f6-adfe-4594-8673-a8375f27c148", { x: 1180, y: 520 });
+  await expectNodeCenterKeepsLogicalRatio(page, "floor-stage", "decor-f7d63df4-e1f5-4435-8ded-8f0865dfd95d", { x: 1480, y: 88 });
+  await expectNodeCenterKeepsLogicalRatio(page, "floor-stage", "decor-e7ae25fd-6e51-432a-85aa-6c3829e5b9f8", { x: 300, y: 760 });
+  for (const nodeTestId of ["table-7b035353-73d6-44bc-8ec4-1ab9951f7a58", "table-a254abd0-b883-4d5c-85c1-89f660409e02", "table-5d2847f6-adfe-4594-8673-a8375f27c148", "decor-f7d63df4-e1f5-4435-8ded-8f0865dfd95d", "decor-e7ae25fd-6e51-432a-85aa-6c3829e5b9f8"]) {
     await expectNodeInsideStage(page, "floor-stage", nodeTestId);
   }
-  await expect(page.getByTestId("table-tbl-b01").getByText("B01", { exact: true })).toBeVisible();
-  await expect(page.getByTestId("table-tbl-b01").getByText("Trống", { exact: true })).toHaveCount(0);
-  await expect(page.getByTestId("table-tbl-b01").getByText("4 chỗ", { exact: true })).toHaveCount(0);
-  await expect(page.getByTestId("table-tbl-b02").getByText("B02", { exact: true })).toBeVisible();
-  await expect(page.getByTestId("table-tbl-b02").getByText("125K", { exact: true })).toBeVisible();
-  await expect(page.getByTestId("table-tbl-b02").getByText(/#24/)).toHaveCount(0);
-  await expectReadableFloorLabel(page, "table-tbl-b01", "name");
-  await expectReadableFloorLabel(page, "table-tbl-b02", "price");
+  await expect(page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").getByText("B01", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").getByText("Trống", { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").getByText("4 chỗ", { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId("table-a254abd0-b883-4d5c-85c1-89f660409e02").getByText("B02", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("table-a254abd0-b883-4d5c-85c1-89f660409e02").getByText("125K", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("table-a254abd0-b883-4d5c-85c1-89f660409e02").getByText(/#24/)).toHaveCount(0);
+  await expectReadableFloorLabel(page, "table-7b035353-73d6-44bc-8ec4-1ab9951f7a58", "name");
+  await expectReadableFloorLabel(page, "table-a254abd0-b883-4d5c-85c1-89f660409e02", "price");
   await waitForTransientOverlays(page);
   await page.getByTestId("floor-view").screenshot({ path: testInfo.outputPath("floor-stage-pos.png") });
 
   await page.getByTestId("nav-floor-editor").click();
   await expect(page.getByTestId("floor-editor")).toBeVisible();
   await expect(page.getByTestId("floor-editor-stage")).toBeVisible();
-  await expectNodeCenterKeepsLogicalRatio(page, "floor-editor-stage", "fe-table-tbl-b01", { x: 260, y: 190 });
-  await expectNodeCenterKeepsLogicalRatio(page, "floor-editor-stage", "fe-table-tbl-b08", { x: 1180, y: 520 });
-  await expectReadableFloorLabel(page, "fe-table-tbl-b01", "name");
+  await expectNodeCenterKeepsLogicalRatio(page, "floor-editor-stage", "fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58", { x: 260, y: 190 });
+  await expectNodeCenterKeepsLogicalRatio(page, "floor-editor-stage", "fe-table-5d2847f6-adfe-4594-8673-a8375f27c148", { x: 1180, y: 520 });
+  await expectReadableFloorLabel(page, "fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58", "name");
   await page.getByTestId("floor-editor-stage").screenshot({ path: testInfo.outputPath("floor-stage-editor.png") });
 
   const stageFit = await page.getByTestId("floor-editor-stage").evaluate((stage) => {
@@ -234,7 +234,7 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await page.getByTestId("nav-employees").click();
   await expect(page.getByTestId("employees-drawer")).toBeVisible();
   await expect(page.getByTestId("add-employee-button")).toBeVisible();
-  await expect(page.getByTestId("employee-row-emp-admin")).toHaveClass(/bg-pos-primary/);
+  await expect(page.getByTestId("employee-row-6b7bd350-7db2-4160-8471-cca2668c070d")).toHaveClass(/bg-pos-primary/);
 
   const employeeSplitGeometry = await page.getByTestId("employees-split-layout").evaluate((split) => {
     const list = split.querySelector('[data-testid="employee-list-pane"]');
@@ -384,7 +384,7 @@ test("wall, decor and table backgrounds persist from editor to POS floor", async
   await expect(editorStage.getByRole("img", { name: "Tường 04" })).toBeVisible();
   await expect(editorStage.getByRole("img", { name: "Thiết bị 30" })).toBeVisible();
 
-  await page.getByTestId("fe-table-tbl-b01").click();
+  await page.getByTestId("fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").click();
   await page.getByTestId("change-table-background").click();
   await expect(page.getByTestId("floor-table-background-picker")).toBeVisible();
   await expect(page.getByTestId("table-background-asset-default")).toHaveAttribute("aria-pressed", "true");
@@ -392,7 +392,7 @@ test("wall, decor and table backgrounds persist from editor to POS floor", async
   await page.getByTestId("table-background-asset-table-bg-11").click();
   await page.getByTestId("confirm-table-background").click();
   await expect(page.getByTestId("floor-table-background-picker")).toBeHidden();
-  await expect(page.getByTestId("fe-table-tbl-b01")).toHaveCSS("background-image", /table-bg-11\.png/);
+  await expect(page.getByTestId("fe-table-7b035353-73d6-44bc-8ec4-1ab9951f7a58")).toHaveCSS("background-image", /table-bg-11\.png/);
 
   await page.getByTestId("save-floor-button").click();
   await expect(page.getByTestId("floor-dirty-badge")).toBeHidden();
@@ -402,7 +402,7 @@ test("wall, decor and table backgrounds persist from editor to POS floor", async
   const posStage = page.getByTestId("floor-stage");
   await expect(posStage.getByRole("img", { name: "Tường 04" })).toBeVisible();
   await expect(posStage.getByRole("img", { name: "Thiết bị 30" })).toBeVisible();
-  await expect(page.getByTestId("table-tbl-b01")).toHaveCSS("background-image", /table-bg-11\.png/);
+  await expect(page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58")).toHaveCSS("background-image", /table-bg-11\.png/);
 });
 
 test("employee permission editor gates payment after re-login", async ({ page }, testInfo) => {
@@ -412,7 +412,7 @@ test("employee permission editor gates payment after re-login", async ({ page },
 
   await page.getByTestId("nav-employees").click();
   await expect(page.getByTestId("employees-drawer")).toBeVisible();
-  await page.getByTestId("employee-row-emp-cashier-1").click();
+  await page.getByTestId("employee-row-22828322-623b-42e7-8a28-a2bdf367c364").click();
 
   const paymentPermission = page.getByTestId("employee-permission-payment.take");
   await expect(paymentPermission).toBeChecked();
@@ -424,14 +424,14 @@ test("employee permission editor gates payment after re-login", async ({ page },
   await closeCleanDrawer(page, "employees-drawer");
   await page.getByTestId("nav-lock").click();
   await expect(page.getByTestId("passcode-screen")).toBeVisible();
-  await page.getByTestId("employee-emp-cashier-1").click();
+  await page.getByTestId("employee-22828322-623b-42e7-8a28-a2bdf367c364").click();
   for (const digit of ["1", "1", "1", "1", "1", "1"]) {
     await page.getByTestId(`pin-${digit}`).click();
   }
   await page.getByTestId("unlock-button").click();
   await expect(page.getByTestId("floor-view")).toBeVisible();
 
-  await page.getByTestId("table-tbl-b02").click();
+  await page.getByTestId("table-a254abd0-b883-4d5c-85c1-89f660409e02").click();
   await expect(page.getByTestId("order-drawer")).toBeVisible();
   const paymentAction = page.getByTestId("submit-order-button-footer");
   await expect(paymentAction).toBeDisabled();

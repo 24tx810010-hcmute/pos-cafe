@@ -1,4 +1,11 @@
 import type {
+  EmployeeSession,
+  ReceiptSnapshot,
+  OperationView,
+  WritePayloadV1,
+  WriteCapabilities,
+  WriteOperationFilter,
+  WriteOperationPage,
   CoreReport,
   CreateStoreInput,
   CreateStoreResult,
@@ -37,12 +44,23 @@ export interface IAuthRepo {
 }
 
 export interface IEmployeeRepo {
+  startSession(employeeId: string, pin: string): Promise<EmployeeSession>;
+  revokeSession(): Promise<void>;
   listEmployees(): Promise<Employee[]>;
   listActiveEmployees(): Promise<Employee[]>;
   verifyPin(employeeId: string, pin: string): Promise<Employee>;
   createEmployee(input: EmployeeInput): Promise<Employee>;
   updateEmployee(input: EmployeeUpdate): Promise<Employee>;
   resetPin(employeeId: string, newPin: string): Promise<void>;
+}
+
+export interface IWriteOperationRepo {
+  capabilities(): Promise<WriteCapabilities>;
+  register(operationId: string, payload: WritePayloadV1): Promise<OperationView>;
+  execute(operationId: string, payload: WritePayloadV1): Promise<OperationView>;
+  get(operationId: string): Promise<OperationView>;
+  list(filter?: WriteOperationFilter): Promise<WriteOperationPage>;
+  cancel(operationId: string): Promise<OperationView>;
 }
 
 export interface IMenuRepo {
@@ -72,6 +90,7 @@ export interface IFloorPlanRepo {
 }
 
 export interface IOrderRepo {
+  getReceipt(orderId: string): Promise<{ receipt: ReceiptSnapshot; legacyMetadata: boolean }>;
   listOpenOrders(): Promise<OrderSummary[]>;
   getOrder(orderId: string): Promise<OrderDetail>;
   submitOrderChanges(input: SubmitOrderChangesInput): Promise<SubmitOrderChangesResult>;
@@ -122,6 +141,7 @@ export interface IRealtimePort {
 }
 
 export type AppPorts = {
+  write: IWriteOperationRepo;
   auth: IAuthRepo;
   employee: IEmployeeRepo;
   menu: IMenuRepo;

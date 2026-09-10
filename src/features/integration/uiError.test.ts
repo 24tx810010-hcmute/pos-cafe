@@ -59,7 +59,7 @@ describe("uiError", () => {
     const uiError = getUiErrorTemplate("ORDER_VERSION_CONFLICT");
 
     expect(formatUiErrorForToast(uiError)).toBe(
-      "Đơn đã thay đổi: Dữ liệu đơn vừa được cập nhật từ thiết bị khác. Tải lại đơn trước khi tiếp tục.",
+      "Đơn đã thay đổi: Đơn đã thay đổi. Hãy tải lại, kiểm tra rồi xác nhận một thao tác mới.",
     );
   });
 });
