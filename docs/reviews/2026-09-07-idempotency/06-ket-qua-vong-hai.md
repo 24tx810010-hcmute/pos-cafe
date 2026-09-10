@@ -1,5 +1,7 @@
 # 06 — Kết quả đánh giá vòng hai
 
+> **Cập nhật 08/09/2026:** lựa chọn `localStorage` và việc loại phối hợp nhiều thiết bị ở mục 5 đã được mở lại. Hướng hiện tại là đăng ký và phục hồi lệnh trên server, ưu tiên online và hoãn offline. Đọc [07](07-uu-tien-online-va-khoi-phuc-tren-server.md) cho quyết định mới và các điểm còn mở; không dùng bảng “đã chốt” cuối tài liệu này để suy rằng mọi câu hỏi hiện nay đã được giải quyết.
+
 Nhận ngày 07/09/2026, ngay sau khi gửi [05-nho-danh-gia-vong-hai.md](05-nho-danh-gia-vong-hai.md).
 
 Người đánh giá đã đọc `04` và `05` tại `2ce590a`, đối chiếu mã tại `main@7183b31`, và **chạy ba phép kiểm trên các hàm flow thật với adapter giả ghi nhận lời gọi**. Phần SQL và effect React được kiểm bằng đọc mã, chưa phải kiểm thử toàn luồng trên Supabase.

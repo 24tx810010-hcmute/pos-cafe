@@ -1,6 +1,16 @@
 # OpenSpec cho pos-cafe
 
+## Cập nhật bộ chống trùng ngày 2026-09-10
+
+[add-idempotent-write-operations](changes/add-idempotent-write-operations/proposal.md) có **bảy loại artifact / 13 file Markdown**, gồm 33 requirement, 12 use case, 93 testcase gốc và các ma trận biến thể. [Testplan](changes/add-idempotent-write-operations/testplan.md) ghi expected trước code; [đối chiếu review ngoài](../docs/reviews/2026-09-07-idempotency/15-doi-chieu-review-ngoai-va-bien-tap.md) ghi các đính chính sau mốc ba reviewer. Ước lượng 76,5 + 2n giờ công; lịch/phạm vi triển khai chưa chốt lại. Chưa triển khai ứng dụng hoặc chạy test tính năng mới.
+
 Thư mục này là nơi quản lý spec của dự án. Nó chỉ tồn tại trên nhánh `docs`; nhánh `main` cố ý không có.
+
+## Cập nhật ưu tiên 2026-09-08
+
+Chủ dự án chọn **online** cho phạm vi hiện tại. `add-idempotent-write-operations` tiếp tục ưu tiên, hướng tới đăng ký và khôi phục lệnh trên server. `add-offline-data-layer` và `add-offline-sync-conflict-resolution` **hoãn**; `add-offline-status-ux` hoãn phần hàng đợi/đồng bộ, còn báo mất kết nối và kết quả chưa rõ của bốn RPC thuộc spec chống trùng. Không còn cam kết offline tuần 11–13.
+
+Quyết định nghiệp vụ nằm trong [tài liệu 10](../docs/reviews/2026-09-07-idempotency/10-quyet-dinh-sau-review-va-chinh-sach-gia.md); bộ hiện hành nằm tại [proposal chống trùng](changes/add-idempotent-write-operations/proposal.md). Tài liệu 07 và danh sách 32 PRE-IDEM là mốc trước review, không thay thế bộ hoàn chỉnh ngày 2026-09-09. Các proposal offline hoãn vẫn được giữ tham khảo, không archive như đã hoàn thành; vì vậy vẫn có thể xuất hiện trong `openspec list`.
 
 ## Cách gọi
 
@@ -24,7 +34,9 @@ Slash command `/opsx:propose`, `/opsx:apply`, `/opsx:archive` chỉ nạp khi m�
 
 Các proposal trỏ tới phần đã di chuyển đã được cập nhật theo: `add-discount-engine`, `add-recipe-based-stock-deduction`, `add-offline-status-ux`, `add-customer-registry`, `expand-e2e-coverage`.
 
-## Trạng thái hiện tại của `changes/`
+## Kiểm kê `changes/` trước khi hoàn thiện chống trùng ngày 2026-09-09
+
+Các số đếm dưới đây là mốc kiểm kê cũ; thay đổi mới nhất của chống trùng được ghi ở đầu trang. Không dùng số lỗi validate tổng cũ để kết luận bộ chống trùng hiện còn thiếu delta.
 
 27 trong 29 change đang ở trạng thái **mới có `proposal.md`**, chưa có các artifact còn lại. Đây là chủ ý, không phải thiếu sót. Hai change đã có đủ bốn artifact và sẵn sàng implement: `redesign-permission-model` và `add-owner-account-and-store-provisioning` (viết ngày 2026-08-31).
 
@@ -68,7 +80,7 @@ Mỗi proposal có section `## Phụ thuộc`. Các quan hệ chính:
 - `add-owner-account-and-store-provisioning` bắt buộc trước `add-multi-store-ownership` và `add-provider-admin-console`.
 - Quan hệ giữa `add-owner-account-and-store-provisioning` và `enforce-permissions-at-database` tùy **phạm vi** của cái sau. Với bản đầy đủ có danh tính riêng cho từng nhân viên ở tầng chính sách bảo mật thì tài khoản chủ **bắt buộc** làm trước. Với bản thu hẹp, tức mọi lời gọi nhạy cảm đọc lại quyền từ cơ sở dữ liệu, thứ tự ngược lại rẻ hơn; xem phần "Vì sao thứ tự này" trong `docs/roadmap.md`.
 - `add-multi-store-ownership` bắt buộc trước `add-cross-store-reporting`.
-- `add-idempotent-write-operations` bắt buộc trước `add-offline-data-layer`, và nên trước `enforce-permissions-at-database` nếu cả hai cùng sửa chữ ký các lời gọi ghi.
+- `add-idempotent-write-operations` phối hợp với `enforce-permissions-at-database`: phần xác minh danh tính nhân viên/quyền server tối thiểu là điều kiện nghiệm thu giao thức mới, không thể mặc định chống trùng luôn làm trước xác thực chỉ để tiết kiệm sửa chữ ký RPC. Nếu mở lại offline, change chống trùng vẫn bắt buộc trước `add-offline-data-layer`.
 - `measure-runtime-load` bắt buộc trước `optimize-runtime-load`.
 - `handle-long-running-session` nên trước `add-offline-data-layer`.
 - `add-offline-data-layer` bắt buộc trước hai change offline còn lại. Riêng lát mỏng hiển thị trạng thái mạng trong `add-offline-status-ux` làm được độc lập trước.
@@ -95,10 +107,10 @@ Bốn change dưới đây mâu thuẫn với các quyết định đang ghi tro
 | --- | --- |
 | `add-multi-store-ownership` | Không phải bài toán quản lý chuỗi đa chi nhánh |
 | `add-provider-admin-console` | Cô lập dữ liệu tuyệt đối giữa các cửa hàng (NFR-02) |
-| `add-offline-data-layer` | Online-only, offline-first hoãn sang mở rộng (FR-21, NFR-05). **Xem ghi chú bên dưới: đây là gỡ hoãn, không phải lật quyết định.** |
+| `add-offline-data-layer` | **Đã hoãn lại 2026-09-08.** Giữ ưu tiên online; không còn là phần phải làm trong giai đoạn 1 |
 | `enforce-permissions-at-database` | NFR-02 không đồng nghĩa bảo mật per-employee |
 
-**Ghi chú 2026-08-30.** Riêng `add-offline-data-layer` không thuộc loại lật quyết định. Online-only là hoãn theo ngân sách thời gian của bài tiểu luận chuyên ngành, đúng như `docs/requirements.md` ghi ở mục "Ngoài Phạm Vi Hoặc Hoãn"; ngân sách 16 tuần của đồ án tốt nghiệp làm ràng buộc đó hết hiệu lực. FR-21 và NFR-05 nói về đồng bộ khi online nên vẫn đúng và không phải sửa. Chi tiết ở quyết định số 1 của proposal.
+**Lịch sử 2026-08-30, đã được thay thế ngày 2026-09-08.** Khi đó nhóm offline được kéo vào đồ án theo ngân sách 16 tuần. Sau khi rà lại độ phức tạp khôi phục và nhiều thiết bị, chủ dự án chọn hoãn nhóm này để tập trung online. Các phụ thuộc offline ở trên chỉ còn áp dụng nếu mở lại nhóm trong tương lai.
 
 ## Chuẩn viết spec
 

@@ -1,0 +1,16 @@
+
+ RUN  v4.1.10 D:/Workspace/pos-cafe
+
+ ✓ src/features/pos/modifier.test.ts (7 tests) 5ms
+ ✓ src/adapters/supabase/repos.test.ts (14 tests) 12ms
+ ✓ src/features/pos/orderFlow.test.ts (19 tests) 33ms
+ ✓ src/adapters/mock/mockRepos.test.ts (20 tests) 34ms
+ ✓ src/app/instantPay.test.tsx (3 tests) 827ms
+     ✓ pays a partial selection and keeps the drawer open on the remaining items  443ms
+
+ Test Files  5 passed (5)
+      Tests  63 passed (63)
+   Start at  18:03:58
+   Duration  5.95s (transform 1.17s, setup 2.00s, import 3.88s, tests 909ms, environment 4.21s)
+
+JSON report written to C:/Users/nguye/AppData/Local/Temp/pos-cafe-independent-baseline-20260908-7183b31.json

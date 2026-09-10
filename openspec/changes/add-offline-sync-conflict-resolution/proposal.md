@@ -1,5 +1,7 @@
 # Đồng bộ và hòa giải xung đột sau khi ngoại tuyến
 
+> **HOÃN — 08/09/2026.** Hoãn cùng `add-offline-data-layer` theo quyết định ưu tiên online. Xung đột version và khôi phục lệnh mất phản hồi khi online vẫn phải xử lý, nhưng không triển khai hàng đợi/hòa giải offline theo proposal này. Xem [quyết định mới](../../../docs/reviews/2026-09-07-idempotency/07-uu-tien-online-va-khoi-phuc-tren-server.md).
+
 ## Why
 
 Có kho dữ liệu cục bộ và hàng đợi thao tác thì bài toán khó nhất vẫn chưa được giải: khi mạng trở lại, thao tác đã xếp hàng có thể mâu thuẫn với những gì đã xảy ra trên máy chủ. Hai thiết bị cùng ngoại tuyến, cùng sửa một bàn, cùng thanh toán một đơn, hoặc một thiết bị ngoại tuyến trong khi thiết bị khác vẫn online và đã đóng đơn đó rồi.

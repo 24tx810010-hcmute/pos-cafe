@@ -1,5 +1,7 @@
 # Hiển thị trạng thái mạng và trạng thái đồng bộ
 
+> **Cập nhật 08/09/2026:** hoãn phần hiển thị hàng đợi và đồng bộ offline. Báo mất kết nối và kết quả chưa rõ trong bốn luồng ghi vẫn thuộc phạm vi viết spec `add-idempotent-write-operations`; không phụ thuộc việc có kho offline. Lát mỏng UX kết nối toàn ứng dụng bên dưới vẫn là đề xuất, chưa được lên lịch triển khai mới. Xem [quyết định ưu tiên online](../../../docs/reviews/2026-09-07-idempotency/07-uu-tien-online-va-khoi-phuc-tren-server.md).
+
 ## Why
 
 Chế độ ngoại tuyến chỉ dùng được nếu nhân viên biết mình đang ở chế độ nào. Nếu ứng dụng trông y hệt lúc online, thu ngân sẽ không biết đơn vừa bán đã lên máy chủ hay còn nằm trong hàng đợi trên máy, và sẽ không biết vì sao máy bên cạnh không thấy bàn đó.
@@ -25,7 +27,7 @@ Phần lớn change này phụ thuộc `add-offline-data-layer`, nhưng có mộ
 
 Lát mỏng này không cho bán hàng khi mất mạng, nên nó không thay thế `add-offline-data-layer`. Nhưng nó xóa được trải nghiệm tệ nhất hiện nay là ứng dụng trông như hỏng mà không nói vì sao, và nó là thứ duy nhất trong cả nhóm ngoại tuyến vừa với một dự án đang kín lịch.
 
-Ba mục còn lại của change này — đánh dấu thao tác chưa được xác nhận, hiển thị số việc đang chờ gửi, và thông báo xung đột — vẫn phải chờ hai change kia.
+**Cập nhật 08/09/2026:** trạng thái lệnh đã gửi nhưng chưa rõ kết quả và xung đột online không phải chờ kho offline; phần đó được đặc tả cùng change chống trùng. Riêng số việc trong hàng đợi offline và trạng thái hòa giải sau đồng bộ vẫn hoãn cùng hai change offline.
 
 ## Capabilities
 

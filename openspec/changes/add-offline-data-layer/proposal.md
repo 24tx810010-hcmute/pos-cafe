@@ -1,5 +1,7 @@
 # Tầng dữ liệu cục bộ cho chế độ ngoại tuyến
 
+> **HOÃN — 08/09/2026.** Chủ dự án ưu tiên online; không triển khai bán hàng offline hoặc hàng đợi cục bộ trong phạm vi hiện tại. Quyết định này thay thế việc đưa offline vào giai đoạn 1 ngày 30/08. Giữ nội dung bên dưới làm lịch sử đề xuất, không coi các quyết định/lịch cũ là cam kết triển khai. Xem [quyết định mới](../../../docs/reviews/2026-09-07-idempotency/07-uu-tien-online-va-khoi-phuc-tren-server.md).
+
 ## Why
 
 Hệ thống hiện là online-only: mất mạng thì không bán được hàng. Với một quán cà phê thật, đây là lỗi nghiêm trọng, vì mạng ở quán hay rớt và quán không thể ngừng bán để chờ mạng. Baseline spec `multi-device-sync` ghi rõ mọi thao tác ghi thất bại khi mất mạng và không có hàng đợi nào lưu lại.

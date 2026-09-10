@@ -1,5 +1,11 @@
 # Siết ranh giới bảo mật quyền nhân viên xuống tầng database
 
+## Liên quan quyết định chống trùng 08/09/2026
+
+Chủ dự án chọn server là nguồn tin cậy duy nhất và cho mọi người đủ quyền tiếp tục đơn/thao tác, không giới hạn quản lý. Yêu cầu được ghi theo nghĩa server xác minh danh tính và quyền người thực hiện, xem [quyết định 10](../../../docs/reviews/2026-09-07-idempotency/10-quyet-dinh-sau-review-va-chinh-sach-gia.md).
+
+Nền tảng danh tính nhân viên server vì vậy liên quan trực tiếp đến việc nghiệm thu `add-idempotent-write-operations`. Cần xác định phần tối thiểu phục vụ những đường ghi/tra cứu trong phạm vi. **Chưa đồng nghĩa toàn bộ change siết quyền mọi bảng đã được duyệt hoặc triển khai**; các câu hỏi kiến trúc phía dưới chưa tự có câu trả lời.
+
 ## Why
 
 Hiện chính sách bảo mật mức dòng chỉ cô lập theo cửa hàng: mọi nhân viên trong cùng một cửa hàng dùng chung một danh tính đã xác thực ở tầng database. Quyền theo từng nhân viên được chốt ở tầng nghiệp vụ, và ba lời gọi order cùng payment chính có kiểm tra lại quyền hiệu lực. Nhưng `docs/requirements.md` ghi rõ NFR-02 không đồng nghĩa bảo mật per-employee, và `pos-cafe-context.md` ghi rõ không claim bảo mật nhân viên ở tầng database, kèm ghi chú cần siết nếu triển khai ngoài môi trường demo tin cậy.
@@ -50,7 +56,9 @@ Không có.
 
 Trao đổi ngày 2026-08-28 nêu một phương án trung gian đáng cân nhắc khi trả lời câu hỏi số 1 và số 7: **giữ nguyên danh tính cấp cửa hàng, không làm danh tính riêng cho từng nhân viên, nhưng bắt mọi lời gọi nghiệp vụ nhạy cảm đọc lại quyền hiệu lực từ database** thay vì tin tham số client gửi lên, kèm nhật ký đầy đủ. Cách này đã áp dụng cho ba lời gọi order và payment chính, nên chỉ là mở rộng phạm vi chứ không phải đổi mô hình xác thực.
 
-Đánh đổi: chặn được việc vượt quyền qua ứng dụng và qua lời gọi thủ công có tham số giả, nhưng **không** chặn được người đã có Store Key ghi thẳng vào bảng bằng quyền cấp cửa hàng. Mức bảo đảm này phải được phát biểu chính xác trong tài liệu thay vì claim quá lên. Bù lại, phạm vi và rủi ro nhỏ hơn nhiều so với việc viết lại toàn bộ chính sách bảo mật mức dòng, và không buộc ghép lại thiết bị.
+**Đính chính 08/09/2026:** bản trước ghi phương án này chặn được “lời gọi thủ công có tham số giả”. Khẳng định đó quá rộng: server hiện đọc quyền của `p_employee_id` client gửi (`src/adapters/supabase/authRepo.ts:19–25`, `src/adapters/supabase/employeeRepo.ts:30–39`, `supabase/migrations/012_action_permission_guardrails.sql:1024–1045`). Đọc role từ DB chặn việc tự khai role/quyền không có trong DB, nhưng không chứng minh caller chính là nhân viên mang ID đó. Xem trích mã tại [08, E5](../../../docs/reviews/2026-09-07-idempotency/08-review-doc-lap-plan-07.md#e5--danh-tinh-nhan-vien-va-duong-ghi).
+
+Đánh đổi đúng: phương án giữ danh tính cửa hàng có phạm vi nhỏ hơn, nhưng không chống giả mạo ID nhân viên hoặc ghi thẳng bảng qua quyền cửa hàng. Nó không đủ để hoàn thành yêu cầu mới “server xác minh quyền thực tế của người tiếp tục” nếu không bổ sung ràng buộc danh tính server đáng tin cậy.
 
 ## Câu hỏi phải chốt trước khi làm
 

@@ -6,12 +6,12 @@ Nó không chép lại quan hệ phụ thuộc giữa các change — phần đ�
 
 | | |
 | --- | --- |
-| Bắt đầu | 28/08/2026 |
-| Hạn cuối | 21/12/2026 |
-| Ngân sách thời gian | 16 tuần tròn, kết thúc 17/12, còn 4 ngày đệm |
+| Bắt đầu | 2026-08-28 |
+| Hạn cuối | 2026-12-21 |
+| Ngân sách thời gian | 16 tuần tròn, kết thúc 2026-12-17, còn 4 ngày đệm |
 | Ngân sách tiền | Không có. Mọi dịch vụ phải dùng được ở gói miễn phí |
 | Yêu cầu đầu ra | Code chạy thật dùng được, không phải chỉ phân tích thiết kế |
-| Cập nhật lần cuối | 30/08/2026, đổi nhóm ca làm việc lấy nhóm bán hàng khi mất mạng |
+| Cập nhật lần cuối | 2026-09-10, chuẩn hóa trình bày và bổ sung mô hình ảnh hưởng lịch; chưa duyệt thay đổi các mốc |
 
 Dự án đi từ tiểu luận cuối kỳ lên đồ án tốt nghiệp. Hai việc bắt buộc đến từ nhận xét của giảng viên phản biện: kiểm soát việc tạo cửa hàng, và tổ chức lại phân quyền cho đúng một hệ POS vận hành thật.
 
@@ -25,30 +25,40 @@ Dự án đi từ tiểu luận cuối kỳ lên đồ án tốt nghiệp. Hai v
 
 Cập nhật cột trạng thái ngay khi đóng một mục, và sửa dòng "Cập nhật lần cuối" ở trên.
 
+**Quy ước ngày:** tài liệu điều hướng này dùng YYYY-MM-DD, kể cả ngày khi kể lại lịch sử. Lần chuẩn hóa 2026-09-10 chỉ đổi cách ghi, không đổi ngày thực tế hay phân bổ lại lịch. Bản báo cáo/evidence đã đóng băng ở file khác giữ nguyên hình thức gốc.
+
 ## Giai Đoạn 1 — Đồ Án Tốt Nghiệp
 
 Mười mục, làm tuần tự. Thứ tự dưới đây được xếp lại ngày 2026-08-28 sau khi đo chi phí thực tế trên kho mã; lý do ở mục "Vì sao thứ tự này" bên dưới.
 
+**Cập nhật 2026-09-08:** chủ dự án chọn ưu tiên online; mục 7–8 được giữ số để truy vết nhưng đã hoãn, không còn là cam kết tuần 11–13. Chưa phân bổ lại khoảng này hoặc tự kéo tính năng khác lên. Mục 2 tiếp tục ưu tiên và hướng tới đăng ký/khôi phục lệnh trên server; lịch thực hiện cần được rà lại khi chốt spec. Xem [quyết định phạm vi](reviews/2026-09-07-idempotency/07-uu-tien-online-va-khoi-phuc-tren-server.md).
+
 | # | Tuần | Khoảng | Việc | Kết quả kiểm chứng được | Trạng thái |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 1 | 28/08 – 03/09 | Chiến lược kiểm thử, lưới an toàn và môi trường thử nghiệm | Chiến lược kiểm thử viết trọn theo chuẩn bảy artifact và dùng được làm khuôn mẫu; bộ kiểm thử chạy xanh trên baseline hiện tại | `[x]` xong 07/09/2026 |
-| 2 | 2 | 04/09 – 10/09 | Khóa chống trùng cho lời gọi ghi, kèm tái cấu trúc dọn đường cho ba RPC tiền | Gọi hai lần cùng khóa cho kết quả như gọi một lần | `[ ]` |
-| 3 | 3–5 | 11/09 – 01/10 | Tổ chức lại phân quyền | Sáu vai trò, mười bốn quyền, điều hướng suy ra từ quyền, đổi quyền có hiệu lực ngay | `[ ]` |
-| 4 | 6 | 02/10 – 08/10 | Siết quyền xuống tầng dữ liệu, bản thu hẹp | Gọi thẳng vào cơ sở dữ liệu khi thiếu quyền bị từ chối | `[ ]` |
-| 5 | 7–9 | 09/10 – 29/10 | Tài khoản chủ và kiểm soát tạo quán, giai đoạn 1 | Không có email đã xác thực thì không tạo được cửa hàng | `[ ]` |
-| 6 | 10 | 30/10 – 05/11 | Khôi phục và vòng đời quyền sở hữu, giai đoạn 2 | Mất Store Key vẫn lấy lại được cửa hàng | `[ ]` |
-| 7 | 11–12 | 06/11 – 19/11 | Kho cục bộ và hàng đợi ý định | Rút mạng vẫn tạo được đơn mới; có mạng lại đơn tự lên máy chủ, không trùng, số bill do database cấp | `[ ]` |
-| 8 | 13 | 20/11 – 26/11 | Hòa giải xung đột và trạng thái kết nối trên giao diện | Sáu tình huống xung đột có chính sách và kiểm thử chạy xanh; nhân viên luôn thấy rõ đang ngoại tuyến và còn bao nhiêu việc chưa gửi | `[ ]` |
-| 9 | 14 | 27/11 – 03/12 | Triển khai thật, làm cứng, sao lưu, **và đo tải lúc chạy** | Bản chạy thật có địa chỉ truy cập được, có sao lưu định kỳ, và có số đo tải thật thay cho ước lượng | `[ ]` |
-| 10 | 15–16 | 04/12 – 17/12 | Viết báo cáo, chụp lại ảnh màn hình, đồng bộ tài liệu | Bản thảo báo cáo đầy đủ | `[ ]` |
+| 1 | 1 | 2026-08-28 – 2026-09-03 | Chiến lược kiểm thử, lưới an toàn và môi trường thử nghiệm | Chiến lược kiểm thử viết trọn theo chuẩn bảy artifact và dùng được làm khuôn mẫu; bộ kiểm thử chạy xanh trên baseline hiện tại | `[x]` xong 2026-09-07 |
+| 2 | 2, lịch gốc | 2026-09-04 – 2026-09-10, cần rà lại | Chống trùng và khôi phục bốn luồng ghi online, hướng đăng ký lệnh trên server | Cùng khóa chỉ áp dụng một lần; tìm lại được lệnh đã đăng ký sau mất phản hồi/đổi máy | `[~]` đã có bộ spec để duyệt; lịch/phạm vi chờ chốt, chưa implement |
+| 3 | 3–5 | 2026-09-11 – 2026-10-01 | Tổ chức lại phân quyền | Sáu vai trò, mười bốn quyền, điều hướng suy ra từ quyền, đổi quyền có hiệu lực ngay | `[ ]` |
+| 4 | 6 | 2026-10-02 – 2026-10-08 | Siết quyền xuống tầng dữ liệu, bản thu hẹp | Gọi thẳng vào cơ sở dữ liệu khi thiếu quyền bị từ chối | `[ ]` |
+| 5 | 7–9 | 2026-10-09 – 2026-10-29 | Tài khoản chủ và kiểm soát tạo quán, giai đoạn 1 | Không có email đã xác thực thì không tạo được cửa hàng | `[ ]` |
+| 6 | 10 | 2026-10-30 – 2026-11-05 | Khôi phục và vòng đời quyền sở hữu, giai đoạn 2 | Mất Store Key vẫn lấy lại được cửa hàng | `[ ]` |
+| 7 | 11–12, lịch cũ | 2026-11-06 – 2026-11-19, đã bỏ cam kết | Kho cục bộ và hàng đợi ý định | Giữ proposal cho hướng phát triển sau | **Hoãn 2026-09-08** |
+| 8 | 13, lịch cũ | 2026-11-20 – 2026-11-26, đã bỏ cam kết | Hòa giải và trạng thái đồng bộ offline | Hoãn phần offline; UX kết quả chưa rõ của bốn luồng ghi nằm trong mục 2 | **Hoãn 2026-09-08** |
+| 9 | 14 | 2026-11-27 – 2026-12-03 | Triển khai thật, làm cứng, sao lưu, **và đo tải lúc chạy** | Bản chạy thật có địa chỉ truy cập được, có sao lưu định kỳ, và có số đo tải thật thay cho ước lượng | `[ ]` |
+| 10 | 15–16 | 2026-12-04 – 2026-12-17 | Viết báo cáo, chụp lại ảnh màn hình, đồng bộ tài liệu | Bản thảo báo cáo đầy đủ | `[ ]` |
 
-Bốn ngày từ 18/12 tới 21/12 để nguyên làm đệm và tập demo. Không xếp việc vào đó.
+Bốn ngày từ 2026-12-18 tới 2026-12-21 để nguyên làm đệm và tập demo. Không xếp việc vào đó.
 
 ### Cảnh báo lệch lịch, chưa xử lý
 
-Tính tới **07/09/2026**, mục 1 chưa bắt đầu dù khoảng thời gian của nó đã trôi qua, và hạn chốt câu hỏi của mục 2 đã quá 3 ngày. Toàn bộ cột "Khoảng" bên trên vì vậy đang **sớm hơn thực tế khoảng một tuần**.
+**Cập nhật 2026-09-09:** [bộ task mục 2](../openspec/changes/add-idempotent-write-operations/tasks.md) có 43 đầu mục, ước lượng **76,5 + 2n giờ công**, với n là số task sửa lỗi phát sinh. Phần cố định đã gồm 6 giờ cho ba reviewer; 78,5 giờ ứng với n = 1. Đây chưa phải lịch được duyệt. Task 09–14 (12 giờ, đã nằm trong tổng) đưa phần phiên/quyền/đóng đường vượt giao thức vào mục 2, sớm hơn mục 4 theo lịch gốc; phần rộng hơn của mục 4 vẫn giữ riêng. Xem [phân tích và phương án cần chốt](../openspec/changes/add-idempotent-write-operations/proposal.md).
 
-Chưa dời ngày vì việc dời kéo theo cả mười mục và phải chốt xem cắt bớt phần nào để bù. Cần chủ dự án quyết trước khi sửa bảng.
+**Ghi chú lịch sử trước khi mục 1 hoàn tất ngày 2026-09-07:** lúc lập cảnh báo, mục 1 chưa bắt đầu dù khoảng thời gian của nó đã trôi qua, và hạn chốt câu hỏi của mục 2 đã quá 3 ngày. Ước lượng trễ khoảng một tuần khi đó không thay thế cho việc tính lại toàn lịch sau khi có bộ spec hiện hành.
+
+**Phân tích 2026-09-10, chưa duyệt đổi lịch:** chủ dự án làm hằng ngày nhưng không có quỹ giờ cố định. Bảng kịch bản tại [proposal mục 2](../openspec/changes/add-idempotent-write-operations/proposal.md) tính dây chuyền tới mục 10, với mốc bắt đầu thử 2026-09-11, một task sửa lỗi và tạm giữ tám tuần cho mục 3–6. Kịch bản 40 giờ/tuần dùng hai trong ba tuần hoãn offline, giữ lịch báo cáo; kịch bản 20 giờ/tuần cần thu hồi một tuần trước báo cáo, nếu không thì viết đủ hai tuần sẽ kết thúc 2026-12-24. Không tự dùng bốn ngày đệm hoặc coi 20/40 giờ là cam kết của chủ dự án. Cần ước lượng lại các mục còn lại và cập nhật dự báo từ giờ thực làm/đầu ra đã kiểm chứng; chưa kết luận phải cắt riêng mục 2.
+
+**Duyệt bắt đầu 2026-09-10:** chủ dự án duyệt bộ spec hiện hành, cho phép push docs rồi triển khai code; chỉ push code sau khi các kiểm tra bắt buộc đạt. Phạm vi mục 2 giữ nguyên, lịch dự báo cập nhật theo thực tế. Việc chưa ấn định quỹ giờ không còn chặn bắt đầu triển khai.
+
+Chưa dời ngày vì việc điều chỉnh ảnh hưởng các mục phía sau và cần chủ dự án chọn phương án về quỹ giờ, cách tổ chức việc hoặc phạm vi. Không mặc định phải cắt bớt chức năng; cần chốt phương án trước khi sửa bảng lịch chính thức.
 
 ### Ánh xạ sang change
 
@@ -59,8 +69,8 @@ Chưa dời ngày vì việc dời kéo theo cả mười mục và phải chố
 | 3 | `redesign-permission-model` |
 | 4 | `enforce-permissions-at-database`, bản thu hẹp |
 | 5, 6 | `add-owner-account-and-store-provisioning`, chia hai giai đoạn theo quyết định số 18 của proposal |
-| 7 | `add-offline-data-layer`, phạm vi hẹp theo quyết định 2 và 3 của proposal |
-| 8 | `add-offline-sync-conflict-resolution` và lát mỏng của `add-offline-status-ux` |
+| 7, hoãn | `add-offline-data-layer` |
+| 8, hoãn | `add-offline-sync-conflict-resolution` và phần đồng bộ của `add-offline-status-ux` |
 | 9 | `measure-runtime-load` — đo, không sửa |
 
 ### Vì sao thứ tự này
@@ -85,7 +95,7 @@ Ba điều chỉnh rút ra:
 
 **Không đổi:** tài khoản chủ giữ nguyên vị trí sau phân quyền, vì nó gắn vai trò chủ quán vào tài khoản chủ. Bù lại nó có bề mặt va chạm thấp nhất trong cả nhóm — chạm vào adapter xác thực, bảng cửa hàng, chính sách bảo mật và một thành phần chạy phía máy chủ, gần như không đụng luồng đơn và thanh toán.
 
-**Cảnh báo cho mục 7 và 8.** Đây là hai mục rủi ro nhất của cả giai đoạn, và chúng nằm ngay trước tuần triển khai. Ba điều kiện bắt buộc, đã ghi trong `## Quyết định đã chốt` của `add-offline-data-layer`:
+**Lịch sử kế hoạch mục 7 và 8 — đã hoãn 2026-09-08.** Các điều kiện dưới đây thuộc kế hoạch cũ, không còn là yêu cầu phải triển khai hoặc làm nguyên mẫu trong giai đoạn 1:
 
 1. Giữ đúng phạm vi hẹp: chỉ đơn mới, không thanh toán ngoại tuyến. Không nới trong giai đoạn 1.
 2. Làm sau một cờ tắt. Hết tuần 13 mà chưa vững thì tắt cờ, demo trực tuyến, trình phần ngoại tuyến ở dạng thiết kế cộng nguyên mẫu. Đây là chốt cứng, không gia hạn sang tuần 14.
@@ -108,18 +118,20 @@ Các việc dưới đây không chiếm tuần riêng, nhưng phải xong trư�
 | Việc | Hạn | Trạng thái |
 | --- | --- | --- |
 | Chốt bảy câu hỏi còn lại của `enforce-permissions-at-database` | **trước tuần 6** | `[ ]` |
-| Chốt bảy câu hỏi của `add-idempotent-write-operations`, trong đó có việc kiểm tra dữ liệu thật xem đã từng sinh bản ghi trùng chưa | **trước tuần 2** | `[ ]` |
+| Chốt nghiệp vụ và hoàn thiện bộ spec `add-idempotent-write-operations`; hệ chưa vận hành thật theo chủ dự án, không tuyên bố đã đo/tái hiện sự cố thật | **trước tuần 2** | `[x]` tài liệu 2026-09-09; implementation/test mới chưa làm — xem [rà cuối](reviews/2026-09-07-idempotency/14-bo-spec-hoan-chinh-va-ra-cuoi.md) |
 | Dựng đường gửi email ở mức 1: Gmail riêng của dự án, App Password, cấu hình SMTP, gửi thử xác nhận không vào thư rác. Không phải mua gì, không phải chờ duyệt | trước tuần 7 | `[ ]` |
-| ~~Viết ba artifact còn thiếu cho `add-owner-account-and-store-provisioning`~~ | trước tuần 7 | `[x]` xong 31/08/2026 |
-| Chốt các câu hỏi còn để mở của ba change ngoại tuyến, và viết đủ delta spec, design, tasks cho chúng | **trước tuần 11** | `[ ]` |
+| ~~Viết ba artifact còn thiếu cho `add-owner-account-and-store-provisioning`~~ | trước tuần 7 | `[x]` xong 2026-08-31 |
+| Chốt và viết spec cho nhóm offline nếu mở lại trong tương lai | Chưa xếp lịch | **Hoãn 2026-09-08** |
 
 Hai hạn đầu **gấp hơn hẳn thứ tự cũ**: khóa chống trùng chuyển lên tuần 2 nên các câu hỏi của nó phải chốt gần như ngay, và siết quyền tầng dữ liệu chuyển từ tuần 9 lên tuần 6.
 
 Việc tên miền và email tuy hạn muộn hơn trước nhưng vẫn nên khởi động sớm, vì phần lớn là thời gian chờ chứ không phải thời gian làm. Rủi ro cụ thể nếu để trễ: mã một lần rơi vào thư rác thì không đăng nhập được, và mô hình không mật khẩu không có đường vào thay thế.
 
-### Lý do đổi nhóm ca làm việc lấy nhóm ngoại tuyến
+### Lịch sử 2026-08-30: đổi nhóm ca làm việc lấy nhóm ngoại tuyến
 
-Ngân sách 16 tuần chỉ đủ cho đúng một nhóm tính năng mới. Đến 30/08/2026 chỗ này đổi từ nhóm ca làm việc sang bán hàng khi mất mạng, phạm vi hẹp.
+**Quyết định này đã được thay thế ngày 2026-09-08:** ưu tiên online và hoãn nhóm offline. Phần dưới giữ để giải thích lịch sử; không còn là lập luận cho phạm vi đang cam kết. Nhóm ca làm việc cũng chưa được kéo lại vào giai đoạn 1.
+
+Ngân sách 16 tuần chỉ đủ cho đúng một nhóm tính năng mới. Đến 2026-08-30 chỗ này đổi từ nhóm ca làm việc sang bán hàng khi mất mạng, phạm vi hẹp.
 
 Lý do đổi:
 
@@ -157,22 +169,22 @@ Các change còn lại, xếp theo tầng. Không gắn ngày. Trong mỗi tần
 
 - `add-multi-store-ownership` → `add-cross-store-reporting`
 
-**Tầng F — Ngoại tuyến, phần còn lại.** Phần lõi đã chuyển lên giai đoạn 1 ngày 30/08/2026. Còn lại ở đây là phần vượt quá phạm vi hẹp: thanh toán ngoại tuyến, sửa đơn đã tồn tại trên máy chủ, và service worker kèm Background Sync.
+**Tầng F — Ngoại tuyến, toàn bộ nhóm đã hoãn lại 2026-09-08.** Gồm kho cục bộ, hàng đợi, hòa giải và UX đồng bộ, cả phạm vi hẹp từng được đưa vào giai đoạn 1. Chưa cam kết thời điểm thực hiện; thanh toán offline, sửa đơn server khi offline và Background Sync vẫn thuộc hướng phát triển sau.
 
-Ngày 2026-08-28, ba đề xuất của tầng này đã được viết chi tiết lại dựa trên rà soát mã nguồn: năm ràng buộc từ hiện trạng, mô hình hàng đợi ý định một chiều, bảng thao tác nào được phép ngoại tuyến, hai mươi tình huống phải xử lý, và chiến lược kiểm thử. **Phạm vi trong 16 tuần chưa chốt**: ước lượng trung thực cho phần bán hàng ngoại tuyến là năm tới bảy tuần, nhiều hơn bốn tuần của nhóm ca làm việc đang giữ chỗ ở giai đoạn 1.
+Ba proposal được giữ làm tài liệu phân tích lịch sử. Các ước lượng và quyết định cũ phải được rà lại nếu mở nhóm này; hiện không dùng chúng để phân bổ thời gian đồ án.
 
 - `add-offline-data-layer` → `add-offline-status-ux`, `add-offline-sync-conflict-resolution`
 
-**Tầng F2 — Hiệu năng và phiên chạy dài.** Thêm ngày 07/09/2026 sau khi rà mã: tải của hệ gần như toàn bộ là đọc do polling, không phải ghi.
+**Tầng F2 — Hiệu năng và phiên chạy dài.** Thêm ngày 2026-09-07 sau khi rà mã: tải của hệ gần như toàn bộ là đọc do polling, không phải ghi.
 
-`measure-runtime-load` **đã được kéo lên giai đoạn 1, mục 9 tuần 14** ngày 07/09/2026. Lý do: nó chỉ đo nên không có rủi ro hồi quy, và tuần 14 là lần đầu tiên có bản chạy thật để đo — đo trên môi trường phát triển sẽ ra số không phản ánh production. Trả lời được câu "hệ chịu tải bao nhiêu" bằng số đo thay vì ước lượng là thứ đáng có trước buổi bảo vệ.
+`measure-runtime-load` **đã được kéo lên giai đoạn 1, mục 9 tuần 14** ngày 2026-09-07. Lý do: nó chỉ đo nên không có rủi ro hồi quy, và tuần 14 là lần đầu tiên có bản chạy thật để đo — đo trên môi trường phát triển sẽ ra số không phản ánh production. Trả lời được câu "hệ chịu tải bao nhiêu" bằng số đo thay vì ước lượng là thứ đáng có trước buổi bảo vệ.
 
 Còn lại ở tầng này:
 
 - `optimize-runtime-load`, **bắt buộc sau** `measure-runtime-load`. Giữ ở giai đoạn 2 vì nó đụng nhịp đồng bộ giữa các máy, tức một năng lực đã đặc tả trong `multi-device-sync`, và đó là loại rủi ro không nên nhận trong 16 tuần đã kín.
-- `handle-long-running-session`. Giữ ở giai đoạn 2 dù proposal của nó ghi "nên trước `add-offline-data-layer`". **Đây là một mâu thuẫn có ý thức:** quan hệ đó là "nên" chứ không phải "bắt buộc", và mục 7–8 tuần 11–13 đã kín cho phần ngoại tuyến. Hệ quả phải chấp nhận: `add-offline-data-layer` thêm một kho dữ liệu sống lâu trên máy trong khi **chưa ai đo phiên chạy dài**, nên nếu về sau phát sinh vấn đề bộ nhớ thì việc truy nguyên sẽ khó hơn vì có hai nghi phạm thay vì một. Đã ghi rủi ro này vào proposal của change đó.
+- `handle-long-running-session`. Vẫn ở giai đoạn 2. Sau khi hoãn offline ngày 2026-09-08, không còn mâu thuẫn lịch với mục 7–8; quan hệ "nên trước `add-offline-data-layer`" chỉ áp dụng nếu mở lại nhóm offline.
 
-**Tầng G — Ca làm việc.** Chuyển xuống đây ngày 30/08/2026 để nhường ba tuần cho nhóm ngoại tuyến. Vẫn là ứng viên mạnh nhất cho nhóm tính năng kế tiếp.
+**Tầng G — Ca làm việc.** Chuyển xuống đây ngày 2026-08-30 để nhường ba tuần cho nhóm ngoại tuyến. Vẫn là ứng viên mạnh nhất cho nhóm tính năng kế tiếp.
 
 - `add-employee-time-clock` → `add-shift-management`
 

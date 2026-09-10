@@ -1,154 +1,161 @@
 # Bảo đảm không sinh trùng cho các lời gọi ghi
 
+> **Duyệt triển khai 2026-09-10:** chủ dự án xác nhận không còn vấn đề, cho phép push docs trước rồi triển khai code. Code chỉ được push sau khi các kiểm tra bắt buộc đạt. Giữ phạm vi hiện tại; quỹ giờ chưa cố định, lịch ở dưới tiếp tục là kịch bản dự báo và được cập nhật theo tiến độ thực tế, không chặn bắt đầu code. Các đoạn về chờ duyệt bên dưới giữ bối cảnh phân tích trước mốc này.
+
+Ngày lập bộ spec 2026-09-09; cập nhật phân tích lịch 2026-09-10. **Đã soạn bộ spec để rà soát và duyệt; chưa triển khai ứng dụng, chưa chốt lại lịch thực hiện.** Mốc code: main@7183b31. [Proposal trước bộ spec](../../../docs/reviews/2026-09-07-idempotency/evidence/2026-09-09-proposal-truoc-bo-spec.md) được giữ nguyên, gồm 32 mã PRE-IDEM và lịch sử sửa quyết định.
+
+<a id="thuat-ngu"></a>
+## Thuật ngữ
+
+| Ký hiệu/thuật ngữ | Định nghĩa trong bộ tài liệu |
+| --- | --- |
+| K | Khóa chống trùng của một thao tác đã xác nhận, tức operationId kiểu UUID, trong phạm vi một cửa hàng. K gắn với payload bất biến đã đăng ký trên server; không phải mã đơn, bàn hay nhân viên. |
+| K1, K2, Knew | Các K khác nhau trong ví dụ: thao tác riêng, không phải các lần thử lại cùng K. |
+| Payload | Nội dung xác nhận theo WritePayloadV1 tại design, mục 3. Thử lại phải dùng nguyên nội dung đã đăng ký, kể cả version, loại thao tác, ID và số lượng. |
+| R1 | BusinessResult bất biến được server lưu khi K chuyển sang applied lần đầu. R1 có thể khác trạng thái đơn hiện tại và không gồm metadata replayCount. Lệnh rejected giữ lỗi đã quyết định, không có R1 thành công. |
+| G | Bộ tiêu chí kiểm chứng chung tại testplan, mục A3: dữ liệu DB trước/sau, tiền, số lượng, quan hệ, actor, tiến triển khi tranh chấp và số request UI. Đây là ký hiệu tài liệu, không phải trường API. |
+| F0–F7 | Mã các bộ dữ liệu thử cố định (fixture) tại testplan, mục A5. F0 là cửa hàng S1 chưa có đơn/thanh toán, cùng nhân viên, bàn và catalog mẫu. |
+| Oracle / SUT | Oracle là kết quả hoặc tiêu chí mong đợi để đối chiếu kết quả chạy test; phải độc lập với helper của hệ thống đang được kiểm thử (SUT). |
+| OCC | Kiểm soát cạnh tranh lạc quan bằng version: từ chối thao tác dựa trên phiên bản đơn đã cũ. OCC và K giải quyết hai vấn đề khác nhau. |
+| pending / applied / rejected / cancelled / expired | Đã đăng ký, chưa quyết định cuối / đã áp dụng / nghiệp vụ bị từ chối / đã hủy trước áp dụng / hết hạn bắt đầu áp dụng. Bốn trạng thái cuối là terminal, không mở lại. |
+| TTL | Thời hạn của lệnh pending: 24 giờ từ lần đăng ký đầu. Đây không phải thời hạn tồn tại của đơn. |
+| IDEM / UC-IDEM / TC-IDEM / PRE-IDEM | Mã requirement / use case / testcase / câu hỏi kiểm tra trước triển khai ở proposal cũ. |
+| k trong ví dụ tiền | Nghìn đồng Việt Nam: 30 k = 30.000 VND. Payload và DB dùng số tiền nguyên theo VND. |
+
+Chi tiết hợp đồng nằm trong [design](design.md); định danh và số liệu fixture nằm trong [testplan](testplan.md).
+
 ## Why
 
-Khi người dùng bấm lại sau một lần mất phản hồi, ứng dụng hiện **dựng lại lệnh từ màn hình đang hiển thị** thay vì gửi lại chính lệnh đã xác nhận: `src/features/pos/orderFlow.ts` sinh định danh mới ở mỗi lần gọi (`orderFlow.ts:308`, `:418-428`), lấy `lock_version` mới nhất mà polling vừa kéo về, và kẹp lại lựa chọn theo dữ liệu mới. Nghĩa là một yêu cầu **đã chạy xong phía database nhưng bị timeout phía client**, rồi được gọi lại, có thể được máy chủ nhìn thành một thao tác hoàn toàn khác.
+Khi request đã commit nhưng client mất phản hồi, polling có thể thay version và lựa chọn. Thử lại từ UI hiện tại có thể thành giao dịch mới: tách thêm món hoặc chuyển lựa chọn rỗng sang thanh toán toàn bộ phần còn lại. Khóa lạc quan không xác định được đây là lần gửi lại của cùng một xác nhận.
 
-Hệ hiện có sẵn vài lớp chặn, và chúng **có tác dụng khi lần gửi lại giữ nguyên định danh cũ**: khóa chính của `order_items`, chỉ mục duy nhất một-đơn-mở-trên-một-bàn, và guard trạng thái cộng `lock_version` trong từng RPC. Nhưng không lớp nào trong số đó nhận diện được **cùng một ý định nghiệp vụ** khi định danh và ngữ cảnh đã đổi. Hai ca đã xác minh bằng đọc mã: bấm lại `pay_order_items` sau khi phiên bản đã tiến hợp lệ thì **ghi nhận thanh toán thêm lần nữa**; và tạo lại một đơn tại bàn sau khi máy khác đã thanh toán đơn đầu thì **qua được cả guard lẫn chỉ mục**, vì cả hai chỉ xét `status = 'open'`.
-
-Định danh do client sinh vốn là điểm mạnh của thiết kế hiện tại: đơn, dòng món và thanh toán đều mang khóa chính dạng UUID do client tạo, nên về nguyên tắc chống trùng được bằng chính khóa chính. Nhưng hiện việc đó **phụ thuộc vào việc tầng gọi có nhớ truyền định danh ổn định xuống hay không**, chứ không phải một bảo đảm của hệ thống. Một chỗ quên là mất bảo đảm.
-
-Môi trường vận hành làm chuyện này dễ xảy ra hơn bình thường: mạng ở quán chập chờn, thiết bị đặt cố định chạy liên tục nhiều giờ, và nhân viên có thói quen bấm lại khi màn hình có vẻ treo. Hậu quả không phải lỗi hiển thị mà là **hai bản ghi thanh toán cho một lần thu tiền**, kéo theo doanh thu sai.
-
-Change này **không phụ thuộc chế độ ngoại tuyến** và đáng làm ngay cả khi không bao giờ làm ngoại tuyến. Nhưng nó cũng là nền bắt buộc cho toàn bộ nhóm ngoại tuyến, vì gửi lại hàng đợi chính là gửi trùng có chủ ý: nếu máy chủ không phân biệt được "lần gửi lại của cùng một việc" với "một việc mới", thì mọi cơ chế hàng đợi đều không an toàn.
+Draft và submit hiện dựng lại giá từ catalog, trong khi chủ dự án chọn giữ giá từng phần đã ghi. Bằng chứng code tại [design, mục 1](design.md), đoạn nguyên văn trong [review 12](../../../docs/reviews/2026-09-07-idempotency/12-chuan-bi-ra-cuoi-truoc-code.md). Không tuyên bố đã xảy ra sự cố thật; theo chủ dự án, hệ chưa vận hành thật.
 
 ## What Changes
 
-- Mọi lời gọi ghi nghiệp vụ nhận một **khóa chống trùng** do client sinh đúng một lần cho mỗi ý định của người dùng, và giữ nguyên qua mọi lần gửi lại.
-- Phía database ghi nhận khóa đã áp dụng và **trả về kết quả của lần áp dụng đầu tiên** thay vì thực hiện lại, để lần gọi lặp không sinh thêm dữ liệu và cũng không báo lỗi cho người dùng.
-- Tầng nghiệp vụ sinh khóa tại thời điểm người dùng xác nhận thao tác, không sinh lại khi thử lại. Việc này chuyển bảo đảm từ "nhớ thì đúng" thành "không nhớ cũng đúng".
-- Rà lại các adapter hiện có để bỏ hẳn mẫu sinh định danh dự phòng ngay tại chỗ gọi.
-- Kiểm chứng trên dữ liệu thật xem đã từng phát sinh bản ghi trùng chưa, trước khi kết luận mức độ nghiêm trọng.
-- Bổ sung kiểm thử khẳng định gọi hai lần với cùng khóa cho kết quả giống hệt gọi một lần, ở cả tầng adapter lẫn tầng database.
+- Thêm register, execute, get, list và cancel. K gắn payload bất biến cùng kết quả trên server, tìm lại được từ máy khác.
+- Server xác minh phiên nhân viên và quyền, bảo vệ nguồn quyền/PIN, thu hồi RPC cũ và đường DML vượt giao thức.
+- Giữ ID và snapshot phần cũ; phần mới, kể cả phần thêm bằng dấu cộng, nhận giá mới đã xác nhận. Không sửa modifier trên phần cũ.
+- Pending có 24 giờ để bắt đầu thực hiện; đơn không hết hạn. Bản đồ án không tự xóa K, payload hoặc kết quả.
+- Ghi người tạo đơn, người khởi tạo/thực hiện/hủy lệnh và người thanh toán. Hóa đơn tính đúng số lượng option; phục hồi không tự in.
+- Thiết kế 33 requirement, 12 use case, 93 testcase gốc và các biến thể về quyền, tranh chấp, lỗi và thời gian. Mỗi ca có kết quả mong đợi và cách quan sát. Test mới **chưa hiện thực, chưa chạy**.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `write-idempotency`: quy tắc khóa chống trùng cho các lời gọi ghi nghiệp vụ, cách máy chủ nhận biết và xử lý lần gửi lặp, và phạm vi áp dụng.
+- write-idempotency: giao thức ghi, phục hồi, tính nguyên tử, thời hạn/hủy lệnh, quyền, giá nguồn và nghiệm thu.
 
 ### Modified Capabilities
 
-- `order-management`: luồng gửi đơn nhận thêm khóa chống trùng, và lần gửi lặp không tạo thêm đơn hay dòng món.
-- `payment`: luồng thanh toán toàn bộ và luồng tách đơn thanh toán nhận thêm khóa chống trùng; lần gửi lặp không tạo thêm bản ghi thanh toán và không cấp thêm số đơn.
-- `order-void`: luồng hủy đơn đã thanh toán nhận thêm khóa chống trùng.
+- employee-session: phiên server, giữ quy trình Store Key/PIN.
+- access-control: quyền hiện hành cho giao thức ghi, bảo vệ nguồn quyền; ghi rõ giới hạn SELECT.
+- order-management: phần giữ lại/phần mới, xác nhận giá, định danh nguồn, phát hiện draft thay đổi và OCC.
+- payment: thanh toán toàn bộ/tách phần một lần, đóng băng lựa chọn, liên kết kiểm toán hai đơn.
+- order-void: chặn version NULL, giữ tiền, lịch sử, bàn và kết quả gửi lại.
+- receipt-printing: schema thống nhất, số lượng option, in lại theo trạng thái hiện tại.
 
 ## Impact
 
-- Thêm bảng lưu khóa đã áp dụng cùng kết quả tương ứng, kéo theo migration.
-- Đổi chữ ký các lời gọi ghi chính, nên chạm vào cả ports, adapter và tầng nghiệp vụ.
-- Cần chính sách dọn bảng khóa, vì bảng này chỉ lớn thêm.
-- Rủi ro thấp so với các change khác trong nhóm: nó cộng thêm một lớp kiểm tra chứ không đổi ngữ nghĩa nghiệp vụ nào.
-- Cập nhật `docs/architecture.md`, `docs/data-model.md`, `docs/limitations.md`.
+FR-03/04/07/09/11/12/13/14/15; NFR-01/02/03/05/07. Ảnh hưởng domain/ports, mock/Supabase adapters, draft/payment/recovery, SQL/RLS, phần admin/bootstrap tối thiểu, hóa đơn và tests. Mã ứng dụng ở worktree main; tài liệu ở worktree docs. Chưa cập nhật baseline specs thành đã triển khai.
 
-## Ngoài phạm vi
-
-- Hàng đợi thao tác khi ngoại tuyến. Việc đó thuộc `add-offline-data-layer`.
-- Tự động thử lại khi lỗi mạng. Change này chỉ bảo đảm thử lại là an toàn, không quyết định khi nào thử lại.
-- Chống trùng cho các thao tác quản trị như sửa thực đơn hay sửa sơ đồ, trừ khi được chốt ở câu hỏi số 4.
-
-## Phụ thuộc
-
-- Không phụ thuộc change nào.
-- Nên làm **trước** `add-offline-data-layer`. Hàng đợi ngoại tuyến gửi lại thao tác theo đúng nghĩa đen, nên nếu chưa có bảo đảm này thì mọi lần gửi lại đều có nguy cơ sinh trùng.
-- Nên làm **trước** `enforce-permissions-at-database` nếu cả hai cùng đụng vào các lời gọi ghi, để chỉ sửa chữ ký một lần.
+Baseline payment quy định: “Hai đơn sau khi tách MUST độc lập với nhau, chỉ cùng nhãn bàn.” Delta cho phép liên kết kiểm toán bất biến nguồn → đơn con → thanh toán → K, vẫn giữ trạng thái độc lập và không hủy dây chuyền. Access-control nâng các đường ghi từ kiểm tra employeeId do client gửi sang xác minh phiên server; chưa thay toàn bộ mô hình tài khoản/chủ quán.
 
 ## Câu hỏi phải chốt trước khi làm
 
-1. Khóa chống trùng sinh ở tầng nào? Sinh ở tầng nghiệp vụ khi người dùng xác nhận là đúng nhất về mặt ngữ nghĩa, nhưng phải bảo đảm nó sống sót qua việc thành phần giao diện bị dựng lại.
-2. Khi gặp khóa đã áp dụng, máy chủ trả về nguyên văn kết quả lần đầu, hay chỉ báo đã áp dụng và để client tự tải lại? Trả nguyên văn thì client không phải xử lý thêm nhánh nào, nhưng phải lưu kết quả.
-3. Giữ khóa đã áp dụng bao lâu? Đủ dài để phủ mọi lần thử lại hợp lý, đủ ngắn để bảng không phình. Nếu sau này làm ngoại tuyến thì thời hạn này phải dài hơn thời gian một thiết bị có thể ngoại tuyến.
-4. Áp cho những lời gọi nào? Tối thiểu là ba lời gọi đụng tiền là gửi đơn, thanh toán và hủy đơn. Có mở rộng sang các thao tác quản trị không?
-5. Đã từng phát sinh bản ghi trùng trên dữ liệu thật chưa? Cần một truy vấn kiểm tra trước khi làm, vì kết quả đổi mức ưu tiên của change này.
-6. Sau khi có bảo đảm này, có bật tự động thử lại cho các lời gọi ghi không, hay vẫn để người dùng chủ động bấm lại?
-7. Lần gửi lặp có ghi vào nhật ký không? Ghi thì phát hiện được vấn đề mạng, nhưng thêm ghi cho một việc vốn không có tác dụng gì.
+Các câu hỏi nghiệp vụ ban đầu đã có câu trả lời. Dưới đây giữ lại nguyên văn bảy câu hỏi của proposal trước bộ spec, cùng câu trả lời hiện hành và mã quyết định. Ngày, nguồn quyết định nằm ở [bảng D01–D12](#quyet-dinh); lịch sử trước đính chính vẫn được giữ ở evidence.
 
+1. ~~Khóa chống trùng sinh ở tầng nào? Sinh ở tầng nghiệp vụ khi người dùng xác nhận là đúng nhất về mặt ngữ nghĩa, nhưng phải bảo đảm nó sống sót qua việc thành phần giao diện bị dựng lại.~~ **Đã chốt:** tầng điều phối nghiệp vụ sinh K tại xác nhận; server lưu payload để phục hồi độc lập với UI và local. Xem D01, D02, D06.
+2. ~~Khi gặp khóa đã áp dụng, máy chủ trả về nguyên văn kết quả lần đầu, hay chỉ báo đã áp dụng và để client tự tải lại? Trả nguyên văn thì client không phải xử lý thêm nhánh nào, nhưng phải lưu kết quả.~~ **Đã chốt:** trả R1 bất biến; tải và hiển thị trạng thái đơn hiện tại riêng. Xem D02.
+3. ~~Giữ khóa đã áp dụng bao lâu? Đủ dài để phủ mọi lần thử lại hợp lý, đủ ngắn để bảng không phình. Nếu sau này làm ngoại tuyến thì thời hạn này phải dài hơn thời gian một thiết bị có thể ngoại tuyến.~~ **Đã chốt:** pending có hạn 24 giờ; bản đồ án không tự xóa K/payload/result ở trạng thái cuối. Ngoại tuyến đã hoãn. Xem D01, D07, D08.
+4. ~~Áp cho những lời gọi nào? Tối thiểu là ba lời gọi đụng tiền là gửi đơn, thanh toán và hủy đơn. Có mở rộng sang các thao tác quản trị không?~~ **Đã chốt:** bốn RPC nghiệp vụ, gồm cả pay_order_items; không mở giao thức chống trùng cho mọi thao tác quản trị. Phần phiên/quyền/admin tối thiểu là điều kiện bảo vệ giao thức. Xem D09.
+5. ~~Đã từng phát sinh bản ghi trùng trên dữ liệu thật chưa? Cần một truy vấn kiểm tra trước khi làm, vì kết quả đổi mức ưu tiên của change này.~~ **Đã rõ giới hạn bằng chứng:** chưa có sự cố thật được xác nhận; theo chủ dự án, hệ chưa vận hành thật. Rủi ro suy ra từ mã cần được kiểm bằng testcase đã thiết kế. Preflight migration vẫn kiểm dữ liệu trước thay đổi. Xem D10.
+6. ~~Sau khi có bảo đảm này, có bật tự động thử lại cho các lời gọi ghi không, hay vẫn để người dùng chủ động bấm lại?~~ **Đã chốt:** người dùng chủ động tra cứu và thử lại cùng K; reconnect/focus chỉ đọc. Xem D01, D02.
+7. ~~Lần gửi lặp có ghi vào nhật ký không? Ghi thì phát hiện được vấn đề mạng, nhưng thêm ghi cho một việc vốn không có tác dụng gì.~~ **Đã chốt:** replayCount nằm ngoài R1; không tạo event nghiệp vụ cho từng retry. Chỉ execute hợp lệ vào trạng thái cuối đã có mới tăng bộ đếm. Xem D12.
+
+32 mã PRE-IDEM là checklist phân tích bổ sung, khác với bảy câu hỏi trên. Bản nguyên văn và lịch sử câu trả lời nằm ở [proposal trước bộ spec](../../../docs/reviews/2026-09-07-idempotency/evidence/2026-09-09-proposal-truoc-bo-spec.md); requirement, use case và testcase hiện hành được nối bằng [traceability](traceability.md).
+
+**Còn phải chốt về kế hoạch:** giữ phạm vi hiện tại và dời lịch, hay yêu cầu một bản thu hẹp phạm vi để duyệt lại? Phân tích khối lượng ở mục tiếp theo. Đây là quyết định lịch/phạm vi của chủ dự án, không phải yêu cầu trả lời lại nghiệp vụ.
+
+## Khối lượng và xung đột lịch
+
+[Roadmap](../../../docs/roadmap.md) đặt mục 2 ở tuần 2026-09-04 đến 2026-09-10 và đã ghi “lịch thực hiện cần được rà lại khi chốt spec”. Bộ task hiện tại cho thấy cần kiểm tra quỹ giờ trước khi tiếp tục coi đây là cam kết một tuần.
+
+- Có 43 đầu mục. Tổng cố định của 42 mục ngoài task 40 là **76,5 giờ công**, đã gồm **6 giờ** cho ba reviewer tại task 37–39.
+- Task 40 dự trù **2 giờ cho mỗi task sửa lỗi phát sinh**. Với n task sửa lỗi, mô hình ước lượng là **76,5 + 2n giờ**. **78,5 giờ** tương ứng n = 1; không phải tổng có trần và không cộng thêm ba lượt review lần nữa.
+- Với 40 giờ tập trung mỗi tuần, phần cố định tương đương khoảng 1,9 tuần; với 20 giờ mỗi tuần là khoảng 3,8 tuần. Chờ DB, công việc khác và sửa lỗi có thể kéo dài lịch. “2–3 tuần” chỉ là một kịch bản, chưa phải cam kết. Reviewer chạy song song có thể giảm thời gian chờ, không tự giảm tổng giờ công.
+- Task 09–14 chiếm 12 giờ trong tổng trên, đưa phần phiên/quyền/đóng đường vượt giao thức vào mục 2. Phần siết quyền tầng dữ liệu vốn nằm ở mục 4, tuần 2026-10-02 đến 2026-10-08. Đây là thay đổi phụ thuộc có thật; không có nghĩa toàn bộ enforce-permissions-at-database đã chuyển lên hoặc hoàn thành.
+
+Chưa đổi ngày roadmap và chưa cắt phạm vi. Analyst khuyến nghị giữ các bảo đảm đã chọn, rà lại quỹ giờ và lịch trước triển khai. Nếu cần thu hẹp thì phải nêu rõ bảo đảm và testcase bị ảnh hưởng để chủ dự án duyệt; không bỏ quyền hoặc test DB rồi vẫn nhận đủ bảo đảm.
+
+### Ảnh hưởng dây chuyền tới mục 3–10 — cập nhật 2026-09-10
+
+**Thông tin từ chủ dự án (2026-09-10):** không có quỹ giờ cố định, nhưng làm dự án hằng ngày. Chưa có căn cứ quy đổi thành 20 hoặc 40 giờ/tuần. Hai cột dưới là phân tích kịch bản, chưa phải lịch được duyệt hay thời gian chạy thực tế của agent.
+
+Các giả định được giữ rõ để có thể kiểm lại phép tính:
+
+1. Giả sử bắt đầu mục 2 vào **2026-09-11**, ngày đầu của khối tuần tiếp theo; chưa ghi nhận task triển khai nào hoàn thành trước mốc này. Đây là mốc tính thử, không ấn định ngày bắt đầu thay chủ dự án.
+2. Dự trù **n = 1**, tức 78,5 giờ cho mục 2; lấy ceil(78,5 / giờ mỗi tuần) thành số khối tuần, mỗi khối bảy ngày lịch. Cách làm tròn dùng để so với roadmap theo tuần, không dự đoán ngày hoàn thành tới từng ngày.
+3. Tạm giữ thời lượng mục 3/4/5/6 là **3/1/3/1 tuần**, tổng tám tuần; mục 9 một tuần và mục 10 hai tuần. Đây là thời lượng lịch cũ, chưa được chứng minh khả thi ở cả hai mức giờ. Chưa tự trừ thời gian mục 4 cho phần quyền đã đưa vào mục 2, vì chưa bóc lại phạm vi còn lại.
+4. Mục 7–8 đã hoãn: **2026-11-06 đến 2026-11-26 là ba tuần chưa phân bổ lại**. Mô hình dưới thử dùng khoảng này để hấp thụ dịch chuyển của mục 3–6; việc phân bổ thật vẫn cần chốt. Không dùng bốn ngày **2026-12-18 đến 2026-12-21** đang dành cho đệm và tập demo.
+5. Làm tuần tự, không tính công việc song song để rút lịch, không thêm thời gian chờ DB hoặc phát sinh ngoài n = 1. Các yếu tố này phải được cập nhật khi có dữ liệu thực tế.
+
+| Mục | Lịch gốc | Kịch bản 40 giờ/tuần cho mục 2 | Kịch bản 20 giờ/tuần cho mục 2 |
+| --- | --- | --- | --- |
+| 2 — Chống trùng | 2026-09-04 đến 2026-09-10 | 2026-09-11 đến 2026-09-24 (2 tuần) | 2026-09-11 đến 2026-10-08 (4 tuần) |
+| 3 — Mô hình quyền | 2026-09-11 đến 2026-10-01 | 2026-09-25 đến 2026-10-15 | 2026-10-09 đến 2026-10-29 |
+| 4 — Quyền tầng dữ liệu | 2026-10-02 đến 2026-10-08 | 2026-10-16 đến 2026-10-22 | 2026-10-30 đến 2026-11-05 |
+| 5 — Tài khoản chủ | 2026-10-09 đến 2026-10-29 | 2026-10-23 đến 2026-11-12 | 2026-11-06 đến 2026-11-26 |
+| 6 — Vòng đời sở hữu | 2026-10-30 đến 2026-11-05 | 2026-11-13 đến 2026-11-19 | 2026-11-27 đến 2026-12-03 |
+| 7–8 — Offline | Đã hoãn, không triển khai trong phạm vi này | Còn 2026-11-20 đến 2026-11-26 chưa cần dùng sau mục 6 | Ba tuần cũ đã bị dịch chuyển mục 3–6 chiếm hết; mục 6 kéo thêm một tuần |
+| 9 — Triển khai và đo tải | 2026-11-27 đến 2026-12-03 | Giữ 2026-11-27 đến 2026-12-03 | Sẽ thành 2026-12-04 đến 2026-12-10 nếu không điều chỉnh |
+| 10 — Viết báo cáo | 2026-12-04 đến 2026-12-17 | Giữ 2026-12-04 đến 2026-12-17 | Sẽ thành 2026-12-11 đến 2026-12-24 nếu vẫn giữ đủ hai tuần sau mục 9 |
+
+Theo giả định trên, **40 giờ** làm mục 3–6 dịch hai tuần so với lịch gốc, được ba tuần hoãn offline hấp thụ; không cần dùng bốn ngày đệm cuối. **20 giờ** làm mục 3–6 dịch bốn tuần; sau khi dùng ba tuần còn thiếu một tuần trước cửa sổ báo cáo. Nếu tiếp tục tuần tự, báo cáo xong ngày 2026-12-24, muộn ba ngày so với hạn 2026-12-21. Để giữ nguyên cửa sổ báo cáo và đệm, cần thu hồi một tuần trước mục 10. Không diễn đạt thành “ăn hết cửa sổ viết báo cáo”.
+
+Riêng phép tính mục 2, để nằm trong ba tuần còn có thể hấp thụ, ngưỡng là **(76,5 + 2n) / 3 giờ/tuần**: khoảng **26,2 giờ/tuần khi n = 1**, không phải ranh giới cứng 20/40 giờ. Tương đương mục 2 xong chậm nhất **2026-10-01** trong mô hình này để còn tám tuần mục 3–6 và một tuần mục 9 trước báo cáo. Đây là chỉ báo có điều kiện, **không phải ngưỡng bảo đảm toàn dự án**, vì giờ công của mục 3–6/9/10 chưa được ước lượng lại.
+
+**Cách ra quyết định khi quỹ giờ không cố định:** hiện giữ nguyên các bảo đảm để review, chưa chọn cột lịch nào. Analyst đề xuất ghi giờ tập trung thực tế, thời gian chờ và đầu ra đã kiểm chứng trong tuần triển khai đầu, rồi cập nhật dự báo phần còn lại. Nếu dự báo không giữ được hai tuần báo cáo và khoảng đệm, cần đưa ra phương án cho toàn dự án: tăng quỹ giờ nếu khả thi, điều chỉnh cách tổ chức việc hoặc thu hẹp phần được chủ dự án chấp nhận. Chưa đủ dữ liệu để kết luận phải cắt riêng change chống trùng; không bỏ quyền hoặc testcase rồi vẫn nhận đủ bảo đảm. Lịch chính thức chỉ đổi sau khi chủ dự án chọn phương án.
+
+<a id="quyet-dinh"></a>
 ## Quyết định đã chốt
 
-Ghi ngày 2026-09-07. Đánh số theo câu hỏi ở mục trên. Câu 1, 2, 3 còn đang trao đổi thêm.
+Các mã D là chỉ mục biên tập cho bản hiện hành, không thay số quyết định lịch sử trong proposal cũ.
 
-**Phần Why giữ nguyên. Một đính chính ghi ngày 2026-09-07 đã bị rút lại cùng ngày.**
+| Mã | Ngày | Nguồn | Quyết định |
+| --- | --- | --- | --- |
+| D01 | 2026-09-08 | Chủ dự án; analyst cụ thể hóa thử lại | Online, server là nguồn tin cậy; không hàng đợi bán offline, không tự thử lại thao tác ghi. |
+| D02 | 2026-09-08 đến 2026-09-09 | Analyst cụ thể hóa yêu cầu phục hồi | K sinh khi xác nhận, gắn payload bất biến; trả R1 khi gửi lại, không dựng payload từ UI/polling. |
+| D03 | 2026-09-08 | Chủ dự án | Người có quyền thực tế được tiếp quản; không cần người tạo online hoặc giới hạn riêng cho quản lý. |
+| D04 | 2026-09-08 | Chủ dự án | Người nhận chịu trách nhiệm tiền mặt vật lý; phần mềm bảo đảm ghi giao dịch, không thêm bước đối soát tiền. |
+| D05 | 2026-09-08 đến 2026-09-09 | Chủ dự án | Giữ giá từng phần: 30.000 + 35.000 = 65.000 VND. Khác giá là dòng bán khác ID, không tạo catalog khác. Modifier chỉ chọn khi thêm món: cũ A × 2 × 30.000 + mới A × 1 × 40.000 + option 0 = 100.000 VND; không sửa modifier cũ. |
+| D06 | 2026-09-08 | Chủ dự án | Mất local/đổi máy phục hồi dữ liệu server; bếp chưa làm, hoãn phục hồi đúng phiếu. |
+| D07 | 2026-09-08 đến 2026-09-09 | Analyst được giao chọn | Pending 24 giờ từ register đầu; kiểm giờ DB sau khóa và validation, trước hiệu ứng; không gia hạn. Đơn 48 giờ vẫn có thể thanh toán bằng K mới. |
+| D08 | 2026-09-08 đến 2026-09-09 | Analyst được giao chọn | Cancel tranh khóa với execute, không hủy applied. Không tự xóa K/result để tránh tái dùng thành giao dịch mới. |
+| D09 | 2026-09-09 | Analyst thiết kế theo phạm vi đã thống nhất | Bốn RPC: submit_order_changes, pay_order, pay_order_items, void_order. Phiên nhân viên opaque token 12 giờ và bảo vệ nguồn quyền đi kèm; schema, giới hạn, lỗi, khóa, harness tại design. |
+| D10 | 2026-09-09 | Chủ dự án cung cấp bối cảnh; analyst ghi giới hạn | Hệ chưa vận hành thật; không khẳng định có ca trùng thật. Kiểm dữ liệu và tái hiện trên môi trường thử riêng trước khi kết luận về implementation. |
+| D11 | 2026-09-09 | Analyst giữ phạm vi | businessDate giữ ngày tạo; paidAt riêng; hóa đơn gồm giá base và số lượng option. |
+| D12 | 2026-09-09 | Analyst cụ thể hóa | Replay counter tăng nguyên tử khi execute vào trạng thái cuối đã có; ngoài R1, không event mỗi retry. |
 
-Ngày 2026-09-07, sau khi rà mã, mục này từng ghi rằng phần Why "nói quá" vì đường dẫn tới bản ghi thanh toán trùng đã bị khóa lạc quan chặn. **Đính chính đó sai và đã được rút.**
+Lý do và đánh đổi tại design, mục 2, 5 và 8: register/execute tăng độ trễ nhưng tìm được lệnh trước áp dụng; giữ payload/result tốn dung lượng; khóa theo store giảm mức song song; snapshot theo phần làm UI nhiều dòng. Xác thực và bảo vệ nguồn quyền cần thiết để các bảo đảm đã chọn có ý nghĩa thực tế.
 
-Một AI độc lập rà lại cùng ngày và chỉ ra ca sau, đã kiểm chứng lại bằng mã:
+## Ngoài phạm vi
 
-1. Đơn có 5 ly, `lock_version = 5`. Thu ngân chọn trả 1 ly qua `pay_order_items`.
-2. Máy chủ tách và ghi thanh toán. Đơn nguồn còn 4 ly, version thành 6. **Phản hồi bị mất.**
-3. Polling 5 giây kéo về version 6.
-4. Giao diện **giữ lại lựa chọn**: `src/app/drawers/pos/PaymentDrawer.tsx:51-60` kẹp lựa chọn về dữ liệu mới chứ không xóa.
-5. Thu ngân bấm lại. `src/features/pos/orderFlow.ts:418-428` sinh **định danh mới** cho `paymentId`, `newOrderId` và `splitItemId`, gửi kèm **version 6 hiện tại**.
-6. Version khớp, guard cho qua. Một ly nữa bị tách và thu tiền.
+Bán offline, outbox và tự thử lại mutation; gateway/QR/ngân hàng/ngăn kéo/kiểm tiền vật lý; sửa modifier cũ; engine giá linh động/giảm giá/tồn kho; native printer; bếp và khôi phục đúng phiếu; tự đóng đơn cũ; tự dọn ledger; đổi ngày báo cáo; quyền nhân viên cho mọi endpoint đọc; tài khoản chủ mới.
 
-Kết quả: **hai bản ghi thanh toán trên hai đơn tách, cho một ý định thu tiền duy nhất.** Khóa lạc quan không hề bị vi phạm vì version đã tiến hợp lệ — đó chính là lý do nó không cứu được ca này.
+## Phụ thuộc
 
-Phát biểu gốc của phần Why vì vậy **đúng về bản chất**, chỉ mô tả sai đường dẫn tới hậu quả.
+- Phần tối thiểu của enforce-permissions-at-database là cổng cùng change: phiên server, nguồn quyền, chống đường gọi vượt giao thức. Phần rộng hơn vẫn thuộc change ấy; không đợi toàn bộ hệ thống tài khoản chủ. Ảnh hưởng lịch nêu ở mục khối lượng.
+- Test DB riêng cho observer/fault và Supabase/PostgREST thật. Thiếu môi trường là BLOCKED DB test; không thay bằng mock rồi nhận đạt.
+- [define-test-strategy (đã archive)](../archive/2026-09-07-define-test-strategy/proposal.md) cung cấp baseline; setup-test-data-environment cung cấp môi trường an toàn. Không chèn lỗi vào dữ liệu cửa hàng thật.
+- Giữ Ports & Adapters và các ranh giới kiến trúc.
 
-Phân tích đầy đủ, gồm tám lỗi khác đã xác nhận trong bản rà đầu tiên, nằm ở `docs/reviews/2026-09-07-idempotency/04-dinh-chinh-sau-danh-gia.md`.
+## Đọc và duyệt
 
-**Hiện trạng đúng sau khi rà lại hai vòng:**
+1. [Requirement](specs/write-idempotency/spec.md) và các delta trong specs/.
+2. [Use case](usecases.md): thao tác, đầu vào, đầu ra, thông báo.
+3. [Design](design.md): schema, quyền, khóa, lỗi, migration và đánh đổi.
+4. [Testplan](testplan.md): fixture, expected và cổng chạy.
+5. [Traceability](traceability.md): không sót requirement hoặc use case.
+6. [Tasks](tasks.md): từng việc ước lượng không quá 2 giờ, tổng và phần phát sinh ghi riêng.
 
-| Ca | Bị chặn chưa | Bằng chứng |
-| --- | --- | --- |
-| Gửi lại **nguyên yêu cầu cũ** | **Có** | `items[].id` giữ nguyên, vướng khóa chính `order_items` (`001_schema_enums.sql`) |
-| Tạo đơn **tại bàn** | **Có, hai lớp** | Guard "bàn đã có đơn mở" trong `submit_order_changes` (012), cộng chỉ mục duy nhất `orders_store_table_open_idx` (`002_indexes_rls_triggers.sql:70`) |
-| `pay_order` bấm lại | **Có** | `status <> 'open'` cộng `lock_version` |
-| `void_order` bấm lại | **Có** | `status <> 'paid'` cộng `lock_version` (011:157) |
-| **Tạo đơn mang đi, định danh mới sau khi tải lại trang** | **Không** | `table_id` là `null` nên cả guard lẫn chỉ mục đều không áp |
-| **`pay_order_items` bấm lại sau khi version đã tiến hợp lệ** | **Không. Thu tiền hai lần** | Xem diễn biến sáu bước ở trên |
-| **Gọi RPC trực tiếp với `p_expected_lock_version = NULL`** | **Không. Bỏ qua kiểm phiên bản** | So sánh `lock_version <> NULL` cho `NULL`, `IF` không chạy nhánh từ chối |
-
-Phát biểu đúng, thay cho phát biểu cũ: **gửi lại nguyên yêu cầu cũ thường bị chặn; bấm lại sau khi dữ liệu và định danh đã thay đổi vẫn lặp được nghiệp vụ, và ca nặng nhất là tách đơn thanh toán hai lần.**
-
-Lỗ hổng `NULL` ở dòng cuối bảng là **vấn đề độc lập với change này** và nên xử lý riêng, không gộp vào phần chống trùng.
-
-**4. Áp khóa cho bốn lời gọi: `submit_order_changes`, `pay_order`, `pay_order_items`, `void_order`.** Chốt 2026-09-07.
-
-Ba phương án đã cân nhắc:
-
-| | Phạm vi | Lý do chọn hoặc loại |
-| --- | --- | --- |
-| a | Ba lời gọi tiền | **Loại.** Bỏ sót `void_order`, mà hủy đơn đã thanh toán cũng là thao tác đụng tiền |
-| b | Bốn lời gọi trên | **Chọn.** Toàn bộ nhóm đụng tiền và đụng trạng thái đơn — ranh giới tự nhiên, không phải con số chọn bừa |
-| c | Thêm cả thao tác quản trị | **Loại.** Thừa, xem lý do bên dưới |
-
-Lý do loại c, **đã sửa ngày 2026-09-07 sau đánh giá độc lập**: giới hạn phạm vi change, **không phải** vì thao tác quản trị đã tự an toàn.
-
-Lý do cũ ghi rằng chúng tự an toàn nhờ mọi kiểu `*Create` mang sẵn `id` do client sinh. **Điều đó không đủ.** `src/adapters/supabase/menuRepo.ts:51` cho thấy `saveMenuChanges` thực hiện **nhiều request nối tiếp**, không phải một giao dịch: tạo category xong mà tạo món hỏng, thì gửi lại nguyên changeset sẽ lỗi trùng khóa ở phần đã xong **trước khi** tới phần chưa xong.
-
-Nguyên tắc phân loại, **đã sửa ngày 2026-09-07 sau đánh giá vòng hai**. Một thao tác cần khóa nếu thỏa **ít nhất một** trong hai điều kiện:
-
-1. **Nó không bình thường hóa** — làm hai lần cho kết quả khác làm một lần. Đặt thực đơn thành trạng thái X thì làm mười lần vẫn ra X; tạo một đơn thì làm hai lần ra hai đơn.
-2. **Caller cần xác nhận kết quả** — sau khi mất phản hồi, người dùng phải biết được lần gửi trước đã thành công hay chưa, và hệ phải trả lời được câu đó mà không thực hiện lại.
-
-Lý do sửa: nguyên tắc cũ chỉ có điều kiện 1, nên nó **mâu thuẫn với chính lý do giữ `void_order`** ghi ngay dưới đây. Điều kiện 2 là thứ làm hai đoạn nhất quán, và nó cũng đúng với bản chất bài toán — khóa chống trùng sinh ra để trả lời "việc này xong chưa", không chỉ để chặn ghi thừa.
-
-Riêng `void_order`: hủy một đơn đã hủy vẫn ra trạng thái đã hủy, nên **về mặt trạng thái nó đã bình thường hóa**. Nó vào phạm vi theo điều kiện 2, không theo điều kiện 1.
-
-Lý do giữ nó trong phạm vi, **đã sửa ngày 2026-09-07**: sau khi mất phản hồi, caller **cần xác nhận thao tác hủy trước đã thành công hay chưa**.
-
-Lý do cũ ghi rằng gọi hai lần sinh dấu vết kiểm toán rác. **Sai với mã**: lần gọi thứ hai bị guard trạng thái chặn **trước khi** cập nhật các trường kiểm toán (`011_void_paid_order.sql:157`).
-
-**6. Không bật tự động thử lại. Giữ người dùng chủ động bấm lại.** Chốt 2026-09-07.
-
-Hiện `src/app/AppProviders.tsx:31-36` đặt `retry: false` **trong khối `queries`**; không có khối `mutations`, nên các lời gọi ghi chạy theo mặc định của TanStack Query, vốn cũng không thử lại mutation. Quyết định này giữ nguyên trạng đó.
-
-*(Sửa ngày 2026-09-07: bản cũ suy từ `queries.retry: false` ra "hệ đang không tự thử lại gì cả". Kết luận về hành vi vẫn đúng, nhưng nó đúng nhờ mặc định của thư viện chứ không nhờ dòng cấu hình đó — và nếu sau này có ai đặt `mutations.retry`, dòng cấu hình kia sẽ không cản.)*
-
-| | Phương án | Lý do chọn hoặc loại |
-| --- | --- | --- |
-| a | Không tự động, người dùng bấm lại | **Chọn** |
-| b | Tự động thử lại vài lần cho lỗi mạng | **Loại.** Phải phân biệt được lỗi mạng với lỗi nghiệp vụ; thử lại một `PAYMENT_AMOUNT_TOO_LOW` là vô nghĩa và làm chậm phản hồi |
-| c | Đẩy sang change riêng | **Loại.** Không cần một change để nói "giữ nguyên hiện trạng" |
-
-Lý do chọn a: bật tự động thử lại là thêm một hành vi **chạy ngầm vào đúng luồng tiền**, trong tuần đang trễ lịch. Và vấn đề gốc đã được giải rồi — có khóa chống trùng thì việc bấm lại thủ công không còn nguy hiểm nữa; phần còn lại chỉ là tiện lợi, không phải đúng sai.
-
-Ranh giới giữ nguyên như mục "Ngoài phạm vi" đang ghi: change này bảo đảm **thử lại là an toàn**, không quyết định **khi nào thử lại**.
-
-**7. Có ghi nhật ký lần gửi lặp, nhưng chỉ đếm.** Chốt 2026-09-07.
-
-Một cột đếm số lần lặp trên chính hàng khóa, không sinh bản ghi riêng cho mỗi lần lặp. Đủ để biết mạng có vấn đề mà không đẻ thêm bảng, và không biến một việc vốn không có tác dụng gì thành một dòng ghi mới.
-
-**5. Chưa từng phát sinh bản ghi trùng trên dữ liệu thật.** Chốt 2026-09-07.
-
-Chủ dự án xác nhận: hệ chưa được dùng thật và chưa có kiểm thử tải, nên chưa có cơ hội phát sinh. Kết luận này **không làm giảm mức ưu tiên**: change vẫn là nền bắt buộc cho nhóm ngoại tuyến ở tuần 11–13, vì gửi lại hàng đợi chính là gửi trùng có chủ ý.
+Bộ này có **bảy loại artifact, 13 file Markdown**, gồm 7 file capability và 6 file gốc. Kết quả rà contract trước đó ở [tài liệu 14](../../../docs/reviews/2026-09-07-idempotency/14-bo-spec-hoan-chinh-va-ra-cuoi.md); đối chiếu review ngoài và đính chính trình bày/lịch ở [tài liệu 15](../../../docs/reviews/2026-09-07-idempotency/15-doi-chieu-review-ngoai-va-bien-tap.md). Chỉ kết luận đạt cho kiểm tra đã thực sự chạy; duyệt triển khai và lịch vẫn cần dựa trên bản cụ thể này.
