@@ -1,0 +1,68 @@
+{
+  "original": "artifacts/final-gate-audit/audit.mjs",
+  "originalSha256": "66aab8864d486d92fdbf3559597f7cda7d94a2284befd160c55bc01c8cda7ef2",
+  "destination": "artifacts/timeout-followup/reviewer-gate/audit.mjs",
+  "destinationSha256": "9e787fd7fd1cd0422fdb5ecd8844134e1e6662d98ae5facddd42f47c6b7ebc07",
+  "edits": [
+    {
+      "from": "from '../../tests/contracts/caseManifest.ts'",
+      "to": "from '../../../tests/contracts/caseManifest.ts'"
+    },
+    {
+      "from": "const directory=process.argv[2]??'artifacts/release-final-20260914';",
+      "to": "const directory=process.argv[2]??'artifacts/timeout-followup/gate';"
+    },
+    {
+      "from": "const expectedCandidate=process.argv[3]??'e8f0aeeb298671044013cfe0b0e2e64ce326fed3f29fbf7994c9395e2605a3c5';",
+      "to": "const expectedCandidate=process.argv[3]??'493c2af03222deefed6ab679fabd9fba352b79e9938b16ba21e1fd0e2a6f7b84';"
+    },
+    {
+      "from": "const expectedRequired=Number(process.argv[4]??770);",
+      "to": "const expectedRequired=Number(process.argv[4]??818);"
+    },
+    {
+      "from": "const diagnostic=i===4&&s.command===ordinary+' -- --reporter=./artifacts/release-wsl/step-reporter.mjs,json';",
+      "to": "const diagnostic=false; // Current full gate has no reporter/filter/retry overrides."
+    },
+    {
+      "from": "const actual=[],stages={},reportHashes={},historicalPlanMismatches=[];",
+      "to": "const priorAudit=read('artifacts/final-gate-audit/audit.json');\nconst priorE2EPath='artifacts/release-final-20260914/idempotency-e2e.json',priorE2E=read(priorE2EPath),priorTimeouts=new Map();\nassert(sha(fs.readFileSync(priorE2EPath))===priorAudit.stages.e2e.reportSha256,'prior timeout evidence hash');\nconst timeoutWalk=s=>{for(const spec of s.specs??[])for(const test of spec.tests??[])priorTimeouts.set(spec.title,test.timeout);(s.suites??[]).forEach(timeoutWalk)};priorE2E.suites.forEach(timeoutWalk);\nconst bootstrapPath='tests/supabase/idempotencyBootstrap.spec.ts';\nconst bootstrapSha256=sha(fs.readFileSync(bootstrapPath));\nassert(bootstrapSha256===priorAudit.fileMapping.find(f=>f.path===bootstrapPath).rawSha256,'TC011 timeout source unchanged');\nassert(fs.readFileSync(bootstrapPath,'utf8').includes('test.setTimeout(120_000);'),'TC011 explicit existing timeout');\nconst timeoutPolicy={defaultMs:45000,existingException:{id:'TC-IDEM-011/e2e',timeoutMs:120000,source:bootstrapPath,sourceSha256:bootstrapSha256},priorReportSha256:sha(fs.readFileSync(priorE2EPath))};\nconst actual=[],stages={},reportHashes={},historicalPlanMismatches=[];"
+    },
+    {
+      "from": "      for(const spec of suite.specs??[])for(const test of spec.tests??[]){",
+      "to": "      for(const spec of suite.specs??[])for(const test of spec.tests??[]){\n        const expectedTimeout=token(spec.title)==='TC-IDEM-011/e2e'?120000:45000;\n        assert(priorTimeouts.get(spec.title)===expectedTimeout,`e2e: prior timeout binding ${spec.title}`);\n        assert(test.timeout===expectedTimeout,`e2e: unchanged test timeout ${spec.title}`);"
+    },
+    {
+      "from": "const postflightPath='artifacts/release-final-20260914/postflight.json';",
+      "to": "const postflightPath='artifacts/timeout-followup/gate/postflight.json';"
+    },
+    {
+      "from": "const preflight=read(fs.existsSync(postflightPath)?postflightPath:'artifacts/release-wsl/preflight.json'),runtime=read('artifacts/release-wsl/runtime-provenance.json');",
+      "to": "const preflight=read(postflightPath),runtime=read('artifacts/timeout-followup/runtime-provenance.json');"
+    },
+    {
+      "from": "earlierBrowserFailure={file:failedBrowserPath,sha256:sha(fs.readFileSync(failedBrowserPath)),passed:prior.stats.expected,nonPass:bad,",
+      "to": "earlierBrowserFailure={file:failedBrowserPath,candidate:read(failedBrowserPath+'.meta.json').startedCandidate,sha256:sha(fs.readFileSync(failedBrowserPath)),passed:prior.stats.expected,nonPass:bad,"
+    },
+    {
+      "from": "warnings.push('A required E2E test timed out once on this same candidate. The final full-suite manual rerun passed with retry=0, but this does not erase the earlier unexplained timing failure or prove it was fixed.');",
+      "to": "warnings.push('A required E2E test timed out once on the prior candidate69ffe. Independent follow-up oracles establish a harness ACK/clock race and error masking, but the original uninstrumented timeout trigger remains unproven; the new gate does not erase this history.');"
+    },
+    {
+      "from": "const diagnosticReporter=fs.existsSync('artifacts/release-wsl/step-reporter.mjs')?{file:'artifacts/release-wsl/step-reporter.mjs',sha256:sha(fs.readFileSync('artifacts/release-wsl/step-reporter.mjs')),review:'Read-only Playwright event observer writes sanitized step timing JSONL; source does not modify test events/results or application code.'}:null;",
+      "to": "const diagnosticReporter=null; // Current gate uses the repository's normal reporter configuration."
+    },
+    {
+      "from": "fs.mkdirSync('artifacts/final-gate-audit',{recursive:true});",
+      "to": "fs.mkdirSync('artifacts/timeout-followup/reviewer-gate',{recursive:true});"
+    },
+    {
+      "from": "total:actual.length,stages,backend:",
+      "to": "total:actual.length,stages,timeoutPolicy,backend:"
+    },
+    {
+      "from": "fs.writeFileSync('artifacts/final-gate-audit/audit.json',JSON.stringify(result,null,2)+'\\n');",
+      "to": "fs.writeFileSync(process.argv[5]??'artifacts/timeout-followup/reviewer-gate/audit.json',JSON.stringify(result,null,2)+'\\n');"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+import { defineConfig } from '@playwright/test';
+import { resolve } from 'node:path';
+import original from '../../../playwright.idempotency.config.ts';
+export default defineConfig({
+  ...original,
+  testDir: resolve('artifacts/timeout-followup/ack-oracle'),
+  testMatch: `${process.env.IDEM_ACK_VARIANT}.spec.ts`,
+  globalSetup: resolve('tests/supabase/idempotencyGlobalSetup.ts'),
+  outputDir: resolve(`artifacts/timeout-followup/ack-oracle/private-results-${process.env.IDEM_ACK_VARIANT}`),
+  webServer: { ...original.webServer as object, cwd: process.cwd() },
+  reporter: [['json', { outputFile: process.env.IDEM_ACK_REPORT }]],
+});

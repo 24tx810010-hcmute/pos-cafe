@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-09-14T04:35:23.473Z",
+  "head": "ef2c372aec60d8362549e47b7aedb27126129479",
+  "candidateFingerprint": "493c2af03222deefed6ab679fabd9fba352b79e9938b16ba21e1fd0e2a6f7b84",
+  "gitCleanFingerprint": "13ba2512152b27cb7fc80930a966d57cdb0fed87f3bfaf9c68fadb73c4c30821",
+  "indexTree": "1ef7df6b8f0e741ce96b4968edd77d1a28fe6fe4",
+  "checkedPaths": 460,
+  "allIndexBlobsMatch": true,
+  "pnpmLockSha256": "86d9c74541d33c1880970534486202dd0307c9a92baf8e6d9cf1d02a246f6996",
+  "pnpmTracked": false,
+  "commitTree": "1ef7df6b8f0e741ce96b4968edd77d1a28fe6fe4",
+  "allCommitBlobsMatch": true,
+  "parent": "8ed7418573fe88e27796d3b09807a3c55db4d0d6"
+}

@@ -155,3 +155,13 @@ Kết quả cuối2026-09-11: [log F2–F5](../../../docs/implementation-log/pha
 - [x] 40n4. Bàn giao bằng chứng runtime WSL, lịch sử lỗi môi trường/test, SHA code/docs và kết quả push có kiểm remote.
 
 Bàn giao Git 14/09: code `8ed7418`, docs evidence `70bd11d0874d1a229d28513c1123278779762ce6`, remote đã khớp. [Biên bản xuất bản](../../../docs/implementation-log/phase-27-publication-2026-09-14.json). Timeout E2E lần đầu chưa rõ nguyên nhân và kiểm app sau phát hành vẫn là giới hạn; không đóng các mục vận hành rollout dựa riêng vào push.
+
+## Follow-up timeout và frontend — 2026-09-14
+
+- [x] 40o1. Dựng Auth/REST/DB cách ly mới, preflight marker và chạy baseline TC068 bốn terminal ×10; giữ40PASS riêng ngoài gate.
+- [x] 40o2. Sửa ACK completion barrier, đóng page cũ trước clock jump, fixture-owned cleanup và named steps; giữ45giây/retry0 cùng oracle nghiệp vụ.
+- [x] 40o3. Hai reviewer kiểm độc lập; actual-fixture error-precedence và ACK750ms có negative controls; fixed40PASS, gate mới1183/818PASS cùng source và backend.
+- [x] 40o4. Xác minh frontend public bằng GitHub/Vercel Production SHA và byte equality JS/CSS; không login hoặc tạo giao dịch.
+- [x] 40o5. Bàn giao docs/evidence và source commit `ef2c372` khớp 460 blob của candidate; giữ pnpm-lock và tài liệu ngoài phạm vi. Xem [follow-up](../../../docs/implementation-log/phase-27-timeout-followup-2026-09-14.md).
+
+Trigger timeout lịch sử chưa xác định chắc chắn; không dùng checkbox trên để tuyên bố đã có root cause cho lần lỗi đó hoặc đã chạy smoke nghiệp vụ production.

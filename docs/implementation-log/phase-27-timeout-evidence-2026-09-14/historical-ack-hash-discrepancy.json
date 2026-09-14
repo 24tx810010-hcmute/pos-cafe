@@ -1,0 +1,67 @@
+{
+  "checkedAt": "2026-09-14T04:25:21.008Z",
+  "status": "FAIL",
+  "candidate": "493c2af03222deefed6ab679fabd9fba352b79e9938b16ba21e1fd0e2a6f7b84",
+  "variants": [
+    {
+      "variant": "baseline",
+      "status": "failed",
+      "exitCode": 1,
+      "reportSha256": "5a9b668116f7da539e2618f630f6b38be6e056a83ad31f6fe3a48931059b4240",
+      "sourceSha256": "fb1b93ced88f85323a2bc63403d22c07fb29140963a277e0e1975bcbdffa4aa5",
+      "copySha256": "e747766299307736831b63b8a527392250f55485ecb42a8bec89b63ef706519e",
+      "testBodyMatchesSource": true,
+      "events": [
+        {
+          "before": "2026-09-08 00:00:00+00",
+          "after": "2026-09-11 00:00:00+00",
+          "unchanged": false
+        }
+      ],
+      "errors": [
+        "clock-order-oracle",
+        "secondary-context-close"
+      ]
+    },
+    {
+      "variant": "fixed",
+      "status": "passed",
+      "exitCode": 0,
+      "reportSha256": "a16425626e8a8ddec496897e3ef906dce200ff5754cfb0643ea78004f34f9cfd",
+      "sourceSha256": "c698f48d2b62013fa43b4da3a10cde47125b469d7f48d23087a979b732495371",
+      "copySha256": "e77a567a40636df3bc3eebffb13c8d47fd842caa745449e45b5e83d5a7a7c9dc",
+      "testBodyMatchesSource": true,
+      "events": [
+        {
+          "before": "2026-09-08 00:00:00+00",
+          "after": "2026-09-08 00:00:00+00",
+          "unchanged": true
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "hashMismatches": [
+    {
+      "file": "artifacts/timeout-followup/ack-oracle/baseline-report.json",
+      "declared": "5748565f3f2122d4adc9bd006e5a9aa01ff8977fee7088d89f5c664c20dd7aad",
+      "current": "5a9b668116f7da539e2618f630f6b38be6e056a83ad31f6fe3a48931059b4240"
+    },
+    {
+      "file": "artifacts/timeout-followup/ack-oracle/fixed-report.json",
+      "declared": "42847950807c171ff334d55cc73ed1a0675b7f5ed248ecfdcfdba5696c881a8f",
+      "current": "a16425626e8a8ddec496897e3ef906dce200ff5754cfb0643ea78004f34f9cfd"
+    }
+  ],
+  "instrumentation": {
+    "file": "artifacts/timeout-followup/ack-oracle/oracle-fixture.ts",
+    "sha256": "7af283eec20e16a5a065c1ff7632af2728504e894bf7ab530eca53812127a11d",
+    "inspectedBehavior": "Wraps page.route handlers and route.abort only. Reads private.write_clock before and after a 750 ms controlled delay; throws before actual abort if clock changed. Does not mutate the clock or fixtures."
+  },
+  "conclusion": "Real isolated-backend evidence demonstrates the old test can advance the shared clock before ACK abort finishes, while the fixed barrier prevents this under the same controlled delay.",
+  "limits": [
+    "Reviewer did not run DB tests; these are independent raw/source/instrumentation checks of root-produced runs.",
+    "The two variants are controlled sensitivity evidence, not business-gate execution totals.",
+    "This establishes a real harness race and its fix, not the trigger of the original uninstrumented 45-second timeout."
+  ]
+}

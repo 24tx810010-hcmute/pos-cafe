@@ -1,0 +1,198 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+import {requiredExecutions,caseCatalog} from '../../../tests/contracts/caseManifest.ts';
+
+// Independent evidence reader: does not import resultVerifier, checkResults,
+// discovery parser, fingerprint helper or the previous reviewer audit.
+const directory=process.argv[2]??'artifacts/timeout-followup/gate';
+const expectedCandidate=process.argv[3]??'493c2af03222deefed6ab679fabd9fba352b79e9938b16ba21e1fd0e2a6f7b84';
+const expectedRequired=Number(process.argv[4]??818);
+const errors=[],warnings=[];
+const assert=(condition,label)=>{if(!condition)errors.push(label)};
+const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+const read=p=>JSON.parse(fs.readFileSync(p,'utf8'));
+const norm=p=>p.replaceAll('\\','/');
+const title=s=>s.replaceAll(' > ',' ').replace(/\s+/g,' ').trim();
+const token=s=>s.match(/(?:^|\s)(TC-IDEM-\d{3}\/(?:core|mock|db|e2e|tool)(?:\/[\w=,.-]+)*)(?=\s|$)/)?.[1];
+const git=(args,input)=>execFileSync('git',args,{input,encoding:'utf8',maxBuffer:16*1024*1024,stdio:['pipe','pipe','ignore']});
+const files=git(['ls-files','-z','--cached','--others','--exclude-standard']).split('\0').filter(Boolean)
+  .filter(p=>!p.startsWith('artifacts/')&&!p.startsWith('test-results/')&&!p.endsWith('.tsbuildinfo')&&p!=='pnpm-lock.yaml').sort();
+assert(files.length===new Set(files).size,'duplicate candidate path');
+const rawHash=crypto.createHash('sha256'),cleanHash=crypto.createHash('sha256');
+const blobOids=git(['hash-object','--stdin-paths'],files.join('\n')+'\n').trim().split('\n');
+assert(blobOids.length===files.length,'Git clean-filter blob count');
+const fileMapping=[];
+for(let i=0;i<files.length;i++){
+  const file=files[i],raw=fs.readFileSync(file);
+  const objectId=bytes=>crypto.createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+  let clean=raw,normalization='none';
+  if(objectId(raw)!==blobOids[i]){
+    clean=Buffer.from(raw.toString('utf8').replaceAll('\r\n','\n'));
+    normalization='CRLF-to-LF';
+    assert(objectId(clean)===blobOids[i],`unexplained Git filter:${file}`);
+  }
+  for(const [hash,bytes] of [[rawHash,raw],[cleanHash,clean]])hash.update(file).update('\0').update(bytes).update('\0');
+  fileMapping.push({path:file,rawSha256:sha(raw),gitBlob:blobOids[i],normalization});
+}
+const rawFingerprint=rawHash.digest('hex'),projectedGitFingerprint=cleanHash.digest('hex');
+assert(rawFingerprint===expectedCandidate,'candidate changed');
+const candidate={base:git(['rev-parse','HEAD']).trim(),rawFingerprint,projectedGitFingerprint,
+  autocrlf:git(['config','--get','core.autocrlf']).trim(),files:files.length,
+  normalizedFiles:fileMapping.filter(x=>x.normalization!=='none').length,
+  pnpmSha256:sha(fs.readFileSync('pnpm-lock.yaml'))};
+assert(candidate.pnpmSha256==='86d9c74541d33c1880970534486202dd0307c9a92baf8e6d9cf1d02a246f6996','pnpm lock changed');
+
+assert(caseCatalog.length===93&&new Set(caseCatalog.map(x=>x.id)).size===93,'catalog count or uniqueness');
+for(let n=1;n<=93;n++)assert(caseCatalog.some(x=>x.id===`TC-IDEM-${String(n).padStart(3,'0')}`),`missing base TC ${n}`);
+assert(requiredExecutions.length===expectedRequired&&new Set(requiredExecutions.map(x=>x.name)).size===expectedRequired,'required execution count or uniqueness');
+const priorAudit=read('artifacts/final-gate-audit/audit.json');
+const priorE2EPath='artifacts/release-final-20260914/idempotency-e2e.json',priorE2E=read(priorE2EPath),priorTimeouts=new Map();
+assert(sha(fs.readFileSync(priorE2EPath))===priorAudit.stages.e2e.reportSha256,'prior timeout evidence hash');
+const timeoutWalk=s=>{for(const spec of s.specs??[])for(const test of spec.tests??[])priorTimeouts.set(spec.title,test.timeout);(s.suites??[]).forEach(timeoutWalk)};priorE2E.suites.forEach(timeoutWalk);
+const bootstrapPath='tests/supabase/idempotencyBootstrap.spec.ts';
+const bootstrapSha256=sha(fs.readFileSync(bootstrapPath));
+assert(bootstrapSha256===priorAudit.fileMapping.find(f=>f.path===bootstrapPath).rawSha256,'TC011 timeout source unchanged');
+assert(fs.readFileSync(bootstrapPath,'utf8').includes('test.setTimeout(120_000);'),'TC011 explicit existing timeout');
+const timeoutPolicy={defaultMs:45000,existingException:{id:'TC-IDEM-011/e2e',timeoutMs:120000,source:bootstrapPath,sourceSha256:bootstrapSha256},priorReportSha256:sha(fs.readFileSync(priorE2EPath))};
+const actual=[],stages={},reportHashes={},historicalPlanMismatches=[];
+for(const stage of ['unit','contracts','tools','e2e']){
+  const p=path.join(directory,`idempotency-${stage}.json`);
+  if(!fs.existsSync(p)){errors.push(`missing stage:${stage}`);continue}
+  const report=read(p),meta=read(p+'.meta.json');reportHashes[path.basename(p)]=sha(fs.readFileSync(p));
+  assert(meta.stage===stage&&meta.exitCode===0&&meta.signal===null,`${stage}: stage exit`);
+  assert(meta.startedCandidate===expectedCandidate&&meta.finishedCandidate===expectedCandidate,`${stage}: candidate attestation`);
+  assert(meta.reportSha256===reportHashes[path.basename(p)],`${stage}: report hash`);
+  assert(Number.isFinite(Date.parse(meta.finishedAt))&&meta.finishedAt.startsWith('2026-09-14'),`${stage}: completion date`);
+  const rows=[];
+  if(stage!=='e2e'){
+    assert(report.success===true&&report.numFailedTests===0&&report.numFailedTestSuites===0,`${stage}: successful runner`);
+    assert(report.numPendingTests===0&&report.numTodoTests===0&&report.numPendingTestSuites===0,`${stage}: no omitted tests`);
+    assert(!report.testExecError&&!report.unhandledErrors?.length,`${stage}: global errors`);
+    assert(report.startTime>=Date.parse('2026-09-14T00:00:00Z')&&report.startTime<=Date.parse(meta.finishedAt),`${stage}: timestamp`);
+    for(const suite of report.testResults){
+      assert(suite.status==='passed'&&!suite.message,`${stage}: suite status ${suite.name}`);
+      assert(suite.endTime>=suite.startTime&&suite.endTime<=Date.parse(meta.finishedAt)+1000,`${stage}: suite time ${suite.name}`);
+      for(const item of suite.assertionResults){
+        assert(item.status==='passed'&&item.failureMessages.length===0,`${stage}: assertion ${item.fullName}`);
+        assert(Number.isFinite(item.duration)&&item.duration>=0,`${stage}: duration ${item.fullName}`);
+        const file=norm(suite.name),name=item.fullName;
+        const backend=stage==='contracts'?'db':stage==='tools'?'tool':file.includes('/adapters/mock/')?'mock':'core';
+        if(stage==='contracts')assert(file.includes('/tests/contracts/')&&file.endsWith('.contract.test.ts'),`contract file:${file}`);
+        if(stage==='tools')assert(file.includes('/tests/contracts/')&&file.endsWith('.tool.test.ts'),`tooling file:${file}`);
+        if(stage==='unit')assert(file.includes('/src/'),`unit file:${file}`);
+        rows.push({name,file,backend,status:item.status,duration:item.duration});
+      }
+    }
+    assert(rows.length===report.numTotalTests&&rows.length===report.numPassedTests,`${stage}: raw assertion count`);
+    const optionsPath=p+'.options.json',options=read(optionsPath);
+    assert(meta.optionsSha256===sha(fs.readFileSync(optionsPath)),`${stage}: options hash`);
+    assert(options.runner==='vitest-actual-options-v1'&&options.reason==='passed'&&options.errorCount===0,`${stage}: options runner errors`);
+    const optionRows=new Map();
+    for(const entry of options.tests){
+      const key=norm(entry.file)+'|'+title(entry.name);
+      assert(!optionRows.has(key),`${stage}: duplicate option ${key}`);optionRows.set(key,entry);
+      const o=entry.options;
+      assert(entry.state==='passed'&&o.fails===false&&o.retry===0&&o.repeats===0&&o.mode==='run',`${stage}: abnormal option ${entry.name}`);
+    }
+    assert(options.tests.length===rows.length,`${stage}: options assertion cardinality`);
+    for(const row of rows)assert(optionRows.has(row.file+'|'+title(row.name)),`${stage}: missing options ${row.name}`);
+    stages[stage]={count:rows.length,runnerTotal:report.numTotalTests,options:options.tests.length,
+      durationMs:Math.max(...report.testResults.map(f=>f.endTime))-report.startTime,reportSha256:reportHashes[path.basename(p)]};
+  }else{
+    assert(Array.isArray(report.errors)&&report.errors.length===0,'e2e: global errors');
+    assert(report.config.forbidOnly===true&&report.config.workers===1,'e2e: forbidOnly/workers');
+    assert(report.config.webServer.env.VITE_DATA_MODE==='supabase'&&report.config.webServer.env.VITE_SUPABASE_URL==='http://127.0.0.1:55444'&&report.config.webServer.reuseExistingServer===false,'e2e: actual server mode and URL');
+    assert(report.config.projects.length===1,'e2e: project count');
+    for(const project of report.config.projects)assert(project.retries===0&&project.repeatEach===1,'e2e: retry/repeat options');
+    const walk=suite=>{
+      for(const spec of suite.specs??[])for(const test of spec.tests??[]){
+        const expectedTimeout=token(spec.title)==='TC-IDEM-011/e2e'?120000:45000;
+        assert(priorTimeouts.get(spec.title)===expectedTimeout,`e2e: prior timeout binding ${spec.title}`);
+        assert(test.timeout===expectedTimeout,`e2e: unchanged test timeout ${spec.title}`);
+        assert(spec.ok===true&&test.expectedStatus==='passed'&&test.status==='expected',`e2e: expected status ${spec.title}`);
+        assert(test.results.length===1,`e2e: attempts ${spec.title}`);
+        const result=test.results[0];
+        assert(result?.status==='passed'&&result.retry===0&&result.errors?.length===0,`e2e: result ${spec.title}`);
+        assert(Number.isFinite(result?.duration)&&result.duration>0,`e2e: duration ${spec.title}`);
+        assert(Date.parse(result?.startTime)>=Date.parse('2026-09-14T00:00:00Z')&&Date.parse(result?.startTime)+result.duration<=Date.parse(meta.finishedAt)+1000,`e2e: timestamp ${spec.title}`);
+        assert(!test.annotations?.some(a=>['skip','fixme','fail'].includes(a.type))&&!result?.annotations?.some(a=>['skip','fixme','fail'].includes(a.type)),`e2e: annotations ${spec.title}`);
+        rows.push({name:spec.title,file:norm('D:/Workspace/pos-cafe/tests/supabase/'+(spec.file??suite.file)),backend:'e2e',status:result?.status,duration:result?.duration});
+      }
+      (suite.suites??[]).forEach(walk);
+    };report.suites.forEach(walk);
+    assert(report.stats.expected===rows.length&&report.stats.unexpected===0&&report.stats.flaky===0&&report.stats.skipped===0,'e2e: stats vs raw results');
+    stages.e2e={count:rows.length,attempts:rows.length,durationMs:report.stats.duration,reportSha256:reportHashes[path.basename(p)]};
+  }
+  actual.push(...rows);
+}
+const requiredMap=new Map();
+for(const row of actual){const id=token(row.name);if(id)requiredMap.set(id,[...(requiredMap.get(id)??[]),row]);}
+for(const requirement of requiredExecutions){
+  const matches=requiredMap.get(requirement.name)??[];
+  assert(matches.length===1,`required cardinality:${requirement.name}`);
+  for(const match of matches){
+    assert(match.backend===requirement.backend,`required backend:${requirement.name}`);
+    const matchesPlan=requirement.plannedFiles.some(file=>match.file.endsWith('/'+file));
+    const historicalPlan=JSON.stringify(requirement.plannedFiles)===JSON.stringify(caseCatalog.find(c=>c.id===requirement.id).plannedFiles);
+    if(historicalPlan&&!matchesPlan)historicalPlanMismatches.push({name:requirement.name,plannedFiles:requirement.plannedFiles,actualFile:match.file});
+    else assert(matchesPlan,`review regression source:${requirement.name}`);
+  }
+}
+const discoveryPath=path.join(directory,'idempotency-manifest.json');
+if(fs.existsSync(discoveryPath)){
+  const d=read(discoveryPath);
+  assert(d.mode==='runner-discovery'&&d.candidateFingerprint===expectedCandidate&&d.errors.length===0,'discovery provenance');
+  assert(d.baseCases===93&&d.requiredExecutions.length===expectedRequired,'discovery requirement counts');
+  assert(d.requiredExecutions.every((r,i)=>r.name===requiredExecutions[i].name&&r.backend===requiredExecutions[i].backend),'discovery requirements match source');
+  const discovery=new Map();for(const r of d.discovered){
+    const file=r.backend==='e2e'&&!/^[A-Za-z]:[\\/]/.test(r.file)?'D:/Workspace/pos-cafe/tests/supabase/'+r.file:r.file;
+    const key=norm(file)+'|'+title(r.name);assert(!discovery.has(key),`duplicate discovery:${key}`);discovery.set(key,r);
+  }
+  assert(discovery.size===actual.length,'discovery vs actual count');
+  for(const row of actual)assert(discovery.has(row.file+'|'+title(row.name)),`executed outside discovery:${row.name}`);
+}else errors.push('missing discovery');
+
+const commandsPath=path.join(directory,'commands.json');
+if(fs.existsSync(commandsPath)){
+  const commands=read(commandsPath);assert(commands.node==='v24.16.0'&&commands.fingerprint===expectedCandidate,'command node/candidate');
+  const expected=['test:idempotency:discover','test:idempotency:unit','test:contracts','test:idempotency:tools','test:idempotency:e2e','test:idempotency:verify-results','build'];
+  assert(commands.steps.length===expected.length,'command stage completeness');
+  commands.steps.forEach((s,i)=>{
+    const ordinary=`npm run ${expected[i]}`;
+    const diagnostic=false; // Current full gate has no reporter/filter/retry overrides.
+    assert((s.command===ordinary||diagnostic)&&s.exitCode===0&&s.signal===null,`command outcome:${s.command}`);
+    assert(s.startedCandidate===expectedCandidate&&s.finishedCandidate===expectedCandidate,`command candidate:${s.command}`);
+    if(i)assert(Date.parse(s.startedAt)>=Date.parse(commands.steps[i-1].finishedAt),`overlapping stage:${s.command}`);
+  });
+}else errors.push('missing commands');
+
+const postflightPath='artifacts/timeout-followup/gate/postflight.json';
+const preflight=read(postflightPath),runtime=read('artifacts/timeout-followup/runtime-provenance.json');
+assert(preflight.status==='PASS'&&preflight.node==='v24.16.0'&&preflight.fingerprint===expectedCandidate,'preflight status/candidate');
+assert(preflight.engine==='postgres-postgrest-gotrue'&&preflight.database===runtime.database&&preflight.postgres.database===runtime.database,'preflight backend identity');
+assert(preflight.apiUrl==='http://127.0.0.1:55444'&&preflight.postgres.address==='127.0.0.1/32'&&preflight.postgres.port===55439,'preflight loopback');
+assert(runtime.auth.sourceCommit==='4eee58f296d9698a1c2c0ae14d7a0b379c7622d3'&&runtime.auth.patch===null,'GoTrue upstream provenance');
+for(const [file,digest] of Object.entries(preflight.migrations))assert(sha(fs.readFileSync('supabase/migrations/'+file))===digest,`preflight migration hash:${file}`);
+assert(Object.keys(preflight.migrations).length===16,'16 migration checksums');
+warnings.push('Backend identity is independently cross-checked across root-produced preflight/runtime/report records; this reviewer did not connect to DB, reset fixtures or query production.');
+warnings.push('Start/end source hashes detect persisted source changes, not an adversarial change-and-revert during a run. No cryptographic runner signing or sandbox attestation is claimed.');
+warnings.push(`Gate verifier targets ${expectedRequired} required execution IDs; this independent audit additionally validates every untagged unit/tool test and all report options.`);
+const failedBrowserPath='artifacts/release-wsl/69ffe-e2e-failure/idempotency-e2e.json';
+let earlierBrowserFailure=null;
+if(fs.existsSync(failedBrowserPath)){
+  const prior=read(failedBrowserPath),bad=[];
+  const inspect=s=>{for(const spec of s.specs??[])for(const t of spec.tests??[])for(const a of t.results??[])if(a.status!=='passed')bad.push({name:spec.title,status:a.status,durationMs:a.duration,retry:a.retry,startedAt:a.startTime});(s.suites??[]).forEach(inspect)};
+  prior.suites.forEach(inspect);
+  earlierBrowserFailure={file:failedBrowserPath,candidate:read(failedBrowserPath+'.meta.json').startedCandidate,sha256:sha(fs.readFileSync(failedBrowserPath)),passed:prior.stats.expected,nonPass:bad,
+    disposition:'Preserved, excluded from accepted final run. Single-case diagnostic and full-suite manual rerun passed, but the original 45-second timeout root cause remains unproven.'};
+  warnings.push('A required E2E test timed out once on the prior candidate69ffe. Independent follow-up oracles establish a harness ACK/clock race and error masking, but the original uninstrumented timeout trigger remains unproven; the new gate does not erase this history.');
+}
+const diagnosticReporter=null; // Current gate uses the repository's normal reporter configuration.
+const result={generatedAt:new Date().toISOString(),status:errors.length?'FAIL':'PASS',candidate,required:requiredExecutions.length,baseCases:caseCatalog.length,
+  total:actual.length,stages,timeoutPolicy,backend:{engine:runtime.engine,database:runtime.database,postgres:preflight.postgres.version,auth:runtime.auth.version,authPatch:runtime.auth.patch,omitted:runtime.omittedServices},errors,warnings,earlierBrowserFailure,diagnosticReporter,historicalPlanMismatches,fileMapping};
+fs.mkdirSync('artifacts/timeout-followup/reviewer-gate',{recursive:true});
+fs.writeFileSync(process.argv[5]??'artifacts/timeout-followup/reviewer-gate/audit.json',JSON.stringify(result,null,2)+'\n');
+console.log(JSON.stringify({...result,fileMapping:undefined,historicalPlanMismatches:historicalPlanMismatches.length,errors:errors.slice(0,16)}));
+process.exitCode=errors.length?1:0;

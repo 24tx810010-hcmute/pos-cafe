@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-09-14T04:30:12.094Z",
+  "status": "PASS",
+  "before": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "after": "493c2af03222deefed6ab679fabd9fba352b79e9938b16ba21e1fd0e2a6f7b84",
+  "added": [
+    "tests/supabase/idempotencyTest.ts"
+  ],
+  "changed": [
+    "tests/supabase/idempotencyRecovery.spec.ts"
+  ],
+  "removed": [],
+  "applicationAndMigrationFilesUnchanged": true,
+  "pnpmUnchanged": true,
+  "limitation": "This is a byte-hash mapping comparison to the earlier audited source; it does not itself prove deployed artifact identity."
+}

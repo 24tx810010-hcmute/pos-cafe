@@ -2,6 +2,8 @@
 
 Ngày 2026-09-14. Findings code đã sửa và kiểm độc lập; gate cuối PASS. Code đã commit thành `8ed7418573fe88e27796d3b09807a3c55db4d0d6`; đã push cùng docs và đối chiếu remote, xem biên bản bên dưới.
 
+Lượt điều tra tiếp theo cùng ngày đã xác minh frontend public phục vụ artifact mới và chứng minh hai điểm yếu harness. Xem [follow-up](phase-27-timeout-followup-2026-09-14.md); report/raw bundle của gate bên dưới được giữ nguyên như bằng chứng lịch sử, không gán cho candidate test mới.
+
 ## Findings và thay đổi
 
 - **P2 — callback lỗi của lần gửi đơn đầu không kiểm vòng đời.** Ở [OrderDrawer.tsx:173](D:/Workspace/pos-cafe/src/app/drawers/pos/OrderDrawer.tsx:173), `submitMutation.mutate(...).onError` gọi `notifyUiError` kể cả khi phiên đã đổi thế hệ hoặc đã offline/online. Oracle độc lập giữ response execute, thực hiện chuyển trạng thái rồi trả AUTH_REQUIRED/EMPLOYEE_SESSION_REQUIRED: cả bốn trường hợp làm currentEmployee thành null, mất draft, toast lỗi cũ và revoke phiên. Expected: giữ phiên/draft hiện tại, không tác động UI từ lượt cũ. Bản sửa chụp `useViewLifetime(context)` lúc bấm và kiểm cả success/error. Chín regression gồm lỗi muộn, lỗi hiện hành, ACK muộn và gửi thành công hiện hành.

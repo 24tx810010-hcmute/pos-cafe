@@ -1,0 +1,444 @@
+{
+  "config": {
+    "configFile": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.config.ts",
+    "rootDir": "D:/Workspace/pos-cafe/artifacts/timeout-followup/reviewer-gate",
+    "forbidOnly": true,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/Workspace/pos-cafe/artifacts/timeout-followup/reviewer-gate/actual-fixture-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/Workspace/pos-cafe/artifacts/timeout-followup/reviewer-gate",
+        "testIgnore": [],
+        "testMatch": [
+          "actual-fixture.spec.ts"
+        ],
+        "timeout": 3000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "actual-fixture.spec.ts",
+      "file": "actual-fixture.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "manual baseline: cleanup hides the missing locator",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 3000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 328,
+                  "error": {
+                    "message": "Error: CONTROLLED_ACTUAL_CLEANUP_FAILURE",
+                    "stack": "Error: CONTROLLED_ACTUAL_CLEANUP_FAILURE\n    at cleanupError (D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:4:24)\n    at _BrowserContext.context.close (D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:7:79)\n    at D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:13:11",
+                    "location": {
+                      "file": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts",
+                      "column": 24,
+                      "line": 4
+                    },
+                    "snippet": "  2 | import {test} from '../../../tests/supabase/idempotencyTest.ts';\n  3 |\n> 4 | const cleanupError=()=>new Error('CONTROLLED_ACTUAL_CLEANUP_FAILURE');\n    |                        ^\n  5 | function failNextClose(context:BrowserContext){\n  6 |   const original=context.close.bind(context);let calls=0;\n  7 |   context.close=async(options)=>{await original(options);if(++calls===1)throw cleanupError()};"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts",
+                        "column": 24,
+                        "line": 4
+                      },
+                      "message": "Error: CONTROLLED_ACTUAL_CLEANUP_FAILURE\n\n  2 | import {test} from '../../../tests/supabase/idempotencyTest.ts';\n  3 |\n> 4 | const cleanupError=()=>new Error('CONTROLLED_ACTUAL_CLEANUP_FAILURE');\n    |                        ^\n  5 | function failNextClose(context:BrowserContext){\n  6 |   const original=context.close.bind(context);let calls=0;\n  7 |   context.close=async(options)=>{await original(options);if(++calls===1)throw cleanupError()};\n    at cleanupError (D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:4:24)\n    at _BrowserContext.context.close (D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:7:79)\n    at D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:13:11"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T04:19:45.200Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture-results\\actual-fixture-manual-base-4cee7-p-hides-the-missing-locator\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts",
+                    "column": 24,
+                    "line": 4
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ca3921f0e31bd6cd8bf4-614ba1ac22d0f72c8f84",
+          "file": "actual-fixture.spec.ts",
+          "line": 9,
+          "column": 1
+        },
+        {
+          "title": "actual fixture: body failure remains first before aggregate cleanup failure",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 3000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 342,
+                  "error": {
+                    "message": "TimeoutError: locator.click: Timeout 250ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('MISSING_ACTUAL_BODY_SENTINEL')\u001b[22m\n",
+                    "stack": "TimeoutError: locator.click: Timeout 250ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('MISSING_ACTUAL_BODY_SENTINEL')\u001b[22m\n\n    at D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:18:58",
+                    "location": {
+                      "file": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts",
+                      "column": 58,
+                      "line": 18
+                    },
+                    "snippet": "  16 |   const page=await newRecoveryPage();await page.setContent('<main data-testid=\"ready\">Blank local document</main>');\n  17 |   failNextClose(page.context());\n> 18 |   await page.getByTestId('MISSING_ACTUAL_BODY_SENTINEL').click({timeout:250});\n     |                                                          ^\n  19 | });\n  20 | test('actual fixture control: cleanup failure still fails successful body',async({newRecoveryPage})=>{\n  21 |   const page=await newRecoveryPage();await page.setContent('<main data-testid=\"ready\">Blank local document</main>');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts",
+                        "column": 58,
+                        "line": 18
+                      },
+                      "message": "TimeoutError: locator.click: Timeout 250ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('MISSING_ACTUAL_BODY_SENTINEL')\u001b[22m\n\n\n  16 |   const page=await newRecoveryPage();await page.setContent('<main data-testid=\"ready\">Blank local document</main>');\n  17 |   failNextClose(page.context());\n> 18 |   await page.getByTestId('MISSING_ACTUAL_BODY_SENTINEL').click({timeout:250});\n     |                                                          ^\n  19 | });\n  20 | test('actual fixture control: cleanup failure still fails successful body',async({newRecoveryPage})=>{\n  21 |   const page=await newRecoveryPage();await page.setContent('<main data-testid=\"ready\">Blank local document</main>');\n    at D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:18:58"
+                    },
+                    {
+                      "location": {
+                        "file": "D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyTest.ts",
+                        "column": 30,
+                        "line": 15
+                      },
+                      "message": "AggregateError: RECOVERY_CONTEXT_CLEANUP_FAILED\n\n   at ..\\..\\..\\tests\\supabase\\idempotencyTest.ts:15\n\n  13 |     const closed = await Promise.allSettled(contexts.map((context) => context.close()));\n  14 |     const errors = closed.filter((result): result is PromiseRejectedResult => result.status === 'rejected');\n> 15 |     if (errors.length) throw new AggregateError(errors.map((result) => result.reason), 'RECOVERY_CONTEXT_CLEANUP_FAILED');\n     |                              ^\n  16 |   },\n  17 | });\n  18 |\n    at Object.newRecoveryPage (D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyTest.ts:15:30)"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T04:19:46.149Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture-results\\actual-fixture-actual-fixt-a5feb-e-aggregate-cleanup-failure\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts",
+                    "column": 58,
+                    "line": 18
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ca3921f0e31bd6cd8bf4-e91fb33cedde77aa6213",
+          "file": "actual-fixture.spec.ts",
+          "line": 15,
+          "column": 1
+        },
+        {
+          "title": "actual fixture control: cleanup failure still fails successful body",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 3000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 96,
+                  "error": {
+                    "message": "AggregateError: RECOVERY_CONTEXT_CLEANUP_FAILED",
+                    "stack": "AggregateError: RECOVERY_CONTEXT_CLEANUP_FAILED\n    at Object.newRecoveryPage (D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyTest.ts:15:30)",
+                    "location": {
+                      "file": "D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyTest.ts",
+                      "column": 30,
+                      "line": 15
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39m..\\..\\..\\tests\\supabase\\idempotencyTest.ts:15\n\n  13 |     const closed = await Promise.allSettled(contexts.map((context) => context.close()));\n  14 |     const errors = closed.filter((result): result is PromiseRejectedResult => result.status === 'rejected');\n> 15 |     if (errors.length) throw new AggregateError(errors.map((result) => result.reason), 'RECOVERY_CONTEXT_CLEANUP_FAILED');\n     |                              ^\n  16 |   },\n  17 | });\n  18 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyTest.ts",
+                        "column": 30,
+                        "line": 15
+                      },
+                      "message": "AggregateError: RECOVERY_CONTEXT_CLEANUP_FAILED\n\n   at ..\\..\\..\\tests\\supabase\\idempotencyTest.ts:15\n\n  13 |     const closed = await Promise.allSettled(contexts.map((context) => context.close()));\n  14 |     const errors = closed.filter((result): result is PromiseRejectedResult => result.status === 'rejected');\n> 15 |     if (errors.length) throw new AggregateError(errors.map((result) => result.reason), 'RECOVERY_CONTEXT_CLEANUP_FAILED');\n     |                              ^\n  16 |   },\n  17 | });\n  18 |\n    at Object.newRecoveryPage (D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyTest.ts:15:30)"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T04:19:47.047Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture-results\\actual-fixture-actual-fixt-eb3e4-still-fails-successful-body\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyTest.ts",
+                    "column": 30,
+                    "line": 15
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ca3921f0e31bd6cd8bf4-5f61bc88eabfd7b01df7",
+          "file": "actual-fixture.spec.ts",
+          "line": 20,
+          "column": 1
+        },
+        {
+          "title": "actual fixture control: successful body and cleanup pass",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 3000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 90,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T04:19:47.732Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ca3921f0e31bd6cd8bf4-28fedac48d3eea2e84cf",
+          "file": "actual-fixture.spec.ts",
+          "line": 24,
+          "column": 1
+        },
+        {
+          "title": "ownership mutation: moving cleanup back into body finally hides primary again",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 3000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 309,
+                  "error": {
+                    "message": "Error: CONTROLLED_ACTUAL_CLEANUP_FAILURE",
+                    "stack": "Error: CONTROLLED_ACTUAL_CLEANUP_FAILURE\n    at cleanupError (D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:4:24)\n    at _BrowserContext.context.close (D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:7:79)\n    at D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:34:11",
+                    "location": {
+                      "file": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts",
+                      "column": 24,
+                      "line": 4
+                    },
+                    "snippet": "  2 | import {test} from '../../../tests/supabase/idempotencyTest.ts';\n  3 |\n> 4 | const cleanupError=()=>new Error('CONTROLLED_ACTUAL_CLEANUP_FAILURE');\n    |                        ^\n  5 | function failNextClose(context:BrowserContext){\n  6 |   const original=context.close.bind(context);let calls=0;\n  7 |   context.close=async(options)=>{await original(options);if(++calls===1)throw cleanupError()};"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts",
+                        "column": 24,
+                        "line": 4
+                      },
+                      "message": "Error: CONTROLLED_ACTUAL_CLEANUP_FAILURE\n\n  2 | import {test} from '../../../tests/supabase/idempotencyTest.ts';\n  3 |\n> 4 | const cleanupError=()=>new Error('CONTROLLED_ACTUAL_CLEANUP_FAILURE');\n    |                        ^\n  5 | function failNextClose(context:BrowserContext){\n  6 |   const original=context.close.bind(context);let calls=0;\n  7 |   context.close=async(options)=>{await original(options);if(++calls===1)throw cleanupError()};\n    at cleanupError (D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:4:24)\n    at _BrowserContext.context.close (D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:7:79)\n    at D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts:34:11"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T04:19:47.935Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture-results\\actual-fixture-ownership-m-2218c-finally-hides-primary-again\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture.spec.ts",
+                    "column": 24,
+                    "line": 4
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ca3921f0e31bd6cd8bf4-a6651d384e945f4c131f",
+          "file": "actual-fixture.spec.ts",
+          "line": 28,
+          "column": 1
+        },
+        {
+          "title": "actual fixture control: all contexts close when one cleanup rejects",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 3000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 123,
+                  "error": {
+                    "message": "AggregateError: RECOVERY_CONTEXT_CLEANUP_FAILED",
+                    "stack": "AggregateError: RECOVERY_CONTEXT_CLEANUP_FAILED\n    at Object.newRecoveryPage (D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyTest.ts:15:30)",
+                    "location": {
+                      "file": "D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyTest.ts",
+                      "column": 30,
+                      "line": 15
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39m..\\..\\..\\tests\\supabase\\idempotencyTest.ts:15\n\n  13 |     const closed = await Promise.allSettled(contexts.map((context) => context.close()));\n  14 |     const errors = closed.filter((result): result is PromiseRejectedResult => result.status === 'rejected');\n> 15 |     if (errors.length) throw new AggregateError(errors.map((result) => result.reason), 'RECOVERY_CONTEXT_CLEANUP_FAILED');\n     |                              ^\n  16 |   },\n  17 | });\n  18 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyTest.ts",
+                        "column": 30,
+                        "line": 15
+                      },
+                      "message": "AggregateError: RECOVERY_CONTEXT_CLEANUP_FAILED\n\n   at ..\\..\\..\\tests\\supabase\\idempotencyTest.ts:15\n\n  13 |     const closed = await Promise.allSettled(contexts.map((context) => context.close()));\n  14 |     const errors = closed.filter((result): result is PromiseRejectedResult => result.status === 'rejected');\n> 15 |     if (errors.length) throw new AggregateError(errors.map((result) => result.reason), 'RECOVERY_CONTEXT_CLEANUP_FAILED');\n     |                              ^\n  16 |   },\n  17 | });\n  18 |\n    at Object.newRecoveryPage (D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyTest.ts:15:30)"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T04:19:48.747Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "context-0-closed",
+                      "contentType": "text/plain",
+                      "body": "Y2xvc2Vk"
+                    },
+                    {
+                      "name": "context-1-closed",
+                      "contentType": "text/plain",
+                      "body": "Y2xvc2Vk"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\reviewer-gate\\actual-fixture-results\\actual-fixture-actual-fixt-a1242-se-when-one-cleanup-rejects\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyTest.ts",
+                    "column": 30,
+                    "line": 15
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ca3921f0e31bd6cd8bf4-4f5bfd32f96b5a224970",
+          "file": "actual-fixture.spec.ts",
+          "line": 36,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-14T04:19:44.730Z",
+    "duration": 4309.504,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 5,
+    "flaky": 0
+  }
+}

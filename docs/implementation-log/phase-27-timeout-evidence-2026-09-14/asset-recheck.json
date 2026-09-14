@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-09-14T04:37:45.809Z",
+  "allMatch": true,
+  "assets": [
+    {
+      "file": "dist/assets/index-CfdNnUcO.js",
+      "expectedRemoteSha256": "74bc45fea095942a74ca64f31ddd8712ed3143d04b1ad9c7ec25d6eeeb073eac",
+      "currentLocalSha256": "74bc45fea095942a74ca64f31ddd8712ed3143d04b1ad9c7ec25d6eeeb073eac"
+    },
+    {
+      "file": "dist/assets/index-Bvfd3nWs.css",
+      "expectedRemoteSha256": "dc620fc7ac27e80232623c6175381544966f20923b935767027c27b56909cf5d",
+      "currentLocalSha256": "dc620fc7ac27e80232623c6175381544966f20923b935767027c27b56909cf5d"
+    }
+  ]
+}

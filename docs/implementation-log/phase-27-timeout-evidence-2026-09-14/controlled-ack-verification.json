@@ -1,0 +1,86 @@
+{
+  "node": "v24.16.0",
+  "scope": "real isolated DB, deliberate 750ms delayed abort on copied baseline/fixed test; diagnostic only, no test.fail/skip/retry or tracked source change",
+  "results": [
+    {
+      "variant": "baseline",
+      "sourceSha256": "fb1b93ced88f85323a2bc63403d22c07fb29140963a277e0e1975bcbdffa4aa5",
+      "copySha256": "e747766299307736831b63b8a527392250f55485ecb42a8bec89b63ef706519e",
+      "command": [
+        "D:\\tools\\nodejs\\node.exe",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "--config=artifacts/timeout-followup/ack-oracle/config.ts",
+        "--grep",
+        "TC-IDEM-068/e2e/terminal=rejected",
+        "--retries=0",
+        "--workers=1"
+      ],
+      "startedAt": "2026-09-14T04:21:55.809Z",
+      "finishedAt": "2026-09-14T04:22:07.845Z",
+      "candidateBefore": "493c2af03222deefed6ab679fabd9fba352b79e9938b16ba21e1fd0e2a6f7b84",
+      "candidateAfter": "493c2af03222deefed6ab679fabd9fba352b79e9938b16ba21e1fd0e2a6f7b84",
+      "exitCode": 1,
+      "stats": {
+        "startTime": "2026-09-14T04:21:56.393Z",
+        "duration": 11432.625,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "events": [
+        {
+          "before": "2026-09-08 00:00:00+00",
+          "after": "2026-09-11 00:00:00+00",
+          "unchanged": false
+        }
+      ],
+      "expectedOracleObserved": true,
+      "errors": [
+        "Error: ACK_CLOCK_CHANGED_BEFORE_ABORT",
+        "Error: browserContext.close: Target page, context or browser has been closed"
+      ],
+      "reportSha256": "5748565f3f2122d4adc9bd006e5a9aa01ff8977fee7088d89f5c664c20dd7aad"
+    },
+    {
+      "variant": "fixed",
+      "sourceSha256": "c698f48d2b62013fa43b4da3a10cde47125b469d7f48d23087a979b732495371",
+      "copySha256": "e77a567a40636df3bc3eebffb13c8d47fd842caa745449e45b5e83d5a7a7c9dc",
+      "command": [
+        "D:\\tools\\nodejs\\node.exe",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "--config=artifacts/timeout-followup/ack-oracle/config.ts",
+        "--grep",
+        "TC-IDEM-068/e2e/terminal=rejected",
+        "--retries=0",
+        "--workers=1"
+      ],
+      "startedAt": "2026-09-14T04:22:08.082Z",
+      "finishedAt": "2026-09-14T04:22:20.340Z",
+      "candidateBefore": "493c2af03222deefed6ab679fabd9fba352b79e9938b16ba21e1fd0e2a6f7b84",
+      "candidateAfter": "493c2af03222deefed6ab679fabd9fba352b79e9938b16ba21e1fd0e2a6f7b84",
+      "exitCode": 0,
+      "stats": {
+        "startTime": "2026-09-14T04:22:08.720Z",
+        "duration": 11600.992,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "events": [
+        {
+          "before": "2026-09-08 00:00:00+00",
+          "after": "2026-09-08 00:00:00+00",
+          "unchanged": true
+        }
+      ],
+      "expectedOracleObserved": true,
+      "errors": [],
+      "reportSha256": "42847950807c171ff334d55cc73ed1a0675b7f5ed248ecfdcfdba5696c881a8f"
+    }
+  ],
+  "valid": true
+}

@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-09-14T04:26:37.205Z",
+  "status": "PASS",
+  "records": [
+    {
+      "variant": "baseline",
+      "originalReportSha256": "5748565f3f2122d4adc9bd006e5a9aa01ff8977fee7088d89f5c664c20dd7aad",
+      "redactedReportSha256": "5a9b668116f7da539e2618f630f6b38be6e056a83ad31f6fe3a48931059b4240",
+      "changed": true,
+      "transformation": "scripts/idempotency-redact-artifacts.mjs automatically sanitizes prior local artifacts after gate stages; assertions/status/options unchanged",
+      "reconstructedOriginalHashVerified": true,
+      "credentialValuePrinted": false,
+      "redactedField": "VITE_SUPABASE_ANON_KEY",
+      "redactionCount": 1,
+      "placeholder": "[REDACTED_JWT]"
+    },
+    {
+      "variant": "fixed",
+      "originalReportSha256": "42847950807c171ff334d55cc73ed1a0675b7f5ed248ecfdcfdba5696c881a8f",
+      "redactedReportSha256": "a16425626e8a8ddec496897e3ef906dce200ff5754cfb0643ea78004f34f9cfd",
+      "changed": true,
+      "transformation": "scripts/idempotency-redact-artifacts.mjs automatically sanitizes prior local artifacts after gate stages; assertions/status/options unchanged",
+      "reconstructedOriginalHashVerified": true,
+      "credentialValuePrinted": false,
+      "redactedField": "VITE_SUPABASE_ANON_KEY",
+      "redactionCount": 1,
+      "placeholder": "[REDACTED_JWT]"
+    }
+  ]
+}

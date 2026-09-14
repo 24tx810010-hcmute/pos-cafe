@@ -1,0 +1,39 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+const folder='artifacts/timeout-followup/reviewer-gate/';
+const raw=fs.readFileSync(folder+'actual-fixture-results.json'),report=JSON.parse(raw),tests=[];
+const walk=s=>{for(const spec of s.specs??[])for(const test of spec.tests??[])tests.push({title:spec.title,test});(s.suites??[]).forEach(walk)};
+report.suites.forEach(walk);assert.equal(tests.length,6);assert.equal(report.errors.length,0);
+assert.equal(report.config.workers,1);assert.equal(report.config.forbidOnly,true);assert.equal(report.config.projects[0].retries,0);
+for(const {test} of tests){assert.equal(test.expectedStatus,'passed');assert.equal(test.results.length,1);assert.equal(test.results[0].retry,0);assert.equal(test.annotations.length,0)}
+const categories=r=>r.errors.map(e=>e.message.includes('CONTROLLED_ACTUAL_CLEANUP_FAILURE')?'injected-cleanup':e.message.includes('RECOVERY_CONTEXT_CLEANUP_FAILED')?'fixture-aggregate-cleanup':e.message.includes('MISSING_ACTUAL_BODY_SENTINEL')?'body-locator':'unexpected');
+const expected={
+  'manual baseline: cleanup hides the missing locator':['injected-cleanup'],
+  'actual fixture: body failure remains first before aggregate cleanup failure':['body-locator','fixture-aggregate-cleanup'],
+  'actual fixture control: cleanup failure still fails successful body':['fixture-aggregate-cleanup'],
+  'actual fixture control: successful body and cleanup pass':[],
+  'ownership mutation: moving cleanup back into body finally hides primary again':['injected-cleanup'],
+  'actual fixture control: all contexts close when one cleanup rejects':['fixture-aggregate-cleanup'],
+};
+for(const {title,test} of tests){assert.deepEqual(categories(test.results[0]),expected[title]);assert.equal(test.results[0].status,expected[title].length?'failed':'passed')}
+const multi=tests.find(t=>t.title.includes('all contexts close')).test.results[0];
+assert(multi.attachments.some(a=>a.name==='context-0-closed'));assert(multi.attachments.some(a=>a.name==='context-1-closed'));
+const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
+const sourceFiles=['tests/supabase/idempotencyTest.ts','tests/supabase/idempotencyRecovery.spec.ts',folder+'actual-fixture.spec.ts',folder+'actual-fixture.config.ts'];
+const sources=sourceFiles.map(file=>({file,sha256:sha(fs.readFileSync(file)),lastModified:fs.statSync(file).mtime.toISOString()}));
+const start=Date.parse(report.stats.startTime);assert(sources.every(s=>Date.parse(s.lastModified)<=start),'source modified after oracle start');
+const result={checkedAt:new Date().toISOString(),status:'PASS',node:process.version,playwright:report.config.version,
+  baseHead:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sources,
+  sourceAttestation:'Hashes read after run; filesystem modification timestamps precede run start. This is not adversarial change-and-revert detection.',
+  command:'node node_modules/@playwright/test/cli.js test --config=artifacts/timeout-followup/reviewer-gate/actual-fixture.config.ts --reporter=json',
+  backend:'real Chromium, blank HTML via setContent, imports actual newRecoveryPage fixture; no app URL or database',
+  rawReportSha256:sha(raw),rawRunnerExit:1,rawOutcomes:{passed:1,deliberateFailures:5,skipped:0,retries:0},
+  configuredExpectedStatus:'passed for all; no expected-failure annotation',
+  cases:tests.map(({title,test})=>({title,status:test.results[0].status,errors:categories(test.results[0]),duration:test.results[0].duration})),
+  allContextsClosedDespiteOneRejection:true,
+  negativeControl:'The actual factory remains imported and unchanged; moving ownership of the first close back into test-body finally hides the primary locator failure again.',
+  limits:['This demonstrates actual fixture error precedence, cleanup aggregation and ownership sensitivity, not the historical TC068 timeout cause.','All deliberate failures are separate from the business gate. No tracked source was edited by reviewer.']};
+fs.writeFileSync(folder+'actual-fixture-check.json',JSON.stringify(result,null,2)+'\n');
+console.log(JSON.stringify({status:result.status,sourceFixture:sources[0],rawOutcomes:result.rawOutcomes,cases:result.cases,allContextsClosedDespiteOneRejection:true}));

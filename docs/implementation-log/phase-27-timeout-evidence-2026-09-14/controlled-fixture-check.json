@@ -1,0 +1,96 @@
+{
+  "checkedAt": "2026-09-14T04:20:57.192Z",
+  "status": "PASS",
+  "node": "v24.16.0",
+  "playwright": "1.60.0",
+  "baseHead": "8ed7418573fe88e27796d3b09807a3c55db4d0d6",
+  "sources": [
+    {
+      "file": "tests/supabase/idempotencyTest.ts",
+      "sha256": "b9131bf49b7aaef10c7755b40f6b65a446eafe6236ce8e0dbd85ba32b2c74287",
+      "lastModified": "2026-09-14T04:18:03.065Z"
+    },
+    {
+      "file": "tests/supabase/idempotencyRecovery.spec.ts",
+      "sha256": "c698f48d2b62013fa43b4da3a10cde47125b469d7f48d23087a979b732495371",
+      "lastModified": "2026-09-14T04:18:03.066Z"
+    },
+    {
+      "file": "artifacts/timeout-followup/reviewer-gate/actual-fixture.spec.ts",
+      "sha256": "3dd11e3fa7d97b6359c76bf798e92a46678cc11305948e810d4827354d484026",
+      "lastModified": "2026-09-14T04:19:43.675Z"
+    },
+    {
+      "file": "artifacts/timeout-followup/reviewer-gate/actual-fixture.config.ts",
+      "sha256": "dace0966272d2c2fa17001b6b7e97ebb131c353db231ea8c7b02fa468dc3d821",
+      "lastModified": "2026-09-14T04:19:43.674Z"
+    }
+  ],
+  "sourceAttestation": "Hashes read after run; filesystem modification timestamps precede run start. This is not adversarial change-and-revert detection.",
+  "command": "node node_modules/@playwright/test/cli.js test --config=artifacts/timeout-followup/reviewer-gate/actual-fixture.config.ts --reporter=json",
+  "backend": "real Chromium, blank HTML via setContent, imports actual newRecoveryPage fixture; no app URL or database",
+  "rawReportSha256": "e586fb4d1b62f19132a23716cb389c56b92e1fb69a2f6c05d0e9d535e2c8cf5f",
+  "rawRunnerExit": 1,
+  "rawOutcomes": {
+    "passed": 1,
+    "deliberateFailures": 5,
+    "skipped": 0,
+    "retries": 0
+  },
+  "configuredExpectedStatus": "passed for all; no expected-failure annotation",
+  "cases": [
+    {
+      "title": "manual baseline: cleanup hides the missing locator",
+      "status": "failed",
+      "errors": [
+        "injected-cleanup"
+      ],
+      "duration": 328
+    },
+    {
+      "title": "actual fixture: body failure remains first before aggregate cleanup failure",
+      "status": "failed",
+      "errors": [
+        "body-locator",
+        "fixture-aggregate-cleanup"
+      ],
+      "duration": 342
+    },
+    {
+      "title": "actual fixture control: cleanup failure still fails successful body",
+      "status": "failed",
+      "errors": [
+        "fixture-aggregate-cleanup"
+      ],
+      "duration": 96
+    },
+    {
+      "title": "actual fixture control: successful body and cleanup pass",
+      "status": "passed",
+      "errors": [],
+      "duration": 90
+    },
+    {
+      "title": "ownership mutation: moving cleanup back into body finally hides primary again",
+      "status": "failed",
+      "errors": [
+        "injected-cleanup"
+      ],
+      "duration": 309
+    },
+    {
+      "title": "actual fixture control: all contexts close when one cleanup rejects",
+      "status": "failed",
+      "errors": [
+        "fixture-aggregate-cleanup"
+      ],
+      "duration": 123
+    }
+  ],
+  "allContextsClosedDespiteOneRejection": true,
+  "negativeControl": "The actual factory remains imported and unchanged; moving ownership of the first close back into test-body finally hides the primary locator failure again.",
+  "limits": [
+    "This demonstrates actual fixture error precedence, cleanup aggregation and ownership sensitivity, not the historical TC068 timeout cause.",
+    "All deliberate failures are separate from the business gate. No tracked source was edited by reviewer."
+  ]
+}

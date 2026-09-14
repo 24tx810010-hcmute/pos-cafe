@@ -1,0 +1,37 @@
+{
+  "checkedAt": "2026-09-14T04:29:20.007Z",
+  "status": "PASS",
+  "runs": [
+    {
+      "name": "baseline-tc068",
+      "candidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+      "passed": 40,
+      "requiredVariants": 4,
+      "manualRepeatEach": 10,
+      "automaticRetries": 0,
+      "runnerTimeout": 45000,
+      "currentReportSha256": "3380c7b5486ebde0b3f8b60234f3e51cd1af7d061d4a9604707d97eeb1d37e6d",
+      "minMs": 3249,
+      "maxMs": 9529,
+      "meanMs": 3731.775
+    },
+    {
+      "name": "fixed-tc068",
+      "candidate": "493c2af03222deefed6ab679fabd9fba352b79e9938b16ba21e1fd0e2a6f7b84",
+      "passed": 40,
+      "requiredVariants": 4,
+      "manualRepeatEach": 10,
+      "automaticRetries": 0,
+      "runnerTimeout": 45000,
+      "currentReportSha256": "bae6d5ca8f1fb32be312335c89004153acc72935e6e93be7e56f505a7efae1dc",
+      "minMs": 3028,
+      "maxMs": 9332,
+      "meanMs": 3325.725
+    }
+  ],
+  "limits": [
+    "Diagnostic repetitions are not gate totals.",
+    "Reports may have been redacted by subsequent gate stages; hashes are of current redacted bytes. These diagnostic metadata did not capture original pre-redaction report hashes.",
+    "Both original and fixed variants passed all 40 repetitions, so repetition evidence alone cannot prove the historical trigger or a before/after behavioral improvement. Controlled ACK and error-precedence oracles supply the sensitivity evidence."
+  ]
+}

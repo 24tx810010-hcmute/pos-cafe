@@ -319,3 +319,9 @@ Action resume/cancel chụp kiểm vòng đời vào mutation variables ngay lú
 OrderDrawer chụp useViewLifetime(orderContext), PaymentDrawer chụp useViewLifetime(paymentOrderId) ngay trước mutate và kiểm tại success/error. Các hook vẫn invalidate query server theo kết quả; UI callback không dùng R1 cũ để sửa state của lượt mới. OrderHistoryDrawer dùng captureView(selectedId) cho catch reprint và callback confirmVoid; mỗi confirm tăng voidGeneration, success/error cần cả vòng đời và generation, onSettled chỉ dọn busy khi còn cùng generation. Đóng/mở popup tăng generation nên settlement cũ không hạ busy của lượt tải mới.
 
 Không gom mọi callback thành im lặng: positive controls kiểm auth error hiện hành, một hiệu ứng ghi và preview đúng. Không đổi SQL, payload/K hoặc quyền DB trong bổ sung ngày 14/09. Runtime WSL chạy cùng migration bytes đã được marker kiểm; cài tzdata-legacy để hỗ trợ timezone fixture có sẵn, không đổi timezone để ép test xanh.
+
+## Harness TC068 sau điều tra timeout — 2026-09-14
+
+Factory newRecoveryPage tạo context tại thời điểm test cần nhưng teardown thuộc fixture, giúp runner giữ lỗi body và báo lỗi cleanup riêng. Các context được đóng bằng allSettled; một cleanup lỗi không làm bỏ qua context khác, rồi AggregateError vẫn khiến test thất bại. Ngắt ACK phải hoàn tất cả route.abort và requestfailed của browser trước khi đóng máy cũ/đổi clock dùng chung. Named steps giới hạn từng phase 15 giây, giữ tổng45/retry0.
+
+Không tăng timeout hoặc bật retry để đổi một failure thành accepted pass: các lựa chọn đó không sửa thứ tự bất đồng bộ hay làm rõ lỗi bị finally che. Không sửa ứng dụng theo giả thuyết chưa tái hiện. Oracle trì hoãn abort750ms chứng minh bản cũ đổi clock sớm còn bản mới chờ đúng; oracle Chromium thực chứng minh thứ tự lỗi body/teardown. Các failure cố ý của oracle được giữ riêng khỏi gate nghiệp vụ.

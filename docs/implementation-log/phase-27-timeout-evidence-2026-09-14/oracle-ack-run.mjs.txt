@@ -1,0 +1,28 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {execFileSync,spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import {candidateFingerprint} from '../../../scripts/idempotency-artifacts.mjs';
+const dir=path.resolve('artifacts/timeout-followup/ack-oracle');
+const hash=s=>createHash('sha256').update(s).digest('hex');
+const results=[];
+for(const variant of ['baseline','fixed']){
+ const source=variant==='baseline'?execFileSync('git',['show','8ed7418:tests/supabase/idempotencyRecovery.spec.ts'],{encoding:'utf8'}):fs.readFileSync('tests/supabase/idempotencyRecovery.spec.ts','utf8');
+ const copy=source.replace("import { expect, test } from '@playwright/test';","import { expect } from '@playwright/test';\nimport { test } from './oracle-fixture.ts';").replace("import { test } from './idempotencyTest.ts';","import { test } from './oracle-fixture.ts';").replace("'../contracts/fixtures.ts'","'../../../tests/contracts/fixtures.ts'").replace("'./idempotencyHarness.ts'","'../../../tests/supabase/idempotencyHarness.ts'");
+ fs.writeFileSync(path.join(dir,variant+'.spec.ts'),copy);
+ const reportFile=path.join(dir,variant+'-report.json');const eventFile=path.join(dir,variant+'-events.jsonl');fs.writeFileSync(eventFile,'');
+ const before=candidateFingerprint(),startedAt=new Date().toISOString();
+ const env={...process.env,IDEM_ENV_FILE:path.join(process.env.TEMP,'pos-cafe-timeout-followup-20260914/idempotency.env'),IDEM_ACK_VARIANT:variant,IDEM_ACK_REPORT:reportFile,IDEM_ACK_EVENTS:eventFile};
+ const args=['node_modules/@playwright/test/cli.js','test','--config=artifacts/timeout-followup/ack-oracle/config.ts','--grep','TC-IDEM-068/e2e/terminal=rejected','--retries=0','--workers=1'];
+ const fd=fs.openSync(path.join(dir,variant+'.log'),'w');
+ const result=spawnSync(process.execPath,args,{env,windowsHide:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);
+ const report=JSON.parse(fs.readFileSync(reportFile));const tests=[];function walk(s){for(const spec of s.specs??[])for(const t of spec.tests??[])tests.push(t);for(const child of s.suites??[])walk(child)}walk(report);
+ const events=fs.readFileSync(eventFile,'utf8').trim().split('\n').filter(Boolean).map(JSON.parse);
+ const errors=tests.flatMap(t=>t.results.flatMap(r=>r.errors??[])).map(e=>e.message??'');
+ const valid=tests.length===1&&events.length===1&&tests[0].results.length===1&&tests[0].results[0].retry===0&&tests[0].expectedStatus==='passed'&&(variant==='baseline'?result.status===1&&!events[0].unchanged&&errors.some(e=>e.includes('ACK_CLOCK_CHANGED_BEFORE_ABORT')):result.status===0&&events[0].unchanged&&tests[0].results[0].status==='passed');
+ const entry={variant,sourceSha256:hash(source),copySha256:hash(copy),command:[process.execPath,...args],startedAt,finishedAt:new Date().toISOString(),candidateBefore:before,candidateAfter:candidateFingerprint(),exitCode:result.status,stats:report.stats,events,expectedOracleObserved:valid,errors:errors.map(e=>e.split('\n')[0]),reportSha256:hash(fs.readFileSync(reportFile))};results.push(entry);
+ console.log(JSON.stringify(entry));
+ if(!valid||before!==candidateFingerprint())break;
+}
+const output={node:process.version,scope:'real isolated DB, deliberate 750ms delayed abort on copied baseline/fixed test; diagnostic only, no test.fail/skip/retry or tracked source change',results,valid:results.length===2&&results.every(r=>r.expectedOracleObserved)};
+fs.writeFileSync(path.join(dir,'verification.json'),JSON.stringify(output,null,2)+'\n');process.exitCode=output.valid?0:1;

@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-09-14T04:32:20.162Z",
+  "linuxTestListeners": [],
+  "windowsProxyReachable": false,
+  "expectedStoppedPids": {
+    "postgres": 412,
+    "postgrest": 487,
+    "gotrue": 447,
+    "windowsProxy": 21924
+  },
+  "stopped": true
+}

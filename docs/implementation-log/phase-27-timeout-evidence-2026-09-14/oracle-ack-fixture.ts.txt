@@ -1,0 +1,23 @@
+import { appendFileSync } from 'node:fs';
+import { test as base } from '../../../tests/supabase/idempotencyTest.ts';
+import { serverHarness as h } from '../../../tests/supabase/idempotencyHarness.ts';
+
+const now = () => h.observer(async (db) => (await db.query('select private.write_clock()::text as moment')).rows[0].moment as string);
+export const test = base.extend({
+  page: async ({ page }, use) => {
+    const install = page.route.bind(page);
+    page.route = (url, handler, options) => install(url, async (route, request) => {
+      const abort = route.abort.bind(route);
+      route.abort = async (code) => {
+        const before = await now();
+        await new Promise((resolve) => setTimeout(resolve, 750));
+        const after = await now();
+        appendFileSync(process.env.IDEM_ACK_EVENTS!, JSON.stringify({ before, after, unchanged: before === after }) + '\n');
+        if (after !== before) throw new Error('ACK_CLOCK_CHANGED_BEFORE_ABORT');
+        await abort(code);
+      };
+      return handler(route, request);
+    }, options);
+    await use(page);
+  },
+});

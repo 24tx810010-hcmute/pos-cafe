@@ -1,0 +1,137 @@
+{
+  "config": {
+    "configFile": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\ack-oracle\\config.ts",
+    "rootDir": "D:/Workspace/pos-cafe/artifacts/timeout-followup/ack-oracle",
+    "forbidOnly": true,
+    "fullyParallel": false,
+    "globalSetup": "D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyGlobalSetup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/Workspace/pos-cafe/artifacts/timeout-followup/ack-oracle/private-results-fixed",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "idempotency-server",
+        "name": "idempotency-server",
+        "testDir": "D:/Workspace/pos-cafe/artifacts/timeout-followup/ack-oracle",
+        "testIgnore": [],
+        "testMatch": [
+          "fixed.spec.ts"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json",
+        {
+          "outputFile": "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\ack-oracle\\fixed-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5176 --strictPort",
+      "url": "http://127.0.0.1:5176",
+      "reuseExistingServer": false,
+      "env": {
+        "VITE_DATA_MODE": "supabase",
+        "VITE_SUPABASE_URL": "http://127.0.0.1:55444",
+        "VITE_SUPABASE_ANON_KEY": "[REDACTED_JWT]"
+      },
+      "cwd": "D:\\Workspace\\pos-cafe"
+    }
+  },
+  "suites": [
+    {
+      "title": "fixed.spec.ts",
+      "file": "fixed.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9611,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 7336
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 878
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 938
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 387
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:22:10.384Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "27537d4a14aa8541fd90-b2fb42795c587bea047c",
+          "file": "fixed.spec.ts",
+          "line": 86,
+          "column": 73
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-14T04:22:08.720Z",
+    "duration": 11600.992,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

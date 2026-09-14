@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-09-14T04:34:00.613Z",
+  "status": "PASS",
+  "control": "Only the rejected TC068 report timeout changed from45000 to120000; declared report hash recomputed to match modified bytes.",
+  "mutationCount": 1,
+  "negativeAudit": "artifacts/timeout-followup/reviewer-gate/tc068-timeout-negative-audit.json",
+  "negativeAuditExit": 1,
+  "rejectedBecause": [
+    "e2e: unchanged test timeout TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK"
+  ],
+  "existingExceptionStillAllowed": {
+    "id": "TC-IDEM-011/e2e",
+    "timeoutMs": 120000,
+    "source": "tests/supabase/idempotencyBootstrap.spec.ts",
+    "sourceSha256": "1837e3cfb7ff1a31344d5febf0c5567c7d70109633da2fb06e5f5d0eeb4a7865"
+  },
+  "acceptedGateAuditUntouched": true,
+  "limit": "This mutates copied evidence, not source or a test execution. No DB/browser/runtime was started."
+}

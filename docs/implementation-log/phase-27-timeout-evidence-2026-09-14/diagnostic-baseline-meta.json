@@ -1,0 +1,26 @@
+{
+  "name": "baseline-tc068",
+  "startedAt": "2026-09-14T04:13:12.159Z",
+  "finishedAt": "2026-09-14T04:15:51.941Z",
+  "node": "v24.16.0",
+  "command": [
+    "D:\\tools\\nodejs\\node.exe",
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "-c",
+    "playwright.idempotency.config.ts",
+    "--grep",
+    "TC-IDEM-068",
+    "--repeat-each",
+    "10",
+    "--retries=0",
+    "--workers=1",
+    "--trace=retain-on-failure",
+    "--output=D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\baseline-tc068/private-traces",
+    "--reporter=./artifacts/timeout-followup/steps.mjs,json"
+  ],
+  "exitCode": 0,
+  "before": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "after": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "scope": "diagnostic repetitions, not release gate or automatic retries; traces may contain test credentials and must stay local"
+}

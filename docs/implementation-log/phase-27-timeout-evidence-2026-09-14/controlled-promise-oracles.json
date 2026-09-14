@@ -1,0 +1,45 @@
+{
+  "checkedAt": "2026-09-14T04:14:07.718Z",
+  "node": "v24.16.0",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "ordinary-finally-masks-body-error",
+      "passed": true,
+      "meaning": "Language-level reproducer, not a reconstruction of the historical browser failure."
+    },
+    {
+      "name": "preserve-body-error-if-cleanup-also-fails",
+      "passed": true
+    },
+    {
+      "name": "cleanup-error-still-fails-successful-body",
+      "passed": true
+    },
+    {
+      "name": "committed-flag-does-not-await-abort",
+      "passed": true,
+      "ordering": [
+        "committed",
+        "clock-advanced-before-abort-completed",
+        "abort-completed"
+      ],
+      "meaning": "Controlled scheduling oracle for TC068 route callback ordering; no DB or browser used."
+    },
+    {
+      "name": "timeout-race-does-not-cancel-body-promise",
+      "passed": true,
+      "lifecycle": [
+        "body-waiting",
+        "runner-timeout-returned",
+        "afterEach-clock-reset",
+        "body-finally"
+      ],
+      "meaning": "Matches inspected Playwright TimeoutManager Promise.race structure; historical event order remains unrecorded."
+    }
+  ],
+  "limits": [
+    "Five dependency-free JavaScript control-flow oracles; these are not business, E2E or DB test passes.",
+    "No claim that a demonstrated scheduling possibility caused the historical timeout."
+  ]
+}

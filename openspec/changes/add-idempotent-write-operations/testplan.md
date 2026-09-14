@@ -858,10 +858,10 @@ Nơi hiện thực: `src/app/writeRecoveryAccess.test.tsx`, `tests/supabase/idem
 - **Mức / nhóm:** DB+E2E / ngoại lệ. **Tiền điều kiện:** F1, reset riêng mỗi variant.
 - **Dữ liệu thử:** rejected(amount 1), cancelled, expired, applied; 4 fixture riêng.
 - **Bước 1:** Dựng fixture, đọc snapshot trước bằng observer độc lập; kiểm positive control nếu có.
-- **Bước 2:** Commit terminal observer xác minh rồi drop ACK; clock+48 h; context mới read/replay.
-- **Bước 3:** Chờ request/transaction kết thúc (timeout 30 s là fail), đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây.
+- **Bước 2:** Commit terminal observer xác minh rồi drop ACK. Với E2E, đợi cả `route.abort` hoàn tất và browser phát `requestfailed`, đóng page cũ, rồi đưa clock tới `2026-09-11T00:00:00Z` (72 giờ sau T đăng ký; 48 giờ sau lúc quyết định expired). Context mới tra cứu lại, không ghi thêm. Context mới do fixture quản lý teardown để lỗi đóng context không thay lỗi của bước test.
+- **Bước 3:** Chờ request/transaction kết thúc, đọc snapshot mới và đối chiếu oracle G cùng expected dưới đây. DB request timeout 30 giây là fail; E2E giữ tổng 45 giây/retry 0, từng phase ngắt ACK/đăng nhập máy mới/tra cứu tối đa 15 giây. Kiểm đúng một ledger row và terminal cũ, số payment như fixture, đúng một request ghi từ page cũ và không request ghi từ máy mới.
 - **Kết quả mong đợi:** Đúng terminal/error/R1 cũ từng fixture; không reopen, không đổi rejected/cancelled thành expired; 0 hiệu ứng mới. Không chỉ test applied.
-- **Nơi hiện thực:** `tests/supabase/idempotencyRecovery.spec.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
+- **Nơi hiện thực:** `tests/supabase/idempotencyRecovery.spec.ts`, fixture `tests/supabase/idempotencyTest.ts`; `tests/contracts/writeRecovery.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
 ### TC-IDEM-069 — Fault rollback tại mọi điểm giữa business
 

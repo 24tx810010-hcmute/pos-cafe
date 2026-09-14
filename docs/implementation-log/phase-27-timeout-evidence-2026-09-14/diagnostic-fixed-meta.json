@@ -1,0 +1,26 @@
+{
+  "name": "fixed-tc068",
+  "startedAt": "2026-09-14T04:18:03.639Z",
+  "finishedAt": "2026-09-14T04:20:27.082Z",
+  "node": "v24.16.0",
+  "command": [
+    "D:\\tools\\nodejs\\node.exe",
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "-c",
+    "playwright.idempotency.config.ts",
+    "--grep",
+    "TC-IDEM-068",
+    "--repeat-each",
+    "10",
+    "--retries=0",
+    "--workers=1",
+    "--trace=retain-on-failure",
+    "--output=D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\fixed-tc068/private-traces",
+    "--reporter=./artifacts/timeout-followup/steps.mjs,json"
+  ],
+  "exitCode": 0,
+  "before": "493c2af03222deefed6ab679fabd9fba352b79e9938b16ba21e1fd0e2a6f7b84",
+  "after": "493c2af03222deefed6ab679fabd9fba352b79e9938b16ba21e1fd0e2a6f7b84",
+  "scope": "diagnostic repetitions, not release gate or automatic retries; traces may contain test credentials and must stay local"
+}

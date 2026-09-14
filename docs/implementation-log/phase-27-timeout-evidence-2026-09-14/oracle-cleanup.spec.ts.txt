@@ -1,0 +1,47 @@
+import {expect,type BrowserContext} from '@playwright/test';
+import {test} from '../../../tests/supabase/idempotencyTest.ts';
+
+const cleanupError=()=>new Error('CONTROLLED_ACTUAL_CLEANUP_FAILURE');
+function failNextClose(context:BrowserContext){
+  const original=context.close.bind(context);let calls=0;
+  context.close=async(options)=>{await original(options);if(++calls===1)throw cleanupError()};
+}
+test('manual baseline: cleanup hides the missing locator',async({browser})=>{
+  const context=await browser.newContext();const page=await context.newPage();
+  await page.setContent('<main data-testid="ready">Blank local document</main>');failNextClose(context);
+  try{await page.getByTestId('MISSING_ACTUAL_BODY_SENTINEL').click({timeout:250})}
+  finally{await context.close()}
+});
+test('actual fixture: body failure remains first before aggregate cleanup failure',async({newRecoveryPage})=>{
+  const page=await newRecoveryPage();await page.setContent('<main data-testid="ready">Blank local document</main>');
+  failNextClose(page.context());
+  await page.getByTestId('MISSING_ACTUAL_BODY_SENTINEL').click({timeout:250});
+});
+test('actual fixture control: cleanup failure still fails successful body',async({newRecoveryPage})=>{
+  const page=await newRecoveryPage();await page.setContent('<main data-testid="ready">Blank local document</main>');
+  failNextClose(page.context());await expect(page.getByTestId('ready')).toBeVisible();
+});
+test('actual fixture control: successful body and cleanup pass',async({newRecoveryPage})=>{
+  const page=await newRecoveryPage();await page.setContent('<main data-testid="ready">Blank local document</main>');
+  await expect(page.getByTestId('ready')).toBeVisible();
+});
+test('ownership mutation: moving cleanup back into body finally hides primary again',async({newRecoveryPage})=>{
+  const page=await newRecoveryPage();await page.setContent('<main data-testid="ready">Blank local document</main>');
+  failNextClose(page.context());
+  // Behavioral negative control: only cleanup ownership moves into the body.
+  // No change to the actual imported fixture or its tracked source is made.
+  try{await page.getByTestId('MISSING_ACTUAL_BODY_SENTINEL').click({timeout:250})}
+  finally{await page.context().close()}
+});
+test('actual fixture control: all contexts close when one cleanup rejects',async({newRecoveryPage})=>{
+  const pages=await Promise.all([newRecoveryPage(),newRecoveryPage()]);
+  for(let i=0;i<pages.length;i++){
+    const context=pages[i].context(),original=context.close.bind(context);
+    context.close=async(options)=>{
+      await original(options);
+      await test.info().attach(`context-${i}-closed`,{body:Buffer.from('closed'),contentType:'text/plain'});
+      if(i===0)throw cleanupError();
+    };
+  }
+  await expect(pages[0].locator('body')).toBeVisible();await expect(pages[1].locator('body')).toBeVisible();
+});

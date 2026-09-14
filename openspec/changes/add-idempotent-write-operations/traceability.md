@@ -72,3 +72,7 @@ Bổ sung TC053/054 cho IDEM-14 trong UC07/09 và positive TC006 cho IDEM-02/24.
 | IDEM-22 | UC07 | Discovery/gate đòi đủ 818 execution; nhóm cache TC006/core vẫn đủ 12, recovery current 4, initial current 2, payment current 4, history current 4 |
 
 48 execution mới không thêm requirement/UC/TC gốc. plannedFiles trong caseCatalog gốc là vị trí dự kiến lịch sử; actual discovery và testplan là nguồn xác minh file đã thực hiện, không suy missing test chỉ từ tên file dự kiến cũ. Review executions mới ghi đúng file actual.
+
+## Bổ sung bằng chứng harness — 2026-09-14
+
+TC-IDEM-068 vẫn ánh xạ IDEM-06/07/10/12 và UC-IDEM-07/09/10 ở bảng chính; bốn terminal và 818 execution không đổi. Nơi hiện thực bổ sung fixture tests/supabase/idempotencyTest.ts. Oracle điều khiển ACK750ms và lỗi teardown phục vụ độ tin cậy bằng chứng IDEM-22/TC-IDEM-088, không tạo requirement/use case mới và không cộng số execution bắt buộc. Deployment metadata/asset hashes là bằng chứng vận hành, không được thay E2E/DB hoặc gọi là business smoke.

@@ -178,3 +178,7 @@ Review trước push tìm thêm P2 thuộc IDEM-14: lỗi action Tra cứu trả
 Tiếp tục yêu cầu đã được chủ dự án cho phép: sửa các lỗi hậu kiểm, có test và hai subagent kiểm độc lập trước push code/docs. Không thêm tính năng hoặc thay quyết định nghiệp vụ. Review phát hiện cùng lỗi callback cũ ở lần gửi đầu, thanh toán/tách đơn và đọc/hủy đơn lịch sử; guard được mở rộng tới các vị trí này. Lỗi hiện hành vẫn phải được xử lý. Runtime WSL thay Windows bị Application Control chặn; không sửa chính sách máy hoặc dùng Supabase thật để test.
 
 Manifest cuối bổ sung 48 execution (submit 9, pay/split 18, history 21), tổng 818 bắt buộc trên 93 TC gốc. Đây là số thiết kế, chưa phải kết quả thực chạy. Gate và bằng chứng cuối ghi riêng tại [hậu kiểm 14/09](../../../docs/implementation-log/phase-27-release-check-2026-09-14.md).
+
+## Follow-up timeout E2E và frontend — 2026-09-14
+
+Chủ dự án yêu cầu xử lý giới hạn timeout và xác minh app đang phục vụ bản mới. Phạm vi là độ tin cậy/khả năng chẩn đoán của TC068 và bằng chứng phát hành, không có hành vi người dùng mới nên không tạo use case mới. Giữ 93 TC/818 execution bắt buộc và các yêu cầu nghiệp vụ đã duyệt. Không đổi SQL hoặc app; không chạy giao dịch trên cửa hàng thật. Race clock/ACK và lỗi cleanup che lỗi body đã có oracle độc lập; không gán chúng thành nguyên nhân đã biết của timeout lịch sử. [Bằng chứng follow-up](../../../docs/implementation-log/phase-27-timeout-followup-2026-09-14.md).

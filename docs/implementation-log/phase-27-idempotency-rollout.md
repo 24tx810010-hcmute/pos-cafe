@@ -4,6 +4,8 @@ Ngày lập: 2026-09-10. Cập nhật trạng thái: 2026-09-14.
 
 **Hậu kiểm 14/09:** findings code đã sửa, gate WSL đạt 1.183 test/818 required cùng fingerprint và hai reviewer kiểm độc lập. Lượt E2E đầu timeout một case, chạy riêng và full rerun đạt nhưng nguyên nhân timeout chưa rõ. Xem [bằng chứng và giới hạn](phase-27-release-check-2026-09-14.md); không lấy gate cũ làm nghiệm thu candidate mới.
 
+**Xác minh frontend tiếp theo 14/09:** GitHub/Vercel Production success gắn `8ed7418`; JS/CSS từ domain public khớp byte với build đã kiểm. [Điều tra timeout và bằng chứng deployment](phase-27-timeout-followup-2026-09-14.md) phân biệt rõ app artifact đã phát hành với nghiệp vụ trên cửa hàng thật chưa chạy smoke. Hai điểm yếu harness được xử lý trong lượt này; không khẳng định đã xác định trigger của timeout lịch sử.
+
 ## Ghi nhận thực hiện
 
 Ngày 2026-09-13, chủ dự án xác nhận đã áp dụng migration 014, 015 và 016. Sau khi chủ dự án cấu hình MCP Supabase và yêu cầu kiểm tra, agent đã xác minh bằng truy vấn chỉ đọc: đúng project app local, 45/45 thân hàm khớp bản sửa 014–016, RPC cũ và quyền ghi tài chính trực tiếp đã bị thu hồi. Lịch sử migration trả về rỗng; chưa có checksum toàn bộ file đã chạy hoặc bằng chứng phiên bản app đang phục vụ. Chi tiết và giới hạn tại [kiểm tra MCP/database đích](phase-27-live-mcp-check-2026-09-13.md). Không chạy lại các migration chỉ để xác nhận trạng thái.

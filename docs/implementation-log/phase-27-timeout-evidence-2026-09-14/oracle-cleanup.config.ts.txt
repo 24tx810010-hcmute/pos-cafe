@@ -1,0 +1,5 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'.',testMatch:'actual-fixture.spec.ts',outputDir:'./actual-fixture-results',
+  timeout:3_000,retries:0,workers:1,fullyParallel:false,forbidOnly:true,
+  reporter:[['json',{outputFile:'D:/Workspace/pos-cafe/artifacts/timeout-followup/reviewer-gate/actual-fixture-results.json'}]],
+  use:{headless:true,trace:'off',screenshot:'off',video:'off'}});

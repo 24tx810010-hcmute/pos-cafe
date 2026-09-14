@@ -1,0 +1,2164 @@
+{
+  "config": {
+    "configFile": "D:\\Workspace\\pos-cafe\\playwright.idempotency.config.ts",
+    "rootDir": "D:/Workspace/pos-cafe/tests/supabase",
+    "forbidOnly": true,
+    "fullyParallel": false,
+    "globalSetup": "D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyGlobalSetup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/Workspace/pos-cafe/artifacts/timeout-followup/fixed-tc068/private-traces",
+        "repeatEach": 10,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "idempotency-server",
+        "name": "idempotency-server",
+        "testDir": "D:/Workspace/pos-cafe/tests/supabase",
+        "testIgnore": [],
+        "testMatch": [
+          "/idempotency(?:Recovery|Pricing|Bootstrap|Lifecycle)?\\.spec\\.ts/"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "D:\\Workspace\\pos-cafe\\artifacts\\timeout-followup\\steps.mjs"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5176 --strictPort",
+      "url": "http://127.0.0.1:5176",
+      "reuseExistingServer": false,
+      "env": {
+        "VITE_DATA_MODE": "supabase",
+        "VITE_SUPABASE_URL": "http://127.0.0.1:55444",
+        "VITE_SUPABASE_ANON_KEY": "[REDACTED_JWT]"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "idempotencyRecovery.spec.ts",
+      "file": "idempotencyRecovery.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "TC-IDEM-068/e2e/terminal=applied recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9332,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 7538
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 135
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1152
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 424
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:06.000Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-e60ec8d63b2dfc796960",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3262,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1606
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 117
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1091
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 379
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:15.444Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-9e09fd7fe38f42c9a8f2",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=cancelled recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3213,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1474
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 90
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1178
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 397
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:18.716Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-fd51cdfe9d26ed0acb8b",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=expired recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3252,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1507
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 132
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1135
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 407
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:21.938Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-f227ef0c1aca1ce386b7",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=applied recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3049,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1429
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 108
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1024
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 405
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:25.942Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-9a024d29738c4401b82f",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3117,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1452
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 120
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1070
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 407
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:29.098Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-861afca405cc81b0fa86",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=cancelled recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3100,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1457
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 92
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1079
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 404
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:32.232Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-163075ea2f95e58859f7",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=expired recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3166,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1473
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 126
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1095
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 404
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:35.341Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-6e420c5d328585881142",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=applied recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3140,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1525
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 119
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1034
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 378
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:39.217Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-00511a8e6a53f5db81d9",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3172,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1493
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 117
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1063
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 417
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:42.473Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-098319fa2d25a3d0cba9",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=cancelled recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3139,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1485
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 88
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1091
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 406
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:45.655Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-72bd92e5bbc872c538b6",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=expired recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3284,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1570
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 118
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1125
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 404
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:48.804Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-6d40853011a6b09e5357",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=applied recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3080,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1442
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 107
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1045
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 397
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:52.790Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-8ece84284b6b30b6f1eb",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3160,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1538
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 115
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1035
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 403
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:55.980Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-e91c03bb2f00446f7c2b",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=cancelled recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3116,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1481
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 90
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1051
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 425
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:18:59.157Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-d8e55196c97ec8ef4adf",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=expired recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3202,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1464
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 129
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1138
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 407
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:02.283Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-8f35167b6b7c5244a287",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=applied recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3111,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1447
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 110
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1057
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 410
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:06.196Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-599d634aa893974873d4",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3207,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1541
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 101
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1088
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 407
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:09.419Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-c62ba6e650e5a6e6e204",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=cancelled recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3261,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1510
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 109
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1164
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 412
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:12.646Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-769db18d4e02c2784d82",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=expired recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3234,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1487
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 113
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1149
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 416
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:15.916Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-d6f5567ad565b917e00c",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=applied recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3192,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1495
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 120
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1095
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 392
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:19.883Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-1ec3d1d4096e66496b61",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3181,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1492
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 112
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1086
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 408
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:23.186Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-ab201c247158dfe50dd9",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=cancelled recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3248,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1496
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 108
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1139
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 438
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:26.377Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-eaeb662445e31cd0e9be",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=expired recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3183,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1439
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 123
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1129
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 424
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:29.635Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-2aacb412abbafa4610a8",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=applied recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3106,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1420
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 115
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1091
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 395
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:33.519Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-49f3ee6cc4178a93959b",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3246,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1581
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 118
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1083
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 387
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:36.737Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-01020cdef9447d4984ef",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=cancelled recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3198,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1516
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 91
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1123
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 403
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:39.992Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-01b3b87a8aba923f5cc9",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=expired recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3297,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1520
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 113
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1187
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 409
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:43.200Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-35b4d03293a354dfa4ff",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=applied recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3114,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1455
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 124
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1051
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 395
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:47.111Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-6486fcfaec278b946846",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3158,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1475
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 117
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1114
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 377
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:50.342Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-27caf83a131f8d168d73",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=cancelled recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3107,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1449
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 87
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1099
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 405
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:53.511Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-12746c49b71d8365cbad",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=expired recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3111,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1395
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 111
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1130
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 407
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:19:56.627Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-ff31797ad966d820d022",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=applied recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3118,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1439
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 131
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1066
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 398
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:20:00.458Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-c1217188ca5e7b8184b0",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3120,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1460
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 116
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1072
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 403
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:20:03.689Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-8944d5f5ef5042d03dfd",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=cancelled recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3113,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1448
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 84
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1117
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 398
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:20:06.827Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-97f888cf05e3a4017a6b",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=expired recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3211,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1492
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 128
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1123
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 392
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:20:09.949Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-7ba8c76cf523ffeaa496",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=applied recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3028,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1404
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 105
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1032
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 407
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:20:13.877Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-4070448a87d1f6c687b0",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3209,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1532
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 102
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1111
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 387
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:20:17.014Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-d15dbc8edf9cf484cc03",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=cancelled recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3322,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1585
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 94
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1161
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 413
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:20:20.234Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-1c619e117ad41072555b",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=expired recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3170,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Prepare a pending operation on the original device",
+                      "duration": 1474
+                    },
+                    {
+                      "title": "Observe the committed decision and finish dropping its ACK",
+                      "duration": 123
+                    },
+                    {
+                      "title": "Create and authenticate a fresh device after the clock jump",
+                      "duration": 1093
+                    },
+                    {
+                      "title": "Recover the original terminal decision without another write",
+                      "duration": 409
+                    }
+                  ],
+                  "startTime": "2026-09-14T04:20:23.565Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-c5c56b900c11437cddf2",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 86,
+          "column": 73
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-14T04:18:04.156Z",
+    "duration": 142905.72,
+    "expected": 40,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

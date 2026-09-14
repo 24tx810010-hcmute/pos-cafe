@@ -1,0 +1,1850 @@
+[
+  {
+    "name": "TC-IDEM-074/db/field=register.operationId/variant=missing validates the RPC UUID boundary",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=register.operationId/variant=null validates the RPC UUID boundary",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=register.operationId/variant=wrong_type validates the RPC UUID boundary",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=register.operationId/variant=positive validates the RPC UUID boundary",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=execute.operationId/variant=missing validates the RPC UUID boundary",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=execute.operationId/variant=null validates the RPC UUID boundary",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=execute.operationId/variant=wrong_type validates the RPC UUID boundary",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=execute.operationId/variant=positive validates the RPC UUID boundary",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=common.schemaVersion/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=common.schemaVersion/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=common.schemaVersion/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=common.schemaVersion/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=common.kind/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=common.kind/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=common.kind/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=common.kind/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=submit.action/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=submit.action/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=submit.action/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=submit.action/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=submit.orderId/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=submit.orderId/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=submit.orderId/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=submit.orderId/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.expectedVersion/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.expectedVersion/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.expectedVersion/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.expectedVersion/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.orderType/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.orderType/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.orderType/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.orderType/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.tableId/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.tableId/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.tableId/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.tableId/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.newLines/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.newLines/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.newLines/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=create.newLines/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=takeaway.tableId/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=takeaway.tableId/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=takeaway.tableId/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=takeaway.tableId/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=update.expectedVersion/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=update.expectedVersion/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=update.expectedVersion/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=update.expectedVersion/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=update.retainedLines/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=update.retainedLines/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=update.retainedLines/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=update.retainedLines/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=update.newLines/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=update.newLines/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=update.newLines/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=update.newLines/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=retained.sourceItemId/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=retained.sourceItemId/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=retained.sourceItemId/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=retained.sourceItemId/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=retained.quantity/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=retained.quantity/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=retained.quantity/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=retained.quantity/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.id/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.id/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.id/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.id/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.menuItemId/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.menuItemId/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.menuItemId/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.menuItemId/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.quantity/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.quantity/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.quantity/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.quantity/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.quotedBasePrice/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.quotedBasePrice/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.quotedBasePrice/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.quotedBasePrice/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.options/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.options/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.options/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine.options/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.id/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.id/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.id/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.id/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.optionValueId/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.optionValueId/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.optionValueId/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.optionValueId/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.quantity/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.quantity/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.quantity/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.quantity/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.quotedPriceDelta/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.quotedPriceDelta/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.quotedPriceDelta/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option.quotedPriceDelta/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.orderId/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.orderId/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.orderId/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.orderId/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.paymentId/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.paymentId/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.paymentId/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.paymentId/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.expectedVersion/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.expectedVersion/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.expectedVersion/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.expectedVersion/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.method/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.method/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.method/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.method/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.receivedAmount/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.receivedAmount/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.receivedAmount/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=pay.receivedAmount/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.newOrderId/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.newOrderId/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.newOrderId/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.newOrderId/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.lines/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.lines/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.lines/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.lines/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.orderItemId/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.orderItemId/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.orderItemId/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.orderItemId/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.quantity/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.quantity/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.quantity/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.quantity/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.splitItemId/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.splitItemId/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.splitItemId/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=split.splitItemId/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=void.reason/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=void.reason/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=void.reason/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=void.reason/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=void.expectedVersion/variant=missing validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=void.expectedVersion/variant=null validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=void.expectedVersion/variant=wrong_type validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=void.expectedVersion/variant=positive validates this field without an earlier business failure",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=kind/variant=invalid_literal rejects an unsupported enum value",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=schemaVersion/variant=invalid_literal rejects an unsupported enum value",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=action/variant=invalid_literal rejects an unsupported enum value",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=orderType/variant=invalid_literal rejects an unsupported enum value",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=method/variant=invalid_literal rejects an unsupported enum value",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=reason/variant=invalid_literal rejects an unsupported enum value",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=common/variant=unknown_field rejects rather than stripping unexpected fields",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=retained/variant=unknown_field rejects rather than stripping unexpected fields",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=newLine/variant=unknown_field rejects rather than stripping unexpected fields",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/field=option/variant=unknown_field rejects rather than stripping unexpected fields",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-047/db/kind=update/version=missing checks valid state before version behavior",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-047/db/kind=update/version=null checks valid state before version behavior",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-047/db/kind=update/version=positive checks valid state before version behavior",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-047/db/kind=pay/version=missing checks valid state before version behavior",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-047/db/kind=pay/version=null checks valid state before version behavior",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-047/db/kind=pay/version=positive checks valid state before version behavior",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-047/db/kind=split/version=missing checks valid state before version behavior",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-047/db/kind=split/version=null checks valid state before version behavior",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-047/db/kind=split/version=positive checks valid state before version behavior",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-047/db/kind=void/version=missing checks valid state before version behavior",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-047/db/kind=void/version=null checks valid state before version behavior",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-047/db/kind=void/version=positive checks valid state before version behavior",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-079/db/note=absent counts Unicode code points rather than UTF16 units",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-079/db/note=null counts Unicode code points rather than UTF16 units",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-079/db/note=empty counts Unicode code points rather than UTF16 units",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-079/db/note=500_ascii counts Unicode code points rather than UTF16 units",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-079/db/note=501_ascii counts Unicode code points rather than UTF16 units",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-079/db/note=500_emoji counts Unicode code points rather than UTF16 units",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-079/db/note=501_emoji counts Unicode code points rather than UTF16 units",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-079/db/reason_other=absent requires explicit nonblank explanation for other",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-079/db/reason_other=null requires explicit nonblank explanation for other",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-079/db/reason_other=empty requires explicit nonblank explanation for other",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-079/db/reason_other=spaces requires explicit nonblank explanation for other",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-079/db/reason_other=nonblank requires explicit nonblank explanation for other",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeSchema.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=register/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=register/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=register/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=execute/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=execute/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=execute/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=get/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=get/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=get/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=list/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=list/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=list/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=cancel/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=cancel/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/endpoint=cancel/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=register/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=register/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=register/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=execute/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=execute/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=execute/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=get/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=get/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=get/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=list/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=list/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=list/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=cancel/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=cancel/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/endpoint=cancel/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=register/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=register/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=register/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=execute/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=execute/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=execute/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=get/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=get/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=get/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=list/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=list/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=list/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=cancel/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=cancel/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/endpoint=cancel/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=register/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=register/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=register/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=execute/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=execute/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=execute/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=get/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=get/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=get/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=list/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=list/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=list/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=cancel/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=cancel/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/endpoint=cancel/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=register/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=register/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=register/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=execute/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=execute/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=execute/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=get/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=get/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=get/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=list/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=list/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=list/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=cancel/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=cancel/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/endpoint=cancel/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=register/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=register/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=register/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=execute/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=execute/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=execute/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=get/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=get/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=get/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=list/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=list/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=list/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=cancel/actor=A checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=cancel/actor=B checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/endpoint=cancel/actor=C checks current server permission for the stored action",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/override=grant gives an explicit deny precedence over a grant",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=create/override=deny_both gives an explicit deny precedence over a grant",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/override=grant gives an explicit deny precedence over a grant",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=update/override=deny_both gives an explicit deny precedence over a grant",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/override=grant gives an explicit deny precedence over a grant",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_open/override=deny_both gives an explicit deny precedence over a grant",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/override=grant gives an explicit deny precedence over a grant",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=pay/override=deny_both gives an explicit deny precedence over a grant",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/override=grant gives an explicit deny precedence over a grant",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=split/override=deny_both gives an explicit deny precedence over a grant",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/override=grant gives an explicit deny precedence over a grant",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-006/db/action=void_paid/override=deny_both gives an explicit deny precedence over a grant",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-003/db missing forged and other-store employee tokens cannot register a write",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-004/db absent JWT returns auth required and invalid JWT is rejected at PostgREST",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-008/db store authenticated role cannot promote itself or read a PIN hash",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-009/db inventory covers every old overload and financial write privilege",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-010/db parent delete and table status mutation are denied and other-store keys stay hidden",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-033/db historical retained price menu modifier name and ID cannot be supplied through JSON",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-093/db unauthorized and mismatched requests cannot mutate any of the four terminal results",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-075/db rejects persisted UUID collisions across both stores and repeated fresh IDs before registration",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writePermissions.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-062/db/validation_k_expiry checks the clock after proven validation wait",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-062/db/validation_session_expiry checks the clock after proven validation wait",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-064/db real DB clock passes expiry while transaction timestamp stays before it",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-065/db first effect before expiry commits after expiry and waiting cancel returns applied",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-069/db/point=submit_removed rolls every financial row back and permits exactly one manual retry",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-069/db/point=submit_option rolls every financial row back and permits exactly one manual retry",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-069/db/point=split_number rolls every financial row back and permits exactly one manual retry",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-069/db/point=split_move rolls every financial row back and permits exactly one manual retry",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-069/db/point=split_copy_option rolls every financial row back and permits exactly one manual retry",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-069/db/point=split_payment rolls every financial row back and permits exactly one manual retry",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-069/db/point=pay_payment rolls every financial row back and permits exactly one manual retry",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-069/db/point=pay_order rolls every financial row back and permits exactly one manual retry",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-069/db/point=pay_table rolls every financial row back and permits exactly one manual retry",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-069/db/point=void_order rolls every financial row back and permits exactly one manual retry",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-070/db/kind=pay cannot commit an applied result when the request rolls back",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-070/db/kind=split cannot commit an applied result when the request rolls back",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-071/db late known failure rolls back changed items but commits immutable rejection outside the subtransaction",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-072/db deadlock serialization and terminated backend leave pending K recoverable",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-073/db two terminal replays increment exactly twice while all read denied mismatch rollback requests keep R1 unchanged",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-085/db migrates literal legacy snapshots without repricing and rejects schema shadowing",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeFaults.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=create/wire=decimal equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=create/wire=exponent equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=update_retained/wire=decimal equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=update_retained/wire=exponent equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=update_remove/wire=decimal equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=update_remove/wire=exponent equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=pay/wire=decimal equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=pay/wire=exponent equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=split_partial/wire=decimal equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=split_partial/wire=exponent equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=split_whole_line/wire=decimal equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=split_whole_line/wire=exponent equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=void_open/wire=decimal equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=void_open/wire=exponent equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=void_paid/wire=decimal equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db/numeric=void_paid/wire=exponent equivalent integral JSON registers, executes and replays without rewriting the frozen payload",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=update.expectedVersion/invalid=fractional raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=update.expectedVersion/invalid=below_min raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=update.expectedVersion/invalid=above_max raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=pay.expectedVersion/invalid=fractional raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=pay.expectedVersion/invalid=below_min raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=pay.expectedVersion/invalid=above_max raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=void.expectedVersion/invalid=fractional raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=void.expectedVersion/invalid=below_min raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=void.expectedVersion/invalid=above_max raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=retained.quantity/invalid=fractional raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=retained.quantity/invalid=below_min raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=retained.quantity/invalid=above_max raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=newLine.quantity/invalid=fractional raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=newLine.quantity/invalid=below_min raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=newLine.quantity/invalid=above_max raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=newLine.quotedBasePrice/invalid=fractional raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=newLine.quotedBasePrice/invalid=below_min raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=newLine.quotedBasePrice/invalid=above_max raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=option.quantity/invalid=fractional raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=option.quantity/invalid=below_min raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=option.quantity/invalid=above_max raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=option.quotedPriceDelta/invalid=fractional raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=option.quotedPriceDelta/invalid=below_min raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=option.quotedPriceDelta/invalid=above_max raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=pay.receivedAmount/invalid=fractional raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=pay.receivedAmount/invalid=below_min raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=pay.receivedAmount/invalid=above_max raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=split.quantity/invalid=fractional raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=split.quantity/invalid=below_min raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-074/db/numeric_field=split.quantity/invalid=above_max raw numeric input is rejected before rounding or business effects",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeNumericWire.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-026/db adding one newly priced portion cannot increase the old retained quantity",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-027/db swapping notes between different price portions preserves their identities",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-031/db equal unit totals with different base and modifier components remain two portions",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-048/db stale versions invalid order status and unknown IDs reject without business changes",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-049/db all supported void reasons work and other requires an explanation",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-050/db full and split historical receipts preserve option quantity and original names",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-052/db losing the HTTP reply after an observed payment commit still recovers exactly one payment",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-068/db/terminal=applied survives an actual lost reply and a forty-eight-hour recovery",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-068/db/terminal=rejected survives an actual lost reply and a forty-eight-hour recovery",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-068/db/terminal=cancelled survives an actual lost reply and a forty-eight-hour recovery",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-068/db/terminal=expired survives an actual lost reply and a forty-eight-hour recovery",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-055/db server recovery distinguishes applied and pending split operations without local data",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-056/db creator modifier initiator executor and payment actor stay independently attributed",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-057/db stable cursor pagination returns all one-hundred-one tied timestamps without duplicates",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-080/db invalid list limits fail and a max lock version cannot wrap or poison an operation",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-081/db only cash integer amounts register and valid exact cash remains payable",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-083/db historical split R1 stays paid after its child is voided and source is edited",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-090/db persisted request result errors and list never contain employee credentials",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-091/db missing deleted or cross-store table IDs reject without creating an order",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-092/db partial underpayment and zero-total selections cannot create a cash payment",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeRecovery.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-005/db/boundary=minus_1ms enforces the employee expiry without expiring the pending operation",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-005/db/boundary=equal enforces the employee expiry without expiring the pending operation",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-005/db/boundary=plus_1ms enforces the employee expiry without expiring the pending operation",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-005/db/reset_pin invalidates the old employee token and requires the new PIN",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-019/db two PostgREST backend PIDs register and execute the same key exactly once",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-060/db/winner=cancel proves both contenders waited and only the winner takes effect",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-060/db/winner=execute proves both contenders waited and only the winner takes effect",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-023/db/pair=update_pay/winner=left forces one OCC winner instead of accepting two failures",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-023/db/pair=update_pay/winner=right forces one OCC winner instead of accepting two failures",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-023/db/pair=update_split/winner=left forces one OCC winner instead of accepting two failures",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-023/db/pair=update_split/winner=right forces one OCC winner instead of accepting two failures",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-023/db/pair=pay_split/winner=left forces one OCC winner instead of accepting two failures",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-023/db/pair=pay_split/winner=right forces one OCC winner instead of accepting two failures",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-023/db/pair=update_voidOpen/winner=left forces one OCC winner instead of accepting two failures",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-023/db/pair=update_voidOpen/winner=right forces one OCC winner instead of accepting two failures",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-023/db/pair=voidPaid_voidPaid/winner=left forces one OCC winner instead of accepting two failures",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-023/db/pair=voidPaid_voidPaid/winner=right forces one OCC winner instead of accepting two failures",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-062/db/boundary=minus_1ms checks operation TTL with a newly valid employee session",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-062/db/boundary=equal checks operation TTL with a newly valid employee session",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-062/db/boundary=plus_1ms checks operation TTL with a newly valid employee session",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-063/db/blocker=operation checks expiry after the contender crosses an observed lock wait",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-063/db/blocker=store checks expiry after the contender crosses an observed lock wait",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-063/db/blocker=order checks expiry after the contender crosses an observed lock wait",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-063/db/blocker=table checks expiry after the contender crosses an observed lock wait",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-020/db/winner=P1 binds one canonical payload after two observed registration contenders",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-020/db/winner=P2 binds one canonical payload after two observed registration contenders",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-021/db/winner=K1 preserves a single occupied-table creation",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-021/db/winner=K2 preserves a single occupied-table creation",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-022/db equal takeaway contents with distinct keys create two legitimate orders",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-024/db/winner=create allocates distinct numbers in the actual store lock order",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-024/db/winner=split allocates distinct numbers in the actual store lock order",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-007/db observes a committed permission revocation before the final execution checkpoint",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-005/db/race=start_first serializes PIN reset and session issuance on the same employee row",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-005/db/race=reset_first serializes PIN reset and session issuance on the same employee row",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-001/db session has exactly twelve hours and acknowledged revoke prevents reuse",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-002/db wrong PIN and inactive employee fail while valid PIN has a positive control",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-012/db register writes only one immutable pending operation",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-013/db repeated registration never extends expiry and terminal remains expired",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-014/db first create is sixty thousand and two replays preserve the complete R1",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-015/db JSON object key order is irrelevant to payload equality",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-016/db changing array order is a mismatch and original payload still applies",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-017/db absent and null notes are separately valid but unequal payloads",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-018/db quantity amount version and kind mutations cannot change a registered split",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-025/db old two portions retain thirty thousand while new portion is forty thousand",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-028/db decrease keeps original price and removal preserves raw old quantity",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-029/db inactive renamed catalog cannot reprice or rename retained snapshots",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-030/db adding current modifier prices preserves old components and new split snapshots",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-030/db/old adding current modifier prices preserves old components and old split snapshots",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-034/db quote increases and decreases both reject durably before a new confirmation",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-035/db offsetting base and option changes reject even when new portion total stays equal",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-037/db void open keeps raw removed history and replays without another event",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-038/db full cash payment has literal amount change receipt and one immutable result",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-039/db cash amount one below total fails while exact total has zero change",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-040/db partial split preserves numbering quantities relations and twenty thousand change",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-041/db splitting a complete line moves its original identity",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-043/db invalid selections cannot create partial effects and a one-unit control works",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-046/db void paid retains money history and does not empty a table with another open order",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-058/db execute get and cancel never implicitly register an unknown key",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-059/db an authorized different employee can cancel and replay does not rewrite that actor",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-061/db cancelling at expiry expires only the operation and preserves the open order",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-066/db a two-day-old open order can be paid with a fresh operation",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-067/db first applied result survives forty-eight hours without being expired",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeOperations.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-032/db/source=other_order validates provenance against actual persisted rows",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-032/db/source=other_store validates provenance against actual persisted rows",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-032/db/source=removed validates provenance against actual persisted rows",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-032/db/source=moved validates provenance against actual persisted rows",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-032/db/source=duplicate validates provenance against actual persisted rows",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-032/db/source=omitted validates provenance against actual persisted rows",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-032/db/source=over_quantity validates provenance against actual persisted rows",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-036/db unavailable catalog and invalid group choices reject but a valid multi group applies",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-076/db money domain and aggregate overflow never produce an out-of-range result",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-077/db line and modifier quantity bounds are tested with zero-priced catalog data",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-078/db/array=create_lines/count=0 enforces array boundaries without price interference",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-078/db/array=create_lines/count=1 enforces array boundaries without price interference",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-078/db/array=create_lines/count=max enforces array boundaries without price interference",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-078/db/array=create_lines/count=max_plus_1 enforces array boundaries without price interference",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-078/db/array=options/count=0 enforces array boundaries without price interference",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-078/db/array=options/count=1 enforces array boundaries without price interference",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-078/db/array=options/count=max enforces array boundaries without price interference",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-078/db/array=options/count=max_plus_1 enforces array boundaries without price interference",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-078/db/bytes=262144 measures exact PostgreSQL JSONB text size with a positive boundary",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-078/db/bytes=262145 measures exact PostgreSQL JSONB text size with a positive boundary",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeCatalog.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-011/db bootstrap once and admin configuration retain identity and financial boundaries",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeBootstrap.contract.test.ts"
+  },
+  {
+    "name": "TC-IDEM-082/db thirty-day retention and clear demo preserve all four terminal states and legacy finance",
+    "file": "D:/Workspace/pos-cafe/tests/contracts/writeBootstrap.contract.test.ts"
+  }
+]
