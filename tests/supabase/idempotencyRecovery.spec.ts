@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from './idempotencyTest.ts';
 import { ids, payPayload, splitPayload, updatePayload, voidPayload, freshTestId,createPayload } from '../contracts/fixtures.ts';
 import { pairAndUnlock, unlock, openRecovery, watchWrites, printCount, installPrintCounter, serverHarness as h } from './idempotencyHarness.ts';
 test.afterEach(()=>h.clock(null));
@@ -82,14 +83,64 @@ test('TC-IDEM-046/e2e voiding a paid order through recovery preserves the new cu
 test('TC-IDEM-049/e2e a void reason of other without explanation displays its precise rejection',async({page})=>{
   await h.reset('F4');const token=await h.login();await h.register({...voidPayload(),reason:'other'},token);await pairAndUnlock(page);await openRecovery(page);await page.getByTestId('write-recovery-resume').click();await expect(page.getByText('Vui lòng chọn lý do hủy và nhập ghi chú nếu chọn lý do khác.',{exact:true}).first()).toBeVisible();expect((await h.snapshot()).orders.find(row=>row.id===ids.O1)?.status).toBe('paid');
 });
-for(const terminal of ['applied','rejected','cancelled','expired'])test(`TC-IDEM-068/e2e/terminal=${terminal} recovers its durable decision after the browser loses an observed committed ACK`,async({page,browser})=>{
-  await h.reset('F1');const token=await h.login();const p=terminal==='rejected'?{...payPayload(),receivedAmount:1}:payPayload();await h.register(p,token);
-  if(terminal==='expired')await h.clock('2026-09-08T20:00:00Z');await pairAndUnlock(page);await openRecovery(page);let committed=false;
-  await page.route(`**/rest/v1/rpc/${terminal==='cancelled'?'cancel':'execute'}_write_operation`,async route=>{
-    if(terminal==='expired')await h.clock('2026-09-09T00:00:00Z');await route.fetch();const raw=await h.snapshot();expect(raw.write_operations[0].status).toBe(terminal);committed=true;await route.abort('failed');
+for (const terminal of ['applied', 'rejected', 'cancelled', 'expired']) test(`TC-IDEM-068/e2e/terminal=${terminal} recovers its durable decision after the browser loses an observed committed ACK`, async ({ page, newRecoveryPage }) => {
+  await test.step('Prepare a pending operation on the original device', async () => {
+    await h.reset('F1');
+    const token = await h.login();
+    const payload = terminal === 'rejected' ? { ...payPayload(), receivedAmount: 1 } : payPayload();
+    await h.register(payload, token);
+    if (terminal === 'expired') await h.clock('2026-09-08T20:00:00Z');
+    await pairAndUnlock(page);
+    await openRecovery(page);
   });
-  await page.getByTestId(terminal==='cancelled'?'write-recovery-cancel':'write-recovery-resume').click();await expect.poll(()=>committed).toBe(true);await h.clock('2026-09-11T00:00:00Z');
-  const fresh=await browser.newContext({baseURL:'http://127.0.0.1:5176'});try{const other=await fresh.newPage();await pairAndUnlock(other);await openRecovery(other);const labels:Record<string,string>={applied:'Đã ghi thành công',rejected:'Đã từ chối',cancelled:'Đã hủy lệnh',expired:'Lệnh hết hạn'};await expect(other.getByTestId('operation-status')).toContainText(labels[terminal]);await expect(other.getByTestId('write-recovery-resume')).toBeDisabled();expect((await h.snapshot()).payments).toHaveLength(terminal==='applied'?1:0);}finally{await fresh.close();}
+
+  await test.step('Observe the committed decision and finish dropping its ACK', async () => {
+    const rpc = `${terminal === 'cancelled' ? 'cancel' : 'execute'}_write_operation`;
+    const writes = watchWrites(page);
+    let dropped!: () => void;
+    let dropFailed!: (error: unknown) => void;
+    const ackDropped = new Promise<void>((resolve, reject) => { dropped = resolve; dropFailed = reject; });
+    await page.route(`**/rest/v1/rpc/${rpc}`, async (route) => {
+      try {
+        if (terminal === 'expired') await h.clock('2026-09-09T00:00:00Z');
+        await route.fetch();
+        const raw = await h.snapshot();
+        expect(raw.write_operations).toHaveLength(1);
+        expect(raw.write_operations[0].status).toBe(terminal);
+        await route.abort('failed');
+        dropped();
+      } catch (error) { dropFailed(error); }
+    });
+    const requestFailed = page.waitForEvent('requestfailed', (request) => request.url().endsWith(`/rpc/${rpc}`));
+    await Promise.all([
+      ackDropped,
+      requestFailed,
+      page.getByTestId(terminal === 'cancelled' ? 'write-recovery-cancel' : 'write-recovery-resume').click(),
+    ]);
+    // The old device must be quiescent before a shared test clock jumps days.
+    // Late-response UI behavior has separate TC053/054 lifecycle oracles.
+    await page.close();
+    expect(writes.map((request) => request.name)).toEqual([rpc]);
+    await h.clock('2026-09-11T00:00:00Z');
+  }, { timeout: 15_000 });
+
+  const other = await test.step('Create and authenticate a fresh device after the clock jump', async () => {
+    const fresh = await newRecoveryPage();
+    await pairAndUnlock(fresh);
+    return fresh;
+  }, { timeout: 15_000 });
+  await test.step('Recover the original terminal decision without another write', async () => {
+    const writes = watchWrites(other);
+    await openRecovery(other);
+    const labels: Record<string, string> = { applied: 'Đã ghi thành công', rejected: 'Đã từ chối', cancelled: 'Đã hủy lệnh', expired: 'Lệnh hết hạn' };
+    await expect(other.getByTestId('operation-status')).toContainText(labels[terminal]);
+    await expect(other.getByTestId('write-recovery-resume')).toBeDisabled();
+    const raw = await h.snapshot();
+    expect(raw.payments).toHaveLength(terminal === 'applied' ? 1 : 0);
+    expect(raw.write_operations).toHaveLength(1);
+    expect(raw.write_operations[0].status).toBe(terminal);
+    expect(writes).toHaveLength(0);
+  }, { timeout: 15_000 });
 });
 
 test('TC-IDEM-059/e2e a permitted cashier can cancel a pending operation without changing its order',async({page})=>{
