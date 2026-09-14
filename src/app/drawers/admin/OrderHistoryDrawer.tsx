@@ -198,7 +198,7 @@ export function OrderHistoryDrawer() {
       const document = await ports.order.getReceipt(id);
       if (!stillHere()) return;
       openReceiptPreview({ variant: "receipt", doc: receiptToPrint(document.receipt, fresh.orderType), orderId: id, legacyMetadata: document.legacyMetadata });
-    } catch (error) { notifyUiError(error); }
+    } catch (error) { if (stillHere()) notifyUiError(error); }
   };
 
   const clearFilters = () => {
@@ -232,6 +232,9 @@ export function OrderHistoryDrawer() {
 
   const confirmVoid = () => {
     if (!currentEmployee || !selected || !voidSnapshot || voidSnapshot.id !== selectedId || isVoiding || blocked) return;
+    const stillHere = captureView();
+    const generation = ++voidGeneration.current;
+    const isCurrent = () => stillHere() && generation === voidGeneration.current;
     setIsVoiding(true);
     voidMutation.mutate(
       {
@@ -242,15 +245,17 @@ export function OrderHistoryDrawer() {
       },
       {
         onSuccess: () => {
+          if (!isCurrent()) return;
           toast.success(`Đã hủy đơn #${selected.displayNo}`);
           setVoidConfirmOpen(false);
         },
         onError: (error) => {
+          if (!isCurrent()) return;
           toast.error(toToastError(error));
           void detailQuery.refetch();
         },
         onSettled: () => {
-          setIsVoiding(false);
+          if (generation === voidGeneration.current) setIsVoiding(false);
         },
       },
     );

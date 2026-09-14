@@ -22,6 +22,7 @@ import { notifyUiError, toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { ticketFromOrderDetail } from "../../components/ReceiptPreview";
 import { useAppStore } from "../../useAppStore";
+import { useViewLifetime } from "../../useViewLifetime";
 import { PaymentCashierPane } from "./PaymentCashierPane";
 import { PaymentSummaryPane } from "./PaymentSummaryPane";
 import { WriteAttemptNotice } from "./WriteAttemptNotice";
@@ -37,6 +38,7 @@ export function PaymentDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const openReceiptPreview = useAppStore((state) => state.openReceiptPreview);
   const paymentOrderId = useAppStore((state) => state.paymentOrderId);
+  const captureView = useViewLifetime(paymentOrderId);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
   const floorPlanQuery = useFloorPlanQuery();
   const orderQuery = useOrderDetailQuery(paymentOrderId);
@@ -188,10 +190,12 @@ export function PaymentDrawer() {
       return;
     }
 
+    const isCurrent = captureView();
     payMutation.mutate(
       { order, actor: currentEmployee, receivedAmount, selection, printReceipt },
       {
         onSuccess: (result) => {
+          if (!isCurrent()) return;
           // In bill từ payload trả về ngay trong mutation (không chờ refetch).
           if (printReceipt && result.initialSuccess) {
             openReceiptPreview({ variant: "receipt", doc: result.receipt });
@@ -210,6 +214,7 @@ export function PaymentDrawer() {
           void orderQuery.refetch();
         },
         onError: (error) => {
+          if (!isCurrent()) return;
           const uiError = notifyUiError(error);
           if (uiError.action === "reloadOrder") {
             void orderQuery.refetch();

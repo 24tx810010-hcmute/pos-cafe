@@ -1,4 +1,6 @@
 import { afterAll, expect, test } from 'vitest';
+import { createClient } from '@supabase/supabase-js';
+import { SupabaseReportRepo } from '../../src/adapters/supabase/reportRepo.ts';
 import { ContractHarness, businessOnly } from './harness.ts';
 import { createPayload, ids, payPayload, splitPayload, updatePayload, voidPayload, T } from './fixtures.ts';
 
@@ -77,11 +79,26 @@ test('TC-IDEM-029/db inactive renamed catalog cannot reprice or rename retained 
   const result=await apply({...updatePayload(),retainedLines:[{sourceItemId:ids.L1,quantity:1,note:'ít đá'}]},token);
   expect(result.status).toBe('applied');expect(result.result.order.total).toBe(40000);expect(result.result.order.items[0]).toMatchObject({name:'Cà phê cũ',baseUnitPrice:30000});expect(result.result.order.items[0].options[0]).toMatchObject({name:'Topping cũ',priceDelta:5000,quantity:2});
 });
-test('TC-IDEM-030/db adding current modifier prices preserves old components and split totals',async()=>{
+for(const variant of ['new','old'] as const)test(`TC-IDEM-030/db${variant==='old'?'/old':''} adding current modifier prices preserves old components and ${variant} split snapshots`,async()=>{
+  // Each branch starts from a fresh F3; an earlier split must not alter its oracle.
   const token=await setup('F3');const result=await apply({...updatePayload(),retainedLines:[{sourceItemId:ids.L1,quantity:2}],newLines:[{id:ids.L2,menuItemId:ids.M_A,quantity:1,quotedBasePrice:35000,options:[{id:ids.OPTION2,optionValueId:ids.Q,quantity:2,quotedPriceDelta:7000}]}]},token);
-  expect(result.result.order.total).toBe(129000);expect(result.result.order.items.find((row:any)=>row.id===ids.L1).lineTotal).toBe(80000);
-  const split={...splitPayload(),expectedVersion:6,receivedAmount:50000,lines:[{orderItemId:ids.L2,quantity:1,splitItemId:ids.L35}]};const paid=await apply(split,token,ids.K2);
-  expect(paid.result.paidOrder.total).toBe(49000);expect(paid.result.sourceOrder.total).toBe(80000);expect(paid.result.payment.amount).toBe(49000);
+  const before=await h.snapshot();
+  expect(result.result.order.total).toBe(129000);expect(before.order_items).toHaveLength(2);expect(before.order_item_options).toHaveLength(2);
+  const oldLine={menu_item_id:ids.M_A,item_name:'Cà phê cũ',unit_price:30000};const newLine={menu_item_id:ids.M_A,item_name:'Cà phê mới',unit_price:35000};
+  const oldOption={option_value_id:ids.Q,option_name:'Topping cũ',price_delta:5000,quantity:2};const newOption={option_value_id:ids.Q,option_name:'Topping mới',price_delta:7000,quantity:2};
+  expect(before.order_items.find(row=>row.id===ids.L1)).toMatchObject({...oldLine,order_id:ids.O1,quantity:2});expect(before.order_items.find(row=>row.id===ids.L2)).toMatchObject({...newLine,order_id:ids.O1,quantity:1});
+  expect(before.order_item_options.find(row=>row.id===ids.OPTION1)).toMatchObject({...oldOption,order_item_id:ids.L1});expect(before.order_item_options.find(row=>row.id===ids.OPTION2)).toMatchObject({...newOption,order_item_id:ids.L2});
+  const split={...splitPayload(),expectedVersion:6,receivedAmount:50000,lines:[{orderItemId:variant==='new'?ids.L2:ids.L1,quantity:1,splitItemId:ids.L35}]};const paid=await apply(split,token,ids.K2);
+  const paidTotal=variant==='new'?49000:40000;const sourceTotal=variant==='new'?80000:89000;
+  expect(paid.result.paidOrder).toMatchObject({id:ids.O2,total:paidTotal,status:'paid'});expect(paid.result.sourceOrder).toMatchObject({id:ids.O1,total:sourceTotal,status:'open',lockVersion:7});expect(paid.result.payment).toMatchObject({id:ids.P1,orderId:ids.O2,amount:paidTotal,receivedAmount:50000,changeAmount:50000-paidTotal});
+  const after=await h.snapshot(`TC-IDEM-030-${variant}`);expect(after.payments).toHaveLength(1);expect(after.order_items).toHaveLength(variant==='new'?2:3);expect(after.order_item_options).toHaveLength(variant==='new'?2:3);
+  const paidItemId=variant==='new'?ids.L2:ids.L35;
+  expect(after.order_items.find(row=>row.id===paidItemId)).toMatchObject({...(variant==='new'?newLine:oldLine),order_id:ids.O2,quantity:1});
+  expect(after.order_items.find(row=>row.id===ids.L1)).toMatchObject({...oldLine,order_id:ids.O1,quantity:variant==='old'?1:2,status:'waiting'});
+  expect(after.order_items.find(row=>row.id===ids.L2)).toMatchObject({...newLine,order_id:variant==='new'?ids.O2:ids.O1,quantity:1,status:'waiting'});
+  expect(after.order_item_options.filter(row=>row.order_item_id!==ids.L35)).toEqual(before.order_item_options);
+  const paidOption=after.order_item_options.find(row=>row.order_item_id===paidItemId);expect(paidOption).toMatchObject(variant==='new'?newOption:oldOption);if(variant==='old')expect([ids.OPTION1,ids.OPTION2]).not.toContain(paidOption.id);else expect(paidOption.id).toBe(ids.OPTION2);
+  expect(paid.result.receipt).toMatchObject({total:paidTotal,lines:[{orderItemId:paidItemId,name:variant==='new'?'Cà phê mới':'Cà phê cũ',quantity:1,baseUnitPrice:variant==='new'?35000:30000,unitTotal:paidTotal,lineTotal:paidTotal,options:[{name:variant==='new'?'Topping mới':'Topping cũ',quantity:2,priceDelta:variant==='new'?7000:5000}]}]});
 });
 test('TC-IDEM-034/db quote increases and decreases both reject durably before a new confirmation',async()=>{
   for(const [current,total]of [[45000,105000],[35000,95000]]) {
@@ -140,7 +157,12 @@ test('TC-IDEM-061/db cancelling at expiry expires only the operation and preserv
   const token=await setup('F1');await h.register(payPayload(),token);const before=await h.snapshot();await h.clock('2026-09-09T00:00:00Z');const fresh=await h.login();expect((await h.cancel(fresh)).status).toBe('expired');expect(businessOnly(await h.snapshot())).toEqual(businessOnly(before));
 });
 test('TC-IDEM-066/db a two-day-old open order can be paid with a fresh operation',async()=>{
-  let token=await setup('F1');await h.register(payPayload(),token);await h.clock('2026-09-10T00:00:00Z');token=await h.login();expect((await h.get(token)).status).toBe('expired');const result=await apply(payPayload(),token,ids.Knew);expect(result.result.order).toMatchObject({businessDate:'2026-09-08',status:'paid',total:150000});expect(Date.parse(result.result.order.paidAt)).toBe(Date.parse('2026-09-10T00:00:00Z'));expect((await h.snapshot()).payments).toHaveLength(1);
+  let token=await setup('F1');
+  const report=new SupabaseReportRepo(createClient(h.env.apiUrl,h.env.anonKey,{auth:{persistSession:false,autoRefreshToken:false},global:{headers:{Authorization:`Bearer ${h.env.storeJwt}`}}}));
+  for(const businessDate of ['2026-09-08','2026-09-10'])expect(await report.getCoreReport({businessDate})).toMatchObject({revenue:0,paidOrders:0});
+  await h.register(payPayload(),token);await h.clock('2026-09-10T00:00:00Z');token=await h.login();expect((await h.get(token)).status).toBe('expired');const result=await apply(payPayload(),token,ids.Knew);expect(result.result.order).toMatchObject({businessDate:'2026-09-08',status:'paid',total:150000,lockVersion:6});expect(Date.parse(result.result.order.paidAt)).toBe(Date.parse('2026-09-10T00:00:00Z'));
+  const after=await h.snapshot();expect(after.payments).toHaveLength(1);expect(after.tables.find(row=>row.id===ids.B01)?.status).toBe('empty');expect((await h.get(token)).status).toBe('expired');
+  expect(await report.getCoreReport({businessDate:'2026-09-08'})).toMatchObject({revenue:150000,paidOrders:1,averageTicket:150000,topItemName:'Cà phê cũ'});expect(await report.getCoreReport({businessDate:'2026-09-10'})).toMatchObject({revenue:0,paidOrders:0});
 });
 test('TC-IDEM-067/db first applied result survives forty-eight hours without being expired',async()=>{
   let token=await setup('F1');const p=payPayload();const first=await apply(p,token);await h.clock('2026-09-10T00:00:00Z');token=await h.login();for(const response of [await h.get(token),await h.register(p,token),await h.cancel(token),await h.execute(p,token)]){expect(response.status).toBe('applied');expect(response.result).toEqual(first.result);expect(response.expiresAt).toBe(first.expiresAt);}expect((await h.snapshot()).payments).toHaveLength(1);

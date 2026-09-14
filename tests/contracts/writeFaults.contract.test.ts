@@ -4,7 +4,7 @@ import { randomBytes } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ContractHarness, businessOnly } from './harness.ts';
-import { ids, createPayload, payPayload, splitPayload, updatePayload, voidPayload } from './fixtures.ts';
+import { ids, freshTestId, createPayload, payPayload, splitPayload, updatePayload, voidPayload } from './fixtures.ts';
 
 const h = new ContractHarness();
 const cleanups = new Set<() => Promise<unknown>>();
@@ -263,18 +263,52 @@ test('TC-IDEM-085/db migrates literal legacy snapshots without repricing and rej
       create schema storage;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);create table storage.objects(id uuid primary key,bucket_id text,name text);alter table storage.objects enable row level security;create function storage.foldername(text) returns text[] language sql as $$select string_to_array($1,'/')$$;
       grant usage on schema auth,public to anon,authenticated;alter default privileges in schema public grant all on tables to authenticated;alter default privileges in schema public grant all on sequences to authenticated`);
     const migrations = readdirSync(resolve('supabase/migrations')).filter(name => name.endsWith('.sql')).sort();
+    expect(migrations.map(name=>Number(name.slice(0,3)))).toEqual(Array.from({length:16},(_,i)=>i+1));
     for (const name of migrations.filter(name => Number(name.slice(0,3)) <= 13)) await db.query(readFileSync(resolve('supabase/migrations',name),'utf8'));
+    // This child is a newly created loopback-only upgrade rehearsal, not the API
+    // database. Mark and check it before seeding; Auth below is an explicit SQL shim.
+    await db.query('create schema if not exists private;create table private.idempotency_test_environment(singleton boolean primary key,marker text not null)');
+    await db.query('insert into private.idempotency_test_environment values(true,$1)',[h.env.marker]);
+    expect((await db.query('select current_database() name,marker from private.idempotency_test_environment where singleton')).rows).toEqual([{name:database,marker:h.env.marker}]);
     await db.query("insert into auth.users values($1,'legacy@invalid.local')",[ids.S1]);
     await db.query('insert into stores(id,store_no) values($1,1)',[ids.S1]);
     await db.query('insert into store_settings(store_id) values($1)',[ids.S1]);
     await db.query("insert into employees(id,store_id,name,role,passcode_hash) values($1,$2,'A','admin',extensions.crypt('123456',extensions.gen_salt('bf')))",[ids.A,ids.S1]);
     await db.query("insert into categories(id,store_id,name) values($1,$2,'Legacy')",[ids.CATEGORY,ids.S1]);
     await db.query("insert into menu_items(id,store_id,category_id,name,price) values($1,$2,$3,'Current catalog',40000)",[ids.M_A,ids.S1,ids.CATEGORY]);
-    await db.query("insert into orders(id,store_id,order_type,order_no,business_date,status,subtotal,total,employee_id) values($1,$2,'takeaway',12,'2026-09-08','open',60000,60000,$3)",[ids.O1,ids.S1,ids.A]);
-    await db.query("insert into order_items(id,store_id,order_id,menu_item_id,item_name,quantity,unit_price) values($1,$2,$3,$4,'Legacy name',2,30000)",[ids.L1,ids.S1,ids.O1,ids.M_A]);
-    const before = (await db.query('select to_jsonb(o) o,to_jsonb(i) i from orders o join order_items i on i.order_id=o.id')).rows[0];
+    await db.query("insert into option_groups(id,store_id,name,select_type,is_required) values($1,$2,'Current group','multi',false)",[ids.GROUP,ids.S1]);
+    await db.query("insert into option_values(id,store_id,option_group_id,name,price_delta) values($1,$2,$3,'Current topping',7000)",[ids.Q,ids.S1,ids.GROUP]);
+    await db.query('insert into menu_item_option_groups(id,store_id,menu_item_id,option_group_id) values($1,$2,$3,$4)',[freshTestId(750),ids.S1,ids.M_A,ids.GROUP]);
+    const legacyCases=[{order:ids.O1,item:ids.L1,option:ids.OPTION1,no:12,status:'open',total:80000,paid:false},{order:ids.O2,item:ids.L2,option:ids.OPTION2,no:13,status:'paid',total:80000,paid:true},{order:ids.O3,item:ids.L30,option:freshTestId(603),no:14,status:'void',total:80000,paid:true},{order:ids.MAX,item:ids.L35,option:freshTestId(604),no:15,status:'void',total:0,paid:false}];
+    for(const legacy of legacyCases){
+      await db.query("insert into orders(id,store_id,order_type,order_no,business_date,status,subtotal,total,employee_id,lock_version,paid_at,voided_at,voided_by_employee_id,void_reason_code,void_reason_note,created_at,updated_at) values($1,$2,'takeaway',$3,'2026-09-08',$4,$5,$5,$6,$7,$8,$9,$10,$11,$12,'2026-09-08T00:00:00Z','2026-09-08T03:00:00Z')",[legacy.order,ids.S1,legacy.no,legacy.status,legacy.total,ids.A,legacy.status==='open'?5:legacy.status==='paid'?6:7,legacy.paid?'2026-09-08T01:00:00Z':null,legacy.status==='void'?'2026-09-08T02:00:00Z':null,legacy.status==='void'?ids.A:null,legacy.status==='void'?'other':null,legacy.status==='void'?'Legacy void reason':null]);
+      await db.query("insert into order_items(id,store_id,order_id,menu_item_id,item_name,quantity,unit_price,note,status,sort_order,created_at,updated_at) values($1,$2,$3,$4,'Legacy name',2,30000,'Legacy note',$5,4,'2026-09-08T00:00:00Z','2026-09-08T00:00:00Z')",[legacy.item,ids.S1,legacy.order,ids.M_A,legacy.status==='void'&&!legacy.paid?'removed':'waiting']);
+      await db.query("insert into order_item_options(id,store_id,order_item_id,option_value_id,option_name,price_delta,quantity,created_at,updated_at) values($1,$2,$3,$4,'Legacy topping',5000,2,'2026-09-08T00:00:00Z','2026-09-08T00:00:00Z')",[legacy.option,ids.S1,legacy.item,ids.Q]);
+      if(legacy.paid)await db.query("insert into payments(id,store_id,order_id,employee_id,method,amount,received_amount,change_amount,paid_at,created_at,updated_at) values($1,$2,$3,$4,'cash',80000,100000,20000,'2026-09-08T01:00:00Z','2026-09-08T01:00:00Z','2026-09-08T01:00:00Z')",[legacy.order===ids.O2?ids.P0:ids.P1,ids.S1,legacy.order,ids.A]);
+    }
+    const legacySnapshot=async()=>{
+      const rows:Record<string,any[]>={};
+      for(const table of ['stores','store_settings','employees','categories','menu_items','option_groups','option_values','menu_item_option_groups','orders','order_items','order_item_options','payments'])rows[table]=(await db.query(`select to_jsonb(t) row from public.${table} t order by to_jsonb(t)::text`)).rows.map(row=>row.row);
+      return rows;
+    };
+    const before=await legacySnapshot();expect(before.orders).toHaveLength(4);expect(before.order_items).toHaveLength(4);expect(before.order_item_options).toHaveLength(4);expect(before.payments).toHaveLength(2);
     for (const name of migrations.filter(name => Number(name.slice(0,3)) >= 14)) await db.query(readFileSync(resolve('supabase/migrations',name),'utf8'));
-    const after = (await db.query("select to_jsonb(o)-array['created_by_employee_id','last_modified_by_employee_id'] o,to_jsonb(i) i,o.created_by_employee_id creator,o.last_modified_by_employee_id editor from orders o join order_items i on i.order_id=o.id")).rows[0];
-    expect({o:after.o,i:after.i}).toEqual(before); expect(after.creator).toBeNull(); expect(after.editor).toBeNull(); expect(after.i.unit_price).toBe(30000); expect(after.o.total).toBe(60000);
+    const after=await legacySnapshot();
+    for(const order of after.orders){expect(order.created_by_employee_id).toBeNull();expect(order.last_modified_by_employee_id).toBeNull();delete order.created_by_employee_id;delete order.last_modified_by_employee_id;}
+    for(const payment of after.payments){expect(payment.receipt_snapshot).toBeNull();delete payment.receipt_snapshot;}
+    for(const option of after.order_item_options){expect(option.snapshot_sort_order).toBe(0);delete option.snapshot_sort_order;}
+    for(const table of Object.keys(before))expect(after[table].sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))),table).toEqual(before[table].sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))));
+    expect((await db.query('select count(*)::int n from public.write_operations')).rows[0].n).toBe(0);expect((await db.query('select count(*)::int n from public.order_events')).rows[0].n).toBe(0);
+    await db.query('begin');
+    try{
+      await db.query('set local role authenticated');await db.query("select set_config('request.jwt.claim.sub',$1,true)",[ids.S1]);
+      const session=(await db.query("select public.start_employee_session($1,'123456') result",[ids.A])).rows[0].result;expect(session.ok).toBe(true);await db.query("select set_config('request.headers',$1,true)",[JSON.stringify({'x-pos-employee-token':session.token})]);
+      expect((await db.query('select public.get_write_capabilities() result')).rows[0].result.writeProtocolVersion).toBe(1);
+      const receipt=(await db.query('select public.get_payment_receipt($1) result',[ids.O2])).rows[0].result;expect(receipt).toMatchObject({ok:true,legacyMetadata:true,receipt:{orderId:ids.O2,paymentId:ids.P0,total:80000,receivedAmount:100000,changeAmount:20000,lines:[{orderItemId:ids.L2,name:'Legacy name',baseUnitPrice:30000,quantity:2,lineTotal:80000,options:[{optionValueId:ids.Q,name:'Legacy topping',priceDelta:5000,quantity:2}]}]}});
+      expect((await db.query('select public.get_payment_receipt($1) result',[ids.O3])).rows[0].result).toMatchObject({ok:false,error:{code:'RECEIPT_UNAVAILABLE'}});
+      const payload={...payPayload(),paymentId:freshTestId(305),receivedAmount:100000};expect((await db.query('select public.register_write_operation($1,$2) result',[ids.K1,payload])).rows[0].result.operation.status).toBe('pending');expect((await db.query('select public.execute_write_operation($1,$2) result',[ids.K1,payload])).rows[0].result.operation).toMatchObject({status:'applied',result:{order:{id:ids.O1,total:80000,status:'paid',lockVersion:6},receipt:{total:80000}}});
+    }finally{await db.query('rollback');}
+    await db.query("insert into auth.users values($1,'store2@store.pos.local')",[ids.S2]);await db.query('begin');
+    try{await db.query('set local role authenticated');await db.query("select set_config('request.jwt.claim.sub',$1,true)",[ids.S2]);expect((await db.query("select public.bootstrap_store($1,2,'New store','') result",[ids.X])).rows[0].result).toMatchObject({ok:true,storeId:ids.S2,adminId:ids.X});expect((await db.query("select public.start_employee_session($1,'123456') result",[ids.X])).rows[0].result.ok).toBe(true);}finally{await db.query('rollback');}
   } finally { await db.end(); await master.query(`drop database ${database}`); await master.end(); }
 });

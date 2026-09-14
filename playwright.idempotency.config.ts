@@ -6,7 +6,7 @@ const env = parseTestEnvironment();
 
 export default defineConfig({
   testDir: './tests/supabase',
-  testMatch: /idempotency(?:Recovery|Pricing|Bootstrap)?\.spec\.ts/,
+  testMatch: /idempotency(?:Recovery|Pricing|Bootstrap|Lifecycle)?\.spec\.ts/,
   globalSetup: './tests/supabase/idempotencyGlobalSetup.ts',
   timeout: 45_000,
   retries: 0,

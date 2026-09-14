@@ -94,6 +94,9 @@ begin
  perform 1 from public.stores where id=sid for share;
 end $$;
 
+-- Payload numbers have already passed valid_integer. Parse through numeric so
+-- JSONB-equivalent integral spellings (2, 2.0, 2e0) execute identically without
+-- rewriting the registered payload. This also applies to recordset projections.
 create function private.prepare_write(p jsonb) returns jsonb
 language plpgsql volatile set search_path=pg_catalog as $$
 #variable_conflict use_column
@@ -113,7 +116,7 @@ begin
   end if;
  else
   if o.id is null then perform private.reject_write('NOT_FOUND'); end if;
-  if o.lock_version<>(p->>'expectedVersion')::integer or
+  if o.lock_version<>(p->>'expectedVersion')::numeric::integer or
      (p->>'kind'='void_order' and o.status<>'paid') or (p->>'kind'<>'void_order' and o.status<>'open') then perform private.reject_write('ORDER_VERSION_CONFLICT'); end if;
   if o.lock_version=2147483647 then perform private.reject_write('INVALID_WRITE_REQUEST'); end if;
  end if;
@@ -124,11 +127,11 @@ begin
    id:=(line->>'sourceItemId')::uuid;
    -- Qualify identifiers explicitly: PL/pgSQL variables are never column aliases.
    select i.* into item from public.order_items i where i.store_id=sid and i.order_id=oid and i.id=(line->>'sourceItemId')::uuid and i.status<>'removed';
-   if item.id is null or id=any(sources) or (line->>'quantity')::integer>item.quantity then perform private.reject_write('INVALID_ORDER_ITEMS'); end if;
+   if item.id is null or id=any(sources) or (line->>'quantity')::numeric::integer>item.quantity then perform private.reject_write('INVALID_ORDER_ITEMS'); end if;
    sources:=array_append(sources,id);
-   if (line->>'quantity')::integer>0 then
+   if (line->>'quantity')::numeric::integer>0 then
     count_active:=count_active+1;
-    unit:=private.item_unit_total(sid,item.id); line_total:=unit*(line->>'quantity')::integer;
+    unit:=private.item_unit_total(sid,item.id); line_total:=unit*(line->>'quantity')::numeric::integer;
     if unit not between 0 and 2147483647 or line_total not between 0 and 2147483647 then perform private.reject_write('INVALID_WRITE_REQUEST'); end if;
     retained_total:=retained_total+line_total;
    end if;
@@ -141,13 +144,13 @@ begin
   for line in select value from jsonb_array_elements(p->'lines') loop
    id:=(line->>'orderItemId')::uuid;
    select i.* into item from public.order_items i where i.store_id=sid and i.order_id=oid and i.id=(line->>'orderItemId')::uuid and i.status<>'removed';
-   if item.id is null or id=any(sources) or (line->>'quantity')::integer>item.quantity then perform private.reject_write('INVALID_ORDER_ITEMS'); end if;
+   if item.id is null or id=any(sources) or (line->>'quantity')::numeric::integer>item.quantity then perform private.reject_write('INVALID_ORDER_ITEMS'); end if;
    sources:=array_append(sources,id);
    id:=(line->>'splitItemId')::uuid;
    if id=any(ids) or exists(select 1 from public.order_items i where i.id=(line->>'splitItemId')::uuid) then perform private.reject_write('ENTITY_ID_CONFLICT'); end if;
    ids:=array_append(ids,id);
   end loop;
-  if not exists(select 1 from public.order_items i left join jsonb_to_recordset(p->'lines') x("orderItemId" uuid,quantity integer) on x."orderItemId"=i.id
+  if not exists(select 1 from public.order_items i left join jsonb_to_recordset(p->'lines') x("orderItemId" uuid,quantity numeric) on x."orderItemId"=i.id
     where i.store_id=sid and i.order_id=oid and i.status<>'removed' and coalesce(x.quantity,0)<i.quantity) then perform private.reject_write('INVALID_ORDER_ITEMS'); end if;
  end if;
  for line in select value from jsonb_array_elements(coalesce(p->'newLines','[]')) loop
@@ -166,34 +169,34 @@ begin
   select m.* into menu from public.menu_items m join public.categories c on c.store_id=m.store_id and c.id=m.category_id
   where m.store_id=sid and m.id=(line->>'menuItemId')::uuid and m.is_available and m.deleted_at is null and c.deleted_at is null;
   if menu.id is null then perform private.reject_write('MENU_ITEM_UNAVAILABLE'); end if;
-  unit:=menu.price; quote_unit:=(line->>'quotedBasePrice')::bigint; prepared_options:='[]'; changed_options:='[]'; option_values:='{}';
-  changed:=menu.price<>(line->>'quotedBasePrice')::integer;
+  unit:=menu.price; quote_unit:=(line->>'quotedBasePrice')::numeric::bigint; prepared_options:='[]'; changed_options:='[]'; option_values:='{}';
+  changed:=menu.price<>(line->>'quotedBasePrice')::numeric::integer;
   for opt in select value from jsonb_array_elements(line->'options') loop
    select v.* into ov from public.option_values v join public.option_groups g on g.store_id=v.store_id and g.id=v.option_group_id
    where v.store_id=sid and v.id=(opt->>'optionValueId')::uuid and v.deleted_at is null and g.deleted_at is null
    and exists(select 1 from public.menu_item_option_groups l where l.store_id=sid and l.menu_item_id=menu.id and l.option_group_id=g.id and l.deleted_at is null);
    if ov.id is null or ov.id=any(option_values) then perform private.reject_write('OPTION_VALUE_UNAVAILABLE'); end if;
    option_values:=array_append(option_values,ov.id);
-   unit:=unit+ov.price_delta::bigint*(opt->>'quantity')::integer;
-   quote_unit:=quote_unit+(opt->>'quotedPriceDelta')::bigint*(opt->>'quantity')::integer;
-   changed:=changed or ov.price_delta<>(opt->>'quotedPriceDelta')::integer;
-   changed_options:=changed_options||jsonb_build_array(jsonb_build_object('optionValueId',ov.id,'quoted',(opt->>'quotedPriceDelta')::integer,'current',ov.price_delta));
-   prepared_options:=prepared_options||jsonb_build_array(jsonb_build_object('id',opt->>'id','optionValueId',ov.id,'name',ov.name,'priceDelta',ov.price_delta,'quantity',(opt->>'quantity')::integer));
+   unit:=unit+ov.price_delta::bigint*(opt->>'quantity')::numeric::integer;
+   quote_unit:=quote_unit+(opt->>'quotedPriceDelta')::numeric::bigint*(opt->>'quantity')::numeric::integer;
+   changed:=changed or ov.price_delta<>(opt->>'quotedPriceDelta')::numeric::integer;
+   changed_options:=changed_options||jsonb_build_array(jsonb_build_object('optionValueId',ov.id,'quoted',(opt->>'quotedPriceDelta')::numeric::integer,'current',ov.price_delta));
+   prepared_options:=prepared_options||jsonb_build_array(jsonb_build_object('id',opt->>'id','optionValueId',ov.id,'name',ov.name,'priceDelta',ov.price_delta,'quantity',(opt->>'quantity')::numeric::integer));
   end loop;
   for grp in select g.* from public.option_groups g where g.store_id=sid and g.deleted_at is null and exists
    (select 1 from public.menu_item_option_groups l where l.store_id=sid and l.menu_item_id=menu.id and l.option_group_id=g.id and l.deleted_at is null) loop
    select count(*) into count_selected from public.option_values v where v.store_id=sid and v.option_group_id=grp.id and v.id=any(option_values);
    if (grp.is_required and count_selected=0) or (grp.select_type='single' and count_selected>1) then perform private.reject_write('OPTION_VALUE_UNAVAILABLE'); end if;
   end loop;
-  line_total:=unit*(line->>'quantity')::integer;
+  line_total:=unit*(line->>'quantity')::numeric::integer;
   if unit not between 0 and 2147483647 or quote_unit not between 0 and 2147483647 or line_total not between 0 and 2147483647 or
-     quote_unit*(line->>'quantity')::integer>2147483647 then perform private.reject_write('INVALID_WRITE_REQUEST'); end if;
+     quote_unit*(line->>'quantity')::numeric::integer>2147483647 then perform private.reject_write('INVALID_WRITE_REQUEST'); end if;
   new_total:=new_total+line_total;
-  quoted_new_total:=quoted_new_total+quote_unit*(line->>'quantity')::integer;
+  quoted_new_total:=quoted_new_total+quote_unit*(line->>'quantity')::numeric::integer;
   count_active:=count_active+1;
   any_changed:=any_changed or changed;
-  if changed then changed_lines:=changed_lines||jsonb_build_array(jsonb_build_object('lineId',line->>'id','base',jsonb_build_object('quoted',(line->>'quotedBasePrice')::integer,'current',menu.price),'options',changed_options)); end if;
-  prepared:=prepared||jsonb_build_array(jsonb_build_object('id',line->>'id','menuItemId',menu.id,'name',menu.name,'quantity',(line->>'quantity')::integer,
+  if changed then changed_lines:=changed_lines||jsonb_build_array(jsonb_build_object('lineId',line->>'id','base',jsonb_build_object('quoted',(line->>'quotedBasePrice')::numeric::integer,'current',menu.price),'options',changed_options)); end if;
+  prepared:=prepared||jsonb_build_array(jsonb_build_object('id',line->>'id','menuItemId',menu.id,'name',menu.name,'quantity',(line->>'quantity')::numeric::integer,
   'baseUnitPrice',menu.price,'note',line->>'note','options',prepared_options));
  end loop;
  if p->>'action' in ('create','update') then
@@ -207,7 +210,7 @@ begin
    unit:=private.item_unit_total(sid,item.id);
    if unit not between 0 and 2147483647 or unit*item.quantity not between 0 and 2147483647 then perform private.reject_write('INVALID_WRITE_REQUEST'); end if;
    if p->>'kind'='pay_order' then amount:=amount+unit*item.quantity;
-   else select coalesce(sum((x->>'quantity')::integer),0) into count_selected from jsonb_array_elements(p->'lines') x where (x->>'orderItemId')::uuid=item.id;
+   else select coalesce(sum((x->>'quantity')::numeric::integer),0) into count_selected from jsonb_array_elements(p->'lines') x where (x->>'orderItemId')::uuid=item.id;
     amount:=amount+unit*count_selected;
    end if;
   end loop;
@@ -215,7 +218,7 @@ begin
   if amount<=0 then perform private.reject_write('INVALID_ORDER_ITEMS'); end if;
   if p->>'kind'='pay_order' and amount<>o.total then perform private.reject_write('INVALID_ORDER_ITEMS'); end if;
   if p->>'kind'='pay_order_items' and o.total-amount<0 then perform private.reject_write('INVALID_ORDER_ITEMS'); end if;
-  if (p->>'receivedAmount')::integer<amount then perform private.reject_write('PAYMENT_AMOUNT_TOO_LOW'); end if;
+  if (p->>'receivedAmount')::numeric::integer<amount then perform private.reject_write('PAYMENT_AMOUNT_TOO_LOW'); end if;
  end if;
  if p->>'kind'='void_order' and p->>'reason'='other' and coalesce(private.trim_whitespace(p->>'reasonNote'),'')='' then perform private.reject_write('VOID_REASON_REQUIRED'); end if;
  if p->>'action'='create' then
@@ -234,21 +237,21 @@ create function private.apply_write(p jsonb,plan jsonb,p_actor uuid,p_at timesta
 language plpgsql volatile set search_path=pg_catalog as $$
 declare sid uuid:=auth.uid(); oid uuid:=(p->>'orderId')::uuid; payment_id uuid:=(p->>'paymentId')::uuid;
  paid_oid uuid:=coalesce((p->>'newOrderId')::uuid,oid); o public.orders; item public.order_items;
- line jsonb; opt jsonb; idx integer; opt_idx integer; amount integer:=(plan->>'amount')::integer; receipt jsonb;
+ line jsonb; opt jsonb; idx integer; opt_idx integer; amount integer:=(plan->>'amount')::numeric::integer; receipt jsonb;
 begin
  select * into o from public.orders where store_id=sid and id=oid;
  if p->>'kind'='submit_order_changes' then
   if p->>'action'='create' then
    insert into public.orders(id,store_id,table_id,order_type,order_no,business_date,status,subtotal,total,employee_id,created_by_employee_id,last_modified_by_employee_id,created_at,updated_at)
-   values(oid,sid,(p->>'tableId')::uuid,(p->>'orderType')::public.order_type,(plan->>'nextNo')::integer,(plan->>'businessDate')::date,'open',(plan->>'total')::integer,(plan->>'total')::integer,p_actor,p_actor,p_actor,p_at,p_at);
+   values(oid,sid,(p->>'tableId')::uuid,(p->>'orderType')::public.order_type,(plan->>'nextNo')::numeric::integer,(plan->>'businessDate')::date,'open',(plan->>'total')::numeric::integer,(plan->>'total')::numeric::integer,p_actor,p_actor,p_actor,p_at,p_at);
   elsif p->>'action'='update' then
    for line in select value from jsonb_array_elements(p->'retainedLines') loop
-    if (line->>'quantity')::integer=0 then
+    if (line->>'quantity')::numeric::integer=0 then
      update public.order_items set status='removed' where store_id=sid and id=(line->>'sourceItemId')::uuid;
-    else update public.order_items set quantity=(line->>'quantity')::integer,note=line->>'note' where store_id=sid and id=(line->>'sourceItemId')::uuid;
+    else update public.order_items set quantity=(line->>'quantity')::numeric::integer,note=line->>'note' where store_id=sid and id=(line->>'sourceItemId')::uuid;
     end if;
    end loop;
-   update public.orders set subtotal=(plan->>'total')::integer,total=(plan->>'total')::integer,lock_version=lock_version+1,last_modified_by_employee_id=p_actor where store_id=sid and id=oid;
+   update public.orders set subtotal=(plan->>'total')::numeric::integer,total=(plan->>'total')::numeric::integer,lock_version=lock_version+1,last_modified_by_employee_id=p_actor where store_id=sid and id=oid;
   else
    update public.order_items set status='removed' where store_id=sid and order_id=oid and status<>'removed';
    update public.orders set status='void',subtotal=0,total=0,lock_version=lock_version+1,last_modified_by_employee_id=p_actor where store_id=sid and id=oid;
@@ -257,11 +260,11 @@ begin
   select coalesce(max(sort_order),-1)+1 into idx from public.order_items where store_id=sid and order_id=oid;
   for line in select value from jsonb_array_elements(plan->'newLines') loop
    insert into public.order_items(id,store_id,order_id,menu_item_id,item_name,quantity,unit_price,note,sort_order,created_at,updated_at)
-   values((line->>'id')::uuid,sid,oid,(line->>'menuItemId')::uuid,line->>'name',(line->>'quantity')::integer,(line->>'baseUnitPrice')::integer,line->>'note',idx,p_at,p_at);
+   values((line->>'id')::uuid,sid,oid,(line->>'menuItemId')::uuid,line->>'name',(line->>'quantity')::numeric::integer,(line->>'baseUnitPrice')::numeric::integer,line->>'note',idx,p_at,p_at);
    idx:=idx+1; opt_idx:=0;
    for opt in select value from jsonb_array_elements(line->'options') loop
     insert into public.order_item_options(id,store_id,order_item_id,option_value_id,option_name,price_delta,quantity,snapshot_sort_order,created_at,updated_at)
-    values((opt->>'id')::uuid,sid,(line->>'id')::uuid,(opt->>'optionValueId')::uuid,opt->>'name',(opt->>'priceDelta')::integer,(opt->>'quantity')::integer,opt_idx,p_at,p_at);
+    values((opt->>'id')::uuid,sid,(line->>'id')::uuid,(opt->>'optionValueId')::uuid,opt->>'name',(opt->>'priceDelta')::numeric::integer,(opt->>'quantity')::numeric::integer,opt_idx,p_at,p_at);
     opt_idx:=opt_idx+1;
    end loop;
   end loop;
@@ -271,17 +274,17 @@ begin
   update public.orders set status='void',voided_at=p_at,voided_by_employee_id=p_actor,void_reason_code=p->>'reason',void_reason_note=nullif(private.trim_whitespace(p->>'reasonNote'),''),lock_version=lock_version+1 where store_id=sid and id=oid;
   return jsonb_build_object('kind',p->>'kind','order',private.order_snapshot(sid,oid));
  elsif p->>'kind'='pay_order_items' then
-  update public.orders set order_no=(plan->>'nextNo')::integer where store_id=sid and id=oid;
+  update public.orders set order_no=(plan->>'nextNo')::numeric::integer where store_id=sid and id=oid;
   insert into public.orders(id,store_id,table_id,order_type,order_no,business_date,status,subtotal,total,employee_id,paid_at,created_by_employee_id,last_modified_by_employee_id,created_at,updated_at)
   values(paid_oid,sid,o.table_id,o.order_type,o.order_no,o.business_date,'paid',amount,amount,p_actor,p_at,p_actor,null,p_at,p_at);
   for line in select value from jsonb_array_elements(p->'lines') loop
    select i.* into item from public.order_items i where i.store_id=sid and i.id=(line->>'orderItemId')::uuid;
-   if (line->>'quantity')::integer=item.quantity then
+   if (line->>'quantity')::numeric::integer=item.quantity then
     update public.order_items set order_id=paid_oid where store_id=sid and id=item.id;
    else
-    update public.order_items set quantity=quantity-(line->>'quantity')::integer where store_id=sid and id=item.id;
+    update public.order_items set quantity=quantity-(line->>'quantity')::numeric::integer where store_id=sid and id=item.id;
     insert into public.order_items(id,store_id,order_id,menu_item_id,item_name,quantity,unit_price,note,status,sort_order,created_at,updated_at)
-    values((line->>'splitItemId')::uuid,sid,paid_oid,item.menu_item_id,item.item_name,(line->>'quantity')::integer,item.unit_price,item.note,item.status,item.sort_order,p_at,p_at);
+    values((line->>'splitItemId')::uuid,sid,paid_oid,item.menu_item_id,item.item_name,(line->>'quantity')::numeric::integer,item.unit_price,item.note,item.status,item.sort_order,p_at,p_at);
     insert into public.order_item_options(id,store_id,order_item_id,option_value_id,option_name,price_delta,quantity,snapshot_sort_order,created_at,updated_at)
     select gen_random_uuid(),sid,(line->>'splitItemId')::uuid,v.option_value_id,v.option_name,v.price_delta,v.quantity,v.snapshot_sort_order,p_at,p_at from public.order_item_options v where v.store_id=sid and v.order_item_id=item.id;
    end if;
@@ -289,7 +292,7 @@ begin
   update public.orders set subtotal=subtotal-amount,total=total-amount,lock_version=lock_version+1 where store_id=sid and id=oid;
  end if;
  insert into public.payments(id,store_id,order_id,employee_id,method,amount,received_amount,change_amount,paid_at,created_at,updated_at)
- values(payment_id,sid,paid_oid,p_actor,'cash',amount,(p->>'receivedAmount')::integer,(p->>'receivedAmount')::integer-amount,p_at,p_at,p_at);
+ values(payment_id,sid,paid_oid,p_actor,'cash',amount,(p->>'receivedAmount')::numeric::integer,(p->>'receivedAmount')::numeric::integer-amount,p_at,p_at,p_at);
  if p->>'kind'='pay_order' then
   update public.orders set status='paid',paid_at=p_at,lock_version=lock_version+1 where store_id=sid and id=oid;
   if o.table_id is not null then update public.tables set status='empty' where store_id=sid and id=o.table_id; end if;

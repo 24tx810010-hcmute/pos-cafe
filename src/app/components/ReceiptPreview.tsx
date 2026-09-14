@@ -1,5 +1,5 @@
 import { Printer, X } from "lucide-react";
-import { forwardRef, useRef } from "react";
+import { forwardRef, useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import { formatVnd } from "@/core/money";
 import type { OrderDetail, PrintReceipt, PrintTicket } from "@/domain";
@@ -9,6 +9,7 @@ import { usePorts } from "@/features/shared/portsContext";
 import { notifyUiError } from "../appErrors";
 import { PortalPopup } from "./PortalPopup";
 import { useAppStore } from "../useAppStore";
+import { useViewLifetime } from "../useViewLifetime";
 
 // ---- Builders: domain order -> print doc -------------------------------------
 
@@ -47,7 +48,7 @@ export const receiptFromOrderDetail = (order: OrderDetail, tableName: string | n
 
 // ---- Print: isolate the receipt in a hidden iframe ---------------------------
 
-const printDocElement = (element: HTMLElement) => {
+const printDocElement = (element: HTMLElement, isCurrent: () => boolean) => {
   const frame = document.createElement("iframe");
   frame.setAttribute("aria-hidden", "true");
   frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
@@ -63,11 +64,13 @@ const printDocElement = (element: HTMLElement) => {
       `<style>@page{margin:0}body{margin:0}</style></head><body>${element.outerHTML}</body></html>`,
   );
   frameDoc.close();
-  frame.contentWindow?.focus();
-  window.setTimeout(() => {
+  const timer = window.setTimeout(() => {
+    if (!isCurrent()) { frame.remove(); return; }
+    frame.contentWindow?.focus();
     frame.contentWindow?.print();
     window.setTimeout(() => frame.remove(), 800);
   }, 200);
+  return () => { window.clearTimeout(timer); frame.remove(); };
 };
 
 // ---- Receipt document (80mm thermal, self-contained inline styles) -----------
@@ -258,6 +261,19 @@ export function ReceiptPreviewPopup() {
   const close = useAppStore((state) => state.closeReceiptPreview);
   const settings = useStoreSettingsQuery().data;
   const docRef = useRef<HTMLDivElement>(null);
+  const captureCurrent = useViewLifetime(preview);
+  const cancelPrint = useRef<(() => void) | undefined>(undefined);
+  useEffect(() => {
+    const cancel = () => { cancelPrint.current?.(); cancelPrint.current = undefined; };
+    const stop = useAppStore.subscribe((state, previous) => {
+      if (state.receiptPreview !== previous.receiptPreview || state.employeeSessionVersion !== previous.employeeSessionVersion
+        || state.currentEmployee !== previous.currentEmployee || state.drawer !== previous.drawer
+        || state.orderContext !== previous.orderContext || state.paymentOrderId !== previous.paymentOrderId
+        || state.screen !== previous.screen) cancel();
+    });
+    window.addEventListener("offline", cancel);
+    return () => { cancel(); stop(); window.removeEventListener("offline", cancel); };
+  }, []);
 
   if (!preview) return null;
 
@@ -316,13 +332,18 @@ export function ReceiptPreviewPopup() {
           data-testid="receipt-print-button"
           onClick={() => {
             const currentPreview = preview;
+            const isCurrent = captureCurrent();
+            if (!isCurrent()) return;
             void (async () => {
               try {
                 if (currentPreview.variant === "receipt" && (currentPreview.doc.snapshot || currentPreview.orderId)) {
                   await ports.order.getReceipt(currentPreview.doc.snapshot?.orderId ?? currentPreview.orderId!);
                 }
-                if (useAppStore.getState().receiptPreview === currentPreview && docRef.current) printDocElement(docRef.current);
-              } catch (error) { notifyUiError(error); }
+                if (isCurrent() && useAppStore.getState().receiptPreview === currentPreview && docRef.current) {
+                  cancelPrint.current?.();
+                  cancelPrint.current = printDocElement(docRef.current, isCurrent);
+                }
+              } catch (error) { if (isCurrent()) notifyUiError(error); }
             })();
           }}
           className="inline-flex h-9 items-center gap-2 rounded-[9px] bg-pos-primary px-4 text-sm font-bold text-white hover:brightness-110"

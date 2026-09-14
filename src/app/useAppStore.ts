@@ -19,6 +19,7 @@ export type OrderDrawerContext = {
 type AppState = {
   screen: AppScreen;
   currentEmployee: Employee | null;
+  employeeSessionVersion: number;
   activeAreaId: string | null;
   activeCategoryId: string | null;
   drawer: DrawerModule;
@@ -42,6 +43,7 @@ type AppState = {
 export const useAppStore = create<AppState>((set) => ({
   screen: "landing",
   currentEmployee: null,
+  employeeSessionVersion: 0,
   activeAreaId: null,
   activeCategoryId: null,
   drawer: null,
@@ -49,7 +51,10 @@ export const useAppStore = create<AppState>((set) => ({
   paymentOrderId: null,
   draftItems: [],
   receiptPreview: null,
-  setCurrentEmployee: (employee) => { if (!employee) clearDrawerExitGuard(); set({ currentEmployee: employee }); },
+  setCurrentEmployee: (employee) => {
+    if (!employee) clearDrawerExitGuard();
+    set((state) => ({ currentEmployee: employee, employeeSessionVersion: state.employeeSessionVersion + 1 }));
+  },
   setScreen: (screen) => set({ screen }),
   setActiveAreaId: (areaId) => set({ activeAreaId: areaId }),
   setActiveCategoryId: (categoryId) => set({ activeCategoryId: categoryId }),

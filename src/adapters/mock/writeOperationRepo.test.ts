@@ -55,11 +55,19 @@ describe("write protocol mock (memory only)", () => {
     clock(Date.parse("2026-09-08T18:00:00.000Z"));await ports.employee.startSession(id(11),"123456");const again=await ports.write.register(id(1001),p);expect(again).toEqual(first);
     clock(Date.parse("2026-09-09T00:00:00.000Z"));const terminal=await ports.write.register(id(1001),p);expect(terminal).toMatchObject({status:"expired",registeredAt:"2026-09-08T00:00:00.000Z",expiresAt:"2026-09-09T00:00:00.000Z",replayCount:"0"});expect(state.orders).toEqual([]);
   });
-  it("TC-IDEM-030/mock old modifier quantity snapshot plus current new portion",async()=>{
+  for(const variant of ["new","old"] as const)it(`TC-IDEM-030/mock${variant==="old"?"/old":""} old modifier snapshot plus current new portion and ${variant} split`,async()=>{
     const {state,perform}=await setup(true);const old=state.orders[0];old.items[0].quantity=2;old.items[0].options=[{id:id(601),optionValueId:id(501),optionName:"Topping cũ",priceDelta:5000,quantity:2}];old.total=80000;
-    state.menu.menuItems[0].price=35000;state.menu.optionGroups=[{id:id(702),name:"Topping",isRequired:false,selectType:"multi",sortOrder:0}];state.menu.optionValues=[{id:id(501),optionGroupId:id(702),name:"Topping mới",priceDelta:7000,sortOrder:0}];state.menu.menuItemOptionGroups=[{id:id(703),menuItemId:id(401),optionGroupId:id(702),sortOrder:0}];
+    old.items[0].itemName="Cà phê cũ";state.menu.menuItems[0].name="Cà phê mới";state.menu.menuItems[0].price=35000;state.menu.optionGroups=[{id:id(702),name:"Topping",isRequired:false,selectType:"multi",sortOrder:0}];state.menu.optionValues=[{id:id(501),optionGroupId:id(702),name:"Topping mới",priceDelta:7000,sortOrder:0}];state.menu.menuItemOptionGroups=[{id:id(703),menuItemId:id(401),optionGroupId:id(702),sortOrder:0}];
     const r=await perform({schemaVersion:1,kind:"submit_order_changes",action:"update",orderId:id(101),expectedVersion:5,retainedLines:[{sourceItemId:id(201),quantity:2}],newLines:[{...line(202),quotedBasePrice:35000,options:[{id:id(602),optionValueId:id(501),quantity:2,quotedPriceDelta:7000}]}]});
     expect(r).toMatchObject({status:"applied",result:{order:{total:129000,items:[{id:id(201),unitTotal:40000,lineTotal:80000,options:[{name:"Topping cũ",quantity:2,priceDelta:5000}]},{id:id(202),unitTotal:49000,lineTotal:49000,options:[{name:"Topping mới",quantity:2,priceDelta:7000}]}]}}});
+    const before=structuredClone(state.orders[0].items);expect(before.map(item=>item.id)).toEqual([id(201),id(202)]);
+    const paid=await perform({schemaVersion:1,kind:"pay_order_items",orderId:id(101),newOrderId:id(102),paymentId:id(301),method:"cash",expectedVersion:6,receivedAmount:50000,lines:[{orderItemId:variant==="new"?id(202):id(201),quantity:1,splitItemId:id(203)}]},1002);
+    const source=state.orders.find(order=>order.id===id(101))!;const child=state.orders.find(order=>order.id===id(102))!;const selected=before[variant==="new"?1:0];const amount=variant==="new"?49000:40000;
+    expect(source).toMatchObject({status:"open",lockVersion:7,total:variant==="new"?80000:89000});expect(source.items).toEqual(variant==="new"?[before[0]]:[{...before[0],quantity:1},before[1]]);
+    const paidItemId=variant==="new"?id(202):id(203);
+    expect(child).toMatchObject({status:"paid",total:amount,payment:{id:id(301),amount,receivedAmount:50000,changeAmount:50000-amount}});expect(child.items).toHaveLength(1);expect(child.items[0]).toMatchObject({...selected,id:paidItemId,quantity:1,options:[{optionValueId:id(501),optionName:variant==="new"?"Topping mới":"Topping cũ",quantity:2,priceDelta:variant==="new"?7000:5000}]});
+    if(variant==="new")expect(child.items[0].options).toEqual(selected.options);else expect(child.items[0].options[0].id).not.toBe(selected.options[0].id);
+    expect(paid).toMatchObject({status:"applied",result:{receipt:{total:amount,lines:[{orderItemId:paidItemId,name:variant==="new"?"Cà phê mới":"Cà phê cũ",quantity:1,baseUnitPrice:variant==="new"?35000:30000,unitTotal:amount,lineTotal:amount,options:[{optionValueId:id(501),name:variant==="new"?"Topping mới":"Topping cũ",quantity:2,priceDelta:variant==="new"?7000:5000}]}]}}});
   });
   it("TC-IDEM-046/mock void paid preserves original payment and new occupant",async()=>{
     const {state,perform}=await setup(true);await perform(payment());const paid=structuredClone(state.orders[0]);state.orders.push({...structuredClone(paid),id:id(103),status:"open",payment:null,paidAt:null,lockVersion:0,items:[],total:20000});state.floorPlan.tables[0].status="occupied";
@@ -156,7 +164,10 @@ describe("write protocol mock (memory only)", () => {
     const {ports,state}=await setup();const p=create();await ports.write.register(id(1001),p);expect((await ports.write.cancel(id(1001))).status).toBe("cancelled");expect((await ports.write.execute(id(1001),p)).status).toBe("cancelled");expect(state.orders).toEqual([]);
   });
   it("TC-IDEM-066/mock 48h open order can be paid using new K",async()=>{
-    const {ports,perform,clock}=await setup(true);clock(Date.parse("2026-09-10T00:00:00.000Z"));await ports.employee.startSession(id(11),"123456");expect((await perform(payment())).status).toBe("applied");
+    const {ports,perform,clock,state}=await setup(true);await ports.write.register(id(1001),payment());
+    expect(await ports.report.getCoreReport({businessDate:"2026-09-08"})).toMatchObject({revenue:0,paidOrders:0});clock(Date.parse("2026-09-10T00:00:00.000Z"));await ports.employee.startSession(id(11),"123456");expect((await ports.write.get(id(1001))).status).toBe("expired");expect((await perform(payment(),1002)).status).toBe("applied");
+    expect(state.orders[0]).toMatchObject({businessDate:"2026-09-08",status:"paid",lockVersion:6,total:150000,paidAt:"2026-09-10T00:00:00.000Z"});expect(state.floorPlan.tables[0].status).toBe("empty");expect((await ports.write.get(id(1001))).status).toBe("expired");
+    expect(await ports.report.getCoreReport({businessDate:"2026-09-08"})).toMatchObject({revenue:150000,paidOrders:1});expect(await ports.report.getCoreReport({businessDate:"2026-09-10"})).toMatchObject({revenue:0,paidOrders:0});
   });
   it("TC-IDEM-067/mock applied replay at 48h preserves exact R1",async()=>{
     const {ports,perform,clock}=await setup(true);const p=payment();const r=await perform(p);clock(Date.parse("2026-09-10T00:00:00.000Z"));await ports.employee.startSession(id(11),"123456");expect((await ports.write.execute(id(1001),p)).result).toEqual(r.result);

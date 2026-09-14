@@ -18,7 +18,18 @@ const environment = (): NodeJS.ProcessEnv => ({
 
 test('Manifest contains 93 distinct approved oracles and each parameterized requirement', () => {
   assertManifest(); expect(caseCatalog).toHaveLength(93);
-  expect(requiredExecutions.filter((entry) => entry.id==='TC-IDEM-006')).toHaveLength(102);
+  expect(requiredExecutions.filter((entry) => entry.id==='TC-IDEM-006' && entry.backend==='db')).toHaveLength(102);
+  expect(requiredExecutions.filter((entry) => entry.id==='TC-IDEM-006' && entry.backend==='core'
+    && entry.plannedFiles.includes('src/app/writeRecoveryAccess.test.tsx'))).toHaveLength(12);
+  expect(requiredExecutions.filter((entry) => entry.id==='TC-IDEM-006' && entry.backend==='core'
+    && entry.plannedFiles.includes('src/app/writeRecoveryActionLifetime.test.tsx'))).toHaveLength(4);
+  expect(requiredExecutions.filter((entry) => entry.id==='TC-IDEM-006' && entry.backend==='core'
+    && entry.plannedFiles.includes('src/app/writeInitialSubmitLifetime.test.tsx'))).toHaveLength(2);
+  expect(requiredExecutions.filter((entry) => entry.id==='TC-IDEM-006' && entry.backend==='core'
+    && entry.plannedFiles.includes('src/app/writePaymentLifetime.test.tsx'))).toHaveLength(4);
+  expect(requiredExecutions.filter((entry) => entry.id==='TC-IDEM-006' && entry.backend==='core'
+    && entry.plannedFiles.includes('src/app/writeHistoryLifetime.test.tsx'))).toHaveLength(4);
+  expect(requiredExecutions.filter((entry) => entry.id==='TC-IDEM-006' && entry.backend==='e2e')).toHaveLength(3);
   expect(requiredExecutions.some((entry)=>entry.name==='TC-IDEM-062/db/validation_session_expiry')).toBe(true);
 });
 

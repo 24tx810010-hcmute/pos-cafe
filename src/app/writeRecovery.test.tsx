@@ -148,7 +148,7 @@ describe("reviewing changed drafts", () => {
     vi.spyOn(ports.write, "register").mockImplementation(async (key, body) => { stored = await originalRegister(key, body); return new Promise((done) => { release = done; }); });
     const execute = vi.spyOn(ports.write, "execute"); const revoke = vi.spyOn(ports.employee, "revokeSession");
     useAppStore.setState({ currentEmployee: admin, drawer: "payment", paymentOrderId: source.id });
-    render(<PortsContext.Provider value={ports}><WriteLifecycle /></PortsContext.Provider>);
+    render(<PortsContext.Provider value={ports}><QueryClientProvider client={new QueryClient()}><WriteLifecycle /></QueryClientProvider></PortsContext.Provider>);
     const coordinator = getWriteCoordinator(ports.write);
     const result = coordinator.begin({ schemaVersion: 1, kind: "pay_order", orderId: source.id, paymentId: id(50), expectedVersion: 5, method: "cash", receivedAmount: 150_000 }).catch((error) => error);
     await waitFor(() => expect(release).toBeDefined());

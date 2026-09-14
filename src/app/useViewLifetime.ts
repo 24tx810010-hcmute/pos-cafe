@@ -11,8 +11,10 @@ export function useViewLifetime(context: unknown) {
   useEffect(() => {
     const invalidate = () => { lifetime.current.generation += 1; };
     const stop = useAppStore.subscribe((state, previous) => {
-      if (state.currentEmployee !== previous.currentEmployee || state.drawer !== previous.drawer
-        || state.orderContext !== previous.orderContext || state.paymentOrderId !== previous.paymentOrderId) invalidate();
+      if (state.currentEmployee !== previous.currentEmployee || state.employeeSessionVersion !== previous.employeeSessionVersion
+        || state.screen !== previous.screen || state.drawer !== previous.drawer
+        || state.orderContext !== previous.orderContext || state.paymentOrderId !== previous.paymentOrderId
+        || state.receiptPreview !== previous.receiptPreview) invalidate();
     });
     window.addEventListener("offline", invalidate);
     return () => { invalidate(); stop(); window.removeEventListener("offline", invalidate); };

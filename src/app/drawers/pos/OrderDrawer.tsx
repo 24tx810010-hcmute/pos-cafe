@@ -28,6 +28,7 @@ import { notifyUiError, toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { DiscardDraftDialog } from "./DiscardDraftDialog";
 import { useAppStore } from "../../useAppStore";
+import { useViewLifetime } from "../../useViewLifetime";
 import { ModifierPickerPopup } from "./ModifierPickerPopup";
 import { OrderCartPane } from "./OrderCartPane";
 import { OrderMenuPane } from "./OrderMenuPane";
@@ -39,6 +40,7 @@ export function OrderDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const openPayment = useAppStore((state) => state.openPayment);
   const context = useAppStore((state) => state.orderContext);
+  const captureView = useViewLifetime(context);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
   const draftItems = useAppStore((state) => state.draftItems);
   const setDraftItems = useAppStore((state) => state.setDraftItems);
@@ -139,6 +141,7 @@ export function OrderDrawer() {
     // Chốt các món MỚI THÊM ngay tại thời điểm bấm gửi (dữ liệu trên máy) để in
     // phiếu gửi bếp — không phụ thuộc payload/refetch từ server.
     const addedLines = menu ? diffAddedPrintLines(menu, orderDetail, draftItems) : [];
+    const isCurrent = captureView();
 
     submitMutation.mutate(
       {
@@ -150,6 +153,7 @@ export function OrderDrawer() {
       },
       {
         onSuccess: (result) => {
+          if (!isCurrent()) return;
           if (result.initialSuccess && result.status !== "void" && addedLines.length > 0) {
             openReceiptPreview({
               variant: "kitchen",
@@ -166,7 +170,7 @@ export function OrderDrawer() {
           clearDrawerExitGuard();
           closeDrawer();
         },
-        onError: handleSubmitError,
+        onError: (error) => { if (isCurrent()) handleSubmitError(error); },
       },
     );
   };
@@ -194,7 +198,13 @@ export function OrderDrawer() {
 
   return (
     <PortalDrawer testId="order-drawer" onOutsideClick={handleClose}>
-      <WriteAttemptNotice />
+      <WriteAttemptNotice onApplied={() => {
+        // Retry confirms the frozen submission. Consume its draft without replaying
+        // the initial-success kitchen preview or using historical R1 as current data.
+        clearDrawerExitGuard();
+        setDraftItems([]);
+        closeDrawer();
+      }} />
       {remoteConflict && <div role="alert" className="m-3 rounded border border-amber-400 p-3"><p>Đơn đã thay đổi trên server. Phần đang chỉnh sửa vẫn được giữ để bạn kiểm tra.</p><Button onClick={() => {
         acceptCurrent();
         coordinator.leave();
@@ -259,7 +269,7 @@ export function OrderDrawer() {
             </div>
           </div>
         )}
-        <div className="grid h-full min-h-0 min-w-[620px] grid-cols-[minmax(300px,1fr)_minmax(280px,360px)] gap-2.5">
+        <fieldset disabled={blocked} className="m-0 grid h-full min-h-0 min-w-[620px] grid-cols-[minmax(300px,1fr)_minmax(280px,360px)] gap-2.5 border-0 p-0">
           <OrderMenuPane
             categories={menu?.categories}
             items={items}
@@ -291,7 +301,7 @@ export function OrderDrawer() {
             onUpdateNote={updateNote}
             onPrimaryAction={runPrimaryAction}
           />
-        </div>
+        </fieldset>
       </div>
 
       {picker.modifierItem && menu && (
