@@ -1,0 +1,156 @@
+{
+  "observedAt": "2026-09-14T04:40:55.947Z",
+  "readOnly": true,
+  "frontend": "https://pos-cafe-azure.vercel.app",
+  "git": {
+    "local": "ef2c372aec60d8362549e47b7aedb27126129479",
+    "remote": "ef2c372aec60d8362549e47b7aedb27126129479\trefs/heads/main"
+  },
+  "github": {
+    "repository": {
+      "homepage": "https://pos-cafe-azure.vercel.app",
+      "default_branch": "main",
+      "visibility": "public"
+    },
+    "combinedStatus": {
+      "sha": "ef2c372aec60d8362549e47b7aedb27126129479",
+      "state": "success",
+      "statuses": [
+        {
+          "state": "success",
+          "context": "Vercel",
+          "description": "Deployment has completed",
+          "target_url": "https://vercel.com/24tx810010-hcmutes-projects/pos-cafe/31AizN1RSmqKLLQ1kgNY6pJeHQm6",
+          "created_at": "2026-09-14T04:40:44Z"
+        }
+      ]
+    },
+    "production": {
+      "id": 6430580267,
+      "sha": "ef2c372aec60d8362549e47b7aedb27126129479",
+      "ref": "ef2c372aec60d8362549e47b7aedb27126129479",
+      "environment": "Production",
+      "created_at": "2026-09-14T04:40:44Z",
+      "statuses": [
+        {
+          "state": "success",
+          "environment": "Production",
+          "environment_url": "https://pos-cafe-1zwy77pi3-24tx810010-hcmutes-projects.vercel.app",
+          "log_url": "https://pos-cafe-1zwy77pi3-24tx810010-hcmutes-projects.vercel.app",
+          "description": "Deployment has completed",
+          "created_at": "2026-09-14T04:40:44Z"
+        }
+      ]
+    },
+    "recentProduction": [
+      {
+        "id": 6430580267,
+        "sha": "ef2c372aec60d8362549e47b7aedb27126129479",
+        "environment": "Production",
+        "created_at": "2026-09-14T04:40:44Z"
+      },
+      {
+        "id": 6430265353,
+        "sha": "8ed7418573fe88e27796d3b09807a3c55db4d0d6",
+        "environment": "Production",
+        "created_at": "2026-09-14T04:07:42Z"
+      },
+      {
+        "id": 6364984793,
+        "sha": "3ada48c0c9c494d9b34838fd3739bda6091e0bb9",
+        "environment": "Production",
+        "created_at": "2026-09-10T05:06:59Z"
+      },
+      {
+        "id": 6304840785,
+        "sha": "7183b31a4ca27ed2be3ca7097f391fd2c07f806c",
+        "environment": "Production",
+        "created_at": "2026-09-07T08:26:49Z"
+      },
+      {
+        "id": 6302232519,
+        "sha": "a4ab461e633be221c8d3848b4137a13badbe7181",
+        "environment": "Production",
+        "created_at": "2026-09-07T04:55:04Z"
+      }
+    ]
+  },
+  "responses": [
+    {
+      "kind": "production-alias",
+      "url": "https://pos-cafe-azure.vercel.app",
+      "finalUrl": "https://pos-cafe-azure.vercel.app/",
+      "status": 200,
+      "redirectLocation": null,
+      "headers": {
+        "date": "Mon, 14 Sep 2026 04:41:51 GMT",
+        "content-type": "text/html; charset=utf-8",
+        "etag": "\"d3d4922219b03ce0a3d4fac210e75bfd\"",
+        "last-modified": "Mon, 14 Sep 2026 04:41:51 GMT",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS",
+        "x-vercel-id": "hkg1::z2c6n-1789360911501-67a64794ca31",
+        "cache-control": "public, max-age=0, must-revalidate"
+      },
+      "bytes": 393,
+      "sha256": "2a7fc4f2a0b7219c636d4a1497cf3336ec297a6cd805df55ca829bf8a7d0911d",
+      "assets": [
+        {
+          "path": "/assets/index-CfdNnUcO.js",
+          "url": "https://pos-cafe-azure.vercel.app/assets/index-CfdNnUcO.js",
+          "status": 200,
+          "contentType": "application/javascript; charset=utf-8",
+          "bytes": 1405737,
+          "sha256": "74bc45fea095942a74ca64f31ddd8712ed3143d04b1ad9c7ec25d6eeeb073eac",
+          "localDistFileExists": true,
+          "localDistSha256": "74bc45fea095942a74ca64f31ddd8712ed3143d04b1ad9c7ec25d6eeeb073eac",
+          "markers": {
+            "employeeSessionVersion": true,
+            "recoveryKey": true,
+            "protocolRegister": true,
+            "protocolExecute": true,
+            "historyReprint": true,
+            "businessBackendHosts": [
+              "https://kfqjdfwxhkdwihjobpny.supabase.co"
+            ]
+          }
+        },
+        {
+          "path": "/assets/index-Bvfd3nWs.css",
+          "url": "https://pos-cafe-azure.vercel.app/assets/index-Bvfd3nWs.css",
+          "status": 200,
+          "contentType": "text/css; charset=utf-8",
+          "bytes": 63283,
+          "sha256": "dc620fc7ac27e80232623c6175381544966f20923b935767027c27b56909cf5d",
+          "localDistFileExists": true,
+          "localDistSha256": "dc620fc7ac27e80232623c6175381544966f20923b935767027c27b56909cf5d"
+        }
+      ]
+    },
+    {
+      "kind": "immutable-deployment",
+      "url": "https://pos-cafe-1zwy77pi3-24tx810010-hcmutes-projects.vercel.app",
+      "finalUrl": "https://pos-cafe-1zwy77pi3-24tx810010-hcmutes-projects.vercel.app/",
+      "status": 302,
+      "redirectLocation": "https://vercel.com/sso-api",
+      "headers": {
+        "date": "Mon, 14 Sep 2026 04:41:54 GMT",
+        "content-type": "text/plain",
+        "etag": null,
+        "last-modified": null,
+        "server": "Vercel",
+        "x-vercel-cache": null,
+        "x-vercel-id": "hkg1::4jq9h-1789360914474-a3c144311f96",
+        "cache-control": "no-store, max-age=0"
+      },
+      "bytes": 15,
+      "sha256": "7c040f8633b8823d72ed63da9b3b2dfe9846e912c66a64c9433ec9c4815d76c2",
+      "assets": []
+    }
+  ],
+  "limitations": [
+    "Only unauthenticated HTML/static asset GET and GitHub metadata; no login, tenant reads, mutations or deployment actions.",
+    "No application build SHA marker is assumed. Deployment-to-alias identity must be established by response/asset bytes or provider metadata.",
+    "Public bundle may contain publishable anon credentials; no bundle body/credential value is stored or printed."
+  ]
+}

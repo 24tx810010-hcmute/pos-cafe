@@ -78,4 +78,10 @@ Không chạy lại coverage hoặc smoke mock vì chỉ đổi test. Kết qu�
 
 ## Giới hạn kết luận
 
-Frontend production đã xác minh phục vụ artifact của `8ed7418`. Hai điểm yếu harness có bằng chứng và đã được sửa trong commit test `ef2c372`; nguyên nhân ban đầu của timeout 45 giây vẫn chưa được chứng minh. Loạt chạy lại PASS là bằng chứng về những lượt đó, không phải bằng chứng hồi tố rằng một giả thuyết đã gây lỗi cũ. Chưa thực hiện business smoke trên dữ liệu cửa hàng, Storage API, Realtime hoặc máy in vật lý.
+Frontend production đã xác minh deployment của `ef2c372` sau push, với byte ứng dụng giống bản `8ed7418`. Hai điểm yếu harness có bằng chứng và đã được sửa trong commit test `ef2c372`; nguyên nhân ban đầu của timeout 45 giây vẫn chưa được chứng minh. Loạt chạy lại PASS là bằng chứng về những lượt đó, không phải bằng chứng hồi tố rằng một giả thuyết đã gây lỗi cũ. Chưa thực hiện business smoke trên dữ liệu cửa hàng, Storage API, Realtime hoặc máy in vật lý.
+
+## Xác nhận sau push
+
+Đã push docs evidence `102a8f9df6d73c0aa1dce3e9ee255e58a611b8ae` trước, rồi main `ef2c372aec60d8362549e47b7aedb27126129479`; `git ls-remote` khớp cả hai. 58 checksum của bundle được kiểm trực tiếp từ Git blobs, 460 source blob khớp candidate và 23 file tài liệu ngoài phạm vi giữ nguyên.
+
+Vercel ban đầu pending, sau đó Production deployment `6430580267` gắn đúng `ef2c372` báo success lúc `2026-09-14T04:40:44Z`. Domain public tiếp tục HTTP 200, JS/CSS giữ nguyên hashes đã xác minh. [Metadata và asset hashes sau push](phase-27-frontend-publication-2026-09-14.json) được kiểm chỉ đọc; evidence của `8ed7418` được giữ nguyên. Bản xác nhận này nằm trong commit docs tiếp theo, không tự gán SHA của chính nó trước khi commit tồn tại. Không thực hiện business smoke hoặc migration trên cửa hàng thật.
