@@ -1,6 +1,6 @@
 # Phase 27 — Kiểm lại sau khi dựng WSL
 
-Ngày 2026-09-14. Findings code đã sửa và kiểm độc lập; gate cuối PASS. Code đã commit thành `8ed7418573fe88e27796d3b09807a3c55db4d0d6`; kết quả push được ghi riêng sau khi đối chiếu remote.
+Ngày 2026-09-14. Findings code đã sửa và kiểm độc lập; gate cuối PASS. Code đã commit thành `8ed7418573fe88e27796d3b09807a3c55db4d0d6`; đã push cùng docs và đối chiếu remote, xem biên bản bên dưới.
 
 ## Findings và thay đổi
 
@@ -56,3 +56,7 @@ Runtime test đã được dừng sau khi ghi postflight và coverage/smoke; kh�
 ## Giới hạn và rollout
 
 Không gọi mutation trên Supabase thật. Migration 014–016 đã được chủ dự án áp và catalog đã kiểm chỉ đọc ngày 13/09; các sửa UI bổ sung không yêu cầu chạy lại migration. Chưa có bằng chứng app đang phục vụ đã chứa bản sửa hoặc đã kiểm nghiệp vụ sau phát hành. Runtime WSL thiếu Storage API/Realtime và không kiểm máy in vật lý. Các cảnh báo bảo mật legacy/owner provisioning ghi trong báo cáo MCP vẫn là giới hạn riêng, không tuyên bố toàn hệ thống hết mọi vấn đề.
+
+## Xuất bản Git
+
+Đã push docs trước, main sau và dùng `git ls-remote` đối chiếu lúc `2026-09-14T04:07:02.559Z`: main `8ed7418573fe88e27796d3b09807a3c55db4d0d6`, docs evidence `70bd11d0874d1a229d28513c1123278779762ce6`. Đây là SHA commit chứa bundle đã kiểm 53 checksum trực tiếp từ Git blobs. [Biên bản xuất bản](phase-27-publication-2026-09-14.json) được ghi ở commit docs tiếp theo; không tự gán SHA của commit chưa tồn tại vào biên bản. Giữ nguyên 23 file tài liệu ngoài phạm vi và pnpm-lock. Push Git không xác minh app đang phục vụ; bước kiểm nghiệp vụ sau phát hành vẫn chưa thực hiện.

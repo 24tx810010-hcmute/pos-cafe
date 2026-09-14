@@ -144,7 +144,7 @@ Kết quả cuối2026-09-11: [log F2–F5](../../../docs/implementation-log/pha
 - [x] 40m1. Tái hiện P2 lỗi action recovery cũ khóa phiên mới/xóa draft; bổ sung guard và 12 regression bắt buộc.
 - [x] 40m2. Negative control: 8 assertion FAIL/4 positive PASS; full unit 589 PASS, build PASS và hai reviewer xác minh guard.
 - [x] 40m3. Dựng runtime WSL PostgreSQL/PostgREST/GoTrue; preflight/marker và gate mới 14/09 đạt cùng fingerprint. Lần fail timezone và một timeout E2E/rerun được giữ riêng; xem báo cáo 14/09.
-- [ ] 40m4. Chỉ commit/push phần phase27 sau gate mới và review đạt; giữ pnpm-lock và tài liệu tính năng khác ngoài commit này.
+- [x] 40m4. Chỉ commit/push phần phase27 sau gate mới và review đạt; giữ pnpm-lock và tài liệu tính năng khác ngoài commit này.
 
 
 ## Hậu kiểm WSL ngày 2026-09-14
@@ -152,4 +152,6 @@ Kết quả cuối2026-09-11: [log F2–F5](../../../docs/implementation-log/pha
 - [x] 40n1. Tái hiện và sửa callback initial-submit/payment/split/history cũ; giữ positive current errors/success và busy generation của popup hủy.
 - [x] 40n2. Viết 48 regression bắt buộc và cập nhật manifest 818; assertion tooling phân nhóm riêng, không bỏ 12 cache oracles.
 - [x] 40n3. Hai reviewer chốt độc lập và gate bốn stage trên candidate cuối; không cộng các run chồng lặp hoặc report cũ.
-- [ ] 40n4. Bàn giao bằng chứng runtime WSL, lịch sử lỗi môi trường/test, SHA code/docs và kết quả push có kiểm remote.
+- [x] 40n4. Bàn giao bằng chứng runtime WSL, lịch sử lỗi môi trường/test, SHA code/docs và kết quả push có kiểm remote.
+
+Bàn giao Git 14/09: code `8ed7418`, docs evidence `70bd11d0874d1a229d28513c1123278779762ce6`, remote đã khớp. [Biên bản xuất bản](../../../docs/implementation-log/phase-27-publication-2026-09-14.json). Timeout E2E lần đầu chưa rõ nguyên nhân và kiểm app sau phát hành vẫn là giới hạn; không đóng các mục vận hành rollout dựa riêng vào push.

@@ -1,0 +1,29 @@
+{
+  "verifiedAt": "2026-09-14T04:07:02.559Z",
+  "remote": "https://github.com/24tx810010-hcmute/pos-cafe",
+  "codeCommit": "8ed7418573fe88e27796d3b09807a3c55db4d0d6",
+  "docsEvidenceCommit": "70bd11d0874d1a229d28513c1123278779762ce6",
+  "observedRemoteHeads": {
+    "refs/heads/docs": "70bd11d0874d1a229d28513c1123278779762ce6",
+    "refs/heads/main": "8ed7418573fe88e27796d3b09807a3c55db4d0d6"
+  },
+  "pushOrder": [
+    "docs",
+    "main"
+  ],
+  "forcePush": false,
+  "gate": {
+    "passed": 1183,
+    "required": 818,
+    "baseCases": 93
+  },
+  "committedEvidenceChecksumEntries": 53,
+  "committedEvidenceChecksumsValid": true,
+  "unrelatedDocsPreserved": 23,
+  "productionMutationPerformed": false,
+  "appDeploymentVerified": false,
+  "limits": [
+    "Initial E2E run timed out once; diagnostic and full rerun passed, root cause remains unknown.",
+    "Documentation receipt is committed after this verification; docsEvidenceCommit identifies the published evidence bundle, not this receipt commit."
+  ]
+}
