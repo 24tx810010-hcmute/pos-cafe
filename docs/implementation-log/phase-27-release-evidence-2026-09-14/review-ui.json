@@ -1,0 +1,460 @@
+{
+  "reviewedAt": "2026-09-14T03:38:23.587Z",
+  "node": "v24.16.0",
+  "mainHead": "3ada48c0c9c494d9b34838fd3739bda6091e0bb9",
+  "backend": "Vitest/jsdom; in-memory mock adapter; no DB, MCP or real backend used by this audit",
+  "finalCandidateBefore": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "finalCandidateAfter": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "sourceStable": true,
+  "hashesBefore": {
+    "src/app/drawers/pos/OrderDrawer.tsx": "9d6853cd176de3cef2b7a2165b26dffcd3d04f67fff65b267ada0b12c03971b4",
+    "src/app/drawers/admin/OrderHistoryDrawer.tsx": "119cab0db4e6f084ed2a99b9586e0ef0af7133653e9ce98d05df8c24314082d5",
+    "src/app/writeInitialSubmitLifetime.test.tsx": "6fe8ff21e3b1392a8a74ca2cb128502efba73fb0faa5be1aed618d6c02e469b7",
+    "src/app/writeHistoryLifetime.test.tsx": "8a09db5f15afa01fc4ea031571a69c38b6260da3bb611d92392652d42d5a91fd"
+  },
+  "hashesAfter": {
+    "src/app/drawers/pos/OrderDrawer.tsx": "9d6853cd176de3cef2b7a2165b26dffcd3d04f67fff65b267ada0b12c03971b4",
+    "src/app/drawers/admin/OrderHistoryDrawer.tsx": "119cab0db4e6f084ed2a99b9586e0ef0af7133653e9ce98d05df8c24314082d5",
+    "src/app/writeInitialSubmitLifetime.test.tsx": "6fe8ff21e3b1392a8a74ca2cb128502efba73fb0faa5be1aed618d6c02e469b7",
+    "src/app/writeHistoryLifetime.test.tsx": "8a09db5f15afa01fc4ea031571a69c38b6260da3bb611d92392652d42d5a91fd"
+  },
+  "disposition": "No unresolved blocker found in this bounded UI diff review after fixes. Full DB/browser gate remains root responsibility.",
+  "findings": [
+    {
+      "severity": "P2",
+      "status": "fixed and independently verified",
+      "file": "src/app/drawers/pos/OrderDrawer.tsx",
+      "line": 173,
+      "problem": "Initial submit per-call error could sign out current employee, erase draft and revoke current session after old lifetime.",
+      "reproduction": "execute pending; renew same employee object or offline→online; reject AUTH_REQUIRED/EMPLOYEE_SESSION_REQUIRED.",
+      "before": "4 stale errors fail; 2 current-error controls pass. After fix 9 tracked cases pass; guard-removal kills 6 stale error/ACK cases.",
+      "fix": "Root captured view lifetime before mutate and scoped both onSuccess/onError."
+    },
+    {
+      "severity": "P2",
+      "status": "fixed and independently verified",
+      "file": "src/app/drawers/admin/OrderHistoryDrawer.tsx",
+      "line": 201,
+      "problem": "Reprint failed read could sign out replacement employee, clear draft and revoke their session.",
+      "reproduction": "getOrder/getReceipt pending; change employee or offline→online; reject AUTH_REQUIRED/EMPLOYEE_SESSION_REQUIRED.",
+      "before": "8/8 stale read scenarios fail through currentEmployee/draft/toast/revoke assertions.",
+      "fix": "Root guarded reprint catch with captured view lifetime."
+    },
+    {
+      "severity": "P2",
+      "status": "fixed and independently verified",
+      "file": "src/app/drawers/admin/OrderHistoryDrawer.tsx",
+      "line": 252,
+      "problem": "Old void callback showed toast/refetched detail; unguarded settlement could release a newer confirmation read busy flag.",
+      "reproduction": "void execute pending; same employee session renewal or offline→online; late auth error or applied ACK. For settlement, close old popup, renew session, start a new confirmation read, then settle old void.",
+      "before": "6 stale callbacks fail. Separate in-memory settlement guard removal kills the new-reading-state oracle.",
+      "fix": "Root scoped success/error with view plus confirmation generation, and used generation-only cleanup for settlement."
+    }
+  ],
+  "runs": [
+    {
+      "name": "baseline",
+      "report": "artifacts/final-ui-audit/baseline.json",
+      "sha256": "201e5482ef222412fb6afa6d45b8b72717a3a6cd689165e4191ed7a47e2cab66",
+      "startTime": "2026-09-14T03:21:51.784Z",
+      "total": 52,
+      "passed": 52,
+      "failed": 0,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": []
+    },
+    {
+      "name": "allow-stale",
+      "report": "artifacts/final-ui-audit/allow-stale.json",
+      "sha256": "5bf5beca1f34a2f7cfa4c781f61d3bd3d1d361f150bf43a55f209dbb985f710b",
+      "startTime": "2026-09-14T03:22:08.955Z",
+      "total": 12,
+      "passed": 6,
+      "failed": 6,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": [
+        "independent stale resume replacement EMPLOYEE_SESSION_REQUIRED preserves live session and draft",
+        "independent stale resume replacement AUTH_REQUIRED preserves live session and draft",
+        "independent stale resume same-object-session EMPLOYEE_SESSION_REQUIRED preserves live session and draft",
+        "independent stale cancel replacement EMPLOYEE_SESSION_REQUIRED preserves live session and draft",
+        "independent stale cancel replacement AUTH_REQUIRED preserves live session and draft",
+        "independent stale cancel same-object-session EMPLOYEE_SESSION_REQUIRED preserves live session and draft"
+      ]
+    },
+    {
+      "name": "suppress-current",
+      "report": "artifacts/final-ui-audit/suppress-current.json",
+      "sha256": "906c1387ee16bd517b47106f342d6790e15ea948173b84655ce69288a297b010",
+      "startTime": "2026-09-14T03:22:08.957Z",
+      "total": 12,
+      "passed": 6,
+      "failed": 6,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": [
+        "independent current resume EMPLOYEE_SESSION_REQUIRED signs the expired employee out",
+        "independent current resume AUTH_REQUIRED signs the expired employee out",
+        "independent current resume FORBIDDEN removes operation data without signing out",
+        "independent current cancel EMPLOYEE_SESSION_REQUIRED signs the expired employee out",
+        "independent current cancel AUTH_REQUIRED signs the expired employee out",
+        "independent current cancel FORBIDDEN removes operation data without signing out"
+      ]
+    },
+    {
+      "name": "initial-submit-confirmed",
+      "report": "artifacts/final-ui-audit/initial-submit-confirmed.json",
+      "sha256": "4797c20ba9d9c1dc70e44a8d8e199e4d2f111259fbd65a95142b86a685cd3a68",
+      "startTime": "2026-09-14T03:24:48.932Z",
+      "total": 6,
+      "passed": 2,
+      "failed": 4,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": [
+        "independent initial submit same-employee-session late EMPLOYEE_SESSION_REQUIRED preserves current lifetime",
+        "independent initial submit same-employee-session late AUTH_REQUIRED preserves current lifetime",
+        "independent initial submit offline-online late EMPLOYEE_SESSION_REQUIRED preserves current lifetime",
+        "independent initial submit offline-online late AUTH_REQUIRED preserves current lifetime"
+      ]
+    },
+    {
+      "name": "initial-submit-fixed",
+      "report": "artifacts/final-ui-audit/initial-submit-fixed.json",
+      "sha256": "5e944233a21d56c753ebf59bf1438a681b6842e033278e5af2e4b05ae96e666f",
+      "startTime": "2026-09-14T03:27:35.354Z",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": []
+    },
+    {
+      "name": "history-confirmed",
+      "report": "artifacts/final-ui-audit/history-confirmed.json",
+      "sha256": "c325a3556de8701d7fb223ada2d31a4a3c26d1d676422ad8e01589ab585061c1",
+      "startTime": "2026-09-14T03:31:10.851Z",
+      "total": 20,
+      "passed": 6,
+      "failed": 14,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": [
+        "TC-IDEM-051/core/history=reprint/stage=order/transition=employee_change/error=EMPLOYEE_SESSION_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=order/transition=employee_change/error=AUTH_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=order/transition=offline_online/error=EMPLOYEE_SESSION_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=order/transition=offline_online/error=AUTH_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=receipt/transition=employee_change/error=EMPLOYEE_SESSION_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=receipt/transition=employee_change/error=AUTH_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=receipt/transition=offline_online/error=EMPLOYEE_SESSION_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=receipt/transition=offline_online/error=AUTH_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-053/core/history=void/transition=same_employee/result=EMPLOYEE_SESSION_REQUIRED ignores an obsolete mutation callback",
+        "TC-IDEM-053/core/history=void/transition=same_employee/result=AUTH_REQUIRED ignores an obsolete mutation callback",
+        "TC-IDEM-053/core/history=void/transition=same_employee/result=applied ignores an obsolete mutation callback",
+        "TC-IDEM-054/core/history=void/transition=offline_online/result=EMPLOYEE_SESSION_REQUIRED ignores an obsolete mutation callback",
+        "TC-IDEM-054/core/history=void/transition=offline_online/result=AUTH_REQUIRED ignores an obsolete mutation callback",
+        "TC-IDEM-054/core/history=void/transition=offline_online/result=applied ignores an obsolete mutation callback"
+      ]
+    },
+    {
+      "name": "history-submit-fixed",
+      "report": "artifacts/final-ui-audit/history-submit-fixed.json",
+      "sha256": "44c89c79f549b397f01006bcbe1aed9af0feeae9fa0e52e1d4c7d2d69ba9b595",
+      "startTime": "2026-09-14T03:33:31.347Z",
+      "total": 30,
+      "passed": 30,
+      "failed": 0,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": []
+    },
+    {
+      "name": "initial-allow-stale",
+      "report": "artifacts/final-ui-audit/initial-allow-stale.json",
+      "sha256": "63f698e7ab5dd657ac75cb9ee1f66346c18c273a4d979bab9e5d70f95f431a7b",
+      "startTime": "2026-09-14T03:34:01.377Z",
+      "total": 9,
+      "passed": 3,
+      "failed": 6,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": [
+        "TC-IDEM-053/core/initial=submit/transition=same_employee/error=EMPLOYEE_SESSION_REQUIRED preserves the current lifetime after a late authentication error",
+        "TC-IDEM-053/core/initial=submit/transition=same_employee/error=AUTH_REQUIRED preserves the current lifetime after a late authentication error",
+        "TC-IDEM-054/core/initial=submit/transition=offline_online/error=EMPLOYEE_SESSION_REQUIRED preserves the current lifetime after a late authentication error",
+        "TC-IDEM-054/core/initial=submit/transition=offline_online/error=AUTH_REQUIRED preserves the current lifetime after a late authentication error",
+        "TC-IDEM-053/core/initial=submit/transition=same_employee/result=applied ignores an ACK from an old lifetime",
+        "TC-IDEM-054/core/initial=submit/transition=offline_online/result=applied ignores an ACK from an old lifetime"
+      ]
+    },
+    {
+      "name": "history-allow-stale",
+      "report": "artifacts/final-ui-audit/history-allow-stale.json",
+      "sha256": "f680339840ad51c8b6bc4c72c29afe8fdef06ab026010379027ccdd98c24eb7f",
+      "startTime": "2026-09-14T03:34:01.377Z",
+      "total": 21,
+      "passed": 6,
+      "failed": 15,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": [
+        "TC-IDEM-051/core/history=reprint/stage=order/transition=employee_change/error=EMPLOYEE_SESSION_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=order/transition=employee_change/error=AUTH_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=order/transition=offline_online/error=EMPLOYEE_SESSION_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=order/transition=offline_online/error=AUTH_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=receipt/transition=employee_change/error=EMPLOYEE_SESSION_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=receipt/transition=employee_change/error=AUTH_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=receipt/transition=offline_online/error=EMPLOYEE_SESSION_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-051/core/history=reprint/stage=receipt/transition=offline_online/error=AUTH_REQUIRED ignores a delayed failed read",
+        "TC-IDEM-053/core/history=void/transition=same_employee/result=EMPLOYEE_SESSION_REQUIRED ignores an obsolete mutation callback",
+        "TC-IDEM-053/core/history=void/transition=same_employee/result=AUTH_REQUIRED ignores an obsolete mutation callback",
+        "TC-IDEM-053/core/history=void/transition=same_employee/result=applied ignores an obsolete mutation callback",
+        "TC-IDEM-054/core/history=void/transition=offline_online/result=EMPLOYEE_SESSION_REQUIRED ignores an obsolete mutation callback",
+        "TC-IDEM-054/core/history=void/transition=offline_online/result=AUTH_REQUIRED ignores an obsolete mutation callback",
+        "TC-IDEM-054/core/history=void/transition=offline_online/result=applied ignores an obsolete mutation callback",
+        "TC-IDEM-053/core/history=void/transition=reopen_confirmation/result=late_error preserves a newer confirmation read's busy state"
+      ]
+    },
+    {
+      "name": "history-settle-unguarded",
+      "report": "artifacts/final-ui-audit/history-settle-unguarded.json",
+      "sha256": "6ae581ed0ab6dbff44631d42a780241b98f81ce8e6419c22cf86a1d2f9ea2d21",
+      "startTime": "2026-09-14T03:34:01.391Z",
+      "total": 21,
+      "passed": 20,
+      "failed": 1,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": [
+        "TC-IDEM-053/core/history=void/transition=reopen_confirmation/result=late_error preserves a newer confirmation read's busy state"
+      ]
+    },
+    {
+      "name": "final-baseline",
+      "report": "artifacts/final-ui-audit/final-baseline.json",
+      "sha256": "1c5f631a13d2c15da1c34e6bde53980a04be349f0ae91a7398316e458c97cd0f",
+      "startTime": "2026-09-14T03:35:17.995Z",
+      "total": 82,
+      "passed": 82,
+      "failed": 0,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": []
+    },
+    {
+      "name": "initial-suppress-current",
+      "report": "artifacts/final-ui-audit/initial-suppress-current.json",
+      "sha256": "5bd64a6724537baa1d95f0dc91fd1cdd6fd69e075b0465ee3555deec4f74b06a",
+      "startTime": "2026-09-14T03:35:18.013Z",
+      "total": 9,
+      "passed": 7,
+      "failed": 2,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": [
+        "TC-IDEM-006/core/initial=submit/error=EMPLOYEE_SESSION_REQUIRED still signs out on a current authentication error",
+        "TC-IDEM-006/core/initial=submit/error=AUTH_REQUIRED still signs out on a current authentication error"
+      ]
+    },
+    {
+      "name": "history-suppress-current",
+      "report": "artifacts/final-ui-audit/history-suppress-current.json",
+      "sha256": "7908d068eb7a18a30e738278d466c8d1c5c138dff0d21c2feb99398664104bb7",
+      "startTime": "2026-09-14T03:35:18.022Z",
+      "total": 21,
+      "passed": 16,
+      "failed": 5,
+      "pending": 0,
+      "todo": 0,
+      "runnerErrors": [],
+      "failedTests": [
+        "TC-IDEM-006/core/history=reprint/error=EMPLOYEE_SESSION_REQUIRED handles a current read failure",
+        "TC-IDEM-006/core/history=reprint/error=AUTH_REQUIRED handles a current read failure",
+        "TC-IDEM-006/core/history=void/error=EMPLOYEE_SESSION_REQUIRED keeps current error feedback and refetch",
+        "TC-IDEM-006/core/history=void/error=AUTH_REQUIRED keeps current error feedback and refetch",
+        "TC-IDEM-051/core/history=void/result=applied retains current success feedback"
+      ]
+    }
+  ],
+  "trackedTests": [
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-051/core/history=reprint/stage=order/transition=employee_change/error=EMPLOYEE_SESSION_REQUIRED ignores a delayed failed read",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-051/core/history=reprint/stage=order/transition=employee_change/error=AUTH_REQUIRED ignores a delayed failed read",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-051/core/history=reprint/stage=order/transition=offline_online/error=EMPLOYEE_SESSION_REQUIRED ignores a delayed failed read",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-051/core/history=reprint/stage=order/transition=offline_online/error=AUTH_REQUIRED ignores a delayed failed read",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-051/core/history=reprint/stage=receipt/transition=employee_change/error=EMPLOYEE_SESSION_REQUIRED ignores a delayed failed read",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-051/core/history=reprint/stage=receipt/transition=employee_change/error=AUTH_REQUIRED ignores a delayed failed read",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-051/core/history=reprint/stage=receipt/transition=offline_online/error=EMPLOYEE_SESSION_REQUIRED ignores a delayed failed read",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-051/core/history=reprint/stage=receipt/transition=offline_online/error=AUTH_REQUIRED ignores a delayed failed read",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-006/core/history=reprint/error=EMPLOYEE_SESSION_REQUIRED handles a current read failure",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-006/core/history=reprint/error=AUTH_REQUIRED handles a current read failure",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-051/core/history=reprint/result=applied opens a preview after a current successful read",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-053/core/history=void/transition=same_employee/result=EMPLOYEE_SESSION_REQUIRED ignores an obsolete mutation callback",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-053/core/history=void/transition=same_employee/result=AUTH_REQUIRED ignores an obsolete mutation callback",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-053/core/history=void/transition=same_employee/result=applied ignores an obsolete mutation callback",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-054/core/history=void/transition=offline_online/result=EMPLOYEE_SESSION_REQUIRED ignores an obsolete mutation callback",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-054/core/history=void/transition=offline_online/result=AUTH_REQUIRED ignores an obsolete mutation callback",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-054/core/history=void/transition=offline_online/result=applied ignores an obsolete mutation callback",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-006/core/history=void/error=EMPLOYEE_SESSION_REQUIRED keeps current error feedback and refetch",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-006/core/history=void/error=AUTH_REQUIRED keeps current error feedback and refetch",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-051/core/history=void/result=applied retains current success feedback",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeHistoryLifetime.test.tsx",
+      "name": "TC-IDEM-053/core/history=void/transition=reopen_confirmation/result=late_error preserves a newer confirmation read's busy state",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeInitialSubmitLifetime.test.tsx",
+      "name": "TC-IDEM-053/core/initial=submit/transition=same_employee/error=EMPLOYEE_SESSION_REQUIRED preserves the current lifetime after a late authentication error",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeInitialSubmitLifetime.test.tsx",
+      "name": "TC-IDEM-053/core/initial=submit/transition=same_employee/error=AUTH_REQUIRED preserves the current lifetime after a late authentication error",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeInitialSubmitLifetime.test.tsx",
+      "name": "TC-IDEM-054/core/initial=submit/transition=offline_online/error=EMPLOYEE_SESSION_REQUIRED preserves the current lifetime after a late authentication error",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeInitialSubmitLifetime.test.tsx",
+      "name": "TC-IDEM-054/core/initial=submit/transition=offline_online/error=AUTH_REQUIRED preserves the current lifetime after a late authentication error",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeInitialSubmitLifetime.test.tsx",
+      "name": "TC-IDEM-006/core/initial=submit/error=EMPLOYEE_SESSION_REQUIRED still signs out on a current authentication error",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeInitialSubmitLifetime.test.tsx",
+      "name": "TC-IDEM-006/core/initial=submit/error=AUTH_REQUIRED still signs out on a current authentication error",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeInitialSubmitLifetime.test.tsx",
+      "name": "TC-IDEM-053/core/initial=submit/transition=same_employee/result=applied ignores an ACK from an old lifetime",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeInitialSubmitLifetime.test.tsx",
+      "name": "TC-IDEM-054/core/initial=submit/transition=offline_online/result=applied ignores an ACK from an old lifetime",
+      "status": "passed"
+    },
+    {
+      "file": "D:/Workspace/pos-cafe/src/app/writeInitialSubmitLifetime.test.tsx",
+      "name": "TC-IDEM-051/core/initial=submit/result=applied opens the initial kitchen preview once",
+      "status": "passed"
+    }
+  ],
+  "controls": {
+    "method": "Vite enforce-pre transform in worker memory only; no production source edits for mutations",
+    "allowOnly": false,
+    "retry": 0,
+    "mutationsAreGateTests": false,
+    "allNegativeControlFailuresAreAssertions": true
+  },
+  "limits": [
+    "Vitest/jsdom memory adapter; no DB/MCP/network contracts/browser print rendering verified by this audit.",
+    "Full phase27 SQL numeric/TTL/race/rollback authorization requires root gate.",
+    "12 independent artifact recovery tests are extra oracle evidence; do not add them to official gate totals.",
+    "Initial history-baseline.json had one setup timing failure; history-confirmed.json waits for detail and isolates reconnect polling, replacing it as bug evidence.",
+    "PRICE_CHANGED direct rejection from execute is not a valid protocol oracle: valid rejected OperationView hits coordinator generation checks before appliedResult. No finding asserted from that hypothetical.",
+    "No guarantee of absence of all bugs; review bounded to edited lifecycle/cache/retry/receipt paths and identified adjacent callbacks."
+  ]
+}

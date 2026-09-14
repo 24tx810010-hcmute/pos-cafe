@@ -1,0 +1,10 @@
+{
+  "stage": "tools",
+  "startedCandidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "finishedCandidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "exitCode": 0,
+  "signal": null,
+  "reportSha256": "3581f7131c61a79b106c3b25a9088c4f63488e803aad3f17ce571d066bf747ab",
+  "optionsSha256": "c7ece741b6798656468a7af4ab088e5fb1262f47f68979eb44d7f83feb0d77dc",
+  "finishedAt": "2026-09-14T03:37:18.227Z"
+}

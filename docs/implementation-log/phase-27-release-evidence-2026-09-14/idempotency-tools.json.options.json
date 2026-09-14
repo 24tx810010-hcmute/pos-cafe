@@ -1,0 +1,414 @@
+{
+  "runner": "vitest-actual-options-v1",
+  "reason": "passed",
+  "errorCount": 0,
+  "tests": [
+    {
+      "name": "TC-IDEM-086/tool actual runner discovery rejects a moved file and a missing parameter suffix",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/gates.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Actual Vitest fails and retry options cannot impersonate an ordinary passing requirement",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/gates.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Actual test.only and describe.only fail before an ordinary-looking JSON pass can certify them",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/gates.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "TC-IDEM-087/tool real preflight fails before test entry and verifies a positive database write",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/gates.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Manifest contains 93 distinct approved oracles and each parameterized requirement",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > moving the required test outside discovery cannot pass",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > complete discovered names are not behavior passes",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > skipped is never a required pass",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > pending is never a required pass",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > todo is never a required pass",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > failed is never a required pass",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > timedOut is never a required pass",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > unexecuted is never a required pass",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > mock results cannot satisfy DB requirements",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > duplicate executions do not silently replace a failure",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > a unit test cannot claim DB provenance by putting /db in its title",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > literal matching excludes a testcase with only a common prefix",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > a valid single pass satisfies only the requested execution",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Discovery and execution gates reject incomplete evidence > a Playwright expected failure cannot be represented as a passing requirement",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > missing VITE_SUPABASE_URL fails without printing values",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > missing VITE_SUPABASE_ANON_KEY fails without printing values",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > missing IDEM_OBSERVER_DSN fails without printing values",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > missing IDEM_STORE_JWT fails without printing values",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > missing IDEM_TEST_MARKER fails without printing values",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > missing IDEM_FIXTURE_STORE_IDS fails without printing values",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > mock mode is rejected",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > remote URL fails without printing a credential embedded in it",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > remote observer and a local non-test database are rejected",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > service-role cannot act as the business caller",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > expired store JWT cannot reach the suite",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > local complete config passes syntax validation, which is not a DB preflight pass",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/harness.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "TC-IDEM-088/tool/always_pending",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/mutations.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "TC-IDEM-088/tool/always_reject",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/mutations.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "TC-IDEM-088/tool/duplicate_payment",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/mutations.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "TC-IDEM-088/tool/reprice_old",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/mutations.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "TC-IDEM-088/tool/drop_option_qty",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/mutations.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    },
+    {
+      "name": "TC-IDEM-088/tool/replay_current",
+      "file": "D:/Workspace/pos-cafe/tests/contracts/mutations.tool.test.ts",
+      "options": {
+        "fails": false,
+        "retry": 0,
+        "repeats": 0,
+        "mode": "run"
+      },
+      "state": "passed"
+    }
+  ]
+}

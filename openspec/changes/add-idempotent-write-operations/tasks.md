@@ -73,7 +73,7 @@ Thứ tự: contract/harness → danh tính/nguồn quyền → ledger/coordinat
 - [x] 29. Payment selection đóng băng kind/IDs/qty/version trước register; test cả hai clamp và full → pay (2 h).
 - [x] 30. Màn list/detail recovery chọn K, phân biệt R1/current, takeover/cancel/expired/manual new K; component tests (2 h).
 - [x] 31. PRICE_CHANGED UI quote cũ/mới, yêu cầu confirm K mới; test tăng/giảm/option-only và 0 auto resubmit (1,5 h).
-- [x] 32. Receipt first/replay/history/print/current void guard; DOM money/options/times và window.print tests (1,5 h).
+- [x] 32. Receipt first/replay/history/print/current void guard và late response/timer đã kiểm lại; xem log khắc phục F2–F5 ngày2026-09-11.
 
 ## 6. Kiểm chứng độc lập và nghiệm thu
 
@@ -84,7 +84,7 @@ Thứ tự: contract/harness → danh tính/nguồn quyền → ledger/coordinat
 - [x] 37. Reviewer độc lập 1 đọc code+test, tự chạy nhóm nghiệp vụ/giá/receipt; báo expected/actual/SHA/backend, không chỉ đọc log (2 h).
 - [x] 38. Reviewer độc lập 2 tự kiểm DB/quyền/race/rollback/TTL trên test DB riêng; báo kết quả/giới hạn (2 h).
 - [x] 39. Reviewer độc lập 3 kiểm discovery/preflight/oracle/mutation sensitivity và tổng hợp thiếu TC (2 h).
-- [x] 40. Xử lý finding của implementation review; chia thành task ≤ 2 h mới cho từng lỗi, chạy lại test liên quan và gate bị ảnh hưởng; không đánh done trước (2 h mỗi task phát sinh).
+- [x] 40. Findings F1–F5 và generation guard phát sinh đã xử lý; gate cuối1123pass/758required cùng fingerprint, hai subagent cross-review phần không do mình viết. Xem log khắc phục F2–F5.
 
 ## 7. Tài liệu và rollout
 
@@ -115,4 +115,41 @@ Task 40 được chia thành các đầu ra sửa lỗi sau, mỗi đầu ra ư�
 
 ## Điều kiện đánh dấu hoàn thành
 
+### Theo dõi hậu kiểm F1 ngày 2026-09-10
+
+- [x] 40k. Cô lập cache theo store/employee/session, loại dữ liệu sau denial, chặn response/receipt cũ đi qua phiên; thêm 12 core/component + 3 E2E bắt buộc. Hai subagent kiểm độc lập đạt; gate cuối 560 unit/component + 415 DB + 37 tooling + 37 E2E = 1.049 pass, 684/684 required cùng fingerprint `7e006793780d39218b28712db96bbbe62e4d9e4901ac1bb1cc504a1fec9deeca`. [Bằng chứng F1](../../../docs/implementation-log/phase-27-f1-evidence/verification.md). Working tree chưa commit/push/deploy.
+- [x] 40l. F2–F5 đã xử lý/kiểm chứng tại lần bổ sung2026-09-11; không dùng chỉ riêng evidence F1 làm bằng chứng.
+
+Các số 1.034/669 và kết luận reviewer phía trên là biên bản của main@3ada48c trước hậu kiểm; không dùng làm số test của candidate khắc phục F1.
+
 Một checkbox chỉ hoàn thành khi đầu ra đã tồn tại và testcase tương ứng chạy đúng expected. Task viết test và task chạy test khác nhau. Final gate yêu cầu không còn requirement/UC thiếu TC, mọi biến thể bắt buộc có execution result, không skip, không fallback mock, không finding nghiệp vụ/quyền chưa xử lý. Nếu thiếu môi trường, báo rõ BLOCKED/NOTRUN và điều kiện mở lại; không thay nhãn này bằng pass.
+
+
+### Theo dõi khắc phục F2–F5 ngày 2026-09-11
+
+Chủ dự án đã cho xử lý cả bốn finding. Thay mô tả “chưa triển khai trong yêu cầu F1” ở40l bằng phạm vi bổ sung này; các số/nghiệm thu phía trên vẫn là lịch sử.
+
+- [x] 40l1. F2: guard await/timer in, late error, offline/close/session và positive print.
+- [x] 40l2. F3: cast số JSON nguyên tương đương trong015; raw-wire positives/negatives và mutation.
+- [x] 40l3. F4: consume draft đúng lượt retry applied, khóa giỏ unresolved, không tự in/sinh K.
+- [x] 40l4. F5: đủ oracle TC030 old/TC066 report/TC085 legacy, manifest và gate cuối cùng fingerprint.
+- [x] 40l5. Hai subagent cross-review phần không do mình viết, xử lý finding phát sinh và ghi giới hạn bằng chứng.
+- [x] 40l6. Cập nhật bàn giao và nhắc chủ dự án migration014→015→016; không tự áp trên môi trường thật.
+
+Kết quả cuối2026-09-11: [log F2–F5](../../../docs/implementation-log/phase-27-p2-fixes.md), [verification](../../../docs/implementation-log/phase-27-p2-evidence/verification.md). 1123passed/758required; fingerprint 35c5f9485b42056303e63a688b8d4a711e0603161a77028e659313796028ea51. Chưa commit/push/deploy; migration và archive vẫn là việc phát hành riêng.
+
+
+## Hậu kiểm trước push ngày 2026-09-13
+
+- [x] 40m1. Tái hiện P2 lỗi action recovery cũ khóa phiên mới/xóa draft; bổ sung guard và 12 regression bắt buộc.
+- [x] 40m2. Negative control: 8 assertion FAIL/4 positive PASS; full unit 589 PASS, build PASS và hai reviewer xác minh guard.
+- [x] 40m3. Dựng runtime WSL PostgreSQL/PostgREST/GoTrue; preflight/marker và gate mới 14/09 đạt cùng fingerprint. Lần fail timezone và một timeout E2E/rerun được giữ riêng; xem báo cáo 14/09.
+- [ ] 40m4. Chỉ commit/push phần phase27 sau gate mới và review đạt; giữ pnpm-lock và tài liệu tính năng khác ngoài commit này.
+
+
+## Hậu kiểm WSL ngày 2026-09-14
+
+- [x] 40n1. Tái hiện và sửa callback initial-submit/payment/split/history cũ; giữ positive current errors/success và busy generation của popup hủy.
+- [x] 40n2. Viết 48 regression bắt buộc và cập nhật manifest 818; assertion tooling phân nhóm riêng, không bỏ 12 cache oracles.
+- [x] 40n3. Hai reviewer chốt độc lập và gate bốn stage trên candidate cuối; không cộng các run chồng lặp hoặc report cũ.
+- [ ] 40n4. Bàn giao bằng chứng runtime WSL, lịch sử lỗi môi trường/test, SHA code/docs và kết quả push có kiểm remote.

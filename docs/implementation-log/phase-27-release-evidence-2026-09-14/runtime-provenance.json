@@ -1,0 +1,66 @@
+{
+  "capturedAt": "2026-09-14T03:21:25.581Z",
+  "database": "pos_cafe_idem_test_auth_c5b5ce76d5d3",
+  "engine": "postgres-postgrest-gotrue",
+  "auth": {
+    "version": "v2.197.0",
+    "sourceCommit": "4eee58f296d9698a1c2c0ae14d7a0b379c7622d3",
+    "patch": null,
+    "pid": 9544,
+    "health": "http://127.0.0.1:55442/health",
+    "schemaTables": 27,
+    "build": "Unmodified upstream git archive at sourceCommit; Linux amd64 CGO_ENABLED=0, Go 1.27.1"
+  },
+  "compatibilityOnly": [
+    "storage catalog shell (no Storage API)"
+  ],
+  "omittedServices": [
+    "Realtime",
+    "Storage API"
+  ],
+  "platform": "Ubuntu 24.04.4 WSL2",
+  "provenanceCorrection": "Bootstrap emits a historical Windows patch label; replaced here because this binary was built from the exact clean upstream archive on Linux.",
+  "root": "/var/tmp/pos-cafe-idem-release-20260914",
+  "linux": "Linux Admin 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+  "osRelease": "PRETTY_NAME=\"Ubuntu 24.04.4 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.4 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "postgresVersion": "postgres (PostgreSQL) 16.15 (Ubuntu 16.15-1.pgdg24.04+2)",
+  "postgrestVersion": "PostgREST 16.2",
+  "goVersion": "go version go1.27.1 linux/amd64",
+  "nodeVersion": "v24.16.0",
+  "archives": {
+    "node": "d804845d34eddc21dc1092b519d643ef40b1f58ec5dec5c22b1f4bd8fabde6c9",
+    "go": "63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445",
+    "postgrest": "4712595baae0f5d84a527d55a11166d6bf4d9b0f1d102505c5e9d59219787f08",
+    "gotrueGitArchive": "04ec4c36926121abdccce20061633d0a5c41afae5487d75e7367fb2627eec885"
+  },
+  "binaries": {
+    "node": "b2959781cc5a74c357ffa02367efa8a0330cbb1c9cb347732fdfaaaca381cbcd",
+    "postgrest": "35048dacdab509e9233d5abe2f99f6a2ba9e653088b3522e5f0eaefed20c1766",
+    "gotrue": "fc8dca6af8ccb99a816bd5e9085dfdbda741cf0ccedccc5ff4cc455460e668e7",
+    "postgres": "3a089a86625851a42ea1561dcdffa30569c24879c4eb6eb7be9055a72172e431"
+  },
+  "processes": {
+    "postgres": 9488,
+    "postgrest": 9585,
+    "gotrue": 9544
+  },
+  "listening": [
+    "LISTEN 0      200         127.0.0.1:55439      0.0.0.0:*    users:((\"postgres\",pid=9488,fd=6))       ",
+    "LISTEN 0      4096        127.0.0.1:55442      0.0.0.0:*    users:((\"gotrue\",pid=9544,fd=4))         ",
+    "LISTEN 0      2048        127.0.0.1:55443      0.0.0.0:*    users:((\"postgrest\",pid=9585,fd=140))    "
+  ],
+  "timezoneDependency": {
+    "packages": {
+      "tzdata": "2026c-0ubuntu0.24.04.1",
+      "tzdata-legacy": "2026c-0ubuntu0.24.04.1"
+    },
+    "reason": "Ubuntu minimal image lacked Asia/Saigon alias; added before successful contracts/gate",
+    "oracle": "artifacts/release-wsl/timezone-after.json"
+  },
+  "windowsHarness": {
+    "node": "v24.16.0",
+    "nodePath": "D:\\tools\\nodejs\\node.exe",
+    "nodeSha256": "b3094d0b49f9ad602262a9921551737bb97637c05dd357a06ae98188d7290aa3",
+    "proxyPid": 28776
+  }
+}

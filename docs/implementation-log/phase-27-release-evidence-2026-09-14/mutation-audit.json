@@ -1,0 +1,158 @@
+{
+  "generatedAt": "2026-09-14T03:49:25.707Z",
+  "status": "PASS",
+  "mutations": [
+    {
+      "name": "always_pending",
+      "oracle": "TC-IDEM-014/mock",
+      "baseline": "passed",
+      "mutant": "failed",
+      "baselineAt": "2026-09-14T03:36:53.298Z",
+      "originalSha256": "e57501ca2e19414ec0ef77ac728fff8b59e70cc8c8aed587ba1ed965a24cd80c",
+      "mutantSha256": "0f76c6a81c7a2af1982baabf1dff8390197f6cc8cf288d87ea8e6e3f387fbc3d",
+      "directory": "artifacts\\mutations\\always_pending-9417f9ca-4a3b-44ad-b9c0-3aa1e36d914a",
+      "baselineSha256": "f6bcfba4fd416eeea663a6656fbda822ad82f3e051dd5be9ed6a0c10f4d9f3cf",
+      "mutantReportSha256": "780f3b6e9a72269cf86cf3009183ba39b41dda019cb73fd28e85dab025d52f58"
+    },
+    {
+      "name": "always_reject",
+      "oracle": "TC-IDEM-014/mock",
+      "baseline": "passed",
+      "mutant": "failed",
+      "baselineAt": "2026-09-14T03:36:56.097Z",
+      "originalSha256": "e57501ca2e19414ec0ef77ac728fff8b59e70cc8c8aed587ba1ed965a24cd80c",
+      "mutantSha256": "2919e592c835e321916709baa2f08fac4a392b836ecfe23324512c47b0bf3bf8",
+      "directory": "artifacts\\mutations\\always_reject-4af41a09-477a-49d6-95bc-138cf487b14e",
+      "baselineSha256": "047d1dcc031848c0478664fdbfc873936893fe74ca139b320d7177dcbc093ca2",
+      "mutantReportSha256": "1524c5bd0147422cc168e6ee09dc2f5555e21fd15ee400e6ace13b0d88ad03cc"
+    },
+    {
+      "name": "duplicate_payment",
+      "oracle": "TC-IDEM-051/mock",
+      "baseline": "passed",
+      "mutant": "failed",
+      "baselineAt": "2026-09-14T03:36:59.007Z",
+      "originalSha256": "e57501ca2e19414ec0ef77ac728fff8b59e70cc8c8aed587ba1ed965a24cd80c",
+      "mutantSha256": "1b3937ff369543bc7ed90d38b4ec16c8e8944021ef05eb9af406905cd1047534",
+      "directory": "artifacts\\mutations\\duplicate_payment-ad1036e8-3475-42d1-8682-53844e04442a",
+      "baselineSha256": "b55f964fc0de5f1ed3342b63f4ce8a253aa694236b33b0b0b3d02a91564eb51e",
+      "mutantReportSha256": "cf3ff0ddaad54e3dddcccc19f4dafaeb61c4ea7648c61922a51f7d1b87cbf9d1"
+    },
+    {
+      "name": "reprice_old",
+      "oracle": "TC-IDEM-025/mock",
+      "baseline": "passed",
+      "mutant": "failed",
+      "baselineAt": "2026-09-14T03:37:01.773Z",
+      "originalSha256": "4e851351c9e1dae96c2540f307ac0b96649e4589d37307fe17629825145de1c4",
+      "mutantSha256": "f19b6635034a241da769666b3e59e55722b26908afe2109ce084b80ff54ffea2",
+      "directory": "artifacts\\mutations\\reprice_old-91418194-ccb3-4336-a08d-34e87d7b5dba",
+      "baselineSha256": "cec25896e079cdeac9062baced0e7c6a45c435f9d2db04d4fe9577f4dad94d6d",
+      "mutantReportSha256": "cf9eeae30acd06896bbba8861c0a6010d49cf90fc5b8b8addd086a70a0951064"
+    },
+    {
+      "name": "drop_option_qty",
+      "oracle": "TC-IDEM-038/mock",
+      "baseline": "passed",
+      "mutant": "failed",
+      "baselineAt": "2026-09-14T03:37:04.697Z",
+      "originalSha256": "4e851351c9e1dae96c2540f307ac0b96649e4589d37307fe17629825145de1c4",
+      "mutantSha256": "ff7e278ac87b8835630b1dc44bd3fec43dffc7aeda01b7e5e41590e817348719",
+      "directory": "artifacts\\mutations\\drop_option_qty-7946e193-94a6-46da-a394-29039b8103b7",
+      "baselineSha256": "d499b8369404d4674bf4fdb65b8100622ee6edcdb115a0b412277afe0e5ffe60",
+      "mutantReportSha256": "b4945a5c889cdcce4c8fc2e6e907bfc9c32ff547cfabc9ab6dcb17df22e3d479"
+    },
+    {
+      "name": "replay_current",
+      "oracle": "TC-IDEM-051/mock",
+      "baseline": "passed",
+      "mutant": "failed",
+      "baselineAt": "2026-09-14T03:37:07.467Z",
+      "originalSha256": "e57501ca2e19414ec0ef77ac728fff8b59e70cc8c8aed587ba1ed965a24cd80c",
+      "mutantSha256": "f4ab6acd0d6a5f0e7e7a2bc89db627e241420b7b904f00fbcf19babb8199e913",
+      "directory": "artifacts\\mutations\\replay_current-3c3af52d-c1d0-430b-8bf4-a312aa3fb0a7",
+      "baselineSha256": "b510187f114f232618515c79f9982ba6dd0f12fd17c0034f1abeba538d709478",
+      "mutantReportSha256": "40db5e387c1a047fbb6c495f4fc1070e43e04871205ebf3477bbab7858daaeda"
+    }
+  ],
+  "uiHistorical": {
+    "without-guard-results.json": {
+      "date": "2026-09-13T04:25:14.421Z",
+      "passed": 4,
+      "failed": 8,
+      "other": 0,
+      "assertionFailures": 8,
+      "sha256": "195d86c3300396edea6e02737acfdea8c4eca25fe7e663e57bce8885919f5b1b"
+    },
+    "independent-fixed-results.json": {
+      "date": "2026-09-13T04:25:32.457Z",
+      "passed": 5,
+      "failed": 0,
+      "other": 0,
+      "assertionFailures": 0,
+      "sha256": "b61ec39c2ebc1270a796f6bddccd70c1dd77478d374f7141fdbdb1da9371ad98"
+    },
+    "tracked-regressions-fixed.json": {
+      "date": "2026-09-13T04:25:35.844Z",
+      "passed": 40,
+      "failed": 0,
+      "other": 0,
+      "assertionFailures": 0,
+      "sha256": "9ceb197c824681fae2d1e92a88896f41fc5483e10be59e11ff559ac4bc50d1f3"
+    }
+  },
+  "sqlHistorical": [
+    {
+      "file": "artifacts/p2-numeric-targeted.json",
+      "sha256": "5a47bbb211bfaf63b7dd06eaef7c5cd3ed5d348ca1f277eb7547e473ec51a150",
+      "date": "2026-09-11T02:29:50.964Z",
+      "passed": 46,
+      "failed": 0,
+      "deselected": 0,
+      "failureClass": null
+    },
+    {
+      "file": "artifacts/p2-numeric-mutant.json",
+      "sha256": "061e8eb4cf40b731d3a6d9c127bc122411a1f4d07c9fa1ee34436dc317a796ec",
+      "date": "2026-09-11T02:30:54.926Z",
+      "passed": 0,
+      "failed": 8,
+      "deselected": 38,
+      "failureClass": "Error: RPC_ERROR: 22P02"
+    },
+    {
+      "file": "artifacts/p2-numeric-restored.json",
+      "sha256": "9fc2c7f1f612fb8c1dc3056bb25d756e1eeca3d062200af36133d96898f697b7",
+      "date": "2026-09-11T02:31:04.707Z",
+      "passed": 46,
+      "failed": 0,
+      "deselected": 0,
+      "failureClass": null
+    },
+    {
+      "file": "artifacts/p2-oracle-completion/mutation-receipt-option-quantity.json",
+      "sha256": "c09b31293cc5cbf6b1366caa9d821e087098f926bfeeb966cef48feac8508a27",
+      "date": "2026-09-11T02:35:39.684Z",
+      "passed": 0,
+      "failed": 2,
+      "deselected": 26,
+      "failureClass": "AssertionError:"
+    },
+    {
+      "file": "artifacts/p2-oracle-completion/restored-receipt-option-quantity.json",
+      "sha256": "02df8c78120620bb56d837b2364d30a28869681c935b3e3db355f2dbfff13c00",
+      "date": "2026-09-11T02:35:41.311Z",
+      "passed": 2,
+      "failed": 0,
+      "deselected": 26,
+      "failureClass": null
+    }
+  ],
+  "errors": [],
+  "limits": [
+    "The six required mutation controls exercise the memory adapter. They are not SQL mutations or DB evidence.",
+    "UI mutation evidence was generated on September 13; its target production file hash still matches. The tracked test received a later type-only Promise annotation; the fresh full gate certifies current source.",
+    "Historical SQL mutations ran September 11 on a different isolated database. Raw reports and mutation scripts were inspected; database definition restoration at that time is root/reviewer provenance, not a new database observation by this auditor.",
+    "Filtered-out tests in each narrow mutant child are intentional non-selected tests, not skipped required executions in the release gate."
+  ]
+}

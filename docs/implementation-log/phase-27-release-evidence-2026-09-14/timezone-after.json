@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-14T03:22:22.747Z",
+  "database": "pos_cafe_idem_test_auth_c5b5ce76d5d3",
+  "mode": "after",
+  "rows": [
+    {
+      "legacy": "2026-09-13 23:59:59",
+      "canonical": "2026-09-13 23:59:59"
+    },
+    {
+      "legacy": "2026-09-14 00:00:00",
+      "canonical": "2026-09-14 00:00:00"
+    }
+  ],
+  "status": "PASS"
+}

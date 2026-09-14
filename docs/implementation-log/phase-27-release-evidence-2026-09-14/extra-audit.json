@@ -1,0 +1,33 @@
+{
+  "generatedAt": "2026-09-14T03:51:54.635Z",
+  "status": "PASS",
+  "candidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "coverage": {
+    "total": 804,
+    "covered": 748,
+    "pct": 93.03,
+    "files": 27,
+    "testsPassed": 637,
+    "scope": "core and pure features only; excludes SQL, JSX, hooks and adapters"
+  },
+  "smoke": {
+    "passed": 35,
+    "skipped": 31,
+    "backend": "mock",
+    "stats": {
+      "startTime": "2026-09-14T03:49:20.874Z",
+      "duration": 46969.462999999996,
+      "expected": 35,
+      "skipped": 31,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "hashes": {
+    "extra-commands.json": "28c253269f20092b2554d7a9b7fe639ef806be4b0d036cefafcb94b38de86fdd",
+    "coverage-summary.json": "fcfd0d50b1d5eb8698cce493e92dd9d595787a0c29d6ce040826d572310b57c0",
+    "coverage-tests.json": "e81bc7d841c26fd83e6e8d8dae3fa43e4c9fa441ddc8f80f9a83f7157924297c",
+    "smoke.json": "c25048a54a828f500e582e4dd01d110468dac22e96e66372458c79fb92fb93e0"
+  },
+  "errors": []
+}

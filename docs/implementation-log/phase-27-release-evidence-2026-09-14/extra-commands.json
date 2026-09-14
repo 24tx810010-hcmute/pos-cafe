@@ -1,0 +1,23 @@
+{
+  "node": "v24.16.0",
+  "steps": [
+    {
+      "name": "coverage",
+      "command": "npm run test:coverage -- --reporter=json --outputFile=artifacts/release-final-20260914/coverage-tests.json",
+      "startedAt": "2026-09-14T03:48:58.247Z",
+      "finishedAt": "2026-09-14T03:49:20.051Z",
+      "exitCode": 0,
+      "startedCandidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+      "finishedCandidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6"
+    },
+    {
+      "name": "smoke",
+      "command": "npm run smoke -- --reporter=json --forbid-only --retries=0",
+      "startedAt": "2026-09-14T03:49:20.130Z",
+      "finishedAt": "2026-09-14T03:50:07.966Z",
+      "exitCode": 0,
+      "startedCandidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+      "finishedCandidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6"
+    }
+  ]
+}

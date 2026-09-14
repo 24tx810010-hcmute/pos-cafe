@@ -1,0 +1,10 @@
+{
+  "stage": "unit",
+  "startedCandidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "finishedCandidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "exitCode": 0,
+  "signal": null,
+  "reportSha256": "9741326e7966bd98a39fa3b30d3b3ddc264e4700bc8636f171bf95d40b501bb1",
+  "optionsSha256": "f19ad607c5e0d787579f6172b6697f69516375548cb0c400eda2ae5483dce8b3",
+  "finishedAt": "2026-09-14T03:35:48.826Z"
+}

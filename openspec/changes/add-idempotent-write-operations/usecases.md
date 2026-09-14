@@ -62,6 +62,7 @@ Reload trở về PIN; đăng nhập lại không làm mất lệnh đã đăng 
 - Caller tự khai employeeId không thay danh tính token.
 - Phiên hết 12 h hoặc bị thu hồi không ghi được; quyền lấy lại ở server.
 - PIN hash không có trong response SELECT hay RPC.
+- Cache Tra cứu bị loại khi khóa/đổi phiên; đăng nhập lại cùng nhân viên cũng phải đọc mới. Phản hồi cũ không được hiện payload/R1/receipt trong phiên mới (bổ sung F1, 2026-09-10).
 
 **Truy vết:** IDEM-01, IDEM-02, IDEM-03, IDEM-21, IDEM-23, IDEM-24, IDEM-25; TC cụ thể trong [traceability.md](traceability.md).
 
@@ -438,6 +439,7 @@ B chỉ có payment.take được tiếp quản pay/split; không register/đọ
 - Đổi role/revoke trước checkpoint phải có hiệu lực.
 - Giả employeeId/admin hoặc đổi cửa hàng không vượt quyền.
 - Hủy lệnh dùng cùng quyền hành động, không thêm gate quản lý.
+- A đã xem lệnh rồi khóa máy: C không có quyền không thấy dữ liệu A từ cache; B có quyền vẫn đọc mới và tiếp quản được. Khi quyền/phiên bị server từ chối lúc Tra cứu đang mở, dữ liệu nhạy cảm và các nút xử lý phải biến mất, kể cả phản hồi In lại đang chờ (F1).
 
 **Truy vết:** IDEM-01, IDEM-02, IDEM-03, IDEM-06, IDEM-09, IDEM-13, IDEM-24, IDEM-25; TC cụ thể trong [traceability.md](traceability.md).
 
@@ -636,3 +638,22 @@ Tắt tùy chọn in sau thanh toán vẫn ghi thành công; tạm tính đơn o
 - Không vượt cấm in void qua R1.
 
 **Truy vết:** IDEM-19, IDEM-32, IDEM-33; TC cụ thể trong [traceability.md](traceability.md).
+
+
+## Bổ sung kiểm chứng UC02/07/10/12 (2026-09-11)
+
+UC02/07: sau mất ACK execute, giỏ tạm khóa chỉnh sửa; người dùng bấm “Thử lại cùng lệnh”. Nếu applied, đóng drawer và xóa draft đã ghi; lượt tạo mới tiếp theo có giỏ rỗng. Không tự mở phiếu bếp hoặc in. Pending/unknown còn lại giữ thông báo hiện có; phản hồi sau khi người dùng rời màn không được xóa draft của lượt khác.
+
+UC12: đóng/mở preview hoặc offline rồi online vô hiệu hóa lượt đọc/in cũ, kể cả timer chờ 200 ms trước print. Một click mới còn hiệu lực và được server cho đọc receipt vẫn in một lần. UC10: đơn ngày 08/09 thanh toán ngày 10/09 giữ doanh thu 150.000 tại ngày 08/09 và 0 tại ngày 10/09. Đây là expected đã duyệt được bổ sung oracle, không đổi businessDate.
+
+
+## Hậu kiểm trước push ngày 2026-09-13
+
+UC-IDEM-07/09: A bấm Tiếp tục/Hủy lệnh rồi khóa máy; B đăng nhập và tạo draft; lỗi phiên của A trả muộn không tác động phiên, màn, draft của B. Sau đóng/mở lại Tra cứu hoặc offline/online, lỗi lượt cũ cũng không thông báo/khóa phiên. Không thay hiệu ứng nghiệp vụ của lệnh đã đăng ký.
+
+
+## Ngoại lệ phản hồi muộn sau hậu kiểm — 2026-09-14
+
+Giữ nguyên input/output và actor của UC02/04/05/06/12. Áp thêm cùng acceptance criteria IDEM-14: người dùng bấm gửi/trả tiền/hủy/in lại, response bị giữ; đổi phiên (kể cả cùng object nhân viên nhưng thế hệ mới), đóng/mở hoặc offline/online; response lỗi AUTH_REQUIRED/EMPLOYEE_SESSION_REQUIRED hay ACK tới muộn không được khóa phiên hiện tại, xóa draft, toast vào lượt mới hoặc mở/đóng preview/popup. Giao dịch server đã commit vẫn được tra cứu bằng K cũ. Khi response còn hiện hành, giữ phản hồi lỗi/success vốn có của từng use case.
+
+Riêng UC06: đóng popup cũ, bắt đầu tải snapshot để xác nhận mới, rồi nhận settlement cũ; nút mở xác nhận mới vẫn bị khóa trong lúc lượt tải hiện hành chưa xong.

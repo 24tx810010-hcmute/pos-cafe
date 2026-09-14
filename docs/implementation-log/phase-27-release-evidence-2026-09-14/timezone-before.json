@@ -1,0 +1,10 @@
+{
+  "at": "2026-09-14T03:22:18.825Z",
+  "database": "pos_cafe_idem_test_auth_c5b5ce76d5d3",
+  "mode": "before",
+  "status": "REPRODUCED_RUNTIME_DEPENDENCY_MISSING",
+  "error": {
+    "code": "22023",
+    "message": "time zone \"Asia/Saigon\" not recognized"
+  }
+}

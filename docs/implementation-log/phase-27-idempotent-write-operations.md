@@ -1,8 +1,14 @@
 # Phase 27 — Ghi POS chống trùng và khôi phục từ server
 
-Ngày cập nhật: 2026-09-10. Change: `add-idempotent-write-operations`.
+Ngày cập nhật: 2026-09-14. Change: `add-idempotent-write-operations`.
 
 ## Trạng thái và phạm vi bằng chứng
+
+**Gate hiện hành 14/09:** đã sửa các finding hậu kiểm và chạy lại trên WSL: 637 unit/component + 462 DB + 37 tooling + 47 E2E = 1.183 PASS, đủ 818/818 required cùng fingerprint. Hai reviewer kiểm độc lập và auditor xác minh report. Một timeout E2E ở lượt trước chưa rõ nguyên nhân được giữ trong lịch sử; không suy kết quả rerun thành không có flake. Xem [hậu kiểm 14/09](phase-27-release-check-2026-09-14.md). Trạng thái commit/push ghi tại báo cáo này.
+
+**Trạng thái ngày 2026-09-13:** chủ dự án xác nhận đã áp dụng migration 014–016; agent đã kiểm catalog qua MCP: 45/45 thân hàm khớp local và grants quan trọng đã được kiểm, xem [báo cáo MCP](phase-27-live-mcp-check-2026-09-13.md). Chưa kiểm nghiệp vụ trên dữ liệu thật hoặc phiên bản app đang chạy; bản sửa F1–F5 vẫn chưa commit trong worktree. Xem [log rollout](phase-27-idempotency-rollout.md) để phân biệt phần đã xác minh với các bước chưa có bằng chứng hoàn tất. Các trạng thái chưa áp migration trong biên bản bên dưới thuộc thời điểm kiểm chứng trước đó.
+
+**Hậu kiểm ngày 2026-09-10:** review độc lập đã tìm F1–F5; kết luận nghiệm thu hoàn tất ở phần lịch sử bên dưới không còn là kết luận rollout hiện hành. Chủ dự án yêu cầu ưu tiên F1 cache Tra cứu giữa phiên, kèm test và hai reviewer độc lập. Theo dõi bản sửa và bằng chứng tại [khắc phục F1](phase-27-f1-recovery-cache-fix.md). Ngày2026-09-11, F2–F5 cùng generation guard đã được xử lý và chạy gate mới: [log khắc phục](phase-27-p2-fixes.md),1123passed/758required; chưa deploy migration014–016.
 
 Chủ dự án đã duyệt spec và cho phép triển khai, push docs trước, chỉ push code sau khi các cổng kiểm thử và đánh giá độc lập đạt. Bộ docs được push tại `docs@0ecf84d`. Mã triển khai đã commit và push tại `main@3ada48c0c9c494d9b34838fd3739bda6091e0bb9`, phát triển từ `7183b31`. Các cổng tự động và ba review độc lập đã đạt; chưa triển khai migration lên môi trường thật.
 
@@ -64,7 +70,7 @@ Build TypeScript/Vite PASS; coverage phần logic nghiệp vụ **92,53% dòng (
 
 Ba reviewer độc lập chốt không còn finding mở trong scope; reviewer nghiệp vụ kiểm lại 11/11 hash code trùng bản đã review. Reviewer bảo mật tự chạy PostgreSQL thật với Auth shim, reviewer harness tự kiểm runner thật và sáu mutant; full E2E dùng GoTrue thật được báo riêng. Gói [bằng chứng tự chứa](phase-27-evidence/verification.md) có đủ 669 dòng actual/expected, provenance, hash và [ba báo cáo](phase-27-evidence/reviewer-1-business.md). Runtime tái dựng ở [tài liệu riêng](phase-27-test-runtime.md).
 
-Triển khai và nghiệm thu code hoàn tất. Change được giữ tại đường dẫn hiện hành để tra cứu bộ spec đã duyệt; chưa archive/apply delta vào baseline specs trong lượt này. Trạng thái code đã push không đồng nghĩa migration đã chạy trên môi trường thật.
+Tại mốc báo cáo trước hậu kiểm, triển khai và nghiệm thu code được ghi là hoàn tất. Kết luận rollout hiện hành đã được thay bởi thông báo hậu kiểm đầu tài liệu và log F1; các finding còn mở phải xử lý tiếp. Change được giữ tại đường dẫn hiện hành để tra cứu bộ spec đã duyệt; chưa archive/apply delta vào baseline specs trong lượt này. Trạng thái code đã push không đồng nghĩa migration đã chạy trên môi trường thật.
 
 ## Giới hạn còn giữ
 

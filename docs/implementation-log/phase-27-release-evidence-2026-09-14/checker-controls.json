@@ -1,0 +1,79 @@
+{
+  "generatedAt": "2026-09-14T03:49:44.386Z",
+  "candidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "baselineExit": 0,
+  "results": [
+    {
+      "name": "missing-required",
+      "exitCode": 1,
+      "status": "FAIL",
+      "expectedError": "required cardinality:TC-IDEM-014/db",
+      "matched": true,
+      "errorCount": 2
+    },
+    {
+      "name": "expected-failure",
+      "exitCode": 1,
+      "status": "FAIL",
+      "expectedError": "abnormal option",
+      "matched": true,
+      "errorCount": 1
+    },
+    {
+      "name": "only",
+      "exitCode": 1,
+      "status": "FAIL",
+      "expectedError": "abnormal option",
+      "matched": true,
+      "errorCount": 1
+    },
+    {
+      "name": "retry-option",
+      "exitCode": 1,
+      "status": "FAIL",
+      "expectedError": "abnormal option",
+      "matched": true,
+      "errorCount": 1
+    },
+    {
+      "name": "stale-report",
+      "exitCode": 1,
+      "status": "FAIL",
+      "expectedError": "candidate attestation",
+      "matched": true,
+      "errorCount": 1
+    },
+    {
+      "name": "source-changed",
+      "exitCode": 1,
+      "status": "FAIL",
+      "expectedError": "candidate attestation",
+      "matched": true,
+      "errorCount": 1
+    },
+    {
+      "name": "wrong-backend",
+      "exitCode": 1,
+      "status": "FAIL",
+      "expectedError": "contract file:",
+      "matched": true,
+      "errorCount": 4
+    },
+    {
+      "name": "skip-untagged",
+      "exitCode": 1,
+      "status": "FAIL",
+      "expectedError": "no omitted tests",
+      "matched": true,
+      "errorCount": 4
+    },
+    {
+      "name": "browser-retry",
+      "exitCode": 1,
+      "status": "FAIL",
+      "expectedError": "e2e: attempts",
+      "matched": true,
+      "errorCount": 2
+    }
+  ]
+}

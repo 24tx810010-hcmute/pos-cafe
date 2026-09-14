@@ -2,6 +2,8 @@
 
 > **Duyệt triển khai 2026-09-10:** chủ dự án xác nhận không còn vấn đề, cho phép push docs trước rồi triển khai code. Code chỉ được push sau khi các kiểm tra bắt buộc đạt. Giữ phạm vi hiện tại; quỹ giờ chưa cố định, lịch ở dưới tiếp tục là kịch bản dự báo và được cập nhật theo tiến độ thực tế, không chặn bắt đầu code. Các đoạn về chờ duyệt bên dưới giữ bối cảnh phân tích trước mốc này.
 
+> **Hậu kiểm 2026-09-10:** review độc lập tìm F1–F5, nên lời ghi nghiệm thu trước đó là lịch sử, không còn là kết luận rollout hiện hành. Chủ dự án yêu cầu xử lý F1 (cache Tra cứu lộ giữa phiên), viết test và kiểm lại với hai subagent độc lập. Đây là sửa để đáp ứng IDEM-02/24 đã duyệt; không thay đổi nghiệp vụ tiền, migration hoặc cho phép deploy. Các F2–F5 giữ mở ngoài phạm vi sửa lần này.
+
 Ngày lập bộ spec 2026-09-09; cập nhật phân tích lịch 2026-09-10. **Đã duyệt và triển khai; đã nghiệm thu code, chưa deploy môi trường thật.** Kết quả/SHA hiện hành ở [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md). Mốc code: main@7183b31. [Proposal trước bộ spec](../../../docs/reviews/2026-09-07-idempotency/evidence/2026-09-09-proposal-truoc-bo-spec.md) được giữ nguyên, gồm 32 mã PRE-IDEM và lịch sử sửa quyết định.
 
 <a id="thuat-ngu"></a>
@@ -159,3 +161,20 @@ Bán offline, outbox và tự thử lại mutation; gateway/QR/ngân hàng/ngăn
 6. [Tasks](tasks.md): từng việc ước lượng không quá 2 giờ, tổng và phần phát sinh ghi riêng.
 
 Bộ này có **bảy loại artifact, 13 file Markdown**, gồm 7 file capability và 6 file gốc. Kết quả rà contract trước đó ở [tài liệu 14](../../../docs/reviews/2026-09-07-idempotency/14-bo-spec-hoan-chinh-va-ra-cuoi.md); đối chiếu review ngoài và đính chính trình bày/lịch ở [tài liệu 15](../../../docs/reviews/2026-09-07-idempotency/15-doi-chieu-review-ngoai-va-bien-tap.md). Chỉ kết luận đạt cho kiểm tra đã thực sự chạy; duyệt triển khai và lịch vẫn cần dựa trên bản cụ thể này.
+
+
+## Phê duyệt khắc phục hậu kiểm (2026-09-11)
+
+Chủ dự án yêu cầu sửa toàn bộ F2–F5 còn mở sau F1 và nhắc áp migration khi hoàn tất. Đây là khắc phục các requirement đã duyệt, không thêm nghiệp vụ mới. Giữ giới hạn không commit/push/deploy, không Supabase thật hoặc .env.local cho DB test, Node24.16.0, DB preflight/marker cách ly và fixture reset tuần tự; pnpm-lock.yaml có sẵn giữ nguyên.
+
+
+## Hậu kiểm trước push ngày 2026-09-13
+
+Review trước push tìm thêm P2 thuộc IDEM-14: lỗi action Tra cứu trả muộn đăng xuất nhân viên mới và xóa draft. Sửa trong phạm vi khắc phục callback F2 đã được yêu cầu; chưa commit/push. Gate DB/E2E candidate mới BLOCKED do Windows Smart App Control chặn runtime PostgreSQL; không dùng nghiệm thu 11/09 để đóng gate mới.
+
+
+## Hậu kiểm WSL trước push — 2026-09-14
+
+Tiếp tục yêu cầu đã được chủ dự án cho phép: sửa các lỗi hậu kiểm, có test và hai subagent kiểm độc lập trước push code/docs. Không thêm tính năng hoặc thay quyết định nghiệp vụ. Review phát hiện cùng lỗi callback cũ ở lần gửi đầu, thanh toán/tách đơn và đọc/hủy đơn lịch sử; guard được mở rộng tới các vị trí này. Lỗi hiện hành vẫn phải được xử lý. Runtime WSL thay Windows bị Application Control chặn; không sửa chính sách máy hoặc dùng Supabase thật để test.
+
+Manifest cuối bổ sung 48 execution (submit 9, pay/split 18, history 21), tổng 818 bắt buộc trên 93 TC gốc. Đây là số thiết kế, chưa phải kết quả thực chạy. Gate và bằng chứng cuối ghi riêng tại [hậu kiểm 14/09](../../../docs/implementation-log/phase-27-release-check-2026-09-14.md).

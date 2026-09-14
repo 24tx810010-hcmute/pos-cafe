@@ -1,0 +1,334 @@
+{
+  "checkedAt": "2026-09-14T04:03:55.915Z",
+  "node": "v24.16.0",
+  "status": "PASS",
+  "code": {
+    "headBefore": "8ed7418573fe88e27796d3b09807a3c55db4d0d6",
+    "rawFingerprint": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+    "projectedGitFingerprint": "02046f390831d1e141684cc204d90214fea37910f316bc556e54905412dbb24f",
+    "indexFileCount": 459,
+    "matchedBlobCount": 459,
+    "indexSnapshotSha256": "7b0af363ce18311e8f4f2d1e648f7f418f6afcf1b977ad8e3c14e440bd91d3a9",
+    "pnpmSha256": "86d9c74541d33c1880970534486202dd0307c9a92baf8e6d9cf1d02a246f6996",
+    "pnpmInIndex": false,
+    "mismatches": [],
+    "headAfter": "8ed7418573fe88e27796d3b09807a3c55db4d0d6",
+    "indexSnapshotAfterSha256": "7b0af363ce18311e8f4f2d1e648f7f418f6afcf1b977ad8e3c14e440bd91d3a9"
+  },
+  "bundle": {
+    "path": "D:\\Workspace\\pos-cafe-docs\\docs\\implementation-log\\phase-27-release-evidence-2026-09-14",
+    "docsHead": "1bdddd8d92ddb7a619a08362e3a8490fd6dcfe12",
+    "fileCount": 51,
+    "checksumEntries": 50,
+    "manifestSha256": "e026b71009224082c105f16f38ff87c73aea3303e9ad44ca0bc4ee3a946060cf",
+    "checksumFindings": [],
+    "exactCopies": [
+      {
+        "file": "audit.json",
+        "source": "artifacts/final-gate-audit/audit.json",
+        "sha256": "5c34e8e767e19843a07b3b52a59cdaa21008e7a7825fec83cd3735a0b9239f33",
+        "matches": true
+      },
+      {
+        "file": "checker-controls.json",
+        "source": "artifacts/final-gate-audit/checker-controls.json",
+        "sha256": "8ea43b49ca0ab1eedf50431aa3550aa3e721bf073f4e1c92b5d88e2356ab2ebf",
+        "matches": true
+      },
+      {
+        "file": "commands.json",
+        "source": "artifacts/release-final-20260914/commands.json",
+        "sha256": "f7b7090f889699e3a0a1ab7bff6c9bd2399c0240f2827af1bb4dab5f761205dc",
+        "matches": true
+      },
+      {
+        "file": "coverage-summary.json",
+        "source": "artifacts/release-final-20260914/coverage-summary.json",
+        "sha256": "fcfd0d50b1d5eb8698cce493e92dd9d595787a0c29d6ce040826d572310b57c0",
+        "matches": true
+      },
+      {
+        "file": "coverage-tests.json",
+        "source": "artifacts/release-final-20260914/coverage-tests.json",
+        "sha256": "e81bc7d841c26fd83e6e8d8dae3fa43e4c9fa441ddc8f80f9a83f7157924297c",
+        "matches": true
+      },
+      {
+        "file": "extra-audit.json",
+        "source": "artifacts/final-gate-audit/extra-audit.json",
+        "sha256": "0e34d377b433a59771801b56ab29ce0908a2c0aff635f6e1b381fd74f0f6b7cb",
+        "matches": true
+      },
+      {
+        "file": "extra-commands.json",
+        "source": "artifacts/release-final-20260914/extra-commands.json",
+        "sha256": "28c253269f20092b2554d7a9b7fe639ef806be4b0d036cefafcb94b38de86fdd",
+        "matches": true
+      },
+      {
+        "file": "full-e2e-diagnostic-steps.jsonl",
+        "source": "artifacts/release-wsl/full-e2e-diagnostic-steps.jsonl",
+        "sha256": "075263d9da70dc6b694e02756e9d66b49ef923f1d761f90fcd0e727cda1f559b",
+        "matches": true
+      },
+      {
+        "file": "historical-failed-contracts-commands.json",
+        "source": "artifacts/release-wsl/failed-attempt-1/commands.json",
+        "sha256": "2d1d28794d955d95f35b96bdec908936177349be0d0d91c46fe56447e7b64692",
+        "matches": true
+      },
+      {
+        "file": "historical-failed-contracts.json",
+        "source": "artifacts/release-wsl/failed-attempt-1/idempotency-contracts.json",
+        "sha256": "9b31e816ddf4f84eecba52b910c757eac9079551b39413147fba4ebd5822c38d",
+        "matches": true
+      },
+      {
+        "file": "historical-failed-contracts.json.meta.json",
+        "source": "artifacts/release-wsl/failed-attempt-1/idempotency-contracts.json.meta.json",
+        "sha256": "3997290b1284ceb542c66ca753f241da8ed90c710938e9425bb3b5d5b8ec68b2",
+        "matches": true
+      },
+      {
+        "file": "historical-failed-contracts.json.options.json",
+        "source": "artifacts/release-wsl/failed-attempt-1/idempotency-contracts.json.options.json",
+        "sha256": "8a1976cf42c0f6c826f9893c101811fef4fcb6f9bc13bbfd313ecda1d5b76d98",
+        "matches": true
+      },
+      {
+        "file": "historical-failed-e2e-commands.json",
+        "source": "artifacts/release-wsl/69ffe-e2e-failure/commands.json",
+        "sha256": "37fbb4522a245da5008dbc5f20dceb04a539821e5daa8acce49cf4de295a46b8",
+        "matches": true
+      },
+      {
+        "file": "historical-failed-e2e-context.md",
+        "source": "artifacts/release-wsl/69ffe-e2e-failure/error-context.md",
+        "sha256": "688bf8b821dc096eb3c6deecbc3ed017b546cff79416486447c16a5d3814abd4",
+        "matches": true
+      },
+      {
+        "file": "historical-failed-e2e.json",
+        "source": "artifacts/release-wsl/69ffe-e2e-failure/idempotency-e2e.json",
+        "sha256": "ef2661fb92449b78e89c148a0dabe1bcbdb823c83f46b83f1ff3cead486220a7",
+        "matches": true
+      },
+      {
+        "file": "historical-failed-e2e.json.meta.json",
+        "source": "artifacts/release-wsl/69ffe-e2e-failure/idempotency-e2e.json.meta.json",
+        "sha256": "28cb2c23593033d24dc07b75081c4a5cbc1d81d39adc0197a1e32ca05403da49",
+        "matches": true
+      },
+      {
+        "file": "historical-failed-tools-commands.json",
+        "source": "artifacts/release-wsl/e8-attempt-before-initial-fix/commands.json",
+        "sha256": "50a4fb090728302cff9e9f48a045a77f7bfc12267f266a2949597c9a10ae623a",
+        "matches": true
+      },
+      {
+        "file": "historical-failed-tools.json",
+        "source": "artifacts/release-wsl/e8-attempt-before-initial-fix/idempotency-tools.json",
+        "sha256": "f7de1027c08ec989874632bc32164e82abb3d04ac75d15d80236fa3acf7dd90b",
+        "matches": true
+      },
+      {
+        "file": "historical-failed-tools.json.meta.json",
+        "source": "artifacts/release-wsl/e8-attempt-before-initial-fix/idempotency-tools.json.meta.json",
+        "sha256": "b27f5c4a74ab5b50d951e7142c5dd737b7da69aa33e21e6bb3d96930f5e5aa2b",
+        "matches": true
+      },
+      {
+        "file": "historical-failed-tools.json.options.json",
+        "source": "artifacts/release-wsl/e8-attempt-before-initial-fix/idempotency-tools.json.options.json",
+        "sha256": "1fc576988117bbd96e155169fdea5f9384bc2db2098609af84b7f8dc37d70585",
+        "matches": true
+      },
+      {
+        "file": "idempotency-contracts.json",
+        "source": "artifacts/release-final-20260914/idempotency-contracts.json",
+        "sha256": "583553d1426dd2acf6e04b7229a7df5ea4818ddb82c4cc534f6ca9e25ebe7246",
+        "matches": true
+      },
+      {
+        "file": "idempotency-contracts.json.meta.json",
+        "source": "artifacts/release-final-20260914/idempotency-contracts.json.meta.json",
+        "sha256": "0bdc5e25823c021ac19218341909d9f0495642815b9930e5d8b7dbf07496c911",
+        "matches": true
+      },
+      {
+        "file": "idempotency-contracts.json.options.json",
+        "source": "artifacts/release-final-20260914/idempotency-contracts.json.options.json",
+        "sha256": "cf5b5611c005546c91e908c25fc2804cca39bbd4396cd30af3c8879f6ac36609",
+        "matches": true
+      },
+      {
+        "file": "idempotency-e2e.json",
+        "source": "artifacts/release-final-20260914/idempotency-e2e.json",
+        "sha256": "492495496abdd5fbb3594d2759255ac169b36fc7323e187c17cf2047a20c8d8a",
+        "matches": true
+      },
+      {
+        "file": "idempotency-e2e.json.meta.json",
+        "source": "artifacts/release-final-20260914/idempotency-e2e.json.meta.json",
+        "sha256": "88f4a02e77e4d20f6564a8d09181a23415f89f8bc6db379f0ebb31cd4dccf214",
+        "matches": true
+      },
+      {
+        "file": "idempotency-list-contracts.json",
+        "source": "artifacts/release-final-20260914/idempotency-list-contracts.json",
+        "sha256": "d92984aed218e36601a9f4d78f8cb3a5869eaf4938eff0eb451a3fc1aa713715",
+        "matches": true
+      },
+      {
+        "file": "idempotency-list-tools.json",
+        "source": "artifacts/release-final-20260914/idempotency-list-tools.json",
+        "sha256": "1bcc54f51a1096d5612f03d9dd4e63c9f3664d17cc71f18d4b47d71361672eca",
+        "matches": true
+      },
+      {
+        "file": "idempotency-list-unit.json",
+        "source": "artifacts/release-final-20260914/idempotency-list-unit.json",
+        "sha256": "a869061f6a9251c0dec597a584d187727ce766a4d009c940e65b733321c44bf4",
+        "matches": true
+      },
+      {
+        "file": "idempotency-manifest.json",
+        "source": "artifacts/release-final-20260914/idempotency-manifest.json",
+        "sha256": "2771c6e3cb5ef367764805db4b284ee11cacbdbe89914caecbe18643a7403091",
+        "matches": true
+      },
+      {
+        "file": "idempotency-tools.json",
+        "source": "artifacts/release-final-20260914/idempotency-tools.json",
+        "sha256": "3581f7131c61a79b106c3b25a9088c4f63488e803aad3f17ce571d066bf747ab",
+        "matches": true
+      },
+      {
+        "file": "idempotency-tools.json.meta.json",
+        "source": "artifacts/release-final-20260914/idempotency-tools.json.meta.json",
+        "sha256": "4a4cac56b1f44ae218624b0ecc2a81220a00e4511ad22348c7131a65e3527548",
+        "matches": true
+      },
+      {
+        "file": "idempotency-tools.json.options.json",
+        "source": "artifacts/release-final-20260914/idempotency-tools.json.options.json",
+        "sha256": "c7ece741b6798656468a7af4ab088e5fb1262f47f68979eb44d7f83feb0d77dc",
+        "matches": true
+      },
+      {
+        "file": "idempotency-unit.json",
+        "source": "artifacts/release-final-20260914/idempotency-unit.json",
+        "sha256": "9741326e7966bd98a39fa3b30d3b3ddc264e4700bc8636f171bf95d40b501bb1",
+        "matches": true
+      },
+      {
+        "file": "idempotency-unit.json.meta.json",
+        "source": "artifacts/release-final-20260914/idempotency-unit.json.meta.json",
+        "sha256": "57f4c3dc0cb934a201d0bc248a15a1e6c3a3fdd6750696241f4af331f03e0276",
+        "matches": true
+      },
+      {
+        "file": "idempotency-unit.json.options.json",
+        "source": "artifacts/release-final-20260914/idempotency-unit.json.options.json",
+        "sha256": "f19ad607c5e0d787579f6172b6697f69516375548cb0c400eda2ae5483dce8b3",
+        "matches": true
+      },
+      {
+        "file": "idempotency-verification.json",
+        "source": "artifacts/release-final-20260914/idempotency-verification.json",
+        "sha256": "12904b03690c0942421376e62165f6410f6702bb17be9203cb4ef94d39998307",
+        "matches": true
+      },
+      {
+        "file": "mutation-audit.json",
+        "source": "artifacts/final-gate-audit/mutation-audit.json",
+        "sha256": "83aee9ce42252f18c03bf70d13ed946c850f1fec70e69ad16da49883fdbbfc9c",
+        "matches": true
+      },
+      {
+        "file": "postflight.json",
+        "source": "artifacts/release-final-20260914/postflight.json",
+        "sha256": "7e71ec49c400de7161c141a2c7f705f6eb185396028abd1c9fb315e06a2dc128",
+        "matches": true
+      },
+      {
+        "file": "rejected-diagnostic-steps.jsonl",
+        "source": "artifacts/release-wsl/rejected-diagnostic-steps.jsonl",
+        "sha256": "1e090536a9ec45891050ebe43f7dff5758a0eab0c19d2e7aac6be7f09bedc3cf",
+        "matches": true
+      },
+      {
+        "file": "review-gate.md",
+        "source": "artifacts/final-gate-audit/REPORT.md",
+        "sha256": "9f40d0402cfcd20c63f45b3eb856cc6cfd4e8c242cafc77b2807c8a181472972",
+        "matches": true
+      },
+      {
+        "file": "review-payment.md",
+        "source": "artifacts/final-gate-audit/PAYMENT-REVIEW.md",
+        "sha256": "1d73c3706cbb178eb94a03c214c7086f38f4059513723be659de8aff193145d5",
+        "matches": true
+      },
+      {
+        "file": "review-ui.json",
+        "source": "artifacts/final-ui-audit/result.json",
+        "sha256": "b3c004ac80b23b38664a02ec5620574e6fc02bfb1810f9d45b3a4955609908fd",
+        "matches": true
+      },
+      {
+        "file": "review-ui.md",
+        "source": "artifacts/final-ui-audit/REPORT.md",
+        "sha256": "d3fcf8c51f66b678ffb35f90d456daece0dd394741ced65cfd74e269f1e5b0bb",
+        "matches": true
+      },
+      {
+        "file": "runtime-provenance.json",
+        "source": "artifacts/release-wsl/runtime-provenance.json",
+        "sha256": "8296b1fc6b7b06df681441e44af383bd60c9bc9eb95fd428f018ed1bfe963b85",
+        "matches": true
+      },
+      {
+        "file": "smoke.json",
+        "source": "artifacts/release-final-20260914/smoke.json",
+        "sha256": "c25048a54a828f500e582e4dd01d110468dac22e96e66372458c79fb92fb93e0",
+        "matches": true
+      },
+      {
+        "file": "step-reporter.mjs.txt",
+        "source": "artifacts/release-wsl/step-reporter.mjs",
+        "sha256": "8a897ab9a99a10b24a3ef051ac1dc421640731b4051d5544e1fc165ce6e2085b",
+        "matches": true
+      },
+      {
+        "file": "summary.json",
+        "source": "artifacts/release-final-20260914/summary.json",
+        "sha256": "9317317a9ce1f16d2ca16ba5324b242d83cc1c13fdaf8a576a2db9beaaf076b5",
+        "matches": true
+      },
+      {
+        "file": "timezone-after.json",
+        "source": "artifacts/release-wsl/timezone-after.json",
+        "sha256": "4cf14fb73a12554bdfb3886435352fbf6d091c5fbbd511b4ecaccbd0ba43a4e2",
+        "matches": true
+      },
+      {
+        "file": "timezone-before.json",
+        "source": "artifacts/release-wsl/timezone-before.json",
+        "sha256": "6147932bd9fdfdcb22208a2bb6415c91201a81c6658a7c919c6d277c57624764",
+        "matches": true
+      }
+    ],
+    "unmappedFiles": [
+      ".gitattributes"
+    ],
+    "gitTextNormalizationDisabled": true,
+    "secretScanFiles": 51,
+    "secretFindings": []
+  },
+  "errors": [],
+  "limits": [
+    "Read-only publication verification: no test, DB, production or runtime operation.",
+    "Secret scan detects selected token/key/credential formats; it does not prove every possible secret format is absent.",
+    "Gate validity retains the documented unexplained historical E2E timeout."
+  ]
+}

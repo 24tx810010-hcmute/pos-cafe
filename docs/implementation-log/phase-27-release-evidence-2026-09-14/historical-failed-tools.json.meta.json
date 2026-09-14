@@ -1,0 +1,10 @@
+{
+  "stage": "tools",
+  "startedCandidate": "e8f0aeeb298671044013cfe0b0e2e64ce326fed3f29fbf7994c9395e2605a3c5",
+  "finishedCandidate": "e8f0aeeb298671044013cfe0b0e2e64ce326fed3f29fbf7994c9395e2605a3c5",
+  "exitCode": 1,
+  "signal": null,
+  "reportSha256": "f7de1027c08ec989874632bc32164e82abb3d04ac75d15d80236fa3acf7dd90b",
+  "optionsSha256": "1fc576988117bbd96e155169fdea5f9384bc2db2098609af84b7f8dc37d70585",
+  "finishedAt": "2026-09-14T03:25:22.343Z"
+}

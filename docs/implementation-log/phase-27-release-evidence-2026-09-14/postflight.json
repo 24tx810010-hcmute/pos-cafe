@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-09-14T03:48:57.978Z",
+  "node": "v24.16.0",
+  "fingerprint": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "engine": "postgres-postgrest-gotrue",
+  "database": "pos_cafe_idem_test_auth_c5b5ce76d5d3",
+  "apiUrl": "http://127.0.0.1:55444",
+  "postgres": {
+    "version": "PostgreSQL 16.15 (Ubuntu 16.15-1.pgdg24.04+2) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit",
+    "database": "pos_cafe_idem_test_auth_c5b5ce76d5d3",
+    "address": "127.0.0.1/32",
+    "port": 55439
+  },
+  "migrations": {
+    "001_schema_enums.sql": "f6d3cdd7f7adb9cc34899296b3d361ba08f8be59e3a4a5f34d7a9d8f448f7637",
+    "002_indexes_rls_triggers.sql": "af3be75bb90ebb3de20d43195ec2a10a24169ff4eaea970a0fbd19f5c321dadf",
+    "003_rpc_functions.sql": "447e4ba1de5da694edf8f8adb30a651a77556431454494174101f9dd997e6f3c",
+    "004_realtime_publication.sql": "cd553e55072fb5c0f8f96bb74231a8e07aba7c794a6bcac1cbc8b3ccafd00a09",
+    "005_menu_item_images_storage.sql": "47888b10b601e80c2df41e02527882fafa35fec330e74f36c9df927f17d52755",
+    "006_menu_item_image_asset_key.sql": "5c7ed74e5698ac78f100173ea4b93c94f48090552e3ae8bb03630312a48b9bb0",
+    "007_wipe_all_data.sql": "a2f41c0c87df134a54ec1c2a8620bb2497c0a3bf5465ec152017128388402b8e",
+    "008_modifier_rework.sql": "4a104d2091dfb6f7002eb09d8645168023ad2d69906a13d39548a90e76d1b6fb",
+    "009_partial_payment.sql": "226f7a84d239df46d0dbbedf913a56e59a64fa5802e0853f256c9bc8722c2745",
+    "010_split_payment.sql": "5adb200fcf241064d3708ad63dccc293c0ec9aaeab7a3a9f894954fd1722f93e",
+    "011_void_paid_order.sql": "5eff39afcdba6155031a56f59cf0377854868f8b70e4022913ba77114b6d8979",
+    "012_action_permission_guardrails.sql": "0af2e00b16ac5e7478eac2a78afb97decec8d7c61db542052893a68774a89e98",
+    "013_table_background_asset_key.sql": "9a018476ebfd2148aaf4dbeb7b4840be56ff159ed20dca2925eed6d2dd2b2b65",
+    "014_write_identity_and_ledger.sql": "148491449485efed645814223adf89026e08d6a263f1365b917bd1d7f92b5747",
+    "015_write_business_helpers.sql": "043fbfd50223e5aa056edbce24995efd9a5e52ab6dc15e8213dd7b30df0e5623",
+    "016_activate_write_protocol.sql": "3267239282a699551d067d38944069a166c476bcbf340c26e89fcbf79344edf9"
+  }
+}

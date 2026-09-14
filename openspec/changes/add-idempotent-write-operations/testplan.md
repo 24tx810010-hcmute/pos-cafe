@@ -2,7 +2,7 @@
 
 Thuật ngữ và ký hiệu K, R1, G, F0: xem [bảng thuật ngữ](proposal.md#thuat-ngu).
 
-Ngày 2026-09-09. **93 testcase gốc đã hiện thực; đã nghiệm thu ngày 2026-09-10.** Các ma trận tham số có suffix riêng (mục B); số testcase thực chạy phải lấy từ manifest, không coi 93 là số execution cuối. Các mục Nơi hiện thực đã đối chiếu discovery của runner với file thật; expected giữ nguyên thiết kế trước code.
+Ngày 2026-09-09, bổ sung F1 ngày 2026-09-10. **93 TC gốc giữ nguyên; TC006 thêm 12 core/component và 3 E2E bắt buộc về cách ly cache.** Hậu kiểm đã tìm findings nên gate tự động trước đó không đủ kết luận nghiệm thu toàn change. Các ma trận tham số có suffix riêng (mục B); số execution phải lấy từ manifest. Các expected cũ không được nới để làm test xanh.
 
 ## A. Cổng chạy và quan sát
 
@@ -159,7 +159,29 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 - **Kết quả mong đợi:** Theo design, mục 2.3 từng cell; B chỉ pay/split, C: 0; deny thắng grant; request cấm FORBIDDEN trừ list lọc; 0 hiệu ứng/0 counter và K pending giữ. Mỗi cell có test ID suffix riêng. Mã phải hiện đúng thông báo tại design, mục 7: FORBIDDEN.
 - **Nơi hiện thực:** `tests/contracts/writePermissions.contract.test.ts`. Biến thể bắt buộc theo `tests/contracts/caseManifest.ts`; kết quả nghiệm thu tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md).
 
+#### TC-IDEM-006 — Bổ sung hồi quy cache F1 (2026-09-10)
+
+Không đổi 102 cell DB đã duyệt. Thêm 12 execution core/component và 3 E2E bắt buộc trong manifest; cùng requirement IDEM-02/24 và UC01/07/08.
+
+| Dữ liệu | Giá trị cụ thể |
+| --- | --- |
+| Fixture | Một lệnh pay K1 applied; đơn 150.000 VND, nhận 200.000, đúng một payment |
+| Nhân viên | A có quyền; B có payment.take; C bị deny mọi quyền ghi POS; thêm A đăng nhập lại sau deny payment.take |
+| Lỗi đọc | FORBIDDEN, AUTH_REQUIRED, EMPLOYEE_SESSION_REQUIRED; mỗi lỗi chạy riêng trên list và detail |
+| Race | Giữ list/get/receipt response đã được A xác thực, khóa/đổi phiên hoặc nhận denial, rồi mới thả response |
+
+1. A mở list và detail K1, kiểm R1 150.000 bằng giá trị literal.
+2. Chuyển nhân viên/cùng người đăng nhập lại/đổi cửa hàng, hoặc để server từ chối quyền khi drawer đang mở; giữ response cũ cho biến thể race.
+3. Expected: 0 dòng K1, 0 historical-result, 0 nút xử lý; cache scope cũ không được tái điền; receiptPreview=null nếu receipt cũ đến muộn. Tải lại sau denial không phục hồi response cũ. B hoặc A được cấp lại quyền đọc mới vẫn thấy đúng K1/150.000; DB vẫn chỉ một payment.
+
+Core suffix: `cache=different_employee`, `same_employee`, `store_change`, `late_response`; `cache=late_reprint/transition=employee_change|permission_denied`; `cache=list_denied|detail_denied/error=FORBIDDEN|AUTH_REQUIRED|EMPLOYEE_SESSION_REQUIRED`.
+
+E2E suffix: `cache=switch_employee`, `cache=revoked_permission`, `cache=late_response`. E2E dùng browser, Store JWT và employee session thực; quan sát trực tiếp RPC denial và DB observer, không thay bằng mock. Các kiểm độc lập ngoài manifest báo riêng.
+
+Nơi hiện thực: `src/app/writeRecoveryAccess.test.tsx`, `tests/supabase/idempotencyRecovery.spec.ts`; manifest `tests/contracts/caseManifest.ts`. Hai reviewer bổ sung tự tạo oracle và kiểm lại bản sửa, bằng chứng ở log khắc phục F1.
+
 ### TC-IDEM-007 — Thu hồi quyền lúc execute chờ khóa
+
 
 - **Truy vết:** IDEM-02, IDEM-24, IDEM-25; UC-IDEM-08.
 - **Mức / nhóm:** DB / bảo mật. **Tiền điều kiện:** F1, reset riêng mỗi variant.
@@ -1123,3 +1145,37 @@ Mỗi TC kế thừa fixture và oracle G (mục A3). Thực hiện theo thứ t
 3. Ba review độc lập test design không thay thế chạy test. Reviewer triển khai phải đọc test+SUT, chạy lại các ca được giao bằng environment đã preflight, báo rõ engine/backend/command/exitcode, không chỉ đọc log từ agent viết code.
 4. Không cần tuyên bố “đảm bảo không có bug”. Chỉ nghiệm thu những bất biến và lịch race đã thiết kế/thực thi; hoạt động mạng/thiết bị ngoài fixtures vẫn có giới hạn.
 5. Cổng triển khai không đạt nếu thiếu môi trường kiểm thử DB hoặc không thể fault test an toàn: ghi BLOCKED/NOTRUN đúng thực tế, không giảm required test hoặc thay bằng mock.
+
+
+## Execution hồi quy bắt buộc sau review F2–F5 (2026-09-11)
+
+93 TC gốc giữ nguyên. Bổ sung variant bắt buộc trong caseManifest; các dòng này không được tính pass trước khi chạy candidate cuối.
+
+| TC/backend | Variant/dữ liệu | Expected | Hiện thực |
+| --- | --- | --- | --- |
+| TC015/db | 8 action/nhánh × decimal/exponent; 2.0,2e0 và cùng K gửi lại số nguyên | applied/R1 đúng, một effect, payload::text đã lưu bất biến sau register lại/execute/replay | tests/contracts/writeNumericWire.contract.test.ts |
+| TC074/db | 10 trường số × fractional/below_min/above_max | INVALID_WRITE_REQUEST, không ledger/business effect; control hợp lệ đạt | tests/contracts/writeNumericWire.contract.test.ts |
+| TC030/db,mock,e2e | /old, reset riêng; old base30k+Q2×5k và new base35k+Q2×7k | paid40k/source89k; IDs, names, quantities và snapshots đúng | writeOperations.contract.test.ts, writeOperationRepo.test.ts, idempotencyPricing.spec.ts |
+| TC051/core | read/timer × offline,close_reopen,lock,same_employee,unmount; positive; late_error | print0/không toast cũ; positive print1 sau200ms | src/app/components/ReceiptPrintLifecycle.test.tsx |
+| TC051/e2e | reprint offline/close_reopen; print read/timer × offline/close_reopen; positive | response HTTP thật cũ không mở/in, frame được dọn; positive print1 | tests/supabase/idempotencyLifecycle.spec.ts |
+| TC052/core,e2e | draft pending/committed; core thêm late_retry | một K/đơn, retry cùng payload, draft tiêu thụ, không auto preview/in; không xóa draft khác | src/app/writeRetryDraft.test.tsx, tests/supabase/idempotencyLifecycle.spec.ts |
+
+TC066 giữ ID gốc và thêm assert report ngày08/09 revenue150.000/count1, ngày10/09 revenue0/count0. TC085 giữ ID gốc, fixture trước nâng cấp gồm open, paid, void-paid, void-open; 4 order/4 item/4 option/2 payment. So tất cả cột cũ và kiểm backfill mới có nghĩa; receipt paid80k/received100k/change20k và Qquantity2, void không in, mở cũ vẫn thanh toán được sau upgrade.
+
+TC053/core/session=same_employee: tạo đơn, giữ ACK applied thật của memory adapter, tăng employeeSessionVersion với cùng object nhân viên rồi thả ACK; không mở phiếu bếp, server chỉ có một đơn. File src/app/writeSessionGeneration.test.tsx. Biến thể bổ sung làm tổng required758; gate cuối đã đạt758/758, bằng chứng ở log khắc phục P2.
+
+
+## Hậu kiểm trước push ngày 2026-09-13
+
+Bổ sung 12 component execution tại src/app/writeRecoveryActionLifetime.test.tsx: TC053 gồm resume/cancel × employee_change với 2 mã AUTH_REQUIRED/EMPLOYEE_SESSION_REQUIRED và close_reopen với EMPLOYEE_SESSION_REQUIRED (6); TC054 gồm resume/cancel × offline_online với EMPLOYEE_SESSION_REQUIRED (2); TC006 positive gồm resume/cancel × hai mã lỗi hiện tại (4). Fixture có lệnh pay pending; giữ Promise execute/cancel, chuyển vòng đời, thả lỗi và chờ mutation state=error trước assertion. Expected stale: giữ employee/draft/drawer/screen, không toast/revoke, đúng một request. Positive: khóa phiên, điều hướng/toast/revoke đúng một lần. Bỏ guard bằng Vite transform: 8 assertion FAIL/4 positive PASS. Test mới và full unit đạt; DB/E2E candidate mới chưa chạy được.
+
+
+## Regression bổ sung 14/09 — 48 execution bắt buộc
+
+| File | TC và biến thể | Oracle cụ thể |
+| --- | --- | --- |
+| src/app/writeInitialSubmitLifetime.test.tsx | TC053/054: same_employee/offline_online × hai auth error hoặc applied (6); TC006 hai current auth error; TC051 current applied | Giữ response execute, chuyển vòng đời, thả response và chờ mutation hoàn tất. Phiên/draft/màn giữ nguyên, không toast/preview/revoke; effect server đã applied vẫn đúng một. Positive kiểm thông báo lỗi và một phiếu bếp hiện hành. |
+| src/app/writePaymentLifetime.test.tsx | pay/split × (TC053/054 sáu biến thể mỗi mode; TC006 hai current auth; TC051 current applied), tổng 18 | Hoãn execute sau/chưa commit; đổi generation hoặc offline/online. Không logout/xóa draft/đóng payment/preview cũ. Positive full/split tạo đúng một payment và receipt theo lựa chọn. |
+| src/app/writeHistoryLifetime.test.tsx | TC051 reprint order/receipt read × employee_change/offline_online × hai auth error (8); current reprint/void applied (2); TC053/054 void × hai auth error/applied (6); TC006 current reprint/void × hai error (4); TC053 reopen_confirmation (1) | Giữ promise read/execute; trả response sau chuyển vòng đời; không toast/revoke/refetch vào lượt mới. Void applied vẫn chỉ một hiệu ứng. Old settlement không hạ busy của fresh confirmation read. |
+
+818 required execution, 93 TC gốc. Các positive/negative control chạy riêng không được cộng trùng vào gate. Báo cáo phải giữ cả lần fail trước sửa, mutation chỉ trong memory, và lần gate mới có fingerprint; không dùng kết quả 770 required của candidate trước sửa.

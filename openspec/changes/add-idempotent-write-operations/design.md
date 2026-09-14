@@ -2,7 +2,7 @@
 
 Thuật ngữ và ký hiệu K, R1, G, F0: xem [bảng thuật ngữ](proposal.md#thuat-ngu).
 
-Ngày 2026-09-09. **Thiết kế đã duyệt và được hiện thực; đã nghiệm thu ngày 2026-09-10.** Bằng chứng code mốc 7183b31 ở mục 1 được giữ để giải thích vấn đề trước sửa; hiện trạng mới tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md). Yêu cầu sản phẩm đã đóng trong proposal; các thông số và cấu trúc dưới đây là lựa chọn kỹ thuật của analyst, không gán thành phát biểu của chủ dự án.
+Ngày 2026-09-09, bổ sung F1 ngày 2026-09-10. **Thiết kế đã duyệt; hậu kiểm còn findings nên chưa đủ điều kiện rollout.** Bằng chứng code mốc 7183b31 ở mục 1 được giữ để giải thích vấn đề trước sửa; hiện trạng và bản sửa F1 tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md). Yêu cầu sản phẩm đã đóng trong proposal; các thông số và cấu trúc dưới đây là lựa chọn kỹ thuật của analyst, không gán thành phát biểu của chủ dự án.
 
 ## 1. Hiện trạng và thay đổi có chủ đích
 
@@ -228,6 +228,8 @@ Cancel không phải HTTP abort. Cancel not found không đặt tombstone chặn
 
 ## 6. UI, draft, phục hồi và in
 
+**Bổ sung khắc phục F1, 2026-09-10:** query key Tra cứu gồm storeId, employeeId và employeeSessionVersion chỉ ở bộ nhớ. Mỗi `setCurrentEmployee` tăng phiên; không dùng token làm key. `WriteLifecycle` remove queries khi phiên thay đổi để kết quả cũ không ghi lại cache. Drawer theo phiên được remount; query không giữ cache sau unmount và consume AbortSignal để bỏ kết quả đọc cũ. Ba lỗi FORBIDDEN/AUTH_REQUIRED/EMPLOYEE_SESSION_REQUIRED đóng quyền xem trong drawer, loại toàn bộ query cùng scope; Tải lại chủ động mới mở lượt đọc mới. Callback In lại kiểm vòng đời sau từng await và generation quyền tăng ngay khi có denial; success/error cũ không được ảnh hưởng phiên mới. Chấp nhận thêm read khi mở lại để tránh tái dùng quyền của lần đọc trước. Không đổi quyền SQL hoặc mở rộng phân quyền mọi SELECT.
+
 - Một ActiveAttempt trong bộ nhớ có K, payload bất biến, generation, startedAt, status. Tạo K tại xác nhận. Có thể giữ pointer tiện dụng nhưng **không phụ thuộc localStorage/sessionStorage** cho độ bền.
 - Register ACK pending chỉ tiếp execute trong cùng lượt chủ động chưa timeout/chưa đóng drawer/chưa khóa phiên/chưa offline. Response đến muộn không kích hoạt mutation. Không auto-resume TanStack paused mutation; explicit online check trước nút và trong coordinator, retry:false cho ghi.
 - Timeout 15 s kể từ mỗi request: hiển thị WRITE_RESULT_UNKNOWN. Polling mỗi 5 s: get/list/refetch được phép, không register/execute/cancel. Reconnect/focus chỉ read. Đóng drawer không cancel; báo có thể tra cứu lại.
@@ -294,3 +296,26 @@ PostgREST chạy mỗi request trong transaction; POST VOLATILE cho phép ghi v�
 PL/pgSQL EXCEPTION tạo vùng rollback cho thay đổi bên trong; dùng nó để rollback business mà giữ rejected ngoài vùng. Tham khảo [PostgreSQL control structures](https://www.postgresql.org/docs/current/plpgsql-control-structures.html#PLPGSQL-ERROR-TRAPPING). Khiimplement kiểm search_path cố định, schema-qualified objects, owner/grants cho SECURITYDEFINER và RLS theo [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
 
 Các ý trên là cơ sở thiết kế, không phải bằng chứng migration đã chạy. Testplan quy định expected, backend/preflight/fault/clock/observer và manifest thực thi. Chỉ có log trên code triển khai mới được dùng để kết luận tính năng đạt.
+
+
+## Quyết định khắc phục F2–F5 (2026-09-11)
+
+Chủ dự án yêu cầu xử lý toàn bộ finding còn lại sau F1, chỉ test cách ly; nhắc chạy 014→015→016 sau hoàn tất, không tự deploy. Số JSON đã qua validator numeric/trunc được đọc qua numeric rồi integer/bigint trong helper015, gồm projection jsonb_to_recordset; không chuẩn hóa lại payload đã register. Chỉ sửa migration015 chưa deploy, không tạo migration017 cho schema chưa triển khai.
+
+ReceiptPreview dùng generation cùng thế hệ phiên và context; kiểm sau receipt read và trong timer200ms, hủy timer/iframe khi context bị thay hoặc offline. WriteAttemptNotice kiểm lifetime trước callback; OrderDrawer tiêu thụ draft khi retry applied. Fieldset khóa giỏ khi lượt ghi blocked; lựa chọn này tránh bỏ sửa đổi mới trong lúc giải quyết ý định cũ, không cần suy lại payload hay merge từ R1. Reconcile không vá query cache bằng historical result, chỉ invalidate và đóng draft.
+
+Bổ sung TC030 old ở cả mock/DB/browser, TC066 đọc report adapter/REST và UI, TC085 dựng legacy trên001–013 rồi so mọi cột cũ sau014–016. Child migration DB là test DB mới có marker, Auth shim ghi riêng; browser/REST dùng GoTrue thật.
+
+Review chéo bổ sung guard employeeSessionVersion cho WriteLifecycle.leave, đồng bộ với cache và useViewLifetime. Invariant này được tái hiện bằng setter cùng object; chưa có đường UI hiện tại không qua null/object mới. Không gọi đây là lỗ hổng production mới đã khai thác được.
+
+
+## Hậu kiểm trước push ngày 2026-09-13
+
+Action resume/cancel chụp kiểm vòng đời vào mutation variables ngay lúc click. onError kiểm trước cả denyAccess và notifyUiError vì notifyUiError có thể khóa phiên, điều hướng và xóa draft qua WriteLifecycle. Success vẫn invalidate dữ liệu server; lỗi xác thực hiện hành vẫn xử lý đầy đủ.
+
+
+## Bổ sung vòng đời callback sau review — 2026-09-14
+
+OrderDrawer chụp useViewLifetime(orderContext), PaymentDrawer chụp useViewLifetime(paymentOrderId) ngay trước mutate và kiểm tại success/error. Các hook vẫn invalidate query server theo kết quả; UI callback không dùng R1 cũ để sửa state của lượt mới. OrderHistoryDrawer dùng captureView(selectedId) cho catch reprint và callback confirmVoid; mỗi confirm tăng voidGeneration, success/error cần cả vòng đời và generation, onSettled chỉ dọn busy khi còn cùng generation. Đóng/mở popup tăng generation nên settlement cũ không hạ busy của lượt tải mới.
+
+Không gom mọi callback thành im lặng: positive controls kiểm auth error hiện hành, một hiệu ứng ghi và preview đúng. Không đổi SQL, payload/K hoặc quyền DB trong bổ sung ngày 14/09. Runtime WSL chạy cùng migration bytes đã được marker kiểm; cài tzdata-legacy để hỗ trợ timezone fixture có sẵn, không đổi timezone để ép test xanh.

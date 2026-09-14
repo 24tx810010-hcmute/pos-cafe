@@ -19,6 +19,8 @@ Mã: **IDEM-02**. Truy vết: FR-04, FR-11, FR-15.
 
 Register, execute, get, list và cancel SHALL kiểm quyền hành động của chính loại lệnh theo bảng design. Execute SHALL kiểm lại sau mọi khóa có thể chờ, trước hiệu ứng đầu tiên; mất quyền không làm lệnh bị rejected. Người có quyền SHALL tiếp quản dù khác người khởi tạo.
 
+Làm rõ sau review F1 ngày 2026-09-10: cache Tra cứu SHALL cách ly theo cửa hàng và từng phiên đăng nhập nhân viên, kể cả cùng nhân viên đăng nhập lại. Khóa/đổi phiên SHALL loại dữ liệu và kết quả đọc đang chờ của phiên trước. Khi server trả FORBIDDEN, AUTH_REQUIRED hoặc EMPLOYEE_SESSION_REQUIRED, UI MUST NOT tiếp tục hiển thị payload/R1 hoặc mở receipt từ lời gọi đã mất quyền. Tải lại chủ động sau đó SHALL đọc mới dưới quyền hiện hành, không phục hồi cache cũ.
+
 #### Scenario: A hết ca; B có payment.take đọc và thực hiện lệnh pay của A
 
 - **WHEN** A hết ca; B có payment.take đọc và thực hiện lệnh pay của A
@@ -243,3 +245,20 @@ Nghiệm thu SHALL có manifest TC, expected tính độc lập, observer DB ri�
 
 - **WHEN** Runner chỉ tìm src nhưng test nằm ngoài include
 - **THEN** cổng discovery thất bại dù số test khác vẫn xanh
+
+
+## Làm rõ hồi quy sau review F2–F5 (2026-09-11)
+
+Không mở rộng requirement đã duyệt. IDEM-04: JSON số nguyên 2, 2.0 và 2e0 SHALL có cùng nghĩa, execute/replay dùng payload register bất biến; số phân số và vượt miền vẫn bị từ chối. IDEM-14/19: vòng đời có hiệu lực phải được kiểm sau await và ngay trước window.print, gồm offline rồi online, đóng/mở lại, khóa hoặc đổi thế hệ phiên; callback lỗi cũ không thông báo vào lượt mới. IDEM-05/14: khi retry xác nhận submit applied, draft của lượt đó SHALL được tiêu thụ, không tự mở/in phiếu bếp hoặc tạo K mới. Giỏ không được chỉnh trong lúc lượt ghi đang thực hiện/chưa rõ kết quả để tránh mất sửa đổi khi tiêu thụ draft. IDEM-21/22: oracle phải kiểm đầy đủ legacy paid/void/payment/options, split phần cũ và báo cáo ngày cũ/ngày mới, không suy đủ expected từ số execution.
+
+
+## Hậu kiểm trước push ngày 2026-09-13
+
+Làm rõ IDEM-14: lỗi AUTH_REQUIRED/EMPLOYEE_SESSION_REQUIRED của action Tiếp tục/Hủy lệnh thuộc vòng đời cũ MUST NOT đăng xuất nhân viên hiện tại, thu hồi phiên mới, đổi màn, xóa draft hoặc toast lỗi cũ. Đóng/mở lại và offline/online không làm phản hồi cũ hợp lệ trở lại. Lỗi action hiện hành vẫn MUST được xử lý theo hợp đồng lỗi.
+
+
+## Làm rõ callback của mọi luồng ghi/đọc hóa đơn — 2026-09-14
+
+IDEM-14/19 áp dụng cho callback success/error của lần gửi đơn đầu, thanh toán toàn bộ, tách thanh toán, hủy đơn đã thanh toán và catch lỗi khi đọc hóa đơn để in lại. Callback SHALL chỉ tác động thông báo, phiên, draft, popup và preview khi vòng đời lúc người dùng bấm còn hiện hành. Đổi thế hệ phiên, đóng/mở màn hoặc offline/online MUST NOT làm phản hồi cũ có hiệu lực trở lại. Việc bỏ qua callback UI cũ không hủy giao dịch server đã commit và không được phát thêm register/execute để thay thế.
+
+Lỗi/callback còn hiện hành SHALL giữ hành vi bình thường của luồng tương ứng; không được đạt kiểm thử bằng cách bỏ mọi callback. Cleanup trạng thái busy của popup hủy SHALL gắn với thế hệ action: settlement cũ không được mở khóa một lượt tải xác nhận mới.

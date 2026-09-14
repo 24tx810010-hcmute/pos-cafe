@@ -1,0 +1,1714 @@
+{
+  "config": {
+    "configFile": "D:\\Workspace\\pos-cafe\\playwright.idempotency.config.ts",
+    "rootDir": "D:/Workspace/pos-cafe/tests/supabase",
+    "forbidOnly": true,
+    "fullyParallel": false,
+    "globalSetup": "D:\\Workspace\\pos-cafe\\tests\\supabase\\idempotencyGlobalSetup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/Workspace/pos-cafe/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "idempotency-server",
+        "name": "idempotency-server",
+        "testDir": "D:/Workspace/pos-cafe/tests/supabase",
+        "testIgnore": [],
+        "testMatch": [
+          "/idempotency(?:Recovery|Pricing|Bootstrap|Lifecycle)?\\.spec\\.ts/"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "D:\\Workspace\\pos-cafe\\artifacts\\release-wsl\\step-reporter.mjs"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 5176 --strictPort",
+      "url": "http://127.0.0.1:5176",
+      "reuseExistingServer": false,
+      "env": {
+        "VITE_DATA_MODE": "supabase",
+        "VITE_SUPABASE_URL": "http://127.0.0.1:55444",
+        "VITE_SUPABASE_ANON_KEY": "[REDACTED_TEST_CREDENTIAL]"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "idempotency.spec.ts",
+      "file": "idempotency.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "TC-IDEM-084/e2e an unsupported capability blocks writes without falling back to old RPCs or mock",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7190,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:45:26.750Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-7bbd9a0c71e4e3fe04a6",
+          "file": "idempotency.spec.ts",
+          "line": 6,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-089/e2e unsent draft exit requires confirmation and keeping it emits no writes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1436,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:45:34.053Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-425cde5ced60c441b7ac",
+          "file": "idempotency.spec.ts",
+          "line": 10,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-051/e2e disabled print preference and recovery never auto-open or print a receipt",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2067,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:45:35.498Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-af0a686e600046791362",
+          "file": "idempotency.spec.ts",
+          "line": 13,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-044/e2e lost split ACK replays the original payload after polling changes selection",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7137,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:45:37.573Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-48d05b13bbdde41abdb9",
+          "file": "idempotency.spec.ts",
+          "line": 16,
+          "column": 115
+        },
+        {
+          "title": "TC-IDEM-045/e2e lost split ACK replays the original payload after polling changes selection",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7199,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:45:44.720Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-730326249ac500a50866",
+          "file": "idempotency.spec.ts",
+          "line": 16,
+          "column": 115
+        },
+        {
+          "title": "TC-IDEM-001/e2e real store pairing employee PIN acknowledged lock and reload",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3427,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:45:51.931Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-ee3fc16d011a2d73428d",
+          "file": "idempotency.spec.ts",
+          "line": 27,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-038/e2e full cash confirmation displays literal receipt total and change",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1653,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:45:55.367Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-9e13a9529097e5c4dfad",
+          "file": "idempotency.spec.ts",
+          "line": 32,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-042/e2e full selection registers pay before execution and never registers split",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1679,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:45:57.028Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-280d34adf2206f4e0a24",
+          "file": "idempotency.spec.ts",
+          "line": 36,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-050/e2e modifier quantity renders forty thousand per unit and eighty thousand total",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2109,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:45:58.714Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-4c2f06d8286831a1b37d",
+          "file": "idempotency.spec.ts",
+          "line": 40,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-054/e2e offline and reconnect never enqueue or automatically resume a write",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2320,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:00.831Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-bcae39594416576fa8b8",
+          "file": "idempotency.spec.ts",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-052/e2e a late payment ACK after timeout cannot issue another write or print",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 17885,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:03.160Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-2768f8368c6532d91d4f",
+          "file": "idempotency.spec.ts",
+          "line": 46,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-053/e2e a late registration ACK after timeout never starts execution automatically",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 17574,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:21.053Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-089b93b823f0b5cf8cd7",
+          "file": "idempotency.spec.ts",
+          "line": 51,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-090/e2e recovery results expose actor IDs without persisting employee credentials",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1360,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:38.634Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-0a3673f7f2c7001f2284",
+          "file": "idempotency.spec.ts",
+          "line": 56,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-092/e2e zero and empty selections are blocked while a mixed full selection pays twenty thousand",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3381,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:40.003Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14101fcde650c4b4ba0b-36cde2c76da46ff0cd4a",
+          "file": "idempotency.spec.ts",
+          "line": 59,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "idempotencyBootstrap.spec.ts",
+      "file": "idempotencyBootstrap.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "TC-IDEM-011/e2e real signup bootstrap PIN and optional demo seed both reach the POS",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2261,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:43.428Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f40bcf1a945b987a57cd-222ba65a7342ed97c532",
+          "file": "idempotencyBootstrap.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "idempotencyLifecycle.spec.ts",
+      "file": "idempotencyLifecycle.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "TC-IDEM-051/e2e/reprint=offline ignores a late real receipt response",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1917,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:45.727Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1b9716fb772ea8b3c2fe-46a5af026b61c34269c0",
+          "file": "idempotencyLifecycle.spec.ts",
+          "line": 10,
+          "column": 64
+        },
+        {
+          "title": "TC-IDEM-051/e2e/reprint=close_reopen ignores a late real receipt response",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1942,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:47.653Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1b9716fb772ea8b3c2fe-98f4d9565285bb3070dc",
+          "file": "idempotencyLifecycle.spec.ts",
+          "line": 10,
+          "column": 64
+        },
+        {
+          "title": "TC-IDEM-051/e2e/print=read/transition=offline cancels stale browser printing",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1600,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:49.603Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1b9716fb772ea8b3c2fe-e5c10f93cfe4e7cd371c",
+          "file": "idempotencyLifecycle.spec.ts",
+          "line": 28,
+          "column": 3
+        },
+        {
+          "title": "TC-IDEM-051/e2e/print=read/transition=close_reopen cancels stale browser printing",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1749,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:51.210Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1b9716fb772ea8b3c2fe-beecfc0890e5ccc1beb6",
+          "file": "idempotencyLifecycle.spec.ts",
+          "line": 28,
+          "column": 3
+        },
+        {
+          "title": "TC-IDEM-051/e2e/print=timer/transition=offline cancels stale browser printing",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1530,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:52.966Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1b9716fb772ea8b3c2fe-bce320aab88dc9c0e73c",
+          "file": "idempotencyLifecycle.spec.ts",
+          "line": 28,
+          "column": 3
+        },
+        {
+          "title": "TC-IDEM-051/e2e/print=timer/transition=close_reopen cancels stale browser printing",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1733,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:54.504Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1b9716fb772ea8b3c2fe-42c331efdd64f71181f1",
+          "file": "idempotencyLifecycle.spec.ts",
+          "line": 28,
+          "column": 3
+        },
+        {
+          "title": "TC-IDEM-051/e2e/print=positive a fresh authorized click still prints exactly once",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1775,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:56.245Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1b9716fb772ea8b3c2fe-b50f6eb32f42f691413a",
+          "file": "idempotencyLifecycle.spec.ts",
+          "line": 54,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-052/e2e/draft=pending retry consumes its create draft without another K or automatic print",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2007,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:46:58.028Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1b9716fb772ea8b3c2fe-427350489f8ef595c8ca",
+          "file": "idempotencyLifecycle.spec.ts",
+          "line": 60,
+          "column": 55
+        },
+        {
+          "title": "TC-IDEM-052/e2e/draft=committed retry consumes its create draft without another K or automatic print",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2040,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:00.043Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1b9716fb772ea8b3c2fe-af9771807e30e441aca7",
+          "file": "idempotencyLifecycle.spec.ts",
+          "line": 60,
+          "column": 55
+        }
+      ]
+    },
+    {
+      "title": "idempotencyPricing.spec.ts",
+      "file": "idempotencyPricing.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "TC-IDEM-025/e2e old two coffees remain thirty thousand while a new coffee with the same free modifier costs forty thousand",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1516,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:02.111Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "edb94413a711f4a403bc-0f493b7702958d5f9314",
+          "file": "idempotencyPricing.spec.ts",
+          "line": 9,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-026/e2e plus on a saved line creates a separate portion at the current price",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1460,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:03.635Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "edb94413a711f4a403bc-bf99acd790c867829f08",
+          "file": "idempotencyPricing.spec.ts",
+          "line": 12,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-027/e2e note edits between different priced portions are dirty and preserve both source identities",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1516,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:05.103Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "edb94413a711f4a403bc-e184c2f7d39d32e69d6c",
+          "file": "idempotencyPricing.spec.ts",
+          "line": 15,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-030/e2e double modifier preserves identities and prices when splitting the new portion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2386,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:06.627Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "edb94413a711f4a403bc-e083e449052096798035",
+          "file": "idempotencyPricing.spec.ts",
+          "line": 18,
+          "column": 45
+        },
+        {
+          "title": "TC-IDEM-030/e2e/old double modifier preserves identities and prices when splitting the old portion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2421,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:09.022Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "edb94413a711f4a403bc-14c8e26da6dab275b618",
+          "file": "idempotencyPricing.spec.ts",
+          "line": 18,
+          "column": 45
+        },
+        {
+          "title": "TC-IDEM-034/e2e a changed new-item quote requires a new explicit confirmation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4279,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:11.451Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "edb94413a711f4a403bc-4cb17cb180c03dacbc1b",
+          "file": "idempotencyPricing.spec.ts",
+          "line": 30,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-035/e2e offsetting base and modifier changes still require confirmation despite an unchanged total",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4272,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:15.738Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "edb94413a711f4a403bc-e5aef946e11f5e582efd",
+          "file": "idempotencyPricing.spec.ts",
+          "line": 33,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "idempotencyRecovery.spec.ts",
+      "file": "idempotencyRecovery.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "TC-IDEM-006/e2e/cache=switch_employee A to denied C to authorized B on the same browser never reuses the earlier cache",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4232,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:20.039Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-a55d247770816af90f89",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 19,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-006/e2e/cache=revoked_permission a real server denial clears open details until a fresh authorized read",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6518,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:24.280Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-be11816aca44d24c0b7b",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 32,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-006/e2e/cache=late_response an authorized result held across lock and employee change stays invisible",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3560,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:30.807Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-dd4aa6a8d5f703d3854f",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 45,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-057/e2e server recovery paginates all 101 tied registrations and applies filters",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2811,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:34.376Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-67f64a08336a989000c4",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 61,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-058/e2e unknown key is never reported cancelled and a late register stays pending",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 19283,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:37.196Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-06d2c55c391f3b62a5eb",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 71,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-046/e2e voiding a paid order through recovery preserves the new customer at its table",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1424,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:56.486Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-384e837dc3edd1bb4eae",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 79,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-049/e2e a void reason of other without explanation displays its precise rejection",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1363,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:57.917Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-07dc62e96d201262135f",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 82,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=applied recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2652,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:47:59.288Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-e60ec8d63b2dfc796960",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 85,
+          "column": 68
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=rejected recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2659,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:48:01.948Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-9e09fd7fe38f42c9a8f2",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 85,
+          "column": 68
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=cancelled recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2667,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:48:04.614Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-fd51cdfe9d26ed0acb8b",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 85,
+          "column": 68
+        },
+        {
+          "title": "TC-IDEM-068/e2e/terminal=expired recovers its durable decision after the browser loses an observed committed ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2785,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:48:07.289Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-f227ef0c1aca1ce386b7",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 85,
+          "column": 68
+        },
+        {
+          "title": "TC-IDEM-059/e2e a permitted cashier can cancel a pending operation without changing its order",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1393,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:48:10.082Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-9913e3ff14abdc0a1db7",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 95,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-056/e2e another cashier resumes a pending payment and preserves initiator attribution",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1487,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:48:11.482Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-56b01edf6604b9b97600",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 98,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-055/e2e a fresh browser recovers distinct historical and pending split operations from server",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2520,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:48:12.977Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-6a140fa745455181b5f5",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-066/e2e expiry is shown separately from an old order that can still be paid",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1966,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:48:15.505Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-fe2b2b63a81d50a44f10",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 106,
+          "column": 1
+        },
+        {
+          "title": "TC-IDEM-083/e2e historical paid split remains readable after child void without enabling a stale reprint",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "idempotency-server",
+              "projectName": "idempotency-server",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1408,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-14T03:48:17.479Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "127cbb7a2841c7a6cbca-b51f50ca48cd3faf14fc",
+          "file": "idempotencyRecovery.spec.ts",
+          "line": 113,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-14T03:45:25.012Z",
+    "duration": 174117.10499999998,
+    "expected": 47,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

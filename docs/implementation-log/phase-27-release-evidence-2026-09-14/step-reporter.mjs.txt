@@ -1,0 +1,8 @@
+import fs from 'node:fs';
+export default class Steps {
+ onBegin(){this.output=process.env.IDEM_STEPS_FILE??'artifacts/release-wsl/rejected-diagnostic-steps.jsonl';fs.writeFileSync(this.output,'');}
+ write(data){fs.appendFileSync(this.output,JSON.stringify({at:new Date().toISOString(),...data})+'\n');}
+ onStepBegin(test,result,step){this.write({event:'begin',category:step.category,op:step.title.split(' ')[0],line:step.location?.line,file:step.location?.file?.replaceAll('\\','/').split('/').slice(-2).join('/')});}
+ onStepEnd(test,result,step){this.write({event:'end',category:step.category,op:step.title.split(' ')[0],line:step.location?.line,duration:step.duration,error:!!step.error});}
+ onTestEnd(test,result){this.write({event:'testEnd',status:result.status,retry:result.retry,duration:result.duration});}
+}

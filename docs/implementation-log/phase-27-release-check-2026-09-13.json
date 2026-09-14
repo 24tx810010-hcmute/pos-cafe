@@ -1,0 +1,26 @@
+{
+  "date": "2026-09-13",
+  "baseSha": "3ada48c0c9c494d9b34838fd3739bda6091e0bb9",
+  "fingerprint": "e8f0aeeb298671044013cfe0b0e2e64ce326fed3f29fbf7994c9395e2605a3c5",
+  "node": "v24.16.0",
+  "required": 770,
+  "unit": {
+    "passed": 589,
+    "total": 589,
+    "metadata": {
+      "stage": "unit",
+      "startedCandidate": "e8f0aeeb298671044013cfe0b0e2e64ce326fed3f29fbf7994c9395e2605a3c5",
+      "finishedCandidate": "e8f0aeeb298671044013cfe0b0e2e64ce326fed3f29fbf7994c9395e2605a3c5",
+      "exitCode": 0,
+      "signal": null,
+      "reportSha256": "767d2536894db25c0b2bd8eda31d935815a09a746a7f58ec8991f9d32651f199",
+      "optionsSha256": "7d430f6d1bedd406cd27cc202f4ed14e1810fa5ad7eb5980778188842c6eec63",
+      "finishedAt": "2026-09-13T04:30:10.920Z"
+    }
+  },
+  "build": "PASS after correcting deferred Promise<OperationView> test type",
+  "database": "BLOCKED: CodeIntegrity 3077/3033; unsigned initdb.exe; Smart App Control VerifiedAndReputablePolicyState=1",
+  "fullGate": "BLOCKED: historical contracts/tools/e2e reports have a different fingerprint",
+  "push": "NOT DONE",
+  "pnpmSha": "86d9c74541d33c1880970534486202dd0307c9a92baf8e6d9cf1d02a246f6996"
+}

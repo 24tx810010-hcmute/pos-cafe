@@ -4,6 +4,8 @@ Thuật ngữ và ký hiệu K, R1, G, F0: xem [bảng thuật ngữ](proposal.m
 
 Ngày 2026-09-09. Phủ ở **mức thiết kế**, không phải số test đã chạy. Mỗi biến thể phải có ID suffix trong manifest theo testplan, mục B. Mã FR/NFR nằm tại requirement. Test đa lớp báo từng backend, không suy rộng mock thành DB.
 
+Cập nhật F1 ngày 2026-09-10: TC006 giữ 102 cell DB và thêm 12 core/component + 3 E2E về cách ly cache/receipt giữa phiên và khi bị từ chối quyền. Vẫn 33 requirement, 12 UC, 93 TC gốc; manifest tăng từ 669 lên 684 execution bắt buộc. Kết quả kiểm chứng bản sửa F1 được ghi riêng; không coi kết quả đó là đóng các finding khác.
+
 | Requirement | Use case | Test case |
 | --- | --- | --- |
 | [IDEM-01 — Danh tính nhân viên được server xác minh](specs/write-idempotency/spec.md) | UC-IDEM-01, UC-IDEM-08 | TC-IDEM-001, TC-IDEM-002, TC-IDEM-003, TC-IDEM-004, TC-IDEM-005, TC-IDEM-090 |
@@ -46,4 +48,27 @@ Ngày 2026-09-09. Phủ ở **mức thiết kế**, không phải số test đã
 | Use case chưa có TC | 0 / phải 0 |
 | Requirement chưa có UC | 0 / nên 0 |
 
-33 requirement, 12 UC, 93 TC gốc. Invariant về runner/kiến trúc được kiểm trong ngữ cảnh phục hồi UC 07; không tạo UC giả riêng cho công cụ. Các TC đã hiện thực; kết quả thực chạy được chốt riêng tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md). Ma trận này chứng minh truy vết thiết kế, không tự chứng minh code đã đúng.
+33 requirement, 12 UC, 93 TC gốc. Invariant về runner/kiến trúc được kiểm trong ngữ cảnh phục hồi UC 07; không tạo UC giả riêng cho công cụ. Có execution cho các TC, nhưng hậu kiểm F5 còn chỉ ra oracle chưa phủ hết expected; kết quả thực chạy được chốt riêng tại [phase 27](../../../docs/implementation-log/phase-27-idempotent-write-operations.md). Ma trận này chứng minh truy vết thiết kế, không tự chứng minh code đã đúng.
+
+
+## Truy vết hồi quy F2–F5 (2026-09-11)
+
+Bảng requirement/UC/TC hiện có giữ nguyên; bổ sung assertion và required executions của TC015/074 (IDEM-04), TC051 (IDEM-14/19, UC12), TC052 (IDEM-05/14, UC02/07), TC030 (IDEM-15/19, UC05/11), TC066 (IDEM-11/12/28, UC10), TC085 (IDEM-21, nâng cấp). Không thêm requirement/UC thiếu testcase. Manifest mở rộng từ684 lên758 execution; gate cuối đã xác nhận758/758required; xem log khắc phục P2 để biết fingerprint và giới hạn.
+
+TC053/core/session=same_employee bổ sung oracle IDEM-01/14: thế hệ phiên đổi vô hiệu hóa coordinator ngay cả khi object nhân viên giữ nguyên. Baseline controlled setter mở phiếu bếp từ ACK cũ; fixed không mở. Luồng PIN hiện tại qua null/object mới nên chưa chứng minh exploit qua UI thật.
+
+
+## Hậu kiểm trước push ngày 2026-09-13
+
+Bổ sung TC053/054 cho IDEM-14 trong UC07/09 và positive TC006 cho IDEM-02/24. Vẫn 93 TC gốc; manifest có 770 required execution (758 cũ + 12 mới). Đây chưa phải số đạt gate: chỉ unit/component 589 PASS trên candidate mới; DB/E2E bị chặn và các report cũ sai fingerprint.
+
+
+## Truy vết hồi quy 14/09
+
+| Requirement | Use case | Execution bổ sung |
+| --- | --- | --- |
+| IDEM-14/19 | UC02, UC04, UC05, UC06, UC12 | TC051/053/054 trong ba file writeInitialSubmitLifetime, writePaymentLifetime, writeHistoryLifetime |
+| IDEM-02/24 | UC01 và các luồng trên | TC006 positive auth errors hiện hành, không bỏ xử lý lỗi để đạt stale-response oracle |
+| IDEM-22 | UC07 | Discovery/gate đòi đủ 818 execution; nhóm cache TC006/core vẫn đủ 12, recovery current 4, initial current 2, payment current 4, history current 4 |
+
+48 execution mới không thêm requirement/UC/TC gốc. plannedFiles trong caseCatalog gốc là vị trí dự kiến lịch sử; actual discovery và testplan là nguồn xác minh file đã thực hiện, không suy missing test chỉ từ tên file dự kiến cũ. Review executions mới ghi đúng file actual.

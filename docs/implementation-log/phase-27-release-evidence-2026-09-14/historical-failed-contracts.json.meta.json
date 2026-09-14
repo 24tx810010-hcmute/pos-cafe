@@ -1,0 +1,10 @@
+{
+  "stage": "contracts",
+  "startedCandidate": "e8f0aeeb298671044013cfe0b0e2e64ce326fed3f29fbf7994c9395e2605a3c5",
+  "finishedCandidate": "e8f0aeeb298671044013cfe0b0e2e64ce326fed3f29fbf7994c9395e2605a3c5",
+  "exitCode": 1,
+  "signal": null,
+  "reportSha256": "9b31e816ddf4f84eecba52b910c757eac9079551b39413147fba4ebd5822c38d",
+  "optionsSha256": "8a1976cf42c0f6c826f9893c101811fef4fcb6f9bc13bbfd313ecda1d5b76d98",
+  "finishedAt": "2026-09-14T03:19:46.864Z"
+}

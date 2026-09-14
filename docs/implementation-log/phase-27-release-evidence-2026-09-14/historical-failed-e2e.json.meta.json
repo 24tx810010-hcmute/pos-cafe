@@ -1,0 +1,10 @@
+{
+  "stage": "e2e",
+  "startedCandidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "finishedCandidate": "69ffe20542536cab0a2c162807fc12e7a143e5aa104b620ba0eeac065d4cb1f6",
+  "exitCode": 1,
+  "signal": null,
+  "reportSha256": "ef2661fb92449b78e89c148a0dabe1bcbdb823c83f46b83f1ff3cead486220a7",
+  "optionsSha256": null,
+  "finishedAt": "2026-09-14T03:41:06.522Z"
+}
