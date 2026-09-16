@@ -13,3 +13,7 @@
 - Phiên bản gói: commit local chứa change, tra `git log -1 -- openspec/changes/adopt-ai-task-workflow/tasks.md`; không gắn lại kết quả task ứng dụng khác vào phiên bản này.
 - Việc cần người dùng: không có để hoàn tất gói đã yêu cầu; task mới chỉ cần mô tả việc muốn làm và dùng prompt.
 - Nghiệm thu/phát hành: bàn giao gói tài liệu theo yêu cầu; chưa có phản hồi sử dụng pilot. Phát hành ứng dụng ngoài phạm vi, không push từ task này.
+
+## Bổ sung sau bản 9937f1f — cổng subagent
+
+Ngày 2026-09-16, chủ dự án yêu cầu review độc lập trước bàn giao. Đã bổ sung DEC-WF-09/WF-09; cả hai reviewer bắt buộc APPROVE candidate cuối `9c627e44f45155de9f61b0b7cdc419b52dfe0ba65e10f43106cbb4b83ca295af`. Finding không chặn RQ-N1 đã được sửa và reviewer xác nhận đóng; không còn finding mở. [Báo cáo nguyên văn, manifest và giới hạn](../reviews/2026-09-16-gate/README.md) được lưu trên docs. Phần đóng gói ban đầu ở trên là checkpoint lịch sử; không gọi tự rà của checkpoint đó là review subagent.

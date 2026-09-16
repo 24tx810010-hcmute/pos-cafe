@@ -75,3 +75,22 @@ Mã **WF-08**. Quy trình SHALL có đường vào từ AGENTS, chuẩn spec, Op
 
 - **WHEN** task được mở trong checkout không mang file bị ignore
 - **THEN** câu mở đầu chỉ cách xác minh/đọc worktree docs hoặc ref docs; nếu thiếu nguồn thì báo thiếu, không tự dựng quy tắc.
+
+### Requirement: Review độc lập và chấp thuận candidate cuối
+
+Mã **WF-09**. Trước bàn giao một task là hoàn tất, AI SHALL gọi ít nhất một subagent không tham gia tạo phần được review; task nhạy cảm SHALL có ít nhất hai với phạm vi khác nhau, hợp phạm vi phủ tiêu chí nghiệm thu. Reviewer SHALL tự đọc nguồn/kiểm bằng chứng, không sửa candidate. Mọi reviewer bắt buộc SHALL trả `APPROVE` đúng candidate cuối/phạm vi sau khi finding chặn được xử lý và kiểm lại. AI MUST NOT dùng tự review, đa số, im lặng hoặc loại reviewer bất đồng để thay cổng này.
+
+#### Scenario: Một reviewer đồng ý và một reviewer thấy lỗi
+
+- **WHEN** hai reviewer bắt buộc có verdict khác nhau vì một finding đúng-sai chưa giải quyết
+- **THEN** chưa bàn giao hoàn tất; tác giả sửa hoặc phản biện bằng chứng và reviewer kiểm lại, không lấy đa số hoặc đổi reviewer để kết thúc.
+
+#### Scenario: Candidate đổi sau khi được chấp thuận
+
+- **WHEN** code, spec hoặc bằng chứng/kết luận quan trọng thay đổi sau review
+- **THEN** kiểm lại phần ảnh hưởng và mọi reviewer xác nhận candidate cuối trong phạm vi; chỉ thêm metadata ghi kết quả review được miễn review đệ quy.
+
+#### Scenario: Không thể thực hiện review
+
+- **WHEN** reviewer không truy cập được bằng chứng thiết yếu hoặc subagent không khả dụng
+- **THEN** ghi `BLOCKED`, báo tiến độ và nguyên nhân; không tự thay bằng self-review hoặc nhận hoàn tất.

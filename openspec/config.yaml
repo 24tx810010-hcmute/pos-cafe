@@ -57,6 +57,7 @@ rules:
     - "Chia task tối đa khoảng 2 giờ mỗi mục."
     - "Phải có mục cập nhật tài liệu nhánh `docs` và mục kiểm thử tương ứng."
     - "Mỗi task ghi đầu vào, đầu ra, dependency, tiêu chí nghiệm thu, phạm vi đã được giao; cập nhật bàn giao và bằng chứng gắn source/môi trường theo docs/workflow/README.md."
+    - "Trước bàn giao hoàn tất phải có review độc lập bằng subagent: ít nhất 1, task nhạy cảm ít nhất 2; mọi reviewer bắt buộc APPROVE candidate cuối theo docs/workflow/README.md#review-doc-lap. Không lấy tự review hoặc đa số thay thế."
 
 operations:
   apply:

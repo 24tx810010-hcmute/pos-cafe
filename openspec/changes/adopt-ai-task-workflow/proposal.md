@@ -20,7 +20,7 @@ Sau khi phản biện đề xuất ban đầu, cần chuẩn hóa bằng chứng
 
 ### New Capabilities
 
-- `ai-task-workflow`: quy trình làm việc và truy vết cho task. Mã `WF-01`–`WF-08` là requirement quy trình, không thêm FR/NFR chức năng POS.
+- `ai-task-workflow`: quy trình làm việc và truy vết cho task. Mã `WF-01`–`WF-09` là requirement quy trình, không thêm FR/NFR chức năng POS.
 
 ### Modified Capabilities
 
@@ -63,4 +63,16 @@ Nguồn: cuộc trao đổi ngày 2026-09-16. Chủ dự án yêu cầu: "các t
 | DEC-WF-07 | Khi sửa không tiến triển, chuyển sang chẩn đoán theo bằng chứng. Không bắt đúng ba lần phải đổi design hoặc dừng toàn task | Nguyên nhân có thể ở requirement/code/test/môi trường; số lần chỉ là tín hiệu xem lại cách làm |
 | DEC-WF-08 | Không chọn sẵn pilot hoặc hoãn an toàn đồng thời của chuyển bàn | Chưa so sánh ứng viên; xung đột dữ liệu là vấn đề tính đúng cần xử lý ở phạm vi phát hành |
 
-Trạng thái: đã chấp nhận hướng quy trình theo nguồn trên; chi tiết đóng gói do AI thực hiện trong yêu cầu. Chưa có quyết định nào bị thay thế trong change này. Nếu sửa về sau, ghi DEC mới liên kết quyết định cũ; không xóa lý do ban đầu. Bằng chứng thực nghiệm về năng suất chưa có.
+Trạng thái tại bản đóng gói đầu `9937f1f`: đã chấp nhận hướng quy trình theo nguồn trên; chi tiết đóng gói do AI thực hiện trong yêu cầu. Các thay đổi về sau ghi DEC mới bên dưới; không xóa lý do ban đầu. Bằng chứng thực nghiệm về năng suất chưa có.
+
+### DEC-WF-09 — Bắt buộc subagent review trước bàn giao
+
+- Ngày: 2026-09-16, sau bản đóng gói `9937f1f`.
+- Nguồn: chủ dự án yêu cầu "ở mỗi bước verify cuối cùng trước khi đưa cho tôi ... gọi 1 hoặc nhiều hơn 1 subagent khác ... check độc lập ... sau khi các bên đồng ý hết rồi thì mới ... bàn giao".
+- Trạng thái: áp dụng yêu cầu review độc lập; số reviewer theo mức và cách ghi evidence là chi tiết thực hiện được AI lựa chọn trong yêu cầu này.
+- Chọn: ít nhất 1 reviewer không phải tác giả cho mọi gói kết quả task, ít nhất 2 trọng tâm khác nhau cho phần nhạy cảm; tất cả reviewer bắt buộc xác nhận candidate cuối. Reviewer không sửa candidate và không cần reviewer lồng nhau để duyệt báo cáo review của chính mình.
+- Phương án loại: tác giả tự rà thay review; lấy đa số; gọi nhiều agent cùng đọc bản tóm tắt của tác giả; gỡ reviewer bất đồng; coi im lặng hoặc thiếu công cụ là đồng ý.
+- Lý do: tạo lượt kiểm riêng đối chiếu yêu cầu và evidence, giảm việc lặp lại giả định của tác giả. Phạm vi khác nhau và ngữ cảnh mới giúp tìm các nhóm lỗi khác nhau, nhưng không chứng minh reviewer không cùng bỏ sót lỗi.
+- Hệ quả: tăng thời gian/chi phí review; nếu không gọi được reviewer hoặc còn thiếu evidence thiết yếu thì chưa thể bàn giao là hoàn tất, vẫn báo tiến độ/blocker. Không đặt số vòng tối đa để tự nhận PASS.
+- Thay thế: mở rộng DEC-WF-06; thay cơ chế cho phép cùng AI tự rà ở mục bằng chứng của bản `9937f1f`. Các biên bản tự rà trước ngày bổ sung giữ giá trị lịch sử, không được đổi tên thành review độc lập.
+- Kiểm chứng: WF-09, TC-WF-09/10, báo cáo của subagent trên candidate đóng gói điều chỉnh này; chưa đo tỷ lệ giảm lỗi.

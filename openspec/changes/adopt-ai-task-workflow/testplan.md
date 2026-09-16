@@ -12,6 +12,8 @@ Các TC sau là **rà soát tài liệu theo tình huống**, không giả làm 
 | TC-WF-06 | WF-06 | Ba lần sửa fail; có thể do fixture sai; chủ dự án chưa đọc code | Rà hướng dẫn: chuyển sang chẩn đoán, không buộc sửa design/nới test; có đường giải thích code và trạng thái chờ phản hồi, không tự đánh dấu đã hiểu |
 | TC-WF-07 | WF-07 | Hai task song song; task A chỉ được giao spec, task B đã được code; không có quyền deploy | Rà chỉ mục/mẫu handoff: file riêng, nguồn quyền rõ, A không tự code, B tiếp tục phần đã giao; cả hai không tự mở quyền deploy; trạng thái nghiệm thu/phát hành tách |
 | TC-WF-08 | WF-08 | Worktree mới không có AGENTS; repo có nhánh docs; README có sửa dở từ task khác | Rà prompt và entrypoints: có cách tìm worktree/ref docs; link/anchor và OpenSpec strict hợp lệ; diff riêng chỉ có workflow, baseline khác được bảo toàn; không claim đã có CI/pilot |
+| TC-WF-09 | WF-09 | Task nhỏ chỉ có tác giả tự kiểm; task nhạy cảm có hai reviewer, một người chưa đồng ý | Kiểm quy tắc: task nhỏ vẫn cần 1 reviewer khác; nhạy cảm cần 2, phạm vi phủ tiêu chí; mọi reviewer bắt buộc APPROVE, không lấy đa số/đổi reviewer để qua |
+| TC-WF-10 | WF-09 | Reviewer A đồng ý source X, sau sửa là Y; reviewer B thiếu backend thiết yếu; tác giả muốn tự đóng finding | Kiểm quy tắc candidate cuối, delta/re-review, finding phải có xác nhận, thiếu chứng cứ là BLOCKED. Metadata ghi verdict không mở vòng reviewer vô hạn; thông báo blocker/tiến độ vẫn được gửi |
 
 ## Cách tái kiểm
 

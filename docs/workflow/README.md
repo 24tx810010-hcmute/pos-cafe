@@ -50,7 +50,7 @@ Mỗi **change chính thức** vẫn theo bộ bảy phần trong chuẩn spec, 
 | 2. Làm rõ, quyết định | Hỏi theo tình huống, so sánh phương án, khuyến nghị có căn cứ; đo thử nếu cần và được phép | Quyết định có lý do, phạm vi làm/hoãn, tiêu chí thành công; hết câu hỏi chặn phần sẽ làm |
 | 3. Spec, kế hoạch | Viết requirement → use case → design → test plan → traceability → tasks; rà tính nhất quán | Spec của phạm vi được duyệt, dependency có cách đáp ứng, task có đầu vào/đầu ra và cách kiểm chứng; chỉ code khi được giao |
 | 4. Thực hiện từng phần | Code và kiểm thử cùng từng slice; sửa theo bằng chứng; cập nhật quyết định mới và bàn giao | Mỗi slice có kết quả và bằng chứng riêng; điều chưa làm ghi rõ, không nhận thành tích của slice sau |
-| 5. Kiểm chứng, nghiệm thu | Kiểm tích hợp/hồi quy còn lại, rà bằng chứng/requirement, review trọng điểm và hướng dẫn đọc code | Ma trận đạt/chưa đạt/chưa chạy; bản dùng thử hoặc kết quả tương ứng; chủ dự án có đủ thông tin để nghiệm thu |
+| 5. Kiểm chứng, nghiệm thu | Kiểm tích hợp/hồi quy còn lại, gọi subagent review độc lập, xử lý findings và hướng dẫn đọc code | Mọi reviewer bắt buộc APPROVE đúng candidate/phạm vi; ma trận đạt/chưa đạt/chưa chạy và kết quả đủ để chủ dự án nghiệm thu |
 | 6. Bàn giao | Đồng bộ spec, decisions, hiện trạng, kết quả, giới hạn; ghi việc tiếp theo; phát hành chỉ trong phạm vi được giao | Hồ sơ gắn đúng source và môi trường; trạng thái kỹ thuật, nghiệm thu và phát hành tách biệt |
 
 Đây là vòng lặp. Câu hỏi mới mở lại phần tương ứng, không xóa quyết định cũ và không làm lại mọi tài liệu vô cớ. Triển khai vẫn được tiếp tục ở phần độc lập đã có đủ thông tin và thẩm quyền.
@@ -78,8 +78,34 @@ Dùng [mẫu quyết định](templates.md#quyet-dinh). Quyết định riêng f
 - Ghi runtime/dependency lock, backend, migration/schema và fixture cần cho lần kiểm. Dữ liệu thử xác định trên backend thật không phải dữ liệu kinh doanh thật; môi trường nào chưa kiểm phải ghi tên. Không dùng dữ liệu thật mặc định để chứng minh test tích hợp.
 - Source đổi sau kiểm tra thì bằng chứng cũ là lịch sử. Chạy lại phần bị ảnh hưởng và các gate bắt buộc; tái dùng phần độc lập chỉ khi chứng minh phạm vi phù hợp và gate hiện hành cho phép. Không ghép báo cáo từ các fingerprint khác nhau để tạo PASS chung.
 - Gói nghiệm thu phải có cách chạy lại (lệnh và điều kiện dựng môi trường). Một lệnh tổng hợp là tiện ích có thể bổ sung, không yêu cầu tạo runner mới cho mỗi task. CI sớm là hướng ưu tiên; không coi tài liệu này là việc đã dựng CI.
-- Với phần nhạy cảm, có lượt rà soát riêng về yêu cầu/expected result và các trường hợp thất bại. Có thể do người hoặc phiên review riêng thực hiện; nếu vẫn là cùng AI, ghi đúng giới hạn độc lập. Agent bổ sung chỉ dùng khi người dùng yêu cầu hoặc quy tắc áp dụng cho phép. Negative control/mutation chỉ dùng khi giúp kiểm chứng cơ chế quan trọng, không bắt mọi sửa chữ phải làm.
+- Review bằng subagent trước bàn giao là bắt buộc theo cổng bên dưới; tự rà vẫn cần nhưng không thay thế reviewer. Negative control/mutation chỉ dùng khi giúp kiểm chứng cơ chế quan trọng, không bắt mọi sửa chữ phải làm.
 - Ảnh/video chứng minh giao diện ở trạng thái đã chụp; không thay thế test về quyền, tiền hoặc giao dịch. Hồ sơ `docs` giữ liên kết, ý nghĩa và giới hạn bằng chứng; tệp nhị phân/raw log ở vị trí artifact phù hợp, không ghi credential/token/dữ liệu nhạy cảm.
+
+<a id="review-doc-lap"></a>
+## Cổng review độc lập trước bàn giao
+
+Bổ sung ngày 2026-09-16 theo yêu cầu chủ dự án: gọi một hoặc nhiều subagent khác để kiểm độc lập ở lần verify cuối, các bên đồng ý rồi mới bàn giao. Áp dụng cho mọi **kết quả task được tuyên bố hoàn tất**, gồm spec, tài liệu và bảo trì nhỏ; không yêu cầu review mới cho từng cập nhật tiến độ hoặc câu hỏi làm rõ. Phiên reviewer chỉ kiểm rồi trả finding/verdict, không cần tạo reviewer lồng nhau để duyệt chính báo cáo review.
+
+### Số reviewer và tính độc lập
+
+- Nhẹ/thông thường: ít nhất **1 subagent** không tham gia tạo phần được giao review.
+- Nhạy cảm: ít nhất **2 subagent**, phân trọng tâm khác nhau; ví dụ nghiệp vụ/tính toàn vẹn dữ liệu và kiểm thử/phân quyền/tính xác thực bằng chứng. Thay đổi cơ chế cho phép đóng task hoặc mở quyền thực hiện cũng là nhạy cảm về quy trình.
+- Một reviewer có thể kiểm một gói nhiều việc nhỏ với phạm vi liệt kê rõ, nhưng mỗi kết quả bàn giao phải được phủ. Không thêm nhiều reviewer chỉ để đủ số, và không gỡ reviewer đang bất đồng để qua cổng.
+- Reviewer không sửa candidate, test/expected hoặc tự commit/deploy. Nếu cần chạy kiểm tra có ghi dữ liệu, chỉ chạy trong môi trường test cách ly đã được giao, không làm đổi candidate hoặc dữ liệu thật; tránh chạy đồng thời các suite dùng chung DB. Tác giả sửa, reviewer kiểm lại.
+- Khởi tạo reviewer với yêu cầu gốc, tiêu chí/spec đã duyệt, snapshot/diff của candidate, phạm vi được giao và nơi lấy evidence. Ưu tiên ngữ cảnh mới; không gửi kết luận "mọi thứ đã đúng" hoặc kết luận reviewer khác trước khi họ tự đánh giá vòng đầu. Cùng mô hình vẫn có thể mắc lỗi giống nhau; độc lập ở vai trò/ngữ cảnh không phải bảo đảm độc lập thống kê.
+
+### Cách kiểm và điều kiện qua cổng
+
+1. Chốt candidate bằng commit sạch hoặc manifest hash cùng snapshot/patch có thể khôi phục (gồm file mới, test, spec và cấu hình có liên quan). Ghi reviewer nào kiểm phạm vi nào; hợp các phạm vi phải bao phủ toàn bộ tiêu chí nghiệm thu của gói bàn giao.
+2. Reviewer tự đọc nguồn và diff, đối chiếu yêu cầu với kết quả/expected, tìm phản ví dụ. Tự kiểm hoặc chạy lại phép kiểm quyết định trong phạm vi khi khả thi; nếu thiếu công cụ/môi trường/bằng chứng thiết yếu thì trả `BLOCKED`, không suy PASS từ lời tác giả. Với tài liệu, phép kiểm thích hợp là đối chiếu yêu cầu, nhất quán, link và kịch bản, không giả số runtime test.
+3. Báo cáo theo [mẫu review](templates.md#review-doc-lap): mã reviewer/phạm vi/candidate, điều đã kiểm và chưa kiểm, finding có vị trí/bằng chứng/tác động, cách kiểm lại, verdict. Mỗi nhận xét có phân loại **chặn** hoặc **đề xuất không chặn** kèm lý do; lỗi đúng-sai, thiếu bằng chứng thiết yếu, sai phạm vi/quyền luôn chặn bất kể nhãn mức độ.
+4. Tác giả xử lý từng finding: sửa hoặc phản biện bằng chứng cụ thể. Reviewer xác nhận đã giải quyết hoặc không phải lỗi; không sửa theo mọi ý kiến một cách máy móc, không bỏ phiếu đa số hay gây áp lực để reviewer đồng ý. Bất đồng nghiệp vụ đưa chủ dự án quyết định; phần phụ thuộc chưa được nhận hoàn tất.
+5. Sau sửa, chạy lại kiểm tra cần thiết và gửi diff mới cho reviewer bị ảnh hưởng. Mọi reviewer bắt buộc xác nhận `APPROVE` trên candidate cuối trong phạm vi của mình; người không bị ảnh hưởng có thể đối chiếu delta và xác nhận lại mà không chạy toàn bộ test. Mọi thay đổi nội dung tác động yêu cầu, code, expected, kết luận hay evidence phải được review lại. Chỉ bổ sung metadata ghi chính kết quả review vào hồ sơ không bắt review đệ quy, nhưng phải giữ nguyên finding/verdict/candidate của reviewer.
+6. Chỉ bàn giao là **hoàn tất** khi kiểm tra bắt buộc đạt, mọi finding chặn đã đóng có căn cứ, mọi reviewer bắt buộc `APPROVE` và AI điều phối đối chiếu bằng chứng cuối. Đồng thuận là một lớp lọc bổ sung; không thay thế test, tiêu chí đã duyệt, quyền của chủ dự án hay bảo đảm đúng mọi trường hợp.
+
+`APPROVE` = đủ bằng chứng trong phạm vi và không còn finding chặn; `CHANGES_REQUESTED` = có finding cần sửa; `BLOCKED` = chưa đủ nguồn/quyền/công cụ để kết luận. Im lặng, timeout, reviewer lỗi hoặc chỉ hết lượt chạy không phải APPROVE. Nếu không gọi được subagent, báo chưa qua cổng và phần đã làm; không tự miễn cổng. Người dùng vẫn nhận tiến độ, câu hỏi và báo cáo blocker, không bị giữ thông tin vì chưa có đồng thuận.
+
+Lưu báo cáo reviewer và bảng xử lý findings trên `docs`, liên kết từ biên bản/handoff. Giữ lịch sử kết quả trước sửa. Nếu chủ dự án thay phạm vi/tiêu chí, ghi quyết định mới rồi review lại theo phạm vi mới; không đổi nghĩa PASS để đóng việc cũ.
 
 ## Khi sửa lỗi không tiến triển
 

@@ -23,6 +23,8 @@ câu hỏi cần thiết. Ghi quyết định và lý do trên docs. Tiếp tụ
 Nếu đây là yêu cầu phân tích/spec, hoàn thành hồ sơ để tôi duyệt.
 Nếu tôi đã giao triển khai phạm vi được duyệt, thực hiện và kiểm chứng
 theo quy trình, cập nhật bằng chứng và bàn giao trước khi kết thúc.
+Trước khi bàn giao hoàn tất, gọi subagent kiểm độc lập theo cổng review;
+chỉ kết luận hoàn tất khi mọi reviewer bắt buộc chấp thuận candidate cuối.
 ```
 
 ## Khi tiếp tục việc đang làm

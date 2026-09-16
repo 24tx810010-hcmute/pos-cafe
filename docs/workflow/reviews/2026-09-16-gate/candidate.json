@@ -1,0 +1,37 @@
+{
+  "id": "9c627e44f45155de9f61b0b7cdc419b52dfe0ba65e10f43106cbb4b83ca295af",
+  "base": "9937f1f005f1569b0e348374b37cc95d8b490ca5",
+  "root": "D:/Workspace/pos-cafe-docs",
+  "files": {
+    "AGENTS.md": "995ac53a0ea9a9ff60c5e94e94736ce7341313839ad34922ae20debde3ca2d06",
+    "CLAUDE.md": "0bd8aaf633be1d7efee6b7ebc6b6b0e67f7136a05ebfdc434a273a54aa3dfad3",
+    "docs/workflow/README.md": "6a9b8ce256307950915462155d52e818d319f79e74219ae3a00eb665166281cb",
+    "docs/workflow/start-task.md": "4af66a56a0a9f7bacb7f94bcd118a5385a436dc51780c292f353da762ae35ceb",
+    "docs/workflow/templates.md": "94c0ac4d49df2b4c54262e2a76f05756ae133a11d53000c78857371ebf7b4822",
+    "openspec/SPEC-STANDARD.md": "5cef7768df5e623cdf2cb2b89d1ab5881423a1bc8083c97e6ad4b9d1ef241a03",
+    "openspec/changes/adopt-ai-task-workflow/design.md": "b8645ae5a63508389cb48d0f0438e273a610f732c5afc7115d4e800c6dcf3fbe",
+    "openspec/changes/adopt-ai-task-workflow/proposal.md": "e99726f5b6f4e5c6119428daa0c1ea7849b7175a8ca2963302692bd507070a09",
+    "openspec/changes/adopt-ai-task-workflow/specs/ai-task-workflow/spec.md": "0f8b5d04f20b84b2ffb7cac5e7fce6f2954562fd99f00b55845c576a44f22016",
+    "openspec/changes/adopt-ai-task-workflow/tasks.md": "b07144c0341393434fa3ce431660058965984ffe61e4d3491f5708bf2d3232c3",
+    "openspec/changes/adopt-ai-task-workflow/testplan.md": "55d0d121a0b08e99b072c4b2210bbe860b48b0fef025aa87e159fff42e11f8e1",
+    "openspec/changes/adopt-ai-task-workflow/traceability.md": "935cfa71afb92f3ac00a30fc4df40fa592674abede0dce39d8c5d655f37d7287",
+    "openspec/config.yaml": "0cadb137ccf6534441a95ae91aa964a3f25873fd726027a9b98d53827d01b7a7"
+  },
+  "scope": "Independent reviewer gate addition; pending checkboxes are bookkeeping. Other dirty project changes are excluded.",
+  "normalizedLfSha256": {
+    "AGENTS.md": "f144e54641a4f0fcd9d416e0803df8f16361a3208f16e516770815cb0d87095c",
+    "CLAUDE.md": "41a732e1c56a61563f97610a0276a67b9f5dc7c8218f7cbb71bc6e97a7d3019c",
+    "docs/workflow/README.md": "6a9b8ce256307950915462155d52e818d319f79e74219ae3a00eb665166281cb",
+    "docs/workflow/start-task.md": "4af66a56a0a9f7bacb7f94bcd118a5385a436dc51780c292f353da762ae35ceb",
+    "docs/workflow/templates.md": "94c0ac4d49df2b4c54262e2a76f05756ae133a11d53000c78857371ebf7b4822",
+    "openspec/SPEC-STANDARD.md": "facd25dff294ed68941a345866950d3e584a3b7f92a22161afdf73f314de2d8b",
+    "openspec/changes/adopt-ai-task-workflow/design.md": "b8645ae5a63508389cb48d0f0438e273a610f732c5afc7115d4e800c6dcf3fbe",
+    "openspec/changes/adopt-ai-task-workflow/proposal.md": "e99726f5b6f4e5c6119428daa0c1ea7849b7175a8ca2963302692bd507070a09",
+    "openspec/changes/adopt-ai-task-workflow/specs/ai-task-workflow/spec.md": "0f8b5d04f20b84b2ffb7cac5e7fce6f2954562fd99f00b55845c576a44f22016",
+    "openspec/changes/adopt-ai-task-workflow/tasks.md": "b07144c0341393434fa3ce431660058965984ffe61e4d3491f5708bf2d3232c3",
+    "openspec/changes/adopt-ai-task-workflow/testplan.md": "55d0d121a0b08e99b072c4b2210bbe860b48b0fef025aa87e159fff42e11f8e1",
+    "openspec/changes/adopt-ai-task-workflow/traceability.md": "935cfa71afb92f3ac00a30fc4df40fa592674abede0dce39d8c5d655f37d7287",
+    "openspec/config.yaml": "0cadb137ccf6534441a95ae91aa964a3f25873fd726027a9b98d53827d01b7a7"
+  },
+  "postReviewMetadata": "Only checklist 8 and 9 become checked in tasks.md. Restore them to unchecked for candidate comparison. Reports, this manifest and review/handoff status record the actual review; no normative content changed."
+}

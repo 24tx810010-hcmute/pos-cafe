@@ -104,6 +104,8 @@ Quyết định riêng đặt trong proposal, design tham chiếu. Quyết đị
 - Tái dùng bằng chứng: <phần nào, căn cứ phạm vi/source, gate cho phép>
 - Lần thất bại trước và cách xử lý: <giữ bằng chứng; không xóa lịch sử>
 - Review expected result / trường hợp phản ví dụ: <ai kiểm, phương pháp, kết quả, giới hạn độc lập>
+- Cổng subagent: <reviewer bắt buộc/phạm vi/candidate cuối/verdict/link báo cáo; hợp phạm vi phủ tiêu chí>
+- Findings: <ID, chặn/không chặn + lý do, xử lý, bằng chứng và reviewer xác nhận đóng>
 - Chưa kiểm / giới hạn / rủi ro còn lại: <...>
 
 ## Giải thích code và phản hồi chủ dự án
@@ -141,9 +143,33 @@ Lưu tại `docs/workflow/tasks/<task-id>.md`; thêm đường dẫn vào chỉ 
 - Đã hoàn tất: <phạm vi + evidence>
 - Chưa làm/chưa kiểm chứng: <...>
 - Lỗi/thử nghiệm gần nhất: <triệu chứng, bằng chứng, điều đã loại trừ>
+- Review độc lập: <candidate, reviewer/phạm vi/verdict, finding chặn còn mở hoặc liên kết bảng xử lý>
 - Việc tiếp theo: <bước cụ thể và điều kiện bắt đầu>
 - Việc cần người dùng: <quyết định/phản hồi thực sự còn thiếu hoặc không có>
 - Trạng thái nghiệm thu/phát hành: <tách riêng>
 ```
 
 Không biến ghi chú ủy quyền thành quyền mới. Khi bắt đầu lại, kiểm tra nguồn quyết định và diff liên quan; không mặc định file còn mới. Không tự chuyển trạng thái task khác chỉ vì đọc được biên bản cũ.
+
+<a id="review-doc-lap"></a>
+## 7. Báo cáo reviewer độc lập
+
+```markdown
+# Review <reviewer-id> — <task / vòng review>
+- Vai trò: <subagent không tham gia tạo nội dung đang review>
+- Phạm vi/tiêu chí được giao: <...>
+- Candidate đã kiểm: <commit hoặc manifest hash + snapshot/patch>
+- Nguồn tự đọc: <yêu cầu, spec, diff, báo cáo, code; ghi phiên bản>
+- Kiểm tra tự thực hiện: <lệnh/phép kiểm + kết quả, hoặc giới hạn>
+- Chưa kiểm: <phần ngoài phạm vi hoặc thiếu bằng chứng>
+
+| Finding | Chặn / không chặn và lý do | Vị trí + bằng chứng | Tác động | Cách kiểm lại | Trạng thái |
+| --- | --- | --- | --- | --- | --- |
+| <ID> | <...> | <...> | <...> | <...> | <mở / đã sửa được xác nhận / không phải lỗi có căn cứ> |
+
+- Verdict: <APPROVE / CHANGES_REQUESTED / BLOCKED>
+- Lý do verdict và giới hạn: <...>
+- Candidate cuối được xác nhận lại: <ID; delta đã kiểm nếu tái dùng review cũ>
+```
+
+AI điều phối lưu nguyên nội dung có ý nghĩa của verdict/findings và liên kết nguồn báo cáo; không tự sửa verdict thay reviewer. Dùng bảng xử lý chung để nối finding → thay đổi/giải trình → evidence → xác nhận reviewer. Một bản ghi APPROVE không tự xác nhận chủ dự án đã nghiệm thu.

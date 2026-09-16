@@ -12,3 +12,11 @@ Input: yêu cầu đóng gói ngày 2026-09-16, proposal/spec của change và q
 Phiên bản bàn giao được lưu bằng commit local riêng chỉ phần workflow; đối chiếu patch còn lại với baseline, không push. Dùng `git log -1 -- openspec/changes/adopt-ai-task-workflow/tasks.md` để lấy mã phiên bản thay vì ghi mã của chính commit vào nội dung nó.
 
 Điểm chặn: không đánh dấu kiểm tra đạt nếu chỉ viết kế hoạch; không đưa sửa dở của task khác vào commit. Task ứng dụng đầu tiên dùng quy trình là công việc về sau, không nằm trong checklist hoàn thành gói này.
+
+## Bổ sung cổng reviewer — DEC-WF-09
+
+- [x] 7. Ghi yêu cầu mới, sửa cổng workflow/AGENTS/chuẩn/config và mẫu review; thêm WF-09, TC-WF-09/10.
+- [x] 8. Kiểm cấu trúc và hai subagent review độc lập candidate; xử lý và kiểm lại mọi finding chặn đến khi cả hai APPROVE.
+- [x] 9. Ghi báo cáo review và bàn giao đúng candidate; commit local chỉ phần bổ sung, giữ nguyên việc khác.
+
+Nguồn ủy quyền là yêu cầu chủ dự án gọi subagent ở verify cuối; không cho phép code ứng dụng, push hoặc deploy. Checklist 1–6 là kết quả bản đóng gói trước khi thêm cổng, không coi tự review của bản đó đáp ứng cổng mới.

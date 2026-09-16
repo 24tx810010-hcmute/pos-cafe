@@ -10,11 +10,14 @@
 | WF-06 | Không có use case — chẩn đoán và giải thích code | TC-WF-06 |
 | WF-07 | Không có use case — bàn giao task và quyền thực hiện | TC-WF-07 |
 | WF-08 | Không có use case — tích hợp hướng dẫn vào repo | TC-WF-08 |
+| WF-09 | Không có use case — cổng review của quy trình, không thêm hành vi ứng dụng | TC-WF-09, TC-WF-10 |
 
 | Chỉ số | Kết quả |
 | --- | --- |
 | Requirement chưa có test case | 0 |
 | Use case chưa có test case | 0 — không có use case ứng dụng trong change quy trình này |
-| Requirement không có use case | 8 — có giải trình và test case rà soát từng dòng theo ngoại lệ của chuẩn |
+| Requirement không có use case | 9 — có giải trình và test case rà soát từng dòng theo ngoại lệ của chuẩn |
 
 DEC-WF-01/08 → WF-08; DEC-WF-02 → WF-04; DEC-WF-03 → WF-02; DEC-WF-04 → WF-01/05; DEC-WF-05 → WF-07; DEC-WF-06/07 → WF-06. Quyết định về lịch sử bằng chứng và lựa chọn xuyên suốt → WF-03. Đây là độ phủ kế hoạch; kết quả rà soát thực tế ở biên bản, không suy ra test ứng dụng đã chạy.
+
+Bổ sung DEC-WF-09 → WF-09. Kết quả tự rà của gói ban đầu là lịch sử; không được coi là đã đáp ứng cổng subagent mới.

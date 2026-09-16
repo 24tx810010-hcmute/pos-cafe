@@ -237,3 +237,5 @@ Every change needs seven artifacts, not four: `proposal.md`, `specs/`, `design.m
 The authority is `openspec/SPEC-STANDARD.md` on the `docs` branch (worktree at `D:/Workspace/pos-cafe-docs`). Read it before writing or extending any spec. `AGENTS.md` carries a summary.
 
 The execution workflow is [docs/workflow/README.md](docs/workflow/README.md), effective 2026-09-16. Use its templates and per-task handoffs for inputs, decision records, source-bound evidence, code walkthroughs and resuming another session. The workflow does not loosen a feature's existing verification gate or authorize deployment. For a new checkout without these ignored pointer files, use [the starter prompt](docs/workflow/start-task.md) to load the authoritative `docs` worktree explicitly.
+
+Final task deliverables require independent subagent approval under the workflow review gate: at least one non-author reviewer, two for sensitive work, distinct review scopes, source-bound findings and explicit approval from every required reviewer. Do not replace missing review with self-review or agreement by majority. Report a blocker if review cannot be completed; do not label the task complete.
