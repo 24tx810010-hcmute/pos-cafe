@@ -47,6 +47,9 @@ npm test               # Vitest unit/component tests (run once)
 npm run test:watch     # Vitest watch mode
 npm run smoke          # Playwright smoke tests (mock data mode; auto-starts a dev server)
 npm run smoke:supabase # Playwright E2E against a real Supabase project (needs .env / .env.local)
+npm run ui-audit          # Rendered-UI audit (mock mode; starts its own dev server on 5178)
+npm run ui-audit:selftest # Verify the audit detector itself against ui-audit/demo-buggy.html
+npm run ui-audit:update   # Accept the current findings as the baseline (user decision only)
 ```
 
 Run a single unit test:
@@ -159,6 +162,61 @@ These keep the door open for a future offline-first adapter; violating them brea
 - **Flow functions** are tested directly against `createMockPorts(createMockState())`.
 - **Component tests** render the component (often `App`) inside a `PortsContext.Provider` (mock ports, `vi.spyOn` on the relevant repo) plus a fresh `QueryClient`, then drive UI state via `useAppStore.setState(...)`; reset the Zustand store in `afterEach`.
 - Smoke tests: `tests/smoke/` (Playwright, mock mode, 5 viewport projects incl. a portrait "rotate" case). Supabase E2E: `tests/supabase/`.
+
+### Rendered-UI audit (`ui-audit/`, added 2026-09-16)
+
+A deterministic detector for defects that only exist after the browser has laid
+the page out, and that neither Vitest nor the smoke suite can see: a control
+covered by a transparent overlay, an icon that renders 0x0 because its font never
+loaded, `undefined` or `[object Object]` reaching the screen, a tap target under
+24px, text clipped with no ellipsis, an element past the viewport, contrast below
+WCAG AA. It measures the live DOM (`getBoundingClientRect`, `getComputedStyle`,
+`elementFromPoint`). No model in the loop and no screenshot diffing, so the same
+page always produces the same output and the result can gate CI.
+
+- `ui-audit/audit.js` — the detector, injected into the page via `addInitScript`.
+  Vendored from an external kit; see `ui-audit/UPSTREAM-README.md` for the
+  original 18-rule table.
+- `ui-audit/run.mjs` — the Playwright runner.
+- `ui-audit/config.json` — targets, viewports, thresholds, exclusions.
+- `ui-audit/README.md`, `ui-audit/AGENTS.md` — usage and the rules agents follow.
+
+**Targets are states, not routes.** Because the app has a single URL (see
+*Navigation*), `config.json` declares named states reached by a short list of
+Playwright steps, with `extends` so the login sequence is written once. `@foo` in
+a step is shorthand for `[data-testid="foo"]`. Each state runs in a fresh browser
+context, because store pairing persists in `localStorage` and a reused context
+would make every state after the first order-dependent. The mock fixtures are the
+same ones `tests/smoke` uses (store key `0001-X8F3QA`, admin PIN `123456`).
+Current states: `landing`, `store-pairing`, `passcode`, `floor`, `order-drawer`,
+`order-cart`, `menu-editor`, `report`. Adding a screen means adding a block to
+`config.json`, not changing code.
+
+**Three deliberate deviations from the upstream detector**, each commented in
+`audit.js`, each measured against this app:
+
+1. *Scope to the topmost viewport-covering fixed layer.* With a drawer open every
+   control behind it is covered, so `hit-blocked` and `overlapping-controls` fired
+   on the whole background. This alone took the first run from 70 findings to 13.
+2. *Skip fixed, click-through, viewport-sized containers.* That structural
+   signature is what `react-hot-toast` renders; a toast drifting past made
+   `hit-blocked` depend on how fast the run went.
+3. *Skip the contrast check when the backdrop is a gradient.* The report drawer's
+   teal cards have a transparent `background-color`, so the old code walked up to
+   a white ancestor and reported false contrast failures. `low-contrast` went from
+   13 to 3.
+
+`run.mjs` also collapses findings that differ only by `:nth-of-type(N)` and
+normalises React `useId` ids, so one repeated defect is one baseline line and the
+baseline survives seed-data changes and unrelated re-renders.
+
+A finding is keyed by state + viewport + rule + selector, never by pixels.
+`baseline.json` is the accepted set and is committed; `report.json`, `report.md`
+and `out/` are generated and git-ignored. Exit code 1 means a finding appeared
+that is not in the baseline.
+
+The runner uses `chromium` from the existing `@playwright/test` dependency. Do not
+add a separate `playwright` package — two Playwright versions would drift apart.
 
 ## Supabase backend
 

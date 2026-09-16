@@ -59,6 +59,50 @@
 - When a mistake, contradiction, or risk is found, raise it for the user to confirm. Do not quietly work around it.
 - Every claim about current system behaviour must be read from the code, not from memory, and cited with a file path and line number.
 
+## Rendered-UI verification
+
+`ui-audit/` on `main` measures the rendered DOM of the running app and reports UI
+defects that reading the code cannot find: a control covered by a transparent
+overlay, an icon at 0x0, `undefined` on screen, a tap target too small for a
+finger, clipped text, horizontal overflow, contrast below WCAG AA. Technical
+detail is in `CLAUDE.md`; per-directory rules are in `ui-audit/AGENTS.md`.
+
+**Use it whenever the work touches the interface** — layout changes, component
+changes, Tailwind token changes, a new screen — and whenever the user reports
+"the button does nothing", "the text is cut off", "the icon is missing", or "the
+tablet screen is broken". It does not replace `npm test` (logic) or `npm run
+smoke` (business flows); it answers one question only: does the interface, once
+rendered, measure any defect.
+
+Required order:
+
+1. `npm run ui-audit:selftest` first. It must report 23 findings and print
+   `selftest OK`. If it does not, the detector is broken and every clean result
+   from it is worthless — fix the detector before trusting anything else.
+2. `npm run ui-audit` against the app.
+3. Read `ui-audit/report.md`. Read `report.json` only when a script needs to
+   filter it.
+4. Open the annotated screenshots in `ui-audit/out/` before calling any finding
+   real. They outline the exact element; judging from a CSS selector alone is
+   unreliable and has produced wrong conclusions.
+5. Report to the user a list already sorted into real defects and false
+   positives, with the state, selector and measurement for each.
+
+Hard rules:
+
+- **Never run `npm run ui-audit:update` on your own initiative.** It accepts
+  every current defect as the new standard. Only the user decides that, and only
+  after reviewing the classified list from step 5.
+- Do not fix `src/` because the audit flagged something. Report it, then follow
+  the analyst role above and wait for the user.
+- `ui-audit/` is measurement tooling, not application code; changes there must not
+  alter the behaviour of `src/`.
+- After any change to `ui-audit/audit.js`, re-run the selftest.
+- To cover a new screen, add a state to `ui-audit/config.json`. Take the
+  `data-testid` values from `tests/smoke/demo-runbook.spec.ts` and
+  `tests/smoke/helpers.ts`, which already carry the login recipe and the mock
+  fixture ids.
+
 ## Spec standard (mandatory)
 
 The full standard lives on the `docs` branch at `openspec/SPEC-STANDARD.md`. It is the authority; this section is a summary so the rule is visible from `main`.
