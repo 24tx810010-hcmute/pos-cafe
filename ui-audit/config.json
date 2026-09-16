@@ -1,0 +1,102 @@
+{
+  "baseUrl": "http://127.0.0.1:5178",
+
+  "devServer": {
+    "command": "npm run dev -- --host 127.0.0.1 --port 5178 --strictPort",
+    "env": {
+      "VITE_DATA_MODE": "mock",
+      "VITE_SUPABASE_URL": "",
+      "VITE_SUPABASE_ANON_KEY": ""
+    },
+    "readyTimeoutMs": 120000
+  },
+
+  "routes": [],
+
+  "states": [
+    {
+      "name": "landing",
+      "describe": "man hinh mo dau, chua ghep cua hang",
+      "steps": [{ "waitFor": "@landing-screen" }]
+    },
+    {
+      "name": "store-pairing",
+      "describe": "nhap ma cua hang",
+      "extends": "landing",
+      "steps": [{ "click": "@go-store-pairing" }, { "waitFor": "@store-pairing-screen" }]
+    },
+    {
+      "name": "passcode",
+      "describe": "chon nhan vien + ban phim PIN",
+      "extends": "store-pairing",
+      "steps": [
+        { "fill": "@store-key-input", "value": "0001-X8F3QA" },
+        { "click": "@go-passcode" },
+        { "waitFor": "@passcode-screen" }
+      ]
+    },
+    {
+      "name": "floor",
+      "describe": "so do ban sau khi dang nhap (trang thai goc cua POS)",
+      "extends": "passcode",
+      "steps": [
+        { "click": "@employee-6b7bd350-7db2-4160-8471-cca2668c070d" },
+        {
+          "clickAll": ["@pin-1", "@pin-2", "@pin-3", "@pin-4", "@pin-5", "@pin-6"]
+        },
+        { "click": "@unlock-button" },
+        { "waitFor": "@floor-view" },
+        { "wait": 4500 }
+      ]
+    },
+    {
+      "name": "order-drawer",
+      "describe": "mo ban trong -> drawer goi mon voi menu",
+      "extends": "floor",
+      "steps": [
+        { "click": "@table-7b035353-73d6-44bc-8ec4-1ab9951f7a58" },
+        { "waitFor": "@order-drawer" }
+      ]
+    },
+    {
+      "name": "order-cart",
+      "describe": "drawer goi mon co 1 mon trong gio",
+      "extends": "order-drawer",
+      "steps": [
+        { "click": "@menu-item-3e43bb8c-198f-443f-83ab-18696983edaa" },
+        { "click": "@modifier-value-62ca9453-5d44-47f4-8f85-a943d526348d" },
+        { "click": "@modifier-confirm" },
+        { "waitFor": "@order-cart-line" }
+      ]
+    },
+    {
+      "name": "menu-editor",
+      "describe": "drawer quan tri menu",
+      "extends": "floor",
+      "steps": [{ "click": "@nav-menu-editor" }, { "waitFor": "@save-menu-button" }]
+    },
+    {
+      "name": "report",
+      "describe": "drawer bao cao (co bieu do recharts)",
+      "extends": "floor",
+      "steps": [{ "click": "@nav-report" }, { "waitFor": "@report-summary" }]
+    }
+  ],
+
+  "viewports": [
+    { "name": "tablet", "width": 1024, "height": 768 },
+    { "name": "desktop", "width": 1440, "height": 900 },
+    { "name": "mobile", "width": 844, "height": 390 }
+  ],
+
+  "failOn": ["error"],
+  "collapse": true,
+  "minTarget": 24,
+  "minFont": 10,
+  "contrastMin": 4.5,
+  "checkContrast": true,
+  "ignore": ".recharts-wrapper, .recharts-responsive-container, [data-ui-audit-skip]",
+  "settleMs": 600,
+  "waitFor": null,
+  "timeout": 30000
+}

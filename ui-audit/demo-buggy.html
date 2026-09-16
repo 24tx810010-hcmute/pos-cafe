@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Demo POS - trang co loi UI co y</title>
+<style>
+  body { font: 14px system-ui, sans-serif; margin: 0; background: #f5f5f7; color: #111; }
+  header { background: #1c1c1e; color: #fff; padding: 12px 16px; display: flex; gap: 12px; align-items: center; }
+  .wrap { padding: 16px; max-width: 900px; }
+  .card { background: #fff; border-radius: 10px; padding: 14px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  button { font: inherit; border: 0; border-radius: 8px; padding: 10px 14px; background: #0a84ff; color: #fff; cursor: pointer; }
+  .row { display: flex; gap: 10px; align-items: center; }
+
+  /* BUG 1: icon-only button, 16x16, no aria-label */
+  .icon-btn { width: 16px; height: 16px; padding: 0; background: #e5e5ea; color: #333; }
+
+  /* BUG 2: invisible overlay swallowing clicks on the checkout button */
+  .checkout-wrap { position: relative; }
+  .ghost-overlay { position: absolute; inset: 0; background: transparent; z-index: 10; }
+
+  /* BUG 3: product name clipped with no ellipsis */
+  .prod-name { width: 120px; overflow: hidden; white-space: nowrap; }
+
+  /* BUG 4: low contrast helper text */
+  .hint { color: #c7c7cc; }
+
+  /* BUG 5: font too small */
+  .fineprint { font-size: 8px; }
+
+  /* BUG 6: element pushed past the viewport */
+  .too-wide { width: 2400px; background: #ffd9d9; padding: 6px; }
+
+  /* BUG 7: two controls overlapping */
+  .stack { position: relative; height: 44px; }
+  .stack .a { position: absolute; left: 0; top: 0; }
+  .stack .b { position: absolute; left: 18px; top: 4px; }
+
+  /* BUG 8: icon font never loaded -> glyph renders as nothing */
+  .material-icons { font-family: "Material Icons Not Loaded"; font-size: 20px; line-height: 1; }
+</style>
+</head>
+<body>
+<header>
+  <strong>Ca phe POS</strong>
+  <span class="material-icons"></span>
+  <button class="icon-btn"></button>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h3>Don hang #1042</h3>
+    <div class="row">
+      <div class="prod-name">Ca phe sua da size lon them tran chau</div>
+      <span>x2</span>
+      <span>undefined d</span>
+    </div>
+    <p class="hint">Nhap ma giam gia neu co</p>
+    <p class="fineprint">Gia da bao gom VAT</p>
+    <p>Tong: [object Object]</p>
+  </div>
+
+  <div class="card checkout-wrap">
+    <div class="ghost-overlay"></div>
+    <button id="checkout">Thanh toan</button>
+    <span class="hint" style="margin-left:8px">Bam de hoan tat</span>
+  </div>
+
+  <div class="card">
+    <div class="stack">
+      <button class="a">Huy don</button>
+      <button class="b">In bill</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="too-wide">Bang thong ke rong hon man hinh</div>
+  </div>
+
+  <div class="card">
+    <img src="/assets/logo-missing.png" width="60" height="60">
+    <div class="undefined">Khoi co class undefined</div>
+    <div style="width:NaNpx;height:20px;background:#eee">Inline style NaN</div>
+    <a href="#" style="display:inline-block;width:0;height:0"></a>
+  </div>
+</div>
+</body>
+</html>

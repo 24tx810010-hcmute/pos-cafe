@@ -17,3 +17,7 @@ vite.config.d.ts
 vite.config.js
 vitest.config.d.ts
 vitest.config.js
+ui-audit/out/
+ui-audit/report.json
+ui-audit/report.md
+ui-audit/auth.json

@@ -17,7 +17,10 @@
     "test:idempotency:tools": "node scripts/idempotency-run.mjs tools",
     "test:idempotency:e2e": "node scripts/idempotency-run.mjs e2e",
     "test:idempotency:discover": "node scripts/idempotency-discover.mjs",
-    "test:idempotency:verify-results": "node scripts/idempotency-verify-results.mjs"
+    "test:idempotency:verify-results": "node scripts/idempotency-verify-results.mjs",
+    "ui-audit": "node ui-audit/run.mjs",
+    "ui-audit:selftest": "node ui-audit/run.mjs --selftest",
+    "ui-audit:update": "node ui-audit/run.mjs --update"
   },
   "dependencies": {
     "@emotion/react": "^11.11.4",
