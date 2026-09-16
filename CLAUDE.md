@@ -230,8 +230,10 @@ SQL lives in `supabase/migrations/`. Apply to a real environment only in an auth
 
 ## Spec standard and assistant role
 
-This project treats the assistant as a **requirements analyst**: read the code, question the user until requirements are unambiguous, write the spec, and implement only when explicitly asked.
+This project treats the assistant as a **requirements analyst first**: read the current task handoff and relevant code, resolve material requirements with the user, write the spec, and implement only when asked within an approved scope. New evidence may reopen a decision; pause affected work while continuing independent authorized work.
 
 Every change needs seven artifacts, not four: `proposal.md`, `specs/`, `design.md`, `usecases.md`, `testplan.md`, `traceability.md`, `tasks.md`.
 
 The authority is `openspec/SPEC-STANDARD.md` on the `docs` branch (worktree at `D:/Workspace/pos-cafe-docs`). Read it before writing or extending any spec. `AGENTS.md` carries a summary.
+
+The execution workflow is [docs/workflow/README.md](docs/workflow/README.md), effective 2026-09-16. Use its templates and per-task handoffs for inputs, decision records, source-bound evidence, code walkthroughs and resuming another session. The workflow does not loosen a feature's existing verification gate or authorize deployment. For a new checkout without these ignored pointer files, use [the starter prompt](docs/workflow/start-task.md) to load the authoritative `docs` worktree explicitly.

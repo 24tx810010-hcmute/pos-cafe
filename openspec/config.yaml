@@ -23,6 +23,10 @@ context: |
   Đồng bộ đa thiết bị hiện là online-only qua Supabase Realtime.
 
   Quy ước viết artifact:
+  - Đọc AGENTS.md, openspec/SPEC-STANDARD.md và docs/workflow/README.md trước task;
+    dùng docs/workflow/templates.md và bàn giao đúng task để tiếp tục.
+  - Hỏi theo nhóm có bối cảnh/phương án/đánh đổi/khuyến nghị, không đặt trần tổng.
+    Ghi quyết định và lý do trên docs; chỉ dừng phần phụ thuộc câu hỏi quan trọng.
   - NỘI DUNG viết bằng TIẾNG VIỆT.
   - GIỮ NGUYÊN tiếng Anh: heading cấu trúc của schema (Why, What Changes,
     Capabilities, New Capabilities, Modified Capabilities, Impact), keyword
@@ -52,12 +56,14 @@ rules:
     - "Nội dung tiếng Việt."
     - "Chia task tối đa khoảng 2 giờ mỗi mục."
     - "Phải có mục cập nhật tài liệu nhánh `docs` và mục kiểm thử tương ứng."
+    - "Mỗi task ghi đầu vào, đầu ra, dependency, tiêu chí nghiệm thu, phạm vi đã được giao; cập nhật bàn giao và bằng chứng gắn source/môi trường theo docs/workflow/README.md."
 
 operations:
   apply:
     guidance:
-      - "TRƯỚC KHI viết code hoặc artifact chi tiết, phải đọc section `## Câu hỏi phải chốt trước khi làm` trong proposal và hỏi người dùng toàn bộ câu hỏi chưa được trả lời. Không bắt đầu implement khi còn câu hỏi bỏ ngỏ ảnh hưởng phạm vi hoặc hành vi."
+      - "Đọc proposal và bàn giao hiện hành. Chốt các câu hỏi quan trọng của phạm vi sẽ làm trước artifact chi tiết/code phụ thuộc; được cập nhật proposal khảo sát trong lúc hỏi. Câu hỏi thuộc phần hoãn không chặn phần độc lập, nhưng phải ghi ranh giới và dependency. Không tự đổi nghiệp vụ hoặc nghiệm thu."
       - "Ghi câu trả lời của người dùng ngược lại vào proposal, dưới mục Quyết định đã chốt, trước khi tiếp tục."
+      - "Kiểm thử từng phần; kết quả và nguồn ủy quyền phải được ghi đúng. Không nới gate của feature, không coi mock là backend thật, không suy quyền deploy từ quyền code; tránh hỏi lại điều đã được cho phép và còn hiệu lực."
       - "Code nằm ở worktree `D:\\Workspace\\pos-cafe` (nhánh `main`); artifact OpenSpec nằm ở `D:\\Workspace\\pos-cafe-docs` (nhánh `docs`)."
   archive:
     guidance:

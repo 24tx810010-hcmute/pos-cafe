@@ -1,5 +1,9 @@
 # OpenSpec cho pos-cafe
 
+## Quy trình task từ 2026-09-16
+
+Đọc [quy trình làm việc với AI](../docs/workflow/README.md) cùng [SPEC-STANDARD.md](SPEC-STANDARD.md). [Mẫu dùng ngay](../docs/workflow/templates.md) bổ sung đầu vào, quyết định có căn cứ, bằng chứng nghiệm thu và bàn giao; giữ bộ bảy phần cho change chính thức. [Change quy trình](changes/adopt-ai-task-workflow/proposal.md) ghi phạm vi và lý do; không đổi trạng thái các feature bên dưới.
+
 ## Cập nhật bộ chống trùng ngày 2026-09-10
 
 [add-idempotent-write-operations](changes/add-idempotent-write-operations/proposal.md) có **bảy loại artifact / 13 file Markdown**, gồm 33 requirement, 12 use case, 93 testcase gốc và các ma trận biến thể. [Testplan](changes/add-idempotent-write-operations/testplan.md) ghi expected trước code; [đối chiếu review ngoài](../docs/reviews/2026-09-07-idempotency/15-doi-chieu-review-ngoai-va-bien-tap.md) ghi các đính chính sau mốc ba reviewer. Chủ dự án đã duyệt triển khai ngày 2026-09-10; docs đã push `0ecf84d`. Code `main@3ada48c` và tests đã nghiệm thu tại [phase 27](../docs/implementation-log/phase-27-idempotent-write-operations.md), đã push code sau khi đủ gate; chưa deploy migration thật. Ước lượng 76,5 + 2n giờ là dự báo công sức; không có quỹ giờ tuần cố định.
@@ -14,11 +18,15 @@ Quyết định nghiệp vụ nằm trong [tài liệu 10](../docs/reviews/2026-
 
 ## Cách gọi
 
-Worktree này đã đăng ký làm store id `pos-cafe-docs`, nên chạy được từ bất kỳ đâu:
+Kiểm tra ngày 2026-09-16: CLI trên máy thực hiện task không có store đăng ký dưới id `pos-cafe-docs`. Chạy từ đúng worktree `docs` và xác minh root trước; không mặc định cấu hình đăng ký store tồn tại trên mọi máy:
 
 ```bash
-openspec list --store pos-cafe-docs
+cd D:/Workspace/pos-cafe-docs
+openspec context --json
+openspec list
 ```
+
+`context` phải trả về root của docs worktree. Chỉ thêm `--store <id>` khi đã kiểm tra store đó tồn tại và trỏ đúng nơi; không tự thay cài đặt toàn cục để làm lệnh trong tài liệu chạy được.
 
 Slash command `/opsx:propose`, `/opsx:apply`, `/opsx:archive` chỉ nạp khi mở Claude Code tại chính worktree này, vì `.claude/commands` nằm trên nhánh `docs`.
 

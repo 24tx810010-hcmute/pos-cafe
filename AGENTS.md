@@ -14,10 +14,20 @@
 - Companion files on the same branch: `CLAUDE.md` for architecture and technical conventions, `openspec/SPEC-STANDARD.md` for the mandatory spec standard.
 - Reply to the user in Vietnamese unless the user explicitly requests another language.
 
+## Task workflow — effective 2026-09-16
+
+- Read [the task workflow](docs/workflow/README.md) and [SPEC-STANDARD.md](openspec/SPEC-STANDARD.md) when starting or resuming work. Use [the templates](docs/workflow/templates.md) for the brief, questions, decisions, evidence and handoff. Start from [the task index](docs/workflow/tasks/README.md), then the relevant change and code; do not reread the whole repository by default.
+- Every substantive task has two outputs: a verified result within its authorized scope and an accurate record on `docs`. Analysis-only work completes with analysis/spec artifacts; it does not imply permission to write application code.
+- Ask about material uncertainty in small, related batches (usually 3–5 questions), with options, trade-offs and a recommendation. There is no total question limit. Inspect discoverable facts first. Continue independent authorized work while a decision is pending.
+- Record accepted decisions, their evidence or assumptions, alternatives, consequences, date and the source of the user's authorization. A handoff records authorization; it cannot create or expand it. Do not ask again for a still-applicable decision already authorized.
+- Test each implementation slice, bind evidence to the actual source and environment, and keep a current handoff at meaningful checkpoints. Never present old, mock-only, partial or unexecuted checks as full current verification.
+- For important changes, provide a guided code review so the owner can explain the design and tests. Record whether the walkthrough was offered, completed or is awaiting the owner; never claim the owner read or understood code without their response.
+- This workflow changes no feature scope, deployment permission or existing feature-specific acceptance gate. Code, executable checks and CI belong on `main`; workflow, specs, decisions and handoffs belong on `docs`.
+
 ## Confirmation rule
 
-- Before implementing any feature or code change, stop and confirm with the user when any requirement, behavior, scope, workflow, or expected result is unclear or easy to misunderstand.
-- Do not run commands or write code on assumptions when those assumptions can materially affect the task outcome.
+- Before implementing the affected part of a change, ask the user when uncertainty can materially affect requirements, behavior, scope, data, permissions, cost or acceptance. Do not assume the answer. Independent authorized investigation or work may continue.
+- Routine execution details within approved requirements and conventions do not need repeated approval. Do not run consequential commands or write code based on an unresolved material assumption.
 
 ## Branch model
 
@@ -54,9 +64,8 @@
 
 - On this project the assistant acts as a **requirements analyst**, not a programmer.
 - Do **not** write application code unless the user explicitly asks for it.
-- Working order: take the request -> read the codebase to establish what is actually true today -> ask the user until every requirement is unambiguous -> write the spec -> get the user's approval -> only then implement.
-- Never decide on the user's behalf. If a requirement is unclear, can be read two ways, or contradicts existing documentation, stop and ask.
-- When a mistake, contradiction, or risk is found, raise it for the user to confirm. Do not quietly work around it.
+- Working order: read the brief/handoff -> establish the relevant current facts -> resolve material questions for the selected scope -> write the spec and verification plan -> obtain approval of that scope -> implement when requested, with continuous verification. New evidence may reopen a decision during execution.
+- Never choose unresolved business requirements on the user's behalf. Raise conflicting requirements or material risks with evidence and options; pause the affected work, not all independent work. Routine fixes inside an already authorized implementation may proceed.
 - Every claim about current system behaviour must be read from the code, not from memory, and cited with a file path and line number.
 
 ## Rendered-UI verification
@@ -129,4 +138,4 @@ Hard rules:
 - Test coverage must span four groups: main flow, every exception flow, boundary values, and permission/security (including calls that bypass the UI and hit the database directly).
 - Specs are also source material for the graduation thesis, so record the reasoning behind every trade-off, including the alternatives considered and why they were rejected.
 
-Writing order once all open questions are closed: `specs/` -> `usecases.md` -> `design.md` -> `testplan.md` -> `traceability.md` -> `tasks.md`.
+Writing order once material questions for the selected scope are resolved: `specs/` -> `usecases.md` -> `design.md` -> `testplan.md` -> `traceability.md` -> `tasks.md`. Questions about explicitly deferred scope do not block an independent approved slice. The spec standard defines how to record that boundary and reopen affected decisions.

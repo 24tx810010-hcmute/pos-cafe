@@ -1,5 +1,9 @@
 # Implementation Log
 
+## Quy trình task và hồ sơ từ 2026-09-16
+
+[Gói quy trình AI](workflow-adoption-2026-09-16.md) ghi thay đổi hướng dẫn và cách kiểm tra tài liệu. Dùng [mẫu nghiệm thu](../workflow/templates.md#nghiem-thu) cho log mới và [bàn giao theo task](../workflow/tasks/README.md) để tiếp tục phiên sau. Không thay kết quả lịch sử của các phase bằng kết quả của task mới.
+
 ## Folder Này Chứa Gì
 
 Folder này ghi nhật ký implement theo phase. Mục tiêu là track nhanh nhánh/commit/tính năng/test/gap mà không phải đọc code hoặc lần lại toàn bộ lịch sử Git trước.

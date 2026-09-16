@@ -1,5 +1,9 @@
 # POS Cafe Documentation
 
+## Bắt đầu task với AI — 2026-09-16
+
+[Quy trình 6 bước](workflow/README.md) · [Mẫu giao việc, quyết định, nghiệm thu, bàn giao](workflow/templates.md) · [Câu mở đầu cho task mới](workflow/start-task.md) · [Chỉ mục bàn giao](workflow/tasks/README.md). Quy trình và hồ sơ ở nhánh `docs`; code/công cụ kiểm chứng ở `main`. [Lý do và phạm vi áp dụng](../openspec/changes/adopt-ai-task-workflow/proposal.md).
+
 Folder này là knowledge base hiện tại của dự án POS Cafe và là nguồn dữ liệu để viết báo cáo tiểu luận. Baseline current-truth gần nhất được audit ngày **2026-08-21** theo `main@c7f2f4e`. Mục tiêu là đọc nhanh được bài toán, yêu cầu, scope, tính năng, data model, kiến trúc, công nghệ, kiểm thử, giới hạn, demo flow và nhật ký implement mà không phải mở code trước.
 
 ## Đọc Nhanh Theo Nhu Cầu

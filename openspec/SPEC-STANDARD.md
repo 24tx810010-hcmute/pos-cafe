@@ -4,11 +4,13 @@ Tài liệu này quy định **cách làm việc** và **bộ tài liệu bắt 
 
 Chốt ngày 2026-09-07 theo yêu cầu của chủ dự án. Áp cho mọi tính năng làm từ thời điểm này trở đi.
 
+Cập nhật quy trình ngày **2026-09-16** theo yêu cầu đóng gói để dùng cho task mới. [Quy trình task](../docs/workflow/README.md) quy định cách khảo sát, hỏi, thực hiện, kiểm chứng và bàn giao; tài liệu này quy định nội dung đặc tả. [Mẫu dùng ngay](../docs/workflow/templates.md). Bộ bảy phần của change chính thức vẫn giữ nguyên.
+
 ## Vì sao có tài liệu này
 
 Ba mục tiêu, xếp theo thứ tự ưu tiên:
 
-1. **Một AI khác đọc spec là làm được, không phải đoán.** Spec phải đủ chi tiết để người thực hiện không cần hỏi lại, và không có chỗ nào để hiểu thành hai nghĩa.
+1. **Một AI khác đọc spec không phải đoán các yêu cầu đã biết.** Phạm vi được giao phải đủ rõ để bắt đầu; người thực hiện vẫn được hỏi khi có thông tin mới hoặc phát hiện mâu thuẫn. Ghi và giải quyết câu hỏi trước khi tiếp tục phần bị ảnh hưởng.
 2. **Tính năng làm ra phải đúng và ổn định.** Mọi requirement phải có ít nhất một test case chứng minh nó đúng, và có ma trận truy vết để thấy chỗ nào chưa được phủ.
 3. **Spec là nguyên liệu của khóa luận tốt nghiệp.** Viết đủ kỹ để trích thẳng vào báo cáo mà không phải viết lại từ đầu.
 
@@ -17,9 +19,9 @@ Ba mục tiêu, xếp theo thứ tự ưu tiên:
 Người viết spec đóng vai **phân tích viên**, không phải người lập trình.
 
 - **Không viết code trực tiếp** trừ khi chủ dự án yêu cầu rõ ràng.
-- Quy trình: nhận yêu cầu → **đọc kho mã để nắm hiện trạng thật** → hỏi lại chủ dự án cho tới khi mọi yêu cầu đều rõ → viết spec → chủ dự án duyệt → sau đó mới tới bước thực hiện.
-- **Không suy đoán thay chủ dự án.** Chỗ nào yêu cầu chưa rõ, có thể hiểu thành hai nghĩa, hoặc mâu thuẫn với tài liệu đang có, thì dừng lại và hỏi.
-- Phát hiện sai sót, mâu thuẫn hoặc rủi ro thì **nêu ra để chủ dự án xác nhận**, không tự quyết và không lặng lẽ bỏ qua.
+- Quy trình: đọc đề bài/bàn giao → **đọc kho mã liên quan để nắm hiện trạng thật** → chốt câu hỏi quan trọng của phạm vi được giao → viết spec → chủ dự án duyệt → thực hiện khi được yêu cầu. Phần độc lập vẫn tiếp tục khi một phần khác đang chờ quyết định.
+- **Không suy đoán nghiệp vụ thay chủ dự án.** Chỗ chưa rõ hoặc mâu thuẫn có thể đổi hành vi, dữ liệu, quyền, chi phí, phạm vi hay nghiệm thu phải hỏi trước khi làm phần phụ thuộc. Chi tiết thực thi đã nằm trong quy ước và phạm vi được giao không cần hỏi lại.
+- Phát hiện mâu thuẫn hoặc rủi ro ảnh hưởng quyết định thì **nêu bằng chứng, phương án và khuyến nghị** để chủ dự án chốt. Sửa lỗi thông thường trong phạm vi triển khai đã được giao không cần xin lại quyền cho từng thao tác.
 
 Mọi khẳng định về hiện trạng hệ thống phải **đọc từ kho mã**, không viết theo trí nhớ. Dẫn nguồn bằng đường dẫn file và số dòng khi khẳng định một điều gì đó về code hiện tại.
 
@@ -38,6 +40,14 @@ Mỗi change trong `openspec/changes/<tên-change>/` phải có đủ bảy ph�
 | 7 | `tasks.md` | Thứ tự thực hiện, cổng chặn |
 
 Change thuộc nhóm công cụ hoặc quy trình, không sinh hành vi người dùng nhìn thấy, được phép bỏ `usecases.md` — nhưng vẫn phải có `testplan.md` và `traceability.md`. Ghi rõ lý do bỏ ngay đầu `proposal.md`.
+
+## Độ sâu theo tác động và phạm vi
+
+- Phân mức **nhẹ / thông thường / nhạy cảm** theo [quy trình task](../docs/workflow/README.md#phan-muc), không theo số dòng hoặc nhãn "bug/UI". Chưa rõ tác động thì khảo sát trước khi xếp nhẹ.
+- Mỗi change chính thức vẫn có bộ phần bắt buộc ở trên. Sáu bước là vòng đời của **một** bộ tài liệu; mỗi task nhỏ không tạo lại cả bộ. Dùng tham chiếu tới nội dung còn đúng thay vì chép lại.
+- Bảo trì nhẹ, không tạo requirement mới hoặc thay đổi ý nghĩa requirement: ghi mục tiêu, phạm vi, kiểm tra và bàn giao ngắn trong hồ sơ task/change đang có; cập nhật tài liệu bị ảnh hưởng. Không bắt tạo change mới cho từng sửa chính tả. Nếu phát hiện đổi hợp đồng, nghiệp vụ, quyền hay dữ liệu, nâng mức và hoàn thiện spec trước phần phụ thuộc.
+- Phân mức điều chỉnh độ sâu khảo sát/review và phạm vi kiểm chứng; không cho bỏ kiểm tra bắt buộc của một change đang có. Một sửa nhỏ trong thanh toán không tự trở thành rủi ro thấp.
+- Proposal chưa đầy đủ được giữ ở mức khảo sát. Số file hoặc checklist có đủ mục không chứng minh đã sẵn sàng code. Chỉ làm sâu change sắp triển khai.
 
 ## 4. `usecases.md` — quy cách
 
@@ -122,11 +132,11 @@ Change nào đã có đủ bốn file theo chuẩn cũ trước ngày 2026-09-07
 
 Lý do hoãn thay vì viết ngay: use case và test case viết trước lúc vào việc thì dễ lệch với các quyết định phát sinh trong lúc làm, và phải sửa lại hai lần. Để khung trống thì vẫn thấy được chỗ còn thiếu khi rà soát, mà không tốn công viết hai lần.
 
-Hai change đang ở trạng thái này: `redesign-permission-model` và `add-owner-account-and-store-provisioning`.
+Hai change được ghi ở trạng thái này tại mốc 2026-09-07 là `redesign-permission-model` và `add-owner-account-and-store-provisioning`. Đây là mốc lịch sử; đọc proposal/tasks và biên bản hiện hành trước khi kết luận tình trạng hôm nay.
 
 ## Khuôn mẫu
 
-`define-test-strategy` là change đầu tiên viết trọn theo chuẩn bảy file. Nó **là khuôn mẫu** cho mọi change sau: cần biết một file nên trông như thế nào thì mở change đó ra xem, đừng suy diễn từ mô tả trong tài liệu này.
+[define-test-strategy](changes/archive/2026-09-07-define-test-strategy/proposal.md) là khuôn mẫu ban đầu; đã nằm trong archive. Dùng cùng [mẫu giao việc, quyết định, nghiệm thu và bàn giao](../docs/workflow/templates.md), không sao chép quyết định lịch sử của mẫu thành yêu cầu cho change mới.
 
 ## Quy tắc viết, áp cho cả bảy file
 
@@ -139,8 +149,18 @@ Hai change đang ở trạng thái này: `redesign-permission-model` và `add-ow
 
 ## Cổng chặn trước khi viết spec
 
-Giữ nguyên quy tắc đã có: mỗi `proposal.md` có mục `## Câu hỏi phải chốt trước khi làm`. Phải hỏi hết câu chưa trả lời và ghi câu trả lời vào `## Quyết định đã chốt` **trước khi** viết bất kỳ file nào trong bộ bảy file trên.
+Mỗi `proposal.md` có mục `## Câu hỏi phải chốt trước khi làm`. Được tạo/cập nhật proposal khảo sát, đề bài, bảng câu hỏi và quyết định trong lúc làm rõ; phải ghi rõ trạng thái nháp. Chưa chốt câu hỏi quan trọng thì chưa coi spec chi tiết của phần phụ thuộc là sẵn sàng thực hiện.
 
-Thứ tự viết sau khi đã chốt hết câu hỏi: `specs/` → `usecases.md` → `design.md` → `testplan.md` → `traceability.md` → `tasks.md`.
+Trước khi hoàn thiện bộ spec của phạm vi được chọn, giải quyết các câu hỏi ảnh hưởng phạm vi đó và ghi câu trả lời vào `## Quyết định đã chốt`, kèm ngày, nguồn xác nhận và lý do. Câu hỏi chỉ thuộc phần hoãn phải ghi phần hoãn và chứng minh không là dependency của phần sẽ làm. Không được chuyển một lỗi hoặc câu hỏi cần thiết sang "hoãn" chỉ để qua cổng.
+
+Thứ tự viết sau khi chốt phạm vi: `specs/` → `usecases.md` → `design.md` → `testplan.md` → `traceability.md` → `tasks.md`. Quyết định mới trong lúc triển khai mở lại đúng yêu cầu/thiết kế/test bị ảnh hưởng, ghi thay thế quyết định cũ và xác nhận lại khi đổi nghiệp vụ hoặc nghiệm thu.
 
 Lý do thứ tự này: requirement định ra cái phải đúng; use case làm rõ hình dạng thao tác nên nó phát hiện được requirement còn thiếu; design chỉ chọn cách làm sau khi đã biết đủ hai thứ trên; test plan bám vào cả ba; traceability là bước kiểm lại; tasks là bước cuối vì nó phụ thuộc mọi thứ trước đó.
+
+## Sẵn sàng, kiểm chứng và đóng task
+
+- **Sẵn sàng thực hiện:** phạm vi và ngoài phạm vi rõ; input/output, quyền, lỗi và tiêu chí nghiệm thu của phần đó đã chốt; dependency đáp ứng; spec/thiết kế/test nhất quán; chủ dự án đã duyệt và giao thực hiện. Duyệt spec không tự cấp quyền phát hành hoặc thay dữ liệu thật.
+- `testplan.md` chỉ là kế hoạch. Kết quả thực chạy nằm trong biên bản nghiệm thu, gắn source thực tế (commit sạch hoặc baseline + fingerprint/snapshot phần chưa commit), môi trường/backend/migration/fixture, lệnh, exit code, báo cáo và phần chưa chạy. Không suy toàn hệ thống PASS từ riêng `npm test`.
+- Kiểm thử đi cùng từng phần triển khai; nghiệm thu tổng kiểm lại tích hợp/hồi quy cần thiết. Kết quả mong đợi phải bám requirement đã duyệt. Mọi thay đổi làm yếu tiêu chí/test cần được giải trình và duyệt nếu đổi yêu cầu.
+- Dùng [mẫu bàn giao](../docs/workflow/templates.md#ban-giao) khi đổi bước, chốt quyết định, có kết quả kiểm tra hoặc tạm dừng. Ghi nguồn và phạm vi ủy quyền; file không tự tạo quyền mới.
+- Phân biệt đã hiện thực, đã kiểm chứng, đã nghiệm thu và đã phát hành; không có phát hành thì ghi ngoài phạm vi. Với thay đổi quan trọng, cung cấp lượt giải thích code/test cho chủ dự án và ghi đúng phản hồi, không tự đánh dấu họ đã hiểu.
