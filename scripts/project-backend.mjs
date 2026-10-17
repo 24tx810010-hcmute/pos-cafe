@@ -23,6 +23,7 @@ export function backendEvidence(worker, evidence, env) {
   const rendered = ci1PublicExport(evidence);
   const safe = JSON.parse(rendered.json);
   if (worker.schemaVersion !== 'permission-ci1-worker-status-v1' || worker.status !== 'COMPLETE'
+    || worker.cleanup !== true || worker.cleanupFailure !== null
     || JSON.stringify(worker.completed) !== JSON.stringify(stages) || worker.businessCounts !== null
     || safe.overallStatus !== 'PASS' || safe.repository !== env.GITHUB_REPOSITORY || safe.runId !== env.GITHUB_RUN_ID
     || safe.attempt !== Number(env.GITHUB_RUN_ATTEMPT) || safe.sourceSHA !== env.GITHUB_SHA
@@ -44,7 +45,8 @@ function main() {
     const permitted = ci1WorkerPlan(process.env.GITHUB_RUN_ID, Number(process.env.GITHUB_RUN_ATTEMPT)).stages;
     console.log(JSON.stringify({ schemaVersion: 'pos-backend-failure-v1', verificationScope: 'CI1_PILOT_ONLY',
       status: 'FAIL', completed: Array.isArray(worker.completed) ? worker.completed.filter(value => permitted.includes(value)) : [],
-      failure: ci1FailureExport(worker.failure), cleanup: worker.cleanup === true }));
+      failure: ci1FailureExport(worker.failure), cleanup: worker.cleanup === true,
+      cleanupFailure: ci1FailureExport(worker.cleanupFailure) }));
     throw new Error();
   }
   const evidence = backendEvidence(worker, read(`${layout.task}/export/public-evidence.json`), process.env);

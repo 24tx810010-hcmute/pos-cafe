@@ -31,16 +31,21 @@ const failureOperations = ['SOURCE_INTAKE', 'SOURCE_CLONE', 'SOURCE_REF', 'SOURC
   'DOWNLOAD_NODE', 'INSPECT_NODE', 'EXTRACT_NODE', 'DOWNLOAD_SUPABASE', 'INSPECT_SUPABASE', 'EXTRACT_SUPABASE',
   'PLACE_TOOLS', 'TOOL_VERSIONS', 'STACK_TEMPLATE', 'FORMAT_VOLUME', 'RESERVE_VOLUME',
   'NPM_DOWNLOAD', 'NPM_INSPECT', 'NPM_CACHE', 'PREFETCH_DAEMONS', 'PREFETCH_READY',
-  'IMAGE_PULL', 'IMAGE_TAG', 'IMAGE_INSPECT'];
+  'IMAGE_PULL', 'IMAGE_TAG', 'IMAGE_INSPECT', 'EDGE_VOLUME_CHECK', 'EDGE_VOLUME_CREATE', 'EDGE_VOLUME_EMPTY',
+  'EDGE_BUNDLE', 'EDGE_CACHE_PROOF', 'EDGE_PROOF_WRITE', 'CLEANUP_EXPORT', 'CLEANUP_DAEMONS', 'CLEANUP_UNMOUNT', 'CLEANUP_DETACH'];
 const failureCommands = ['git', 'tar', 'node', 'npm', 'supabase', 'fallocate', 'losetup', 'mkfs.ext4', 'mount', 'umount',
   'cp', 'mv', 'docker', 'unshare', 'systemd-run', 'systemctl', 'findmnt', 'containerd', 'dockerd'];
 const failureCodes = ['GUARD_REFUSED', 'INTAKE_REFUSED', 'COMMAND_FAILED', 'COMMAND_TIMEOUT', 'OUTPUT_LIMIT',
   'IO_MISSING', 'IO_NOTDIR', 'IO_DENIED', 'JS_TYPE_ERROR', 'SUPERVISOR_REFUSED', 'LOOP_REFUSED', 'CONTROL_REFUSED',
   'DOCKER_DAEMON_UNAVAILABLE', 'DOCKER_NO_SPACE', 'DOCKER_PERMISSION', 'DOCKER_TLS', 'DOCKER_REGISTRY_AUTH',
-  'DOCKER_REGISTRY_NOT_FOUND', 'DOCKER_REGISTRY_RATE_LIMIT', 'DOCKER_NETWORK', 'DOCKER_API_VERSION', 'DOCKER_UNPACK', 'UNKNOWN'];
+  'DOCKER_REGISTRY_NOT_FOUND', 'DOCKER_REGISTRY_RATE_LIMIT', 'DOCKER_NETWORK', 'DOCKER_API_VERSION', 'DOCKER_UNPACK',
+  'EDGE_CACHE_ENTRY', 'EDGE_CACHE_TYPE', 'EDGE_CACHE_PACKAGE', 'EDGE_CACHE_VERSION', 'EDGE_CACHE_PIN',
+  'EDGE_CACHE_METADATA', 'EDGE_CACHE_NAME', 'EDGE_CACHE_SRI', 'EDGE_CACHE_TARBALL', 'EDGE_CACHE_DEPENDENCIES',
+  'EDGE_CACHE_BOUND', 'EDGE_CACHE_INCOMPLETE', 'UNKNOWN'];
 const failureMetrics = ['hostFreeBytes', 'memoryBytes', 'oom', 'pidsEvents', 'memoryCurrentBytes', 'pidsCurrent',
   'cpuMatches', 'memoryLimitMatches', 'swapLimitMatches', 'pidsLimitMatches', 'cgroupMatches', 'runtimeMatches', 'loggingMatches',
-  'loopImageBytes', 'loopAllocatedBytes', 'loopFilesystemBytes', 'loopFreeBytes', 'loopOffset', 'loopSizeLimit', 'mountMatches', 'ownerMatches', 'imageOrdinal'];
+  'loopImageBytes', 'loopAllocatedBytes', 'loopFilesystemBytes', 'loopFreeBytes', 'loopOffset', 'loopSizeLimit', 'mountMatches', 'ownerMatches', 'imageOrdinal', 'edgePackageOrdinal',
+  'edgeVersionMajor', 'edgeVersionMinor', 'edgeVersionPatch', 'edgeVersionCopy'];
 export function ci1DockerFailureCode(stderr) {
   if (typeof stderr !== 'string' || Buffer.byteLength(stderr) > 1024 ** 2) return null;
   for (const [code, pattern] of Object.entries({
@@ -126,7 +131,7 @@ export function ci1WorkerPlan(runId, attempt) {
 // Adapter tests assert order and abort behavior, without executing any Linux command.
 export async function runCi1Worker(adapter, identity) {
   const completed = [];
-  let status = 'ERROR', activeStage = 'supervisor', entered = false, failure = null, cleanup = false;
+  let status = 'ERROR', activeStage = 'supervisor', entered = false, failure = null, cleanup = false, cleanupFailure = null;
   try {
     assertCi1Supervisor(await adapter.supervisor(), identity);
     for (const stage of ['loop', 'source-tools', 'npm-images', 'edge-network-warm', 'stop-prefetch',
@@ -140,9 +145,12 @@ export async function runCi1Worker(adapter, identity) {
     status = 'COMPLETE';
   } catch (error) { failure = failureDetails(error, activeStage, entered ? adapter.operation?.() : null, adapter.failureFacts?.()); }
   finally { try { cleanup = await adapter.close() === true; if (!cleanup) status = 'ERROR'; }
-    catch (error) { status = 'ERROR'; failure ??= failureDetails(error, 'cleanup', null); } }
+    catch (error) { status = 'ERROR'; cleanupFailure = failureDetails(error, 'cleanup', null); failure ??= cleanupFailure; }
+    cleanupFailure ??= ci1FailureExport(adapter.cleanupFailure?.());
+    if (cleanupFailure) { cleanup = false; status = 'ERROR'; failure ??= cleanupFailure; }
+  }
   return { schemaVersion: 'permission-ci1-worker-status-v1', status, completed,
-    businessCounts: null, evidence: status === 'COMPLETE' ? 'D12_PUBLIC_EVIDENCE_REQUIRED' : 'NOT_RUN_OR_PARTIAL', failure, cleanup };
+    businessCounts: null, evidence: status === 'COMPLETE' ? 'D12_PUBLIC_EVIDENCE_REQUIRED' : 'NOT_RUN_OR_PARTIAL', failure, cleanup, cleanupFailure };
 }
 
 function runnerGuard(env) {
@@ -358,58 +366,73 @@ export function ci1EdgeCacheProof(cacheRoot, expected, read = { list: readdirSyn
   // cache bytes are never accepted from a host cache or a previous job.
   const allowed = new Map(ci1EdgeIntake(expected).map(item => [`${item.name}@${item.version}`, item]));
   const allowedNames = new Set([...allowed.values()].map(item => item.name));
+  let packageOrdinal = 0, versionFacts = {};
+  const cacheRefuse = code => { throw Object.assign(new Error('CI1_WORKER_REFUSED'), {
+    ci1FailureCode: code, ci1Facts: { edgePackageOrdinal: packageOrdinal, ...versionFacts },
+  }); };
   const observed = [], files = []; let bytes = 0;
   const registry = `${cacheRoot}/npm/registry.npmjs.org`;
   const packages = [];
   for (const name of read.list(registry)) {
-    if (typeof name !== 'string' || /[\r\n\0/\\]/.test(name) || !/^@?[a-z0-9._-]+$/.test(name)) refused();
+    if (typeof name !== 'string' || /[\r\n\0/\\]/.test(name) || !/^@?[a-z0-9._-]+$/.test(name)) cacheRefuse('EDGE_CACHE_ENTRY');
     const info = read.stat(`${registry}/${name}`);
-    if (!info.isDirectory() || info.isSymbolicLink()) refused();
+    if (!info.isDirectory() || info.isSymbolicLink()) cacheRefuse('EDGE_CACHE_TYPE');
     if (name.startsWith('@')) { for (const child of read.list(`${registry}/${name}`)) {
-      if (typeof child !== 'string' || /[\r\n\0/\\]/.test(child) || !/^[a-z0-9._-]+$/.test(child)) refused();
+      if (typeof child !== 'string' || /[\r\n\0/\\]/.test(child) || !/^[a-z0-9._-]+$/.test(child)) cacheRefuse('EDGE_CACHE_ENTRY');
       packages.push(`${name}/${child}`);
     } }
     else packages.push(name);
   }
   for (const name of packages) {
+    packageOrdinal = expected.packages.findIndex(item => item.name === name) + 1;
+    versionFacts = {};
     const folder = `${registry}/${name}`;
     const folderInfo = read.stat(folder);
-    if (!allowedNames.has(name) || !folderInfo.isDirectory() || folderInfo.isSymbolicLink()) refused();
+    if (!allowedNames.has(name)) cacheRefuse('EDGE_CACHE_PACKAGE');
+    if (!folderInfo.isDirectory() || folderInfo.isSymbolicLink()) cacheRefuse('EDGE_CACHE_TYPE');
     const entries = read.list(folder);
-    if (!entries.includes('registry.json') || entries.length < 2) refused();
+    if (!entries.includes('registry.json') || entries.length < 2) cacheRefuse('EDGE_CACHE_METADATA');
     for (const version of entries) {
       if (version === 'registry.json') continue;
+      versionFacts = {};
+      if (typeof version === 'string') {
+        const numeric = /^(\d+)\.(\d+)\.(\d+)(?:_(\d+))?$/.exec(version);
+        if (numeric && numeric.slice(1).filter(Boolean).every(n => Number.isSafeInteger(Number(n)) && Number(n) <= 1000000))
+          versionFacts = {edgeVersionMajor:Number(numeric[1]),edgeVersionMinor:Number(numeric[2]),edgeVersionPatch:Number(numeric[3]),edgeVersionCopy:Number(numeric[4]??0)};
+      }
       // Deno peer copies use e.g. 2.45.0_1. Until a specific copy is reviewed,
       // refuse it (and every other unknown entry), rather than skip its bytes.
-      if (typeof version !== 'string' || /[\r\n\0/\\]/.test(version) || !/^\d+\.\d+\.\d+$/.test(version)) refused();
-      const pin = allowed.get(`${name}@${version}`); if (!pin) refused();
+      if (typeof version !== 'string' || /[\r\n\0/\\]/.test(version) || !/^\d+\.\d+\.\d+$/.test(version)) cacheRefuse('EDGE_CACHE_VERSION');
+      const pin = allowed.get(`${name}@${version}`); if (!pin) cacheRefuse('EDGE_CACHE_PIN');
       const metadataPath = `${folder}/registry.json`;
       const metadataInfo = read.stat(metadataPath);
-      if (!metadataInfo.isFile() || metadataInfo.isSymbolicLink() || metadataInfo.size > 32 * 1024 ** 2) refused();
+      if (!metadataInfo.isFile() || metadataInfo.isSymbolicLink() || metadataInfo.size > 32 * 1024 ** 2) cacheRefuse('EDGE_CACHE_METADATA');
       const packument = JSON.parse(read.read(metadataPath, 'utf8')), metadata = packument.versions?.[version];
       // deno_npm0.26 serializes name at packument level, not in version info.
-      if (packument.name !== name || metadata?.version !== version || metadata.dist?.integrity !== pin.integrity
-        || metadata.dist?.tarball !== pin.tarball || JSON.stringify(Object.entries(metadata.dependencies ?? {}).sort())
-          !== JSON.stringify(Object.entries(pin.dependencies).sort())) refused();
+      if (packument.name !== name) cacheRefuse('EDGE_CACHE_NAME');
+      if (metadata?.version !== version) cacheRefuse('EDGE_CACHE_VERSION');
+      if (metadata.dist?.integrity !== pin.integrity) cacheRefuse('EDGE_CACHE_SRI');
+      if (metadata.dist?.tarball !== pin.tarball) cacheRefuse('EDGE_CACHE_TARBALL');
+      if (JSON.stringify(Object.entries(metadata.dependencies ?? {}).sort()) !== JSON.stringify(Object.entries(pin.dependencies).sort())) cacheRefuse('EDGE_CACHE_DEPENDENCIES');
       const packageRoot = `${folder}/${version}`;
       const packageInfo = read.stat(packageRoot);
-      if (!packageInfo.isDirectory() || packageInfo.isSymbolicLink()) refused();
+      if (!packageInfo.isDirectory() || packageInfo.isSymbolicLink()) cacheRefuse('EDGE_CACHE_TYPE');
       const visit = (directory, prefix = '') => {
         for (const entry of read.list(directory).sort()) {
-          if (typeof entry !== 'string' || !entry || ['.', '..', '.deno_sync_lock'].includes(entry) || /[\r\n\0/\\]/.test(entry)) refused();
+          if (typeof entry !== 'string' || !entry || ['.', '..', '.deno_sync_lock'].includes(entry) || /[\r\n\0/\\]/.test(entry)) cacheRefuse('EDGE_CACHE_ENTRY');
           const path = `${directory}/${entry}`, info = read.stat(path);
-          if (info.isSymbolicLink()) refused();
+          if (info.isSymbolicLink()) cacheRefuse('EDGE_CACHE_TYPE');
           if (info.isDirectory()) visit(path, prefix + entry + '/');
           else if (info.isFile()) { bytes += info.size;
-            if (bytes > CI1_SETUP.edgeBytes || files.length >= 100000) refused();
+            if (bytes > CI1_SETUP.edgeBytes || files.length >= 100000) cacheRefuse('EDGE_CACHE_BOUND');
             files.push({ path: `${name}/${version}/${prefix}${entry}`, sha256: ci1BytesHash(read.read(path)), bytes: info.size });
-          } else refused();
+          } else cacheRefuse('EDGE_CACHE_TYPE');
         }
       }; visit(packageRoot);
       observed.push(`${name}@${version}`);
     }
   }
-  if (!observed.includes(expected.root) || !files.length) refused();
+  if (!observed.includes(expected.root) || !files.length) cacheRefuse('EDGE_CACHE_INCOMPLETE');
   return { observed: observed.sort(), files, bytes, sha256: ci1BytesHash(JSON.stringify(files.sort((a, b) => a.path.localeCompare(b.path)))) };
 }
 
@@ -515,12 +538,13 @@ async function setup(layout, input, parentEnv) {
   const root = layout.volume, baseEnv = { ...fixedEnv(root, parentEnv), ...githubEnv(parentEnv) };
   const guard = () => supervisor(layout, baseEnv);
   const run = commandRunner(baseEnv, guard);
-  let loop, mounted = false, pair, source, operation = null, imageOrdinal = 0;
+  let loop, mounted = false, pair, source, operation = null, imageOrdinal = 0, cleanupFailure = null;
   const pinPath = suffix => `${source}/tests/permissions/runtime/${suffix}`;
   const adapter = {
     supervisor: guard,
     operation: () => operation,
     failureFacts: () => ({ imageOrdinal }),
+    cleanupFailure: () => cleanupFailure,
     stage: async stage => {
       operation = null;
       if (stage === 'loop') {
@@ -619,13 +643,19 @@ async function setup(layout, input, parentEnv) {
           if (actual.Id !== image.configDigest || actual.Os !== 'linux' || actual.Architecture !== 'amd64') refused();
         }
       } else if (stage === 'edge-network-warm') {
+        operation = 'EDGE_VOLUME_CHECK';
         const image = ci1ImagesIntake(parse(pinPath('ci1-images.json'))).find(item => item.ref.includes('/edge-runtime:'))?.ref;
         if (!image || run('docker', ['volume', 'ls', '--filter', `name=^${layout.edgeVolume}$`, '--format', '{{.Name}}']).trim()) refused();
+        operation = 'EDGE_VOLUME_CREATE';
         run('docker', ['volume', 'create', '--label', `com.supabase.cli.project=${CI1_PROJECT}`, layout.edgeVolume]);
         const cacheRoot = JSON.parse(run('docker', ['volume', 'inspect', layout.edgeVolume]))[0].Mountpoint;
+        operation = 'EDGE_VOLUME_EMPTY';
         if (statSync(cacheRoot).dev !== statSync(root).dev || readdirSync(cacheRoot).length) refused();
+        operation = 'EDGE_BUNDLE';
         edgeBundle(layout, run, image, 'host', 'warm');
+        operation = 'EDGE_CACHE_PROOF';
         const proof = ci1EdgeCacheProof(cacheRoot, parse(pinPath('ci1-edge.json')));
+        operation = 'EDGE_PROOF_WRITE';
         writeFileSync(`${root}/private/edge-warm-proof.json`, JSON.stringify(proof), { flag: 'wx', mode: 0o600 });
       } else if (stage === 'stop-prefetch') { await stopDaemons(layout, pair); pair = undefined;
       } else if (stage === 'private-namespaces') {
@@ -647,14 +677,17 @@ async function setup(layout, input, parentEnv) {
       // A quota refusal must not itself prevent ownership-checked shutdown.
       const control = commandRunner(baseEnv);
       let valid = true;
-      try { if (mounted) exportProof(layout, baseEnv); } catch { valid = false; }
-      try { await stopDaemons(layout, pair); } catch { valid = false; }
+      const failed = (error, op) => { valid = false; cleanupFailure ??= failureDetails(error, 'cleanup', op); };
+      try { if (mounted) exportProof(layout, baseEnv); } catch (error) { failed(error, 'CLEANUP_EXPORT'); }
+      try { await stopDaemons(layout, pair); } catch (error) { failed(error, 'CLEANUP_DAEMONS'); }
       try {
         if (mounted) { const mount = JSON.parse(control('findmnt', ['--json', '--target', root, '--output', 'TARGET,SOURCE'])).filesystems[0];
           if (mount.target !== root || mount.source !== loop) refused(); control('umount', [root]); mounted = false; }
-        if (loop) { const attached = JSON.parse(control('losetup', ['--json', '--list', '--output', 'BACK-FILE', loop])).loopdevices[0];
+      } catch (error) { failed(error, 'CLEANUP_UNMOUNT'); }
+      try {
+        if (loop && !mounted) { const attached = JSON.parse(control('losetup', ['--json', '--list', '--output', 'BACK-FILE', loop])).loopdevices[0];
           if (realpathSync(attached['back-file']) !== layout.image) refused(); control('losetup', ['--detach', loop]); }
-      } catch { valid = false; }
+      } catch (error) { failed(error, 'CLEANUP_DETACH'); }
       return valid;
     },
   };

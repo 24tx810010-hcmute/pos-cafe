@@ -6,6 +6,7 @@ import { ci1Identity } from './permission-ci1-policy.mjs';
 import { ci1WorkerPlan, runCi1Worker, ci1EdgeCacheProof, ci1PublicExport, ci1EdgeBundleArguments,
   ci1AcquireDaemons, ci1CloseDaemons, ci1TerminateDaemon, ci1FailureExport, ci1DockerFailureCode } from './permission-ci1-worker.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
+import { backendEvidence } from './project-backend.mjs';
 
 // Every Linux fact, adapter and cache below is fake unit data. No Linux/DB/CI is started.
 const identity = ci1Identity('12345', 1);
@@ -143,6 +144,21 @@ function cacheFixture() {
   return { pin, expected, folder, entries, read };
 }
 
+test('Edge cache and cleanup failures retain independent finite reasons without exporting metadata', async () => {
+  const fixture=cacheFixture(),metadata=JSON.parse(fixture.entries.get(`${fixture.folder}/registry.json`));
+  metadata.versions['2.45.0'].dist.integrity='FAKE_UNIT_SECRET';fixture.entries.set(`${fixture.folder}/registry.json`,JSON.stringify(metadata));
+  let cacheError;try{ci1EdgeCacheProof('/cache',fixture.expected,fixture.read);}catch(error){cacheError=error;}
+  assert.equal(cacheError.ci1FailureCode,'EDGE_CACHE_SRI');
+  const fake=adapter();fake.operation=()=> 'EDGE_CACHE_PROOF';fake.stage=async()=>{throw cacheError;};
+  fake.close=async()=>false;fake.cleanupFailure=()=>({stage:'cleanup',operation:'CLEANUP_UNMOUNT',code:'COMMAND_FAILED',command:'umount',exitCode:32,raw:'FAKE_UNIT_SECRET'});
+  const result=await runCi1Worker(fake,identity);
+  assert.equal(result.failure.code,'EDGE_CACHE_SRI');assert.equal(result.failure.facts.edgePackageOrdinal,1);
+  assert.deepEqual(Object.fromEntries(Object.entries(result.failure.facts).filter(([k])=>k.startsWith('edgeVersion'))),
+    {edgeVersionMajor:2,edgeVersionMinor:45,edgeVersionPatch:0,edgeVersionCopy:0});
+  assert.deepEqual(result.cleanupFailure,{stage:'cleanup',operation:'CLEANUP_UNMOUNT',code:'COMMAND_FAILED',command:'umount',exitCode:32});
+  assert.equal(result.cleanup,false);assert.equal(result.status,'ERROR');assert.equal(JSON.stringify(result).includes('FAKE_UNIT_SECRET'),false);
+});
+
 test('fresh Edge cache proof requires pinned resolved version/SRI and detects file drift or incomplete extraction', () => {
   const fake = cacheFixture(), before = ci1EdgeCacheProof('/cache', fake.expected, fake.read);
   assert.deepEqual(before.observed, ['@supabase/supabase-js@2.45.0']);
@@ -182,6 +198,20 @@ test('public export regenerates D12 schema/Markdown and rejects raw or forged de
   assert.equal(JSON.parse(ci1PublicExport(evidence).json).overallStatus, 'NOT_RUN');
   assert.throws(() => ci1PublicExport({ ...evidence, raw: 'FAKE_UNIT_SECRET' }), { message: 'CI1_WORKER_REFUSED' });
   assert.throws(() => ci1PublicExport({ ...evidence, overallStatus: 'PASS' }), { message: 'CI1_WORKER_REFUSED' });
+});
+
+test('backend success independently requires outer teardown proof after a passing synthetic D12 fixture', () => {
+  const env={GITHUB_REPOSITORY:'nguyentronglinh045/pos-cafe',GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',GITHUB_SHA:'1'.repeat(40),GITHUB_WORKFLOW_SHA:'1'.repeat(40)};
+  const input={repository:env.GITHUB_REPOSITORY,runId:'12345',attempt:1,workflowSHA:env.GITHUB_SHA,sourceSHA:env.GITHUB_SHA,
+    sourceFingerprint:'2'.repeat(64),lockSHA:'3'.repeat(64),versions:{node:'24.16.0',npm:'11.13.0',supabase:'2.117.0'},
+    startedAt:'2026-10-17T00:00:00.000Z',finishedAt:'2026-10-17T00:00:01.000Z',
+    checks:Object.fromEntries(['bootstrap','auth','apiBinding','sourcePreservation','cleanup'].map(k=>[k,'PASS'])),
+    suites:[['T09',1],['T10',3]].map(([id,n])=>({id,status:'PASS',exitCode:0,counts:{required:n,run:n,pass:n,fail:0,skip:0}}))};
+  const evidence=JSON.parse(renderCi1Evidence(input).json),worker={schemaVersion:'permission-ci1-worker-status-v1',status:'COMPLETE',
+    completed:ci1WorkerPlan('12345',1).stages.slice(1),businessCounts:null,cleanup:true,cleanupFailure:null};
+  assert.equal(JSON.parse(backendEvidence(worker,evidence,env).json).overallStatus,'PASS');
+  for(const delta of [{cleanup:false},{cleanupFailure:{stage:'cleanup'}},{status:'ERROR'},{completed:worker.completed.slice(1)}])
+    assert.throws(()=>backendEvidence({...worker,...delta},evidence,env),{message:'BACKEND_PROOF_REFUSED'});
 });
 
 test('CLI plan is side-effect free; effectful entry refuses Windows before any layout creation', () => {

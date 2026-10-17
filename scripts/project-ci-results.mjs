@@ -3,7 +3,7 @@ import { stripVTControlCharacters } from 'node:util';
 
 export const PROJECT_REPOSITORY = 'nguyentronglinh045/pos-cafe';
 export const PROJECT_REPOSITORY_ID = 1263057386;
-export const PROJECT_PHASES = Object.freeze(['install', 'build', 'unit', 'tooling', 'node-tools', 'browser', 'smoke-discovery', 'smoke', 'ui-selftest', 'ui-audit']);
+export const PROJECT_PHASES = Object.freeze(['install', 'build', 'unit', 'tooling', 'node-tools', 'browser', 'smoke-discovery', 'smoke-preflight', 'smoke', 'ui-selftest', 'ui-audit']);
 export const PROJECTS = Object.freeze(['desktop', 'tablet-landscape', 'phone-landscape', 'small-landscape', 'portrait', 'demo-runbook']);
 export const hash = value => createHash('sha256').update(value).digest('hex');
 const reject = () => { throw new Error('PROJECT_CI_RESULT_INVALID'); };
@@ -28,6 +28,27 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
   if (metrics.numFailedTests > 0) codes.push('VITEST_ASSERTION');
   if (metrics.numRuntimeErrorTestSuites > 0) codes.push('VITEST_RUNTIME');
   const messages = [output];
+  const smokeFailedFiles = [], queue = (Array.isArray(report?.suites) ? report.suites : []).slice(0, 10000);
+  for (let n = 0; queue.length && n < 10000; n++) {
+    const suite = queue.shift();
+    if (Array.isArray(suite?.suites)) queue.push(...suite.suites.slice(0, 10000 - queue.length));
+    for (const spec of Array.isArray(suite?.specs) ? suite.specs : []) for (const test of Array.isArray(spec.tests) ? spec.tests : []) {
+      const failed = (Array.isArray(test.results) ? test.results : []).filter(r => ['failed', 'timedOut', 'interrupted'].includes(r.status));
+      if (!failed.length) continue;
+      const file = typeof spec.file === 'string' ? `tests/smoke/${spec.file}` : '';
+      if (expectedFiles.includes(file) && /^tests\/smoke\/[A-Za-z0-9_./-]+\.(?:ts|mjs)$/.test(file)) {
+        smokeFailedFiles.push(file);
+        if (metrics.smokeTestLine === undefined && integer(spec.line) && spec.line > 0 && spec.line <= 1000000) {
+          metrics.smokeTestLine = spec.line;
+          if (PROJECTS.includes(test.projectName)) metrics.smokeFailureProjectOrdinal = PROJECTS.indexOf(test.projectName) + 1;
+        }
+      }
+      for (const result of failed) for (const error of [result.error, ...(Array.isArray(result.errors) ? result.errors : [])])
+        for (const value of [error?.message, error?.stack]) if (typeof value === 'string') messages.push(value);
+    }
+  }
+  for (const [name, key] of Object.entries({expected:'smokeExpected',unexpected:'smokeUnexpected',skipped:'smokeSkipped',flaky:'smokeFlaky'}))
+    if (integer(report?.stats?.[name])) metrics[key] = report.stats[name];
   for (const file of report?.testResults ?? []) if (file.status === 'failed') {
     for (const value of [file.message, file.failureMessage]) if (typeof value === 'string') messages.push(value);
     for (const assertion of file.assertionResults ?? []) if (assertion.status === 'failed') {
@@ -35,6 +56,12 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
     }
   }
   const privateText = stripVTControlCharacters(messages.join('\n'));
+  if (expectedFiles.includes('tests/smoke/helpers.ts')) {
+    const helper = /tests[/\\]smoke[/\\]helpers\.ts:(\d+):\d+/.exec(privateText);
+    if (helper && Number(helper[1]) > 0 && Number(helper[1]) <= 1000000) metrics.smokeHelperLine = Number(helper[1]);
+  }
+  const progress = [...privateText.matchAll(/\[(\d+)\/(\d+)\]/g)].filter(m => Number(m[1]) <= Number(m[2]) && Number(m[2]) <= 10000).at(-1);
+  if (progress) { metrics.smokeProgressIndex = Number(progress[1]); metrics.smokeProgressTotal = Number(progress[2]); }
   for (const [code, pattern] of Object.entries({ TEST_TIMEOUT: /timed?\s*out|test timeout|timeout of/i,
     ASSERTION_ERROR: /AssertionError|expected .{0,100} to /i, TYPE_ERROR: /TypeError/, REFERENCE_ERROR: /ReferenceError/,
     MODULE_NOT_FOUND: /ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|cannot find (?:module|package)/i,
@@ -49,7 +76,9 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
   const failedFiles = (report?.testResults ?? []).filter(file => file.status === 'failed').map(file => {
     const path = typeof file.name === 'string' ? file.name.replaceAll('\\', '/').replace(root.replaceAll('\\', '/') + '/', '') : '';
     return expectedFiles.includes(path) && /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path) ? path : null;
-  }).filter(Boolean).slice(0, 32);
+  }).filter(Boolean);
+  failedFiles.push(...smokeFailedFiles.filter(file => !failedFiles.includes(file)));
+  failedFiles.splice(32);
   const architecture = (report?.testResults ?? []).find(file => file.name?.replaceAll('\\', '/') === root.replaceAll('\\', '/') + '/src/architectureBoundaries.test.ts');
   if (failedFiles.includes('src/architectureBoundaries.test.ts') && Array.isArray(architecture?.assertionResults)) {
     const index = architecture.assertionResults.findIndex(item => item.status === 'failed');
@@ -126,7 +155,7 @@ export function nodeCounts(tap) {
   return result;
 }
 
-export function smokeCases(report) {
+export function smokeCases(report, projects = PROJECTS) {
   const cases = [];
   function visit(suite) {
     for (const spec of suite.specs ?? []) for (const test of spec.tests ?? []) {
@@ -138,8 +167,19 @@ export function smokeCases(report) {
   if (!Array.isArray(report.suites) || (report.errors?.length ?? 0)) reject();
   for (const suite of report.suites) visit(suite);
   if (!cases.length || new Set(cases.map(item => item.key)).size !== cases.length
-    || !sameSet([...new Set(cases.map(item => item.project))], PROJECTS)) reject();
+    || !sameSet([...new Set(cases.map(item => item.project))], projects)) reject();
   return cases;
+}
+
+export function smokePreflightCounts(report, discovery) {
+  const key = 'desktop|pos-cafe.spec.ts|119|POS mock flow keeps primary actions visible on landscape viewports';
+  const expected = smokeCases(discovery).filter(item => item.key === key), actual = smokeCases(report, ['desktop']);
+  if (expected.length !== 1 || actual.length !== 1 || actual[0].key !== key) reject();
+  const test = actual[0].test;
+  if (test.expectedStatus !== 'passed' || test.status !== 'expected' || test.results?.length !== 1
+    || test.results[0].status !== 'passed' || (test.results[0].retry ?? 0) !== 0 || test.results[0].error || (test.results[0].errors?.length ?? 0)
+    || report.stats?.expected !== 1 || report.stats?.unexpected !== 0 || report.stats?.skipped !== 0 || report.stats?.flaky !== 0) reject();
+  return {run:1,pass:1,fail:0,skip:0};
 }
 
 export function smokeCounts(report, discovery, allowedSkips) {
@@ -192,6 +232,7 @@ export function publicSummary(binding, rows, fingerprints) {
       metrics: Object.fromEntries(Object.entries(diagnostic.metrics).filter(([key, value]) =>
         ['numTotalTests', 'numPassedTests', 'numFailedTests', 'numPendingTests', 'numRuntimeErrorTestSuites', 'architectureAssertion',
           'minimumObservedFreeBytes', 'initialFreeBytes', 'freeSpaceDecreaseBytes', 'ownedBytesAtCheckpoint', 'coreFileCount', 'coreAllocatedBytes', 'largestOwnedFileBytes', 'kernelCorePipe',
+          'smokeTestLine', 'smokeFailureProjectOrdinal', 'smokeHelperLine', 'smokeExpected', 'smokeUnexpected', 'smokeSkipped', 'smokeFlaky', 'smokeProgressIndex', 'smokeProgressTotal',
           'memoryCurrentBytes', 'peakMemoryBytes', 'pidsCurrent', 'peakPids', 'oomEvents', 'oomKills', 'pidsLimitEvents'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));
   return { schemaVersion: 'pos-cafe-light-ci-v1', verificationScope: 'LIGHT_MOCK_ONLY', repository: PROJECT_REPOSITORY, repositoryID: PROJECT_REPOSITORY_ID,

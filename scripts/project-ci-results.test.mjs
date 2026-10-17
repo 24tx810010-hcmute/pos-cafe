@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, mkdtempSync, existsSync, linkSync } from '
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { sourceBinding, vitestCounts, nodeCounts, smokeCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
+import { sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
 import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit, allocatedBytes, coreLimitDisabled } from './project-ci.mjs';
 import { lightService, withLightCorePattern, stopLightUnit } from './project-ci-launch.mjs';
 import { backendInvocation } from './project-backend.mjs';
@@ -108,6 +108,33 @@ test('smoke requires every project/case and exact applicability skips without re
   assert.throws(() => smokeCounts(missing, report, []));
   const retry = structuredClone(report); retry.suites[0].specs[0].tests[0].results[0].retry = 1;
   assert.throws(() => smokeCounts(retry, report, []));
+});
+
+test('smoke preflight requires the one original desktop case and never substitutes for full matrix', () => {
+  const spec=projectName=>({file:'pos-cafe.spec.ts',line:119,title:'POS mock flow keeps primary actions visible on landscape viewports',
+    tests:[{projectName,expectedStatus:'passed',status:'expected',results:[{status:'passed',retry:0,errors:[]}]}]});
+  const discovery={suites:[{specs:PROJECTS.map(spec)}],errors:[]};
+  const report={suites:[{specs:[spec('desktop')]}],errors:[],stats:{expected:1,unexpected:0,skipped:0,flaky:0}};
+  assert.equal(smokePreflightCounts(report,discovery).pass,1);
+  assert.throws(()=>smokeCounts(report,discovery,[]));
+  for(const change of [r=>{r.suites[0].specs[0].line=120;},r=>{r.suites[0].specs.push(spec('desktop'));},
+    r=>{r.suites[0].specs[0].tests[0].results[0].status='skipped';},r=>{r.stats.unexpected=1;},
+    r=>{r.suites[0].specs[0].tests[0].results[0].retry=1;},r=>{r.errors=['FAKE_UNIT_SECRET'];}]) {
+    const bad=structuredClone(report);change(bad);assert.throws(()=>smokePreflightCounts(bad,discovery));
+  }
+});
+
+test('failed Playwright diagnostics expose known source locations and counts without raw errors or titles', () => {
+  const report={suites:[{specs:[{file:'pos-cafe.spec.ts',line:119,title:'FAKE_UNIT_SECRET',tests:[{projectName:'desktop',results:[{
+    status:'timedOut',errors:[{message:'Test timeout FAKE_UNIT_SECRET',stack:'/source/tests/smoke/helpers.ts:19:3'}]}]}]}]}],
+    stats:{expected:0,unexpected:1,skipped:0,flaky:0}};
+  const d=privateDiagnostics('[9/81] FAKE_UNIT_SECRET',report,['tests/smoke/pos-cafe.spec.ts','tests/smoke/helpers.ts'],'/source');
+  assert.deepEqual(d.failedFiles,['tests/smoke/pos-cafe.spec.ts']);
+  assert.equal(d.metrics.smokeUnexpected,1);assert.equal(d.metrics.smokeHelperLine,19);assert.equal(d.metrics.smokeTestLine,119);
+  assert.equal(d.metrics.smokeFailureProjectOrdinal,1);assert.equal(d.metrics.smokeProgressIndex,9);
+  assert.equal(JSON.stringify(d).includes('FAKE_UNIT_SECRET'),false);
+  const bad=structuredClone(report);bad.suites[0].specs[0].file='../private/FAKE_UNIT_SECRET';bad.stats.unexpected=-1;
+  const safe=privateDiagnostics('',bad,[]);assert.deepEqual(safe.failedFiles,[]);assert.equal(safe.metrics.smokeUnexpected,undefined);
 });
 
 test('UI gate requires every target/viewport and rejects fresh or incomplete findings', () => {

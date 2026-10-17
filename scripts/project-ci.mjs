@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, appendFileSync, mkdirSync, mkdtempSync, ls
 import { resolve, join } from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { hash, sourceBinding, vitestCounts, nodeCounts, smokeCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode } from './project-ci-results.mjs';
+import { hash, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode } from './project-ci-results.mjs';
 
 const GiB = 1024 ** 3;
 const refuse = () => { throw new Error('PROJECT_CI_GUARD'); };
@@ -192,9 +192,13 @@ export async function main() {
     // JSON reporter uses its explicit file rather than public stdout.
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke-discovery.json');
     await phase('smoke-discovery', process.execPath, ['node_modules/playwright/cli.js', 'test', '--list', '--reporter=json']);
+    env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke-preflight.json');
+    await phase('smoke-preflight', process.execPath, ['node_modules/playwright/cli.js', 'test', 'tests/smoke/pos-cafe.spec.ts:119',
+      '--project=desktop', '--workers=1', '--retries=0', '--forbid-only', '--reporter=line,json'],
+      () => smokePreflightCounts(json('smoke-preflight'), json('smoke-discovery')), 'smoke-preflight');
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke.json');
     await phase('smoke', process.execPath, ['node_modules/playwright/cli.js', 'test', '--workers=2', '--retries=0', '--forbid-only', '--reporter=line,json'],
-      () => smokeCounts(json('smoke'), json('smoke-discovery'), JSON.parse(readFileSync(join(root, 'ci/smoke-applicability.json'), 'utf8'))));
+      () => smokeCounts(json('smoke'), json('smoke-discovery'), JSON.parse(readFileSync(join(root, 'ci/smoke-applicability.json'), 'utf8'))), 'smoke');
     delete env.PLAYWRIGHT_JSON_OUTPUT_NAME;
     await phase('ui-selftest', process.execPath, ['ui-audit/run.mjs', '--selftest'], output => {
       if (!output.includes('selftest OK') || !/^selftest: 23 finding\(s\)/m.test(output)) refuse();
