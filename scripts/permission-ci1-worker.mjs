@@ -51,7 +51,20 @@ const failureMetrics = ['hostFreeBytes', 'memoryBytes', 'oom', 'pidsEvents', 'me
   'cpuMatches', 'memoryLimitMatches', 'swapLimitMatches', 'pidsLimitMatches', 'cgroupMatches', 'runtimeMatches', 'loggingMatches',
   'loopImageBytes', 'loopAllocatedBytes', 'loopFilesystemBytes', 'loopFreeBytes', 'loopOffset', 'loopSizeLimit', 'mountMatches', 'ownerMatches', 'imageOrdinal', 'edgePackageOrdinal',
   'edgeVersionMajor', 'edgeVersionMinor', 'edgeVersionPatch', 'edgeVersionCopy', 'edgeCacheEntryCount', 'edgeRegistryMetadataPresent', 'loopNestedMounts',
-  'isolatedFailureSeen', 'isolatedCleanupFailed', 'systemdPropertyOrdinal'];
+  'isolatedFailureSeen', 'isolatedCleanupFailed', 'systemdPropertyOrdinal', 'imagePullAttempt'];
+
+export async function ci1PullImage(run, reference, guard = () => {}, wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)), onAttempt = () => {}) {
+  if (typeof reference !== 'string' || !/^public\.ecr\.aws\/supabase\/[a-z0-9._-]+@sha256:[a-f0-9]{64}$/.test(reference)) refused();
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    guard(); onAttempt(attempt);
+    try { return run('docker', ['pull', '--quiet', '--platform', 'linux/amd64', reference]); }
+    catch (error) {
+      if (error?.ci1FailureCode !== 'DOCKER_REGISTRY_RATE_LIMIT' || attempt === 3) throw error;
+    }
+    await wait(attempt === 1 ? 10000 : 30000);
+    guard();
+  }
+}
 export function ci1UnmountFailureCode(stderr) {
   if (typeof stderr !== 'string' || Buffer.byteLength(stderr) > 1024 ** 2) return null;
   for (const [code, pattern] of Object.entries({ UNMOUNT_BUSY: /target is busy|device or resource busy/i,
@@ -623,12 +636,12 @@ async function setup(layout, input, parentEnv) {
   const root = layout.volume, baseEnv = { ...fixedEnv(root, parentEnv), ...githubEnv(parentEnv) };
   const guard = () => supervisor(layout, baseEnv);
   const run = commandRunner(baseEnv, guard);
-  let loop, mounted = false, pair, source, operation = null, imageOrdinal = 0, cleanupFailure = null, cleanupMountFacts = {};
+  let loop, mounted = false, pair, source, operation = null, imageOrdinal = 0, imagePullAttempt = 0, cleanupFailure = null, cleanupMountFacts = {};
   const pinPath = suffix => `${source}/tests/permissions/runtime/${suffix}`;
   const adapter = {
     supervisor: guard,
     operation: () => operation,
-    failureFacts: () => ({ imageOrdinal }),
+    failureFacts: () => ({ imageOrdinal, ...(imagePullAttempt ? { imagePullAttempt } : {}) }),
     cleanupFailure: () => cleanupFailure,
     stage: async stage => {
       operation = null;
@@ -720,7 +733,9 @@ async function setup(layout, input, parentEnv) {
           imageOrdinal++;
           const repository = image.ref.slice(0, image.ref.lastIndexOf(':'));
           operation = 'IMAGE_PULL';
-          run('docker', ['pull', '--quiet', '--platform', 'linux/amd64', `${repository}@${image.manifestDigest}`]);
+          imagePullAttempt = 0;
+          await ci1PullImage(run, `${repository}@${image.manifestDigest}`, guard, undefined, attempt => { imagePullAttempt = attempt; });
+          imagePullAttempt = 0;
           operation = 'IMAGE_TAG';
           run('docker', ['tag', `${repository}@${image.manifestDigest}`, image.ref]);
           operation = 'IMAGE_INSPECT';

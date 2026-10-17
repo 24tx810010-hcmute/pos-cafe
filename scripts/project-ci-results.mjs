@@ -174,8 +174,40 @@ export function smokeTraceEvents(text, expectedFiles, facts = {}) {
     }
   }
   Object.assign(metrics, smokeTraceSnapshotFacts(events));
+  Object.assign(metrics, smokeTraceExpectFacts(events));
   delete facts.traceRefusalOrdinal;
   return { codes: [...codes], metrics, failedFiles };
+}
+
+export function smokeTraceExpectFacts(events) {
+  const calls = new Map(), facts = { traceExpectCalls: 0 };
+  for (const event of events) {
+    if (event?.type === 'before' && event.class === 'Frame' && event.method === 'expect'
+      && event.params?.expression === 'to.be.visible' && typeof event.params.selector === 'string'
+      && event.params.selector === 'internal:testid=[data-testid="landing-screen"s]' && typeof event.callId === 'string'
+      && calls.size < 32 && !calls.has(event.callId)) {
+      calls.set(event.callId, event); facts.traceExpectCalls++;
+    } else if (event?.type === 'after' && calls.has(event.callId)) {
+      const before = calls.get(event.callId), result = event.result;
+      for (const name of Object.keys(facts)) if (name !== 'traceExpectCalls') delete facts[name];
+      for (const name of ['timeout', 'timeoutForLogs']) if (integer(before.params[name]) && before.params[name] <= 480000)
+        facts[name === 'timeout' ? 'traceExpectTimeoutMs' : 'traceExpectLogTimeoutMs'] = before.params[name];
+      if (typeof result?.matches === 'boolean') facts.traceExpectMatches = result.matches ? 1 : 0;
+      if (typeof result?.timedOut === 'boolean') facts.traceExpectTimedOut = result.timedOut ? 1 : 0;
+      const value = result?.received?.value;
+      const scalar = value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 1;
+      // Dispatcher trace results contain protocol SerializedValue, not raw JS.
+      facts.traceExpectReceivedOrdinal = value === undefined || (scalar && value.v === 'undefined') ? 0
+        : scalar && value.s === 'visible' ? 1 : scalar && value.s === 'hidden' ? 2 : 3;
+      const errorName = ['Expect', 'Error', 'TimeoutError', 'TargetClosedError'].indexOf(event.error?.name) + 1;
+      if (errorName) facts.traceExpectErrorOrdinal = errorName;
+      if (Number.isFinite(event.endTime) && Number.isFinite(before.startTime)) {
+        const duration = event.endTime - before.startTime;
+        if (duration >= 0 && duration <= 480000) facts.traceExpectDurationMs = Math.round(duration);
+      }
+    }
+  }
+  return facts;
 }
 
 // Resolve only fixed element counts, never HTML/text/attributes. Trace references
@@ -267,6 +299,9 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
     for (const spec of Array.isArray(suite?.specs) ? suite.specs : []) for (const test of Array.isArray(spec.tests) ? spec.tests : []) {
       const failed = (Array.isArray(test.results) ? test.results : []).filter(r => ['failed', 'timedOut', 'interrupted'].includes(r.status));
       if (!failed.length) continue;
+      if (integer(test.timeout) && test.timeout <= 480000) metrics.smokeConfiguredTimeoutMs ??= test.timeout;
+      if (integer(failed[0].duration) && failed[0].duration <= 480000) metrics.smokeResultDurationMs ??= failed[0].duration;
+      metrics.smokeResultStatusOrdinal ??= ['failed', 'timedOut', 'interrupted'].indexOf(failed[0].status) + 1;
       const file = typeof spec.file === 'string' ? `tests/smoke/${spec.file}` : '';
       if (expectedFiles.includes(file) && /^tests\/smoke\/[A-Za-z0-9_./-]+\.(?:ts|mjs)$/.test(file)) {
         smokeFailedFiles.push(file);
@@ -322,7 +357,7 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
       if (step.file === 'tests/smoke/helpers.ts') metrics.smokeHelperLine = step.line;
     }
   }
-  for (const [code, pattern] of Object.entries({ TEST_TIMEOUT: /timed?\s*out|test timeout|timeout of/i,
+  for (const [code, pattern] of Object.entries({ TEST_TIMEOUT: /timed\s*out|test timeout|timeout\s+(?:of|(?:[0-9]+(?:ms)?\s+)?exceeded)|^Timeout:\s*[0-9]+ms/im,
     ASSERTION_ERROR: /AssertionError|expected .{0,100} to /i, TYPE_ERROR: /TypeError/, REFERENCE_ERROR: /ReferenceError/,
     MODULE_NOT_FOUND: /ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|cannot find (?:module|package)/i,
     OUT_OF_MEMORY: /heap out of memory|allocation failed|SIGKILL/i, COVERAGE_LINES: /ERROR: Coverage for lines/i,
@@ -515,6 +550,9 @@ export function publicSummary(binding, rows, fingerprints) {
           'traceToolExitCode', 'traceToolTimedOut', 'traceToolOverflow',
           'traceIOOrdinal',
           'traceHttp2xx', 'traceMainFrameSnapshots', 'traceSnapshotComplete', 'traceScreenMask', 'traceLandingNodes', 'traceAppRootNodes',
+          'traceExpectCalls', 'traceExpectTimeoutMs', 'traceExpectLogTimeoutMs', 'traceExpectMatches', 'traceExpectTimedOut',
+          'traceExpectReceivedOrdinal', 'traceExpectErrorOrdinal', 'traceExpectDurationMs',
+          'smokeConfiguredTimeoutMs', 'smokeResultDurationMs', 'smokeResultStatusOrdinal',
           'smokeExpected', 'smokeUnexpected', 'smokeSkipped', 'smokeFlaky', 'smokeProgressIndex', 'smokeProgressTotal',
           'memoryCurrentBytes', 'peakMemoryBytes', 'pidsCurrent', 'peakPids', 'oomEvents', 'oomKills', 'pidsLimitEvents'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));

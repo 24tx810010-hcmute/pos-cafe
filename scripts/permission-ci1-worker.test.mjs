@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { ci1Identity } from './permission-ci1-policy.mjs';
 import { ci1WorkerPlan, runCi1Worker, ci1EdgeCacheProof, ci1PublicExport, ci1EdgeBundleArguments,
   ci1AcquireDaemons, ci1CloseDaemons, ci1TerminateDaemon, ci1FailureExport, ci1DockerFailureCode,
-  ci1OwnedMountCount, ci1UnmountFailureCode, ci1IsolatedFailure, ci1IsolatedError } from './permission-ci1-worker.mjs';
+  ci1OwnedMountCount, ci1UnmountFailureCode, ci1IsolatedFailure, ci1IsolatedError, ci1PullImage } from './permission-ci1-worker.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
 import { backendEvidence, backendFailureEvidence } from './project-backend.mjs';
 
@@ -55,6 +55,22 @@ test('Docker failures expose bounded fixed categories and image ordinal without 
   const result=await runCi1Worker(fake,identity);
   assert.deepEqual(result.failure,{stage:'loop',operation:'IMAGE_PULL',code:'DOCKER_REGISTRY_AUTH',command:'docker',exitCode:1,facts:{imageOrdinal:2}});
   assert.equal(result.cleanup,true);assert.equal(JSON.stringify(result).includes('FAKE_UNIT_SECRET'),false);
+});
+
+test('pinned image pulls retry only rate limits with bounded guarded backoff, never tests or other failures', async () => {
+  const reference='public.ecr.aws/supabase/postgres@sha256:'+'a'.repeat(64), calls=[], waits=[], attempts=[];let guards=0;
+  const rate=()=>Object.assign(new Error('FAKE_UNIT_SECRET'),{ci1FailureCode:'DOCKER_REGISTRY_RATE_LIMIT'});
+  const run=(command,args)=>{calls.push([command,args]);if(calls.length<3)throw rate();return 'ok';};
+  assert.equal(await ci1PullImage(run,reference,()=>{guards++;},async ms=>{waits.push(ms);},n=>attempts.push(n)),'ok');
+  assert.deepEqual(attempts,[1,2,3]);assert.deepEqual(waits,[10000,30000]);assert.equal(guards,5);
+  assert.ok(calls.every(([command,args])=>command==='docker'&&JSON.stringify(args)===JSON.stringify(['pull','--quiet','--platform','linux/amd64',reference])));
+  let exhausted=0;await assert.rejects(ci1PullImage(()=>{exhausted++;throw rate();},reference,()=>{},async()=>{}));assert.equal(exhausted,3);
+  for(const code of ['DOCKER_REGISTRY_AUTH','DOCKER_NETWORK','DOCKER_NO_SPACE',undefined]) {
+    let count=0;await assert.rejects(ci1PullImage(()=>{count++;throw Object.assign(new Error('FAKE_UNIT_SECRET'),{ci1FailureCode:code});},reference,
+      ()=>{},async()=>{assert.fail('non-rate error must not wait');}));assert.equal(count,1);
+  }
+  let count=0;await assert.rejects(ci1PullImage(()=>{count++;throw rate();},reference,()=>{if(count)throw new Error('guard');},async()=>{}));assert.equal(count,1);
+  await assert.rejects(ci1PullImage(()=>assert.fail('arbitrary reference'), 'private/FAKE_UNIT_SECRET:latest'));
 });
 
 test('worker plan applies caps before writes and separates network cache warm from offline service tests', () => {

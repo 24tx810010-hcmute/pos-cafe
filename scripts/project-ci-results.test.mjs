@@ -5,7 +5,7 @@ import { crc32 } from 'node:zlib';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import SmokeFailureReporter, { smokeStepDiagnostic, smokeTraceDiagnostics, smokeTraceEvents, smokeTraceSnapshotFacts, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
+import SmokeFailureReporter, { smokeStepDiagnostic, smokeTraceDiagnostics, smokeTraceEvents, smokeTraceSnapshotFacts, smokeTraceExpectFacts, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
 import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit, allocatedBytes, coreLimitDisabled } from './project-ci.mjs';
 import { lightService, withLightCorePattern, stopLightUnit, coreDumpDisabled, linuxCorePatternAdapter } from './project-ci-launch.mjs';
 import { backendInvocation } from './project-backend.mjs';
@@ -52,7 +52,7 @@ test('trace observes browser JS errors without exporting messages, URLs, secrets
   assert.deepEqual(result.failedFiles,[file]);
   assert.deepEqual(result.metrics,{traceReadable:1,tracePageErrors:1,traceConsoleErrors:1,traceConsoleWarnings:1,
     traceHttp4xx:1,traceHttp5xx:1,traceHttp2xx:0,traceModuleLine:89,traceModuleColumn:7,
-    traceMainFrameSnapshots:0,traceSnapshotComplete:0});
+    traceMainFrameSnapshots:0,traceSnapshotComplete:0,traceExpectCalls:0});
   const row = {id:'install',status:'FAIL',exitCode:1,elapsedMs:1,invocationSHA:digest,reportSHA:digest,diagnostic:result};
   const safe=publicSummary(binding,[row],{source:digest,lock:digest});
   assert.equal(safe.overallStatus,'FAIL');assert.deepEqual(safe.phases[0].diagnostic,result);
@@ -110,6 +110,30 @@ test('fixed selector and browser protocol errors never reflect error text', () =
     const result=privateDiagnostics(message,null);
     assert.ok(result.codes.includes(code));assert.equal(JSON.stringify(result).includes('FAKE_TRACE_PRIVATE_TOKEN'),false);
   }
+});
+
+test('trace distinguishes configured timeout from observed fixed-locator expect results without raw values', () => {
+  const before={type:'before',class:'Frame',method:'expect',callId:'FAKE_PRIVATE_CALL',startTime:100,
+    params:{selector:'internal:testid=[data-testid="landing-screen"s]',expression:'to.be.visible',timeout:5000,timeoutForLogs:5000}};
+  const after={type:'after',callId:before.callId,endTime:111.4,error:{name:'Expect',message:'FAKE_TRACE_PRIVATE_TOKEN'},
+    result:{matches:false,timedOut:false,received:{value:'FAKE_TRACE_PRIVATE_TOKEN'}}};
+  const result=smokeTraceEvents(traceLines([before,after]),[]);
+  assert.deepEqual(smokeTraceExpectFacts([before,after]),{traceExpectCalls:1,traceExpectTimeoutMs:5000,traceExpectLogTimeoutMs:5000,
+    traceExpectMatches:0,traceExpectTimedOut:0,traceExpectReceivedOrdinal:3,traceExpectErrorOrdinal:1,traceExpectDurationMs:11});
+  const safe=publicSummary(binding,[{id:'install',status:'FAIL',exitCode:1,elapsedMs:1,invocationSHA:digest,reportSHA:digest,diagnostic:result}],{source:digest,lock:digest});
+  assert.equal(safe.phases[0].diagnostic.metrics.traceExpectMatches,0);assert.equal(JSON.stringify(safe).includes('PRIVATE'),false);
+  assert.deepEqual(smokeTraceExpectFacts([{...before,params:{...before.params,selector:'FAKE_PRIVATE_SELECTOR'}},after]),{traceExpectCalls:0});
+  assert.equal(smokeTraceExpectFacts(Array(100).fill(before)).traceExpectCalls,1);
+  const next={...before,callId:'second'}, missing={type:'after',callId:'second',endTime:112};
+  assert.equal(smokeTraceExpectFacts([before,after,next,missing]).traceExpectMatches,undefined);
+  for(const [value,ordinal] of [[{s:'visible'},1],[{s:'hidden'},2],[{s:'FAKE_TRACE_PRIVATE_TOKEN'},3],
+    [{v:'undefined'},0],[{n:42},3],[{s:'visible',raw:'FAKE_TRACE_PRIVATE_TOKEN'},3],['visible',3],[undefined,0]]) {
+    const facts=smokeTraceExpectFacts([before,{...after,result:{matches:false,received:{value}}}]);
+    assert.equal(facts.traceExpectReceivedOrdinal,ordinal);assert.equal(JSON.stringify(facts).includes('PRIVATE'),false);
+  }
+  assert.equal(privateDiagnostics('expect.toBeVisible with timeout 5000ms; FAKE_TRACE_PRIVATE_TOKEN',null).codes.includes('TEST_TIMEOUT'),false);
+  for(const text of ['Timed out 5000ms','Test timeout of 60000ms exceeded','Timeout: 5000ms','Timeout 5000ms exceeded'])
+    assert.ok(privateDiagnostics(text,null).codes.includes('TEST_TIMEOUT'));
 });
 
 test('real unzip streams only owned failed trace JSONL and never extracts resource files', () => {
