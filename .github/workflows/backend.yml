@@ -1,0 +1,45 @@
+name: POS backend pilot (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Run synthetic T09/T10 only; no hosted DB/deploy. Type RUN_SYNTHETIC_PILOT'
+        required: true
+        type: choice
+        default: DO_NOT_RUN
+        options:
+          - DO_NOT_RUN
+          - RUN_SYNTHETIC_PILOT
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pos-backend-pilot
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    if: github.repository == 'nguyentronglinh045/pos-cafe' && github.repository_id == '1263057386'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Require prepared backend source
+        run: |
+          if [ ! -f scripts/project-backend.mjs ]; then
+            echo BACKEND_SOURCE_NOT_PREPARED_SELECT_REVIEWED_CI_BRANCH
+            exit 1
+          fi
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.16.0'
+          package-manager-cache: false
+      - name: Run isolated bounded backend and publish safe proof
+        env:
+          CI1_CONFIRMATION: ${{ inputs.confirmation == 'RUN_SYNTHETIC_PILOT' && 'RUN_SYNTHETIC_PILOT' || 'REFUSED' }}
+        run: node scripts/project-backend.mjs

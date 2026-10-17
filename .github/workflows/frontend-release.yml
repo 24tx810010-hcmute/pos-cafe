@@ -1,0 +1,53 @@
+name: Frontend release approval (held)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: 'Exact reviewed source commit; setup never deploys production'
+        required: true
+        type: string
+      ci_run_id:
+        description: 'Successful POS light CI push run for that source'
+        required: true
+        type: string
+      ci_attempt:
+        description: 'Exact CI run attempt'
+        required: true
+        default: '1'
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  deployments: read
+
+concurrency:
+  group: pos-frontend-release
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: github.repository == 'nguyentronglinh045/pos-cafe' && github.repository_id == '1263057386' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.16.0'
+          package-manager-cache: false
+      - name: Verify exact CI source, trusted checker and owner protection
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/project-release.mjs verify
+  approval:
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - name: Approval checkpoint only; production stays held
+        run: echo FRONTEND_RELEASE_APPROVED_BUT_PRODUCTION_HELD
