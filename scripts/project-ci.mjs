@@ -88,6 +88,10 @@ export async function main() {
   const git = args => checkoutGit(root, args);
   if (git(['status', '--porcelain', '--untracked-files=all']).trim()) refuse();
   const paths = git(['ls-files', '-z']).split('\0').filter(Boolean).sort();
+  const backendOnly = JSON.parse(readFileSync(join(root, 'ci/backend-only-tests.json'), 'utf8'));
+  if (!Array.isArray(backendOnly) || backendOnly.length !== 1 || backendOnly.some(item =>
+    !paths.includes(item.file) || !/^tests\/[A-Za-z0-9_./-]+\.tool\.test\.ts$/.test(item.file)
+    || hash(readFileSync(join(root, item.file))) !== item.sourceSHA256 || item.requiresRealBackend !== true)) refuse();
   if (paths.some(path => /(^|\/)\.env(?:$|\.)/.test(path) && !path.endsWith('.env.example'))) refuse();
   const binding = sourceBinding(process.env, JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')), git(['rev-parse', 'HEAD']).trim());
   const unit = `pos-cafe-light-r${binding.runId}-a${binding.attempt}.service`;
@@ -139,7 +143,7 @@ export async function main() {
     await phase('unit', process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--coverage', '--maxWorkers=2', '--retry=0',
       '--reporter=json', `--outputFile=${join(task, 'unit.json')}`], () => vitestCounts(json('unit'), paths.filter(path => /^src\/.*\.(?:test|spec)\.tsx?$/.test(path)), root), 'unit');
     await phase('tooling', process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--config=vitest.project-tooling.config.ts',
-      '--reporter=json', `--outputFile=${join(task, 'tooling.json')}`], () => vitestCounts(json('tooling'), paths.filter(path => /^tests\/.*\.tool\.test\.(?:ts|mjs)$/.test(path)), root), 'tooling');
+      '--reporter=json', `--outputFile=${join(task, 'tooling.json')}`], () => vitestCounts(json('tooling'), paths.filter(path => /^tests\/.*\.tool\.test\.(?:ts|mjs)$/.test(path)), root, backendOnly), 'tooling');
     await phase('node-tools', process.execPath, ['--test', '--test-concurrency=2', '--test-reporter=tap', ...paths.filter(path => /^scripts\/.*\.test\.mjs$/.test(path))], nodeCounts);
     await phase('browser', process.execPath, ['node_modules/playwright/cli.js', 'install', 'chromium', '--only-shell']);
     // JSON reporter uses its explicit file rather than public stdout.

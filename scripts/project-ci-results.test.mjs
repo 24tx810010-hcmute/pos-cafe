@@ -36,6 +36,24 @@ test('Vitest requires exact discovered file set, totals and zero pending/fail/ho
   assert.throws(() => vitestCounts({ ...report, numRuntimeErrorTestSuites: 1 }, ['src/a.test.ts'], '/source'));
 });
 
+test('light tooling accounts for exactly the declared real-backend case without accepting any other skip or failure', () => {
+  const manual = [{file:'tests/contracts/gates.tool.test.ts',fullName:'TC-IDEM-087/tool real backend'}];
+  const report = {numTotalTests:2,numPassedTests:1,numFailedTests:0,numPendingTests:1,success:true,
+    testResults:[{name:'/source/tests/contracts/gates.tool.test.ts',status:'passed',assertionResults:[
+      {fullName:'pure runner gate',status:'passed'}, {fullName:manual[0].fullName,status:'pending'}]}]};
+  const files = [manual[0].file];
+  assert.deepEqual(vitestCounts(report,files,'/source',manual),{discovered:2,run:1,pass:1,fail:0,skip:1,manualDeferred:1});
+  assert.throws(()=>vitestCounts(report,files,'/source'));
+  const extra = structuredClone(report);extra.testResults[0].assertionResults[0].status='pending';
+  assert.throws(()=>vitestCounts(extra,files,'/source',manual));
+  const missing = structuredClone(report);missing.testResults[0].assertionResults[1].fullName='another case';
+  assert.throws(()=>vitestCounts(missing,files,'/source',manual));
+  const accidentalRun = structuredClone(report);accidentalRun.testResults[0].assertionResults[1].status='passed';
+  assert.throws(()=>vitestCounts(accidentalRun,files,'/source',manual));
+  assert.throws(()=>vitestCounts(report,files,'/source',[...manual,...manual]));
+  assert.throws(()=>vitestCounts({...report,numPendingTests:0,numTodoTests:1},files,'/source',manual));
+});
+
 test('Node TAP pending/cancelled/malformed counts cannot become a pass', () => {
   const tap = '# tests 2\n# pass 2\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n';
   assert.equal(nodeCounts(tap).run, 2);

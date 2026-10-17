@@ -57,7 +57,7 @@ export function sourceBinding(env, event, actualSHA) {
     runId: env.GITHUB_RUN_ID, attempt: Number(env.GITHUB_RUN_ATTEMPT) };
 }
 
-export function vitestCounts(report, expectedFiles, root) {
+export function vitestCounts(report, expectedFiles, root, backendOnly = []) {
   if (!Array.isArray(report.testResults) || !report.testResults.length || !Array.isArray(expectedFiles)) reject();
   const names = report.testResults.map(file => {
     const prefix = root.replaceAll('\\', '/') + '/';
@@ -66,20 +66,29 @@ export function vitestCounts(report, expectedFiles, root) {
     return name.slice(prefix.length);
   });
   if (!sameSet(names, expectedFiles)) reject();
-  const tests = report.testResults.flatMap(file => {
+  const deferred = backendOnly.map(item => item.file + '\0' + item.fullName);
+  if (new Set(deferred).size !== deferred.length || backendOnly.some(item => !expectedFiles.includes(item.file) || typeof item.fullName !== 'string')) reject();
+  const tests = report.testResults.flatMap((file, index) => {
     if (!Array.isArray(file.assertionResults) || !file.assertionResults.length) reject();
-    return file.assertionResults;
+    return file.assertionResults.map(test => ({ ...test, sourceFile: names[index] }));
   });
-  const result = { run: tests.length, pass: 0, fail: 0, skip: 0 };
+  const result = { discovered: tests.length, run: 0, pass: 0, fail: 0, skip: 0, manualDeferred: 0 };
+  const seen = [];
   for (const test of tests) {
+    const identity = test.sourceFile + '\0' + test.fullName;
+    if (deferred.includes(identity)) {
+      if (!['pending', 'skipped'].includes(test.status)) reject();
+      seen.push(identity); result.skip++; result.manualDeferred++; continue;
+    }
+    result.run++;
     if (test.status === 'passed') result.pass++;
     else if (test.status === 'failed') result.fail++;
     else if (['pending', 'skipped', 'todo'].includes(test.status)) result.skip++;
     else reject();
   }
-  if (report.numTotalTests !== result.run || report.numPassedTests !== result.pass
-    || report.numFailedTests !== result.fail || (report.numPendingTests ?? 0) + (report.numTodoTests ?? 0) !== result.skip
-    || (report.numRuntimeErrorTestSuites ?? 0) !== 0 || result.skip
+  if (!sameSet(seen, deferred) || report.numTotalTests !== result.discovered || report.numPassedTests !== result.pass
+    || report.numFailedTests !== result.fail || (report.numPendingTests ?? 0) !== result.skip || (report.numTodoTests ?? 0) !== 0
+    || (report.numRuntimeErrorTestSuites ?? 0) !== 0 || result.skip !== deferred.length || !result.run
     || report.testResults.some(file => file.status !== 'passed') || report.success !== true || result.fail) reject();
   return result;
 }
@@ -156,7 +165,7 @@ export function publicSummary(binding, rows, fingerprints) {
   if (!/^[a-f0-9]{64}$/.test(fingerprints.source) || !/^[a-f0-9]{64}$/.test(fingerprints.lock)) reject();
   const phases = rows.map(({ id, status, elapsedMs, exitCode, counts, invocationSHA, reportSHA, diagnostic }) => ({ id, status, elapsedMs, exitCode, invocationSHA, reportSHA,
     counts: counts ? Object.fromEntries(Object.entries(counts).filter(([key, value]) =>
-      ['run', 'pass', 'fail', 'skip', 'acceptedFindings', 'detectedFindings'].includes(key) && integer(value))) : null,
+      ['discovered', 'run', 'pass', 'fail', 'skip', 'manualDeferred', 'acceptedFindings', 'detectedFindings'].includes(key) && integer(value))) : null,
     diagnostic: diagnostic ? { codes: diagnostic.codes.filter(code => DIAGNOSTIC_CODES.includes(code)),
       metrics: Object.fromEntries(Object.entries(diagnostic.metrics).filter(([key, value]) =>
         ['numTotalTests', 'numPassedTests', 'numFailedTests', 'numPendingTests', 'numRuntimeErrorTestSuites', 'architectureAssertion'].includes(key) && integer(value))),

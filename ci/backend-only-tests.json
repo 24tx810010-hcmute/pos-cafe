@@ -1,0 +1,10 @@
+[
+  {
+    "file": "tests/contracts/gates.tool.test.ts",
+    "fullName": "TC-IDEM-087/tool real preflight fails before test entry and verifies a positive database write",
+    "sourceSHA256": "9deced5b290e611845255d27cb50f04a572d9a5146538e65fb66259e2a064070",
+    "requiresRealBackend": true,
+    "manualCommand": "npm run test:idempotency:tools",
+    "manualPrerequisite": "Dedicated synthetic legacy idempotency DB/Auth/REST fixture; never production. This case is not covered by the separate T09/T10 permission pilot."
+  }
+]
