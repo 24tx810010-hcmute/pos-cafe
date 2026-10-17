@@ -25,6 +25,32 @@ const ghKeys = ['GITHUB_ACTIONS', 'RUNNER_ENVIRONMENT', 'GITHUB_REPOSITORY', 'GI
   'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_WORKFLOW_SHA', 'GITHUB_SHA', 'CI1_EXECUTION_AUTHORIZED'];
 const githubEnv = env => Object.fromEntries(ghKeys.filter(key => env[key]).map(key => [key, env[key]]));
 
+const failureStages = ['supervisor', 'loop', 'source-tools', 'npm-images', 'edge-network-warm', 'stop-prefetch',
+  'private-namespaces', 'offline-edge', 'stack', 'harness', 'export', 'cleanup'];
+const failureOperations = ['SOURCE_INTAKE', 'SOURCE_CLONE', 'SOURCE_REF', 'SOURCE_CONFIG', 'TOOL_MANIFEST',
+  'DOWNLOAD_NODE', 'INSPECT_NODE', 'EXTRACT_NODE', 'DOWNLOAD_SUPABASE', 'INSPECT_SUPABASE', 'EXTRACT_SUPABASE',
+  'PLACE_TOOLS', 'TOOL_VERSIONS', 'STACK_TEMPLATE'];
+const failureCommands = ['git', 'tar', 'node', 'npm', 'supabase', 'fallocate', 'losetup', 'mkfs.ext4', 'mount', 'umount',
+  'cp', 'mv', 'docker', 'unshare', 'systemd-run', 'systemctl', 'findmnt', 'containerd', 'dockerd'];
+const failureCodes = ['GUARD_REFUSED', 'INTAKE_REFUSED', 'COMMAND_FAILED', 'COMMAND_TIMEOUT', 'OUTPUT_LIMIT',
+  'IO_MISSING', 'IO_NOTDIR', 'IO_DENIED', 'JS_TYPE_ERROR', 'UNKNOWN'];
+export function ci1FailureExport(value) {
+  if (!value || typeof value !== 'object') return null;
+  return {
+    stage: failureStages.includes(value.stage) ? value.stage : 'supervisor',
+    operation: failureOperations.includes(value.operation) ? value.operation : null,
+    code: failureCodes.includes(value.code) ? value.code : 'UNKNOWN',
+    command: failureCommands.includes(value.command) ? value.command : null,
+    exitCode: Number.isSafeInteger(value.exitCode) && value.exitCode >= 0 && value.exitCode <= 255 ? value.exitCode : null,
+  };
+}
+const failureDetails = (error, stage, operation) => ci1FailureExport({stage, operation,
+  code: ({ENOENT:'IO_MISSING',ENOTDIR:'IO_NOTDIR',EACCES:'IO_DENIED',ETIMEDOUT:'COMMAND_TIMEOUT',
+    ENOBUFS:'OUTPUT_LIMIT',ERR_CHILD_PROCESS_STDIO_MAXBUFFER:'OUTPUT_LIMIT'})[error?.code]
+    ?? (error?.message === 'CI1_WORKER_REFUSED' ? 'GUARD_REFUSED' : error?.message === 'CI1_INTAKE_REFUSED'
+      ? 'INTAKE_REFUSED' : error?.name === 'TypeError' ? 'JS_TYPE_ERROR' : Number.isInteger(error?.status) ? 'COMMAND_FAILED' : 'UNKNOWN'),
+  command:error?.ci1Command,exitCode:error?.status});
+
 function taskControl(layout, env) {
   const directory = lstatSync(layout.task), path = `${layout.task}/run-control.json`, info = lstatSync(path);
   if (!directory.isDirectory() || directory.isSymbolicLink() || directory.uid !== 0 || (directory.mode & 0o077)
@@ -65,20 +91,23 @@ export function ci1WorkerPlan(runId, attempt) {
 // Adapter tests assert order and abort behavior, without executing any Linux command.
 export async function runCi1Worker(adapter, identity) {
   const completed = [];
-  let status = 'ERROR';
+  let status = 'ERROR', activeStage = 'supervisor', entered = false, failure = null, cleanup = false;
   try {
     assertCi1Supervisor(await adapter.supervisor(), identity);
     for (const stage of ['loop', 'source-tools', 'npm-images', 'edge-network-warm', 'stop-prefetch',
       'private-namespaces', 'offline-edge', 'stack', 'harness', 'export']) {
+      activeStage = stage; entered = false;
       assertCi1Supervisor(await adapter.supervisor(), identity);
+      entered = true;
       if (await adapter.stage(stage) !== true) refused();
       completed.push(stage);
     }
     status = 'COMPLETE';
-  } catch { /* Never reflect subprocess output, raw errors, fixture JWT or DSN. */ }
-  finally { try { if (await adapter.close() !== true) status = 'ERROR'; } catch { status = 'ERROR'; } }
+  } catch (error) { failure = failureDetails(error, activeStage, entered ? adapter.operation?.() : null); }
+  finally { try { cleanup = await adapter.close() === true; if (!cleanup) status = 'ERROR'; }
+    catch (error) { status = 'ERROR'; failure ??= failureDetails(error, 'cleanup', null); } }
   return { schemaVersion: 'permission-ci1-worker-status-v1', status, completed,
-    businessCounts: null, evidence: status === 'COMPLETE' ? 'D12_PUBLIC_EVIDENCE_REQUIRED' : 'NOT_RUN_OR_PARTIAL' };
+    businessCounts: null, evidence: status === 'COMPLETE' ? 'D12_PUBLIC_EVIDENCE_REQUIRED' : 'NOT_RUN_OR_PARTIAL', failure, cleanup };
 }
 
 function runnerGuard(env) {
@@ -94,8 +123,9 @@ function runnerGuard(env) {
 function commandRunner(env, guard = () => {}) {
   return (command, args, options = {}) => {
     guard();
-    return execFileSync(command, args, { env, encoding: 'utf8', timeout: CI1_SETUP.commandTimeoutMs,
-      maxBuffer: 1024 ** 2, stdio: ['ignore', 'pipe', 'pipe'], ...options });
+    try { return execFileSync(command, args, { env, encoding: 'utf8', timeout: CI1_SETUP.commandTimeoutMs,
+      maxBuffer: 1024 ** 2, stdio: ['ignore', 'pipe', 'pipe'], ...options }); }
+    catch (error) { error.ci1Command = failureCommands.includes(basename(command)) ? basename(command) : null; throw error; }
   };
 }
 
@@ -435,11 +465,13 @@ async function setup(layout, input, parentEnv) {
   const root = layout.volume, baseEnv = { ...fixedEnv(root, parentEnv), ...githubEnv(parentEnv) };
   const guard = () => supervisor(layout, baseEnv);
   const run = commandRunner(baseEnv, guard);
-  let loop, mounted = false, pair, source;
+  let loop, mounted = false, pair, source, operation = null;
   const pinPath = suffix => `${source}/tests/permissions/runtime/${suffix}`;
   const adapter = {
     supervisor: guard,
+    operation: () => operation,
     stage: async stage => {
+      operation = null;
       if (stage === 'loop') {
         const free = statfsSync(layout.task);
         if (free.bavail * free.bsize < CI1_LIMITS.hostReserveBytes + CI1_LIMITS.taskBytes) refused();
@@ -458,28 +490,39 @@ async function setup(layout, input, parentEnv) {
         for (const name of ['private', 'docker', 'containerd', 'run', 'tmp', 'home/.cache', 'npm-cache', 'runtime/bin', 'downloads']) mkdirSync(`${root}/${name}`, { recursive: true, mode: 0o700 });
         for (const file of ['npm-user.conf', 'npm-global.conf']) writeFileSync(`${root}/run/${file}`, '', { mode: 0o600 });
       } else if (stage === 'source-tools') {
+        operation = 'SOURCE_INTAKE';
         if (boundedTree(input, CI1_SETUP.sourceBytes).bytes > CI1_SETUP.sourceBytes || run('git', ['-c', `safe.directory=${input}`, '-C', input, 'rev-parse', 'HEAD']).trim() !== baseEnv.GITHUB_SHA
           || run('git', ['-c', `safe.directory=${input}`, '-C', input, 'status', '--porcelain', '--untracked-files=all']).trim()) refused();
         source = `${root}/source`;
+        operation = 'SOURCE_CLONE';
         run('git', ['-c', `safe.directory=${input}`, '-c', 'core.hooksPath=/dev/null', 'clone', '--no-hardlinks', '--depth=1', '--no-local', '--', 'file://' + input, source]);
+        operation = 'SOURCE_REF';
         if (run('git', ['-C', source, 'rev-parse', 'HEAD']).trim() !== baseEnv.GITHUB_SHA) refused();
         // No checkout credentials are accepted in the clone; actual published Git
         // commit is sourceSHA, never fabricated as the POS working-tree baseline.
+        operation = 'SOURCE_CONFIG';
         const config = readFileSync(`${source}/.git/config`, 'utf8');
         if (/extraheader|credential|https?:\/\/[^\s/]+@/i.test(config)) refused();
+        operation = 'TOOL_MANIFEST';
         for (const tool of ci1ToolsIntake(parse(pinPath('ci1-tools.json')))) {
           const archive = `${root}/downloads/${tool.id}.tar.gz`;
+          operation = `DOWNLOAD_${tool.id.toUpperCase()}`;
           await download({ ...tool, maxBytes: CI1_SETUP.toolBytes }, archive, 'sha256', guard);
+          operation = `INSPECT_${tool.id.toUpperCase()}`;
           ci1CheckTarListing(run('tar', ['-tvf', archive, '--numeric-owner', '--utc']), tool.id);
+          operation = `EXTRACT_${tool.id.toUpperCase()}`;
           run('tar', ['-xf', archive, '--no-same-owner', '--no-same-permissions', '-C', `${root}/runtime`]);
           unlinkSync(archive); // Only this freshly created, checksum-verified transfer file.
         }
+        operation = 'PLACE_TOOLS';
         run('mv', [`${root}/runtime/node-v24.16.0-linux-x64`, `${root}/runtime/node`]);
         run('mv', [`${root}/runtime/supabase`, `${root}/runtime/bin/supabase`]);
         chmodSync(`${root}/runtime/bin/supabase`, 0o700);
+        operation = 'TOOL_VERSIONS';
         if (run(`${root}/runtime/node/bin/node`, ['--version']).trim() !== 'v24.16.0'
           || run(`${root}/runtime/node/bin/npm`, ['--version']).trim() !== '11.13.0'
           || run(`${root}/runtime/bin/supabase`, ['--version']).trim() !== '2.117.0') refused();
+        operation = 'STACK_TEMPLATE';
         mkdirSync(`${root}/runtime/stack/supabase/migrations`, { recursive: true, mode: 0o700 });
         writeFileSync(`${root}/runtime/stack/supabase/config.toml`, readFileSync(`${source}/tests/permissions/runtime/identity.toml`), { mode: 0o600 });
         writeFileSync(`${root}/runtime/stack/supabase/seed.sql`, '', { mode: 0o600 });

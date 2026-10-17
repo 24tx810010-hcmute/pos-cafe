@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { sourceBinding, vitestCounts, nodeCounts, smokeCounts, uiCounts, publicSummary, privateDiagnostics, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
+import { sourceBinding, vitestCounts, nodeCounts, smokeCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
 import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit } from './project-ci.mjs';
 import { lightService } from './project-ci-launch.mjs';
 import { backendInvocation } from './project-backend.mjs';
@@ -155,7 +155,33 @@ test('output overflow terminates the owned child and reusing an old capture cann
   const result = await capturedCommand(process.execPath, ['-e', 'process.stdout.write("x".repeat(2048)); setInterval(()=>{},1000)'],
     { cwd: root, env: process.env, output, guard() {}, maxBytes: 32, timeoutMs: 2000 });
   assert.equal(result.blocked, true);
+  assert.equal(result.blockCode, 'OUTPUT_LIMIT');
   await assert.rejects(capturedCommand(process.execPath, [], { cwd: root, env: process.env, output, guard() {} }));
+});
+
+test('monitor failure and timeout remain distinct finite signals without reflecting arbitrary errors', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'pos-ci-monitor-'));
+  let calls = 0;
+  const monitored = await capturedCommand(process.execPath, ['-e', 'setInterval(()=>{},1000)'], {
+    cwd: root, env: process.env, output: join(root, 'monitor'), monitorMs: 20,
+    guard() { if (++calls > 1) throw Object.assign(new Error('FAKE_PRIVATE_TOKEN'), { code: 'ENOENT' }); },
+  });
+  assert.equal(monitored.blocked, true); assert.equal(monitored.blockCode, 'GUARD_IO_ENOENT');
+  assert.equal(JSON.stringify(monitored).includes('FAKE_PRIVATE_TOKEN'), false);
+  const timeout = await capturedCommand(process.execPath, ['-e', 'setInterval(()=>{},1000)'], {
+    cwd: root, env: process.env, output: join(root, 'timeout'), timeoutMs: 50, guard() {},
+  });
+  assert.equal(timeout.blockCode, 'COMMAND_TIMEOUT');
+  for (const code of ['RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT'])
+    assert.equal(guardFailureCode({code}), code);
+  assert.equal(guardFailureCode({code:'FAKE_PRIVATE_TOKEN',message:'FAKE_PRIVATE_TOKEN'}), 'GUARD_REFUSED');
+  const row = { id:'install', status:'FAIL', exitCode:null, elapsedMs:1, invocationSHA:digest, reportSHA:null,
+    diagnostic:{codes:['RESOURCE_FREE_SPACE','PROCESS_SIGTERM','FAKE_PRIVATE_TOKEN'],
+      metrics:{minimumObservedFreeBytes:123,oomKills:1,raw:'FAKE_PRIVATE_TOKEN'},failedFiles:[]} };
+  const safe = publicSummary(binding,[row],{source:digest,lock:digest});
+  assert.deepEqual(safe.phases[0].diagnostic.codes,['RESOURCE_FREE_SPACE','PROCESS_SIGTERM']);
+  assert.equal(safe.phases[0].diagnostic.metrics.oomKills,1);
+  assert.equal(JSON.stringify(safe).includes('FAKE_PRIVATE_TOKEN'),false);
 });
 
 test('backend manual guard requires confirmation, immutable workflow/source and exact allowed repositories', () => {

@@ -9,7 +9,15 @@ export const hash = value => createHash('sha256').update(value).digest('hex');
 const reject = () => { throw new Error('PROJECT_CI_RESULT_INVALID'); };
 const integer = n => Number.isSafeInteger(n) && n >= 0;
 const DIAGNOSTIC_CODES = Object.freeze(['COMMAND_FAILED', 'VITEST_ASSERTION', 'VITEST_RUNTIME', 'REPORT_MISSING',
-  'TEST_TIMEOUT', 'ASSERTION_ERROR', 'TYPE_ERROR', 'REFERENCE_ERROR', 'MODULE_NOT_FOUND', 'OUT_OF_MEMORY', 'COVERAGE_LINES']);
+  'TEST_TIMEOUT', 'ASSERTION_ERROR', 'TYPE_ERROR', 'REFERENCE_ERROR', 'MODULE_NOT_FOUND', 'OUT_OF_MEMORY', 'COVERAGE_LINES',
+  'RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'GUARD_IO_ENOENT', 'GUARD_IO_ENOTDIR',
+  'GUARD_IO_EACCES', 'GUARD_REFUSED', 'COMMAND_TIMEOUT', 'OUTPUT_LIMIT', 'COMMAND_SPAWN_FAILED', 'RESULT_INVALID',
+  'SOURCE_DRIFT', 'PROCESS_SIGTERM', 'PROCESS_SIGKILL', 'PROCESS_SIGABRT', 'PROCESS_SIGSEGV']);
+export function guardFailureCode(error) {
+  if (['RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'SOURCE_DRIFT'].includes(error?.code)) return error.code;
+  if (['ENOENT', 'ENOTDIR', 'EACCES'].includes(error?.code)) return `GUARD_IO_${error.code}`;
+  return error?.message === 'PROJECT_CI_RESULT_INVALID' ? 'RESULT_INVALID' : 'GUARD_REFUSED';
+}
 
 export function privateDiagnostics(output, report, expectedFiles = [], root = '') {
   const codes = ['COMMAND_FAILED'];
@@ -176,7 +184,8 @@ export function publicSummary(binding, rows, fingerprints) {
       ['discovered', 'run', 'pass', 'fail', 'skip', 'manualDeferred', 'acceptedFindings', 'detectedFindings'].includes(key) && integer(value))) : null,
     diagnostic: diagnostic ? { codes: diagnostic.codes.filter(code => DIAGNOSTIC_CODES.includes(code)),
       metrics: Object.fromEntries(Object.entries(diagnostic.metrics).filter(([key, value]) =>
-        ['numTotalTests', 'numPassedTests', 'numFailedTests', 'numPendingTests', 'numRuntimeErrorTestSuites', 'architectureAssertion'].includes(key) && integer(value))),
+        ['numTotalTests', 'numPassedTests', 'numFailedTests', 'numPendingTests', 'numRuntimeErrorTestSuites', 'architectureAssertion',
+          'minimumObservedFreeBytes', 'memoryCurrentBytes', 'peakMemoryBytes', 'pidsCurrent', 'peakPids', 'oomEvents', 'oomKills', 'pidsLimitEvents'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));
   return { schemaVersion: 'pos-cafe-light-ci-v1', verificationScope: 'LIGHT_MOCK_ONLY', repository: PROJECT_REPOSITORY, repositoryID: PROJECT_REPOSITORY_ID,
     event: binding.event, sourceSHA: binding.sourceSHA, prHeadSHA: binding.prHeadSHA, workflowSHA: binding.workflowSHA,

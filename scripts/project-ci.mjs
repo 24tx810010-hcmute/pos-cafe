@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, appendFileSync, mkdirSync, mkdtempSync, ls
 import { resolve, join } from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { hash, sourceBinding, vitestCounts, nodeCounts, smokeCounts, uiCounts, publicSummary, privateDiagnostics } from './project-ci-results.mjs';
+import { hash, sourceBinding, vitestCounts, nodeCounts, smokeCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode } from './project-ci-results.mjs';
 
 const GiB = 1024 ** 3;
 const refuse = () => { throw new Error('PROJECT_CI_GUARD'); };
@@ -47,14 +47,15 @@ export function allocatedBytes(roots) {
   return bytes;
 }
 
-export async function capturedCommand(command, args, { cwd, env, output, guard, timeoutMs = 480000, maxBytes = 32 * 1024 ** 2 }) {
+export async function capturedCommand(command, args, { cwd, env, output, guard, timeoutMs = 480000, maxBytes = 32 * 1024 ** 2, monitorMs = 5000 }) {
   guard();
   // A fresh file, never a pre-existing report from an earlier run/attempt.
   writeFileSync(output, '', { flag: 'wx', mode: 0o600 });
   return new Promise(resolveResult => {
     const child = spawn(command, args, { cwd, env, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
-    let size = 0, blocked = false, settled = false, escalation;
-    const stop = () => {
+    let size = 0, blocked = false, settled = false, escalation, blockCode = null;
+    const stop = code => {
+      blockCode ??= code;
       blocked = true;
       try { process.kill(process.platform === 'win32' ? child.pid : -child.pid, 'SIGTERM'); } catch { /* already exited */ }
       escalation ??= setTimeout(() => {
@@ -63,20 +64,21 @@ export async function capturedCommand(command, args, { cwd, env, output, guard, 
     };
     const record = chunk => {
       size += chunk.length;
-      if (size > maxBytes) stop();
+      if (size > maxBytes) stop('OUTPUT_LIMIT');
       else if (!blocked) appendFileSync(output, chunk);
     };
     child.stdout.on('data', record); child.stderr.on('data', record);
-    const monitor = setInterval(() => { try { guard(); } catch { stop(); } }, 5000);
-    const deadline = setTimeout(stop, timeoutMs);
-    const finish = code => {
+    const monitor = setInterval(() => { try { guard(); } catch (error) { stop(guardFailureCode(error)); } }, monitorMs);
+    const deadline = setTimeout(() => stop('COMMAND_TIMEOUT'), timeoutMs);
+    const finish = (code, signal) => {
       if (settled) return; settled = true;
       clearInterval(monitor); clearTimeout(deadline);
       // A killed group must remain under escalation until every descendant dies.
       clearTimeout(escalation);
-      resolveResult({ exitCode: Number.isInteger(code) ? code : null, blocked });
+      resolveResult({ exitCode: Number.isInteger(code) ? code : null, blocked, blockCode,
+        signalCode: ['SIGTERM', 'SIGKILL', 'SIGABRT', 'SIGSEGV'].includes(signal) ? `PROCESS_${signal}` : null });
     };
-    child.on('error', () => { stop(); finish(null); });
+    child.on('error', () => { stop('COMMAND_SPAWN_FAILED'); finish(null); });
     child.on('close', finish);
   });
 }
@@ -103,30 +105,50 @@ export async function main() {
   const task = mkdtempSync(join(process.env.RUNNER_TEMP, `pos-light-${binding.runId}-${binding.attempt}-`));
   const env = lightEnvironment(task, process.env);
   let peak = 0;
+  const guardFacts = {};
+  const guardRefuse = code => { throw Object.assign(new Error('PROJECT_CI_GUARD'), { code }); };
   const guard = () => {
-    for (const path of [root, task]) { const disk = statfsSync(path); if (disk.bavail * disk.bsize < 30 * GiB) refuse(); }
+    for (const [file, key] of [['memory.current', 'memoryCurrentBytes'], ['pids.current', 'pidsCurrent']])
+      guardFacts[key] = Number(readFileSync(join(cgroup, file), 'utf8').trim());
+    guardFacts.peakMemoryBytes = Math.max(guardFacts.peakMemoryBytes ?? 0, guardFacts.memoryCurrentBytes);
+    guardFacts.peakPids = Math.max(guardFacts.peakPids ?? 0, guardFacts.pidsCurrent);
+    for (const [file, keys] of [['memory.events', { oom: 'oomEvents', oom_kill: 'oomKills' }], ['pids.events', { max: 'pidsLimitEvents' }]])
+      for (const line of readFileSync(join(cgroup, file), 'utf8').trim().split('\n')) {
+        const [key, value] = line.split(/\s+/); if (keys[key]) guardFacts[keys[key]] = Number(value);
+      }
+    for (const path of [root, task]) {
+      const disk = statfsSync(path), free = disk.bavail * disk.bsize;
+      guardFacts.minimumObservedFreeBytes = Math.min(guardFacts.minimumObservedFreeBytes ?? Number.MAX_SAFE_INTEGER, free);
+      if (free < 30 * GiB) guardRefuse('RESOURCE_FREE_SPACE');
+    }
     peak = Math.max(peak, allocatedBytes([root, task]));
-    if (peak > 5 * GiB) refuse();
-    for (const [name, value] of Object.entries(limits)) if (readFileSync(join(cgroup, name), 'utf8').trim() !== value) refuse();
+    if (peak > 5 * GiB) guardRefuse('RESOURCE_OWNED_CAP');
+    for (const [name, value] of Object.entries(limits)) if (readFileSync(join(cgroup, name), 'utf8').trim() !== value) guardRefuse('RESOURCE_CGROUP_DRIFT');
   };
   const rows = [];
   const phase = async (id, command, args, readCounts, diagnosticReport) => {
     const started = Date.now(), output = join(task, `${id}.log`);
     const invocationSHA = hash(JSON.stringify({ runId: binding.runId, attempt: binding.attempt, id, command, args,
       sourceFingerprint: fingerprints.source, lockSHA: fingerprints.lock }));
-    let result = { exitCode: null, blocked: true }, counts = null, valid = false;
+    let result = { exitCode: null, blocked: true }, counts = null, valid = false, failureCode = null;
     try {
       result = await capturedCommand(command, args, { cwd: root, env, output, guard });
       if (!result.blocked && readCounts) counts = readCounts(readFileSync(output, 'utf8'));
-      if (trackedFingerprint(root, paths) !== fingerprints.source) refuse();
+      if (trackedFingerprint(root, paths) !== fingerprints.source) guardRefuse('SOURCE_DRIFT');
       valid = !result.blocked && result.exitCode === 0;
-    } catch { valid = false; }
+    } catch (error) { valid = false; failureCode = guardFailureCode(error); }
+    try { guard(); } catch (error) { valid = false; failureCode ??= guardFailureCode(error); }
     const info = lstatSync(output, { throwIfNoEntry: false });
     const reportSHA = info?.isFile() ? hash(readFileSync(output)) : null;
     let diagnostic = null;
     if (!valid && info?.isFile()) {
       let report = null; try { report = diagnosticReport ? json(diagnosticReport) : null; } catch { /* missing report stays unknown */ }
       diagnostic = privateDiagnostics(readFileSync(output, 'utf8'), report, paths, root);
+    }
+    if (!valid) {
+      diagnostic ??= { codes: ['COMMAND_FAILED'], metrics: {}, failedFiles: [] };
+      diagnostic.codes = [...new Set([...diagnostic.codes, result.blockCode, result.signalCode, failureCode].filter(Boolean))];
+      Object.assign(diagnostic.metrics, guardFacts);
     }
     rows.push({ id, status: valid ? 'PASS' : 'FAIL', exitCode: result.exitCode, elapsedMs: Date.now() - started, counts, invocationSHA, reportSHA, diagnostic });
     console.log(`PROJECT_CI_PHASE ${id} ${valid ? 'PASS' : 'FAIL'}`);

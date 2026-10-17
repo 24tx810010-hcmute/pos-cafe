@@ -3,7 +3,7 @@ import { readFileSync, appendFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { ci1WorkerLayout } from './permission-ci1-intake.mjs';
-import { ci1WorkerPlan, ci1PublicExport } from './permission-ci1-worker.mjs';
+import { ci1WorkerPlan, ci1PublicExport, ci1FailureExport } from './permission-ci1-worker.mjs';
 
 export function backendInvocation(env, node, root) {
   if (env.GITHUB_REPOSITORY !== 'nguyentronglinh045/pos-cafe' || env.GITHUB_REPOSITORY_ID !== '1263057386' || env.GITHUB_EVENT_NAME !== 'workflow_dispatch'
@@ -43,7 +43,8 @@ function main() {
   if (child.status !== 0) {
     const permitted = ci1WorkerPlan(process.env.GITHUB_RUN_ID, Number(process.env.GITHUB_RUN_ATTEMPT)).stages;
     console.log(JSON.stringify({ schemaVersion: 'pos-backend-failure-v1', verificationScope: 'CI1_PILOT_ONLY',
-      status: 'FAIL', completed: Array.isArray(worker.completed) ? worker.completed.filter(value => permitted.includes(value)) : [] }));
+      status: 'FAIL', completed: Array.isArray(worker.completed) ? worker.completed.filter(value => permitted.includes(value)) : [],
+      failure: ci1FailureExport(worker.failure), cleanup: worker.cleanup === true }));
     throw new Error();
   }
   const evidence = backendEvidence(worker, read(`${layout.task}/export/public-evidence.json`), process.env);

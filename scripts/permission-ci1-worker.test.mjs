@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { ci1Identity } from './permission-ci1-policy.mjs';
 import { ci1WorkerPlan, runCi1Worker, ci1EdgeCacheProof, ci1PublicExport, ci1EdgeBundleArguments,
-  ci1AcquireDaemons, ci1CloseDaemons, ci1TerminateDaemon } from './permission-ci1-worker.mjs';
+  ci1AcquireDaemons, ci1CloseDaemons, ci1TerminateDaemon, ci1FailureExport } from './permission-ci1-worker.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
 
 // Every Linux fact, adapter and cache below is fake unit data. No Linux/DB/CI is started.
@@ -53,6 +53,21 @@ test('hardware or any setup/cache/harness failure stops dependent work and still
   }
   const close = adapter(); close.close = async () => false;
   assert.equal((await runCi1Worker(close, identity)).status, 'ERROR');
+});
+
+test('worker failure reports finite stage/operation/command and teardown without subprocess secrets', async () => {
+  const fake = adapter(); fake.operation = () => 'SOURCE_CLONE';
+  fake.stage = async name => { if (name === 'source-tools') throw Object.assign(new Error('FAKE_UNIT_SECRET'),
+    {status:128,ci1Command:'git',stderr:'FAKE_UNIT_SECRET'}); return true; };
+  const result = await runCi1Worker(fake,identity);
+  assert.equal(result.status,'ERROR'); assert.equal(result.cleanup,true);
+  assert.deepEqual(result.completed,['loop']);
+  assert.deepEqual(result.failure,{stage:'source-tools',operation:'SOURCE_CLONE',code:'COMMAND_FAILED',command:'git',exitCode:128});
+  assert.equal(JSON.stringify(result).includes('FAKE_UNIT_SECRET'),false);
+  const safe = ci1FailureExport({stage:'FAKE_UNIT_SECRET',operation:'FAKE_UNIT_SECRET',code:'FAKE_UNIT_SECRET',
+    command:'FAKE_UNIT_SECRET',exitCode:-1,raw:'FAKE_UNIT_SECRET'});
+  assert.equal(JSON.stringify(safe).includes('FAKE_UNIT_SECRET'),false);
+  assert.equal(safe.code,'UNKNOWN'); assert.equal(safe.exitCode,null);
 });
 
 test('daemon acquisition retains each child before PID-write/readiness/second-spawn failures', async () => {
