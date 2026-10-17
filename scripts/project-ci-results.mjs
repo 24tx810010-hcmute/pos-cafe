@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { stripVTControlCharacters } from 'node:util';
 
 export const PROJECT_REPOSITORY = 'nguyentronglinh045/pos-cafe';
 export const PROJECT_REPOSITORY_ID = 1263057386;
@@ -17,7 +18,14 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
   if (!report) codes.push('REPORT_MISSING');
   if (metrics.numFailedTests > 0) codes.push('VITEST_ASSERTION');
   if (metrics.numRuntimeErrorTestSuites > 0) codes.push('VITEST_RUNTIME');
-  const privateText = output + '\n' + JSON.stringify(report ?? {});
+  const messages = [output];
+  for (const file of report?.testResults ?? []) if (file.status === 'failed') {
+    for (const value of [file.message, file.failureMessage]) if (typeof value === 'string') messages.push(value);
+    for (const assertion of file.assertionResults ?? []) if (assertion.status === 'failed') {
+      for (const value of assertion.failureMessages ?? []) if (typeof value === 'string') messages.push(value);
+    }
+  }
+  const privateText = stripVTControlCharacters(messages.join('\n'));
   for (const [code, pattern] of Object.entries({ TEST_TIMEOUT: /timed?\s*out|test timeout|timeout of/i,
     ASSERTION_ERROR: /AssertionError|expected .{0,100} to /i, TYPE_ERROR: /TypeError/, REFERENCE_ERROR: /ReferenceError/,
     MODULE_NOT_FOUND: /ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|cannot find (?:module|package)/i,

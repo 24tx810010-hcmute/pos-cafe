@@ -92,7 +92,7 @@ test('public evidence excludes arbitrary binding/count/raw fields and incomplete
 test('failed Vitest diagnostics retain known counters and source paths without raw messages or credentials', () => {
   const report = { numTotalTests: 2, numPassedTests: 1, numFailedTests: 1, numPendingTests: 0, success: false,
     secret: 'FAKE_PRIVATE_TOKEN', testResults: [{ name: '/source/src/a.test.ts', status: 'failed',
-      failureMessage: 'AssertionError: FAKE_PRIVATE_TOKEN test timed out' }, { name: '/private/FAKE_PRIVATE_TOKEN', status: 'failed' }] };
+      failureMessage: 'AssertionError: FAKE_PRIVATE_TOKEN test \u001b[31mtimed\u001b[39m out' }, { name: '/private/FAKE_PRIVATE_TOKEN', status: 'failed' }] };
   const diagnostic = privateDiagnostics('FAKE_PRIVATE_TOKEN', report, ['src/a.test.ts'], '/source');
   assert.equal(diagnostic.metrics.numFailedTests, 1);
   assert.deepEqual(diagnostic.failedFiles, ['src/a.test.ts']);
@@ -107,6 +107,8 @@ test('failed Vitest diagnostics retain known counters and source paths without r
   const precise = privateDiagnostics('', architectureReport, ['src/architectureBoundaries.test.ts'], '/source');
   assert.equal(precise.metrics.architectureAssertion, 2);
   assert.equal(JSON.stringify(precise).includes('FAKE_PRIVATE_TOKEN'), false);
+  const passedText = {testResults:[{name:'/source/src/a.test.ts',status:'passed',assertionResults:[{status:'passed',failureMessages:['Test timed out FAKE_PRIVATE_TOKEN']}]}]};
+  assert.equal(privateDiagnostics('',passedText,['src/a.test.ts'],'/source').codes.includes('TEST_TIMEOUT'), false);
 });
 
 test('fresh capture retains output privately; guard refusal stops dependent process and never echoes output', async () => {

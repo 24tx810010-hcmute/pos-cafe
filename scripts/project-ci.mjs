@@ -140,7 +140,7 @@ export async function main() {
   try {
     await phase('install', 'npm', ['ci', '--no-fund']);
     await phase('build', 'npm', ['run', 'build']);
-    await phase('unit', process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--coverage', '--maxWorkers=2', '--retry=0',
+    await phase('unit', process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--coverage', '--maxWorkers=1', '--no-file-parallelism', '--retry=0',
       '--reporter=json', `--outputFile=${join(task, 'unit.json')}`], () => vitestCounts(json('unit'), paths.filter(path => /^src\/.*\.(?:test|spec)\.tsx?$/.test(path)), root), 'unit');
     await phase('tooling', process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--config=vitest.project-tooling.config.ts',
       '--reporter=json', `--outputFile=${join(task, 'tooling.json')}`], () => vitestCounts(json('tooling'), paths.filter(path => /^tests\/.*\.tool\.test\.(?:ts|mjs)$/.test(path)), root, backendOnly), 'tooling');
