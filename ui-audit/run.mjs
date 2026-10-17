@@ -295,7 +295,7 @@ const SELFTEST_MAX = 30;
 
 async function selftest() {
   const file = pathToFileURL(path.join(here, 'demo-buggy.html')).toString();
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ channel: process.env.CI === 'true' ? 'chromium' : undefined });
   const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 }, deviceScaleFactor: 1 });
   await ctx.addInitScript({ content: auditSrc });
   const page = await ctx.newPage();
@@ -403,7 +403,7 @@ const setupFailures = [];
 try {
   devServer = await startDevServer(cfg);
 
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ channel: process.env.CI === 'true' ? 'chromium' : undefined });
   const ctxOpts = {};
   if (cfg.storageState && fs.existsSync(path.join(here, cfg.storageState))) {
     ctxOpts.storageState = path.join(here, cfg.storageState);

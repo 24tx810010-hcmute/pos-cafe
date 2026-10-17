@@ -15,7 +15,7 @@ const step = value => { stage = value; console.log('PROJECT_BROWSER_RUNTIME_STAG
 step(1);
 try {
   const { chromium, expect } = await import('@playwright/test');
-  step(2); browser = await chromium.launch({ timeout: 5000 });
+  step(2); browser = await chromium.launch({ channel: 'chromium', timeout: 5000 });
   step(3); const context = await browser.newContext();
   step(4); const page = await context.newPage();
   page.on('crash', () => { if (!crashed) console.log('PROJECT_BROWSER_RUNTIME_CRASH 1'); crashed = 1; });
@@ -251,7 +251,7 @@ export async function main() {
     await phase('tooling', process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--config=vitest.project-tooling.config.ts',
       '--reporter=json', `--outputFile=${join(task, 'tooling.json')}`], () => vitestCounts(json('tooling'), paths.filter(path => /^tests\/.*\.tool\.test\.(?:ts|mjs)$/.test(path)), root, backendOnly), 'tooling');
     await phase('node-tools', process.execPath, ['--test', '--test-concurrency=2', '--test-reporter=tap', ...paths.filter(path => /^scripts\/.*\.test\.mjs$/.test(path))], nodeCounts);
-    await phase('browser', process.execPath, ['node_modules/playwright/cli.js', 'install', 'chromium', '--only-shell']);
+    await phase('browser', process.execPath, ['node_modules/playwright/cli.js', 'install', 'chromium', '--no-shell']);
     // JSON reporter uses its explicit file rather than public stdout.
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke-discovery.json');
     await phase('smoke-discovery', process.execPath, ['node_modules/playwright/cli.js', 'test', '--list', '--reporter=json']);

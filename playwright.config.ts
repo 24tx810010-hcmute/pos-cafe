@@ -11,6 +11,9 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:5175",
     trace: "on-first-retry",
+    // The pinned headless shell crashes on a static locator query in hosted
+    // Linux CI. Use the same version's full Chromium/new headless runtime.
+    channel: process.env.CI === "true" ? "chromium" : undefined,
   },
   webServer: {
     command: "npm run dev -- --host 127.0.0.1 --port 5175 --strictPort",

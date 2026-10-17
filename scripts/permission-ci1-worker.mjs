@@ -51,15 +51,23 @@ const failureMetrics = ['hostFreeBytes', 'memoryBytes', 'oom', 'pidsEvents', 'me
   'cpuMatches', 'memoryLimitMatches', 'swapLimitMatches', 'pidsLimitMatches', 'cgroupMatches', 'runtimeMatches', 'loggingMatches',
   'loopImageBytes', 'loopAllocatedBytes', 'loopFilesystemBytes', 'loopFreeBytes', 'loopOffset', 'loopSizeLimit', 'mountMatches', 'ownerMatches', 'imageOrdinal', 'edgePackageOrdinal',
   'edgeVersionMajor', 'edgeVersionMinor', 'edgeVersionPatch', 'edgeVersionCopy', 'edgeCacheEntryCount', 'edgeRegistryMetadataPresent', 'loopNestedMounts',
-  'isolatedFailureSeen', 'isolatedCleanupFailed', 'systemdPropertyOrdinal', 'imagePullAttempt'];
+  'isolatedFailureSeen', 'isolatedCleanupFailed', 'systemdPropertyOrdinal', 'imagePullAttempt', 'imageRegistryOrdinal'];
 
 export async function ci1PullImage(run, reference, guard = () => {}, wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)), onAttempt = () => {}) {
   if (typeof reference !== 'string' || !/^public\.ecr\.aws\/supabase\/[a-z0-9._-]+@sha256:[a-f0-9]{64}$/.test(reference)) refused();
   for (let attempt = 1; attempt <= 3; attempt++) {
     guard(); onAttempt(attempt);
-    try { return run('docker', ['pull', '--quiet', '--platform', 'linux/amd64', reference]); }
+    try { run('docker', ['pull', '--quiet', '--platform', 'linux/amd64', reference]); return reference; }
     catch (error) {
-      if (error?.ci1FailureCode !== 'DOCKER_REGISTRY_RATE_LIMIT' || attempt === 3) throw error;
+      if (error?.ci1FailureCode !== 'DOCKER_REGISTRY_RATE_LIMIT') throw error;
+      if (attempt === 3) {
+        // Supabase's own CLI supports this public mirror. Keep the exact OCI
+        // manifest digest: no tag resolution, new version or credentials.
+        const mirror = reference.replace(/^public\.ecr\.aws\//, 'ghcr.io/');
+        guard(); onAttempt(4);
+        run('docker', ['pull', '--quiet', '--platform', 'linux/amd64', mirror]);
+        return mirror;
+      }
     }
     await wait(attempt === 1 ? 10000 : 30000);
     guard();
@@ -641,7 +649,7 @@ async function setup(layout, input, parentEnv) {
   const adapter = {
     supervisor: guard,
     operation: () => operation,
-    failureFacts: () => ({ imageOrdinal, ...(imagePullAttempt ? { imagePullAttempt } : {}) }),
+    failureFacts: () => ({ imageOrdinal, ...(imagePullAttempt ? { imagePullAttempt, imageRegistryOrdinal: imagePullAttempt === 4 ? 2 : 1 } : {}) }),
     cleanupFailure: () => cleanupFailure,
     stage: async stage => {
       operation = null;
@@ -734,10 +742,10 @@ async function setup(layout, input, parentEnv) {
           const repository = image.ref.slice(0, image.ref.lastIndexOf(':'));
           operation = 'IMAGE_PULL';
           imagePullAttempt = 0;
-          await ci1PullImage(run, `${repository}@${image.manifestDigest}`, guard, undefined, attempt => { imagePullAttempt = attempt; });
+          const pulledReference = await ci1PullImage(run, `${repository}@${image.manifestDigest}`, guard, undefined, attempt => { imagePullAttempt = attempt; });
           imagePullAttempt = 0;
           operation = 'IMAGE_TAG';
-          run('docker', ['tag', `${repository}@${image.manifestDigest}`, image.ref]);
+          run('docker', ['tag', pulledReference, image.ref]);
           operation = 'IMAGE_INSPECT';
           const actual = JSON.parse(run('docker', ['image', 'inspect', image.ref]))[0];
           if (actual.Id !== image.configDigest || actual.Os !== 'linux' || actual.Architecture !== 'amd64') refused();
