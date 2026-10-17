@@ -1,6 +1,34 @@
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+
+export function stopLightUnit(adapter) {
+  const stopped = adapter.stop(), state = adapter.state();
+  const collected = state.load === 'not-found' && state.active === 'inactive';
+  if (!collected && (stopped.status !== 0 || stopped.error || !['inactive', 'failed'].includes(state.active)
+    || state.load !== 'loaded')) throw new Error('PROJECT_CI_CORE_PATTERN_RESTORE_FAILED');
+  const populated = adapter.populated();
+  if (populated !== 0 && populated !== null) throw new Error('PROJECT_CI_CORE_PATTERN_RESTORE_FAILED');
+}
+
+export function withLightCorePattern(adapter, action) {
+  const previous = adapter.read();
+  if (typeof previous !== 'string' || previous.length < 1 || previous.length > 4096
+    || previous.includes('\0') || /[\r\n]/.test(previous.replace(/\n$/, ''))) throw new Error('PROJECT_CI_CORE_PATTERN_INVALID');
+  // Only used on one disposable GitHub-hosted VM. Piped core handlers ignore
+  // RLIMIT_CORE; temporarily use the regular-file mechanism with hard/soft 0.
+  // systemd-run --wait returns after KillMode=control-group has stopped children.
+  try {
+    adapter.write('core\n');
+    if (adapter.read() !== 'core\n') throw new Error('PROJECT_CI_CORE_PATTERN_INVALID');
+    return action();
+  } finally {
+    adapter.beforeRestore?.();
+    adapter.write(previous);
+    if (adapter.read() !== previous) throw new Error('PROJECT_CI_CORE_PATTERN_RESTORE_FAILED');
+  }
+}
 
 export function lightService(env, node, root) {
   if (!/^[1-9][0-9]*$/.test(env.GITHUB_RUN_ID ?? '') || !/^[1-9][0-9]*$/.test(env.GITHUB_RUN_ATTEMPT ?? '')
@@ -20,7 +48,37 @@ export function lightService(env, node, root) {
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
     if (process.platform !== 'linux') throw new Error();
-    const result = spawnSync('sudo', ['--', ...lightService(process.env, process.execPath, process.cwd())], { stdio: 'inherit', timeout: 1560000 });
+    const args = lightService(process.env, process.execPath, process.cwd());
+    const path = '/proc/sys/kernel/core_pattern';
+    const unit = `pos-cafe-light-r${process.env.GITHUB_RUN_ID}-a${process.env.GITHUB_RUN_ATTEMPT}.service`;
+    const cgroup = `/sys/fs/cgroup/system.slice/${unit}`;
+    const result = withLightCorePattern({ read: () => readFileSync(path, 'utf8'), write: input => {
+      const write = spawnSync('/usr/bin/sudo', ['--', '/usr/bin/tee', path],
+        { input, stdio: ['pipe', 'ignore', 'ignore'], timeout: 10000 });
+      if (write.status !== 0) throw new Error('PROJECT_CI_CORE_PATTERN_INVALID');
+    }, beforeRestore: () => {
+      // Even a disconnected/timed-out systemd-run client must not restore the
+      // piped handler while an owned browser descendant can still crash.
+      stopLightUnit({
+        stop: () => spawnSync('/usr/bin/sudo', ['--', '/usr/bin/systemctl', 'stop', unit], { stdio: 'ignore', timeout: 20000 }),
+        state: () => {
+          const show = spawnSync('/usr/bin/systemctl', ['show', unit, '--property=LoadState', '--property=ActiveState'],
+            { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 10000, maxBuffer: 4096 });
+          const values = Object.fromEntries((show.stdout ?? '').trim().split('\n').map(line => line.split('=')));
+          if (show.error || (show.status !== 0 && !(values.LoadState === 'not-found' && values.ActiveState === 'inactive'))
+            || Object.keys(values).sort().join(',') !== 'ActiveState,LoadState') throw new Error('PROJECT_CI_CORE_PATTERN_RESTORE_FAILED');
+          return { load: values.LoadState, active: values.ActiveState };
+        },
+        populated: () => {
+          try {
+            const value = /^populated ([01])$/m.exec(readFileSync(`${cgroup}/cgroup.events`, 'utf8'));
+            if (!value) throw new Error('PROJECT_CI_CORE_PATTERN_RESTORE_FAILED');
+            return Number(value[1]);
+          } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+        },
+      });
+    } }, () => spawnSync('sudo', ['--', ...args], { stdio: 'inherit', timeout: 1560000 }));
+    console.log('PROJECT_CI_CORE_PATTERN_RESTORED');
     process.exitCode = result.status === 0 ? 0 : 1;
   } catch { console.log('PROJECT_CI_LAUNCH_BLOCKED'); process.exitCode = 1; }
 }

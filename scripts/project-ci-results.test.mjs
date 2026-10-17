@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { sourceBinding, vitestCounts, nodeCounts, smokeCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
 import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit, allocatedBytes, coreLimitDisabled } from './project-ci.mjs';
-import { lightService } from './project-ci-launch.mjs';
+import { lightService, withLightCorePattern, stopLightUnit } from './project-ci-launch.mjs';
 import { backendInvocation } from './project-backend.mjs';
 import { verifyReleaseRun, verifyReleaseEnvironment, verifyReleaseFiles, productionCommands, PRODUCTION_ENABLED } from './project-release.mjs';
 import { ci1TrustedRepository } from './permission-ci1-policy.mjs';
@@ -16,6 +16,44 @@ const sha = '1'.repeat(40), other = '2'.repeat(40), digest = '3'.repeat(64);
 const env = { GITHUB_REPOSITORY: 'nguyentronglinh045/pos-cafe', GITHUB_REPOSITORY_ID: '1263057386', GITHUB_ACTIONS: 'true', RUNNER_ENVIRONMENT: 'github-hosted',
   GITHUB_EVENT_NAME: 'push', GITHUB_SHA: sha, GITHUB_WORKFLOW_SHA: sha, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '1' };
 const binding = sourceBinding(env, { after: sha, repository: { full_name: env.GITHUB_REPOSITORY, id: 1263057386 } }, sha);
+
+test('temporary core handler is restored after success, action failure and failed setup; unsafe cleanup keeps it disabled', () => {
+  const original='|/private/FAKE_UNIT_HANDLER\n';
+  const fake=()=>{const state={value:original,writes:[],actions:0};return {state,
+    read:()=>state.value,write:value=>{state.writes.push(value);state.value=value;}};};
+  const success=fake();assert.equal(withLightCorePattern(success,()=>{success.state.actions++;return 17;}),17);
+  assert.deepEqual(success.state.writes,['core\n',original]);assert.equal(success.state.value,original);
+  const failed=fake();assert.throws(()=>withLightCorePattern(failed,()=>{throw new Error('ACTION_FAILED');}),{message:'ACTION_FAILED'});
+  assert.equal(failed.state.value,original);
+  const setup=fake(),write=setup.write;setup.write=value=>{write(value);if(value==='core\n')setup.state.value='wrong\n';};
+  assert.throws(()=>withLightCorePattern(setup,()=>{setup.state.actions++;}),{message:'PROJECT_CI_CORE_PATTERN_INVALID'});
+  assert.equal(setup.state.actions,0);assert.equal(setup.state.value,original);
+  const unsafe=fake();unsafe.beforeRestore=()=>{throw new Error('PROJECT_CI_CORE_PATTERN_RESTORE_FAILED');};
+  assert.throws(()=>withLightCorePattern(unsafe,()=>0),{message:'PROJECT_CI_CORE_PATTERN_RESTORE_FAILED'});
+  assert.equal(unsafe.state.value,'core\n');
+  const invalid=fake();invalid.read=()=> 'bad\nsecond\n';
+  assert.throws(()=>withLightCorePattern(invalid,()=>0));assert.equal(invalid.state.writes.length,0);
+});
+
+test('browser setup signatures become finite diagnostics without exporting private output', () => {
+  const result=privateDiagnostics('browserType.launch: FAKE_UNIT_SECRET https://private.example\nHost system is missing dependencies\nNo usable sandbox\nchrome_crashpad_handler: --database is required\nsignal=SIGILL',null);
+  for(const code of ['BROWSER_LAUNCH','BROWSER_DEPENDENCIES','BROWSER_SANDBOX','BROWSER_CRASHPAD','BROWSER_EXECUTION'])assert.ok(result.codes.includes(code));
+  assert.equal(JSON.stringify(result).includes('FAKE_UNIT_SECRET'),false);
+  assert.equal(JSON.stringify(result).includes('private.example'),false);
+  for(const code of ['RESOURCE_CORE_PATTERN','RESOURCE_HOST_GROWTH'])assert.equal(guardFailureCode({code}),code);
+});
+
+test('core restore requires stopped unit plus recursively empty or confirmed absent cgroup', () => {
+  const fake=()=>({stop:()=>({status:0}),state:()=>({load:'loaded',active:'inactive'}),populated:()=>0});
+  assert.doesNotThrow(()=>stopLightUnit(fake()));
+  const gone=fake();gone.stop=()=>({status:5});gone.state=()=>({load:'not-found',active:'inactive'});gone.populated=()=>null;
+  assert.doesNotThrow(()=>stopLightUnit(gone));
+  for(const change of [a=>{a.stop=()=>({status:1});},a=>{a.state=()=>({load:'loaded',active:'active'});a.populated=()=>null;},
+    a=>{a.populated=()=>1;},a=>{a.populated=()=>{throw Object.assign(new Error(),{code:'EACCES'});};},
+    a=>{a.state=()=>{throw new Error('READ_FAILED');};},a=>{a.stop=()=>{throw new Error('STOP_FAILED');};}]) {
+    const a=fake();change(a);assert.throws(()=>stopLightUnit(a));
+  }
+});
 
 test('source binding distinguishes tested PR merge from head and refuses mismatched SHA/event/repo', () => {
   const event = { repository: { full_name: env.GITHUB_REPOSITORY, id: 1263057386 }, pull_request: { head: { sha: other }, merge_commit_sha: sha } };

@@ -121,7 +121,9 @@ export async function main() {
   const guardRefuse = code => { throw Object.assign(new Error('PROJECT_CI_GUARD'), { code }); };
   const guard = () => {
     if (!coreLimitDisabled(readFileSync('/proc/self/limits', 'utf8'))) guardRefuse('RESOURCE_CORE_LIMIT');
-    guardFacts.kernelCorePipe = readFileSync('/proc/sys/kernel/core_pattern', 'utf8').startsWith('|') ? 1 : 0;
+    const pattern = readFileSync('/proc/sys/kernel/core_pattern', 'utf8');
+    guardFacts.kernelCorePipe = pattern.startsWith('|') ? 1 : 0;
+    if (pattern !== 'core\n') guardRefuse('RESOURCE_CORE_PATTERN');
     for (const [file, key] of [['memory.current', 'memoryCurrentBytes'], ['pids.current', 'pidsCurrent']])
       guardFacts[key] = Number(readFileSync(join(cgroup, file), 'utf8').trim());
     guardFacts.peakMemoryBytes = Math.max(guardFacts.peakMemoryBytes ?? 0, guardFacts.memoryCurrentBytes);
@@ -137,8 +139,10 @@ export async function main() {
       freeNow = Math.min(freeNow, free);
     }
     guardFacts.initialFreeBytes ??= freeNow;
+    guardFacts.freeSpaceDecreaseBytes = Math.max(0, guardFacts.initialFreeBytes - freeNow);
     peak = Math.max(peak, allocatedBytes([root, task], guardFacts));
     if (freeNow < 30 * GiB) guardRefuse('RESOURCE_FREE_SPACE');
+    if (guardFacts.freeSpaceDecreaseBytes > 5 * GiB) guardRefuse('RESOURCE_HOST_GROWTH');
     if (peak > 5 * GiB) guardRefuse('RESOURCE_OWNED_CAP');
     for (const [name, value] of Object.entries(limits)) if (readFileSync(join(cgroup, name), 'utf8').trim() !== value) guardRefuse('RESOURCE_CGROUP_DRIFT');
   };
@@ -189,7 +193,7 @@ export async function main() {
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke-discovery.json');
     await phase('smoke-discovery', process.execPath, ['node_modules/playwright/cli.js', 'test', '--list', '--reporter=json']);
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke.json');
-    await phase('smoke', process.execPath, ['node_modules/playwright/cli.js', 'test', '--workers=2', '--retries=0', '--forbid-only', '--reporter=json'],
+    await phase('smoke', process.execPath, ['node_modules/playwright/cli.js', 'test', '--workers=2', '--retries=0', '--forbid-only', '--reporter=line,json'],
       () => smokeCounts(json('smoke'), json('smoke-discovery'), JSON.parse(readFileSync(join(root, 'ci/smoke-applicability.json'), 'utf8'))));
     delete env.PLAYWRIGHT_JSON_OUTPUT_NAME;
     await phase('ui-selftest', process.execPath, ['ui-audit/run.mjs', '--selftest'], output => {

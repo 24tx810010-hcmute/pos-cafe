@@ -12,9 +12,10 @@ const DIAGNOSTIC_CODES = Object.freeze(['COMMAND_FAILED', 'VITEST_ASSERTION', 'V
   'TEST_TIMEOUT', 'ASSERTION_ERROR', 'TYPE_ERROR', 'REFERENCE_ERROR', 'MODULE_NOT_FOUND', 'OUT_OF_MEMORY', 'COVERAGE_LINES',
   'RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'RESOURCE_CORE_LIMIT', 'GUARD_IO_ENOENT', 'GUARD_IO_ENOTDIR',
   'GUARD_IO_EACCES', 'GUARD_REFUSED', 'COMMAND_TIMEOUT', 'OUTPUT_LIMIT', 'COMMAND_SPAWN_FAILED', 'RESULT_INVALID',
-  'SOURCE_DRIFT', 'PROCESS_SIGTERM', 'PROCESS_SIGKILL', 'PROCESS_SIGABRT', 'PROCESS_SIGSEGV']);
+  'SOURCE_DRIFT', 'PROCESS_SIGTERM', 'PROCESS_SIGKILL', 'PROCESS_SIGABRT', 'PROCESS_SIGSEGV', 'RESOURCE_CORE_PATTERN', 'RESOURCE_HOST_GROWTH',
+  'BROWSER_LAUNCH', 'BROWSER_DEPENDENCIES', 'BROWSER_SANDBOX', 'BROWSER_CRASHPAD', 'BROWSER_EXECUTION']);
 export function guardFailureCode(error) {
-  if (['RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'RESOURCE_CORE_LIMIT', 'SOURCE_DRIFT'].includes(error?.code)) return error.code;
+  if (['RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'RESOURCE_CORE_LIMIT', 'RESOURCE_CORE_PATTERN', 'RESOURCE_HOST_GROWTH', 'SOURCE_DRIFT'].includes(error?.code)) return error.code;
   if (['ENOENT', 'ENOTDIR', 'EACCES'].includes(error?.code)) return `GUARD_IO_${error.code}`;
   return error?.message === 'PROJECT_CI_RESULT_INVALID' ? 'RESULT_INVALID' : 'GUARD_REFUSED';
 }
@@ -37,7 +38,12 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
   for (const [code, pattern] of Object.entries({ TEST_TIMEOUT: /timed?\s*out|test timeout|timeout of/i,
     ASSERTION_ERROR: /AssertionError|expected .{0,100} to /i, TYPE_ERROR: /TypeError/, REFERENCE_ERROR: /ReferenceError/,
     MODULE_NOT_FOUND: /ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|cannot find (?:module|package)/i,
-    OUT_OF_MEMORY: /heap out of memory|allocation failed|SIGKILL/i, COVERAGE_LINES: /ERROR: Coverage for lines/i })) {
+    OUT_OF_MEMORY: /heap out of memory|allocation failed|SIGKILL/i, COVERAGE_LINES: /ERROR: Coverage for lines/i,
+    BROWSER_LAUNCH: /browserType\.launch|browser has been closed|Target crashed|signal=SIGTRAP/i,
+    BROWSER_DEPENDENCIES: /Host system is missing dependencies|error while loading shared libraries/i,
+    BROWSER_SANDBOX: /No usable sandbox|Running as root without --no-sandbox|Failed to move to new namespace/i,
+    BROWSER_CRASHPAD: /chrome_crashpad_handler: --database is required|FATAL:.*crashpad/i,
+    BROWSER_EXECUTION: /Illegal instruction|signal=SIGILL|Exec format error|cannot execute binary/i })) {
     if (pattern.test(privateText)) codes.push(code);
   }
   const failedFiles = (report?.testResults ?? []).filter(file => file.status === 'failed').map(file => {
@@ -185,7 +191,7 @@ export function publicSummary(binding, rows, fingerprints) {
     diagnostic: diagnostic ? { codes: diagnostic.codes.filter(code => DIAGNOSTIC_CODES.includes(code)),
       metrics: Object.fromEntries(Object.entries(diagnostic.metrics).filter(([key, value]) =>
         ['numTotalTests', 'numPassedTests', 'numFailedTests', 'numPendingTests', 'numRuntimeErrorTestSuites', 'architectureAssertion',
-          'minimumObservedFreeBytes', 'initialFreeBytes', 'ownedBytesAtCheckpoint', 'coreFileCount', 'coreAllocatedBytes', 'largestOwnedFileBytes', 'kernelCorePipe',
+          'minimumObservedFreeBytes', 'initialFreeBytes', 'freeSpaceDecreaseBytes', 'ownedBytesAtCheckpoint', 'coreFileCount', 'coreAllocatedBytes', 'largestOwnedFileBytes', 'kernelCorePipe',
           'memoryCurrentBytes', 'peakMemoryBytes', 'pidsCurrent', 'peakPids', 'oomEvents', 'oomKills', 'pidsLimitEvents'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));
   return { schemaVersion: 'pos-cafe-light-ci-v1', verificationScope: 'LIGHT_MOCK_ONLY', repository: PROJECT_REPOSITORY, repositoryID: PROJECT_REPOSITORY_ID,
