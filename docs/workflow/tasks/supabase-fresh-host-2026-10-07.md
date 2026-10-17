@@ -1,0 +1,8 @@
+# Bàn giao — MCP trong host Codex mới,07/10/2026
+
+- **Ủy quyền:** chủ dự án “ok xác minh và xử lý bước tiếp theo”, sau scope local PAT/direct probe. Chỉ DB Read cho project đã pin, không tăng quyền hoặc phát hành POS.
+- **Kết quả:** fresh Codex app-server stdio PASS: effective config đúng, thread ephemeral true, target connected/bearerToken, execute_sql hằng số trả1, own child stopped; command exit0. Không model turn.13 guard checks đạt. [Log và bằng chứng](../../implementation-log/supabase-fresh-host-2026-10-07.md), [review](../../reviews/2026-10-07-supabase-fresh-host.md).
+- **Đã sửa:** map override không cô lập; leaf/transport-mismatch bootstrap fail trước PAT; đổi block disabled đúng loại transport cho từng server. Pin module/helper, env filter case-insensitive, exact tool set, cwd ngoài repo và cleanup/env safeguards. Global config/credential/app không đổi.
+- **Source:** harness/tooling/evidence trong `D:/Workspace/pos-cafe/artifacts/supabase-fresh-host-20261007`; module/helper private source hash pin, không token/raw config/backup vào artifact. Main/docs còn dirty work sẵn, không commit/reset/switch. Manifest/snapshot theo review.
+- **Giới hạn:** đây là fresh app-server runtime proof; chưa kiểm Desktop đang mở, model-driven MCP, Edge/Storage/Vercel/gate ứng dụng. Không bảo đảm email/visibility/log sạch; không sửa lịch sử/auth để che hoạt động. PAT hết hạn08/10, nếu cần thay thì người dùng tự tạo/nhập cùng scope.
+- **Tiếp theo:** inventory Edge/Storage read-only qua Dashboard đang đăng nhập hoặc scope đọc riêng; không mở write. Vercel và gate tổng vẫn theo [task chính](redesign-permission-model.md). Chưa cần tạo chat mới. Walkthrough đã cung cấp, chủ dự án chưa xác nhận đã đọc; docs chưa commit/publish.

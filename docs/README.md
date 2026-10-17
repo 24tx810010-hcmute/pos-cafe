@@ -1,5 +1,7 @@
 # POS Cafe Documentation
 
+**Phân quyền, cập nhật17/09:** chưa hoàn tất sản phẩm. [Bàn giao triển khai trọn luồng](workflow/tasks/redesign-permission-model.md) ghi phần đã kiểm thử cách ly, phần UI còn thiếu và đích phát hành đã được xác nhận.
+
 ## Bắt đầu task với AI — 2026-09-16
 
 [Quy trình 6 bước](workflow/README.md) · [Mẫu giao việc, quyết định, nghiệm thu, bàn giao](workflow/templates.md) · [Câu mở đầu cho task mới](workflow/start-task.md) · [Chỉ mục bàn giao](workflow/tasks/README.md). Quy trình và hồ sơ ở nhánh `docs`; code/công cụ kiểm chứng ở `main`. [Lý do và phạm vi áp dụng](../openspec/changes/adopt-ai-task-workflow/proposal.md).
@@ -21,8 +23,11 @@ Folder này là knowledge base hiện tại của dự án POS Cafe và là ngu�
 | Giải thích chọn công nghệ và đánh đổi | [tech-stack.md](tech-stack.md) |
 | Lấy số liệu kiểm thử đã phân môi trường | [testing.md](testing.md) |
 | Biết đang ở đâu trong lộ trình và làm gì tiếp | [roadmap.md](roadmap.md) |
+| Kết quả T01–T07: nền quyền, identity/admin/financial và projection đọc candidate; UI chưa đổi | [Biên bản T07](implementation-log/permission-t07-read-projections-2026-09-16.md), [T06](implementation-log/permission-t06-financial-authority-2026-09-16.md), [proposal](../openspec/changes/redesign-permission-model/proposal.md) |
+| Quyết định bỏ Kế toán: bốn vai trò hoạt động, Bếp dự phòng; mốc chuẩn bị trước code T02 | [Bàn giao ngày 15/09](reviews/2026-09-14-permission-model/11-bo-ke-toan-chuan-bi-t02-2026-09-15.md) — phạm vi, ma trận quyền, fixture và điều kiện nghiệm thu |
 | Viết hạn chế và hướng phát triển | [limitations.md](limitations.md) |
 | Ánh xạ tài liệu sang chương báo cáo | [report-source-map.md](report-source-map.md) |
+| Chọn tài liệu tham khảo học thuật cho từng chương | [references.md](references.md) |
 | Học kiến trúc phổ biến và lý do chọn của dự án | [architecture-explainer.html](architecture-explainer.html) — mở bằng trình duyệt |
 | Chuẩn bị bảo vệ/demo | [demo-runbook.md](demo-runbook.md) |
 | Chuẩn bị redesign UI/UX | [ui-redesign-context.md](ui-redesign-context.md) |

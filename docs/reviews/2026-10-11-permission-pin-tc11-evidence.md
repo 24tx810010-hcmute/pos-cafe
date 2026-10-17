@@ -1,0 +1,8 @@
+# Review bằng chứng/fixture TC-PIN-11 — 11/10/2026
+
+- **Reviewer:** subagent độc lập `tc11_evidence_review`, không sửa candidate, không deploy.
+- **Candidate:** main manifest SHA-256 `626b59308251a089db44f111d3b34982b97f28ff78c3012dda7dda0c673debc3`, source tar `90feef57384c9383ac947db47838078dbdafeff11a75968c74eb29dde57e3551`; docs-slice sau rà độ tin cậy SHA-256 `11654a91aa145b0e58e338495b39b15a42c9bfa6e24d8ba8a72b92424966c9db`, docs tar `cc00f9be1207a99fcbd593e47f667e9bf87ff63b9eed4a4e2079c9464e46c96f`.
+- **Phạm vi đã đọc:** 782 source/3 docs archive entries và current hashes, base commit, delta TC10→TC11; safe summary 9/9; fixture `beforeEach`/`afterEach` và pre/postflight scripts; finite receipts và Docker readback. Không đọc raw report/env/token hoặc chạy lại mutating tests.
+- **Finding đã xử lý:** ban đầu thiếu receipt file cho pre/postflight và stop. Tác giả thêm bản ghi hữu hạn có nhãn *transcription*, hash script và giới hạn; không nhận là raw terminal log độc lập. Biên bản cũng được sửa để phân biệt assertion thông báo UI trong browser với assertion mã `BOOTSTRAP_CONFLICT` ở adapter unit. Rà sau verdict xác nhận mã `AUTH_REQUIRED` của riêng luồng tạo quán chưa được assert trực tiếp trong chín ca browser; biên bản ghi rõ giới hạn đó.
+- **Kết luận:** fixture cleanup/postflight count-zero phù hợp; stop `--no-backup` ghi đúng target container0, DB volume không còn, network còn. Việc chuẩn bị fixture mới cho TC12 được ghi rõ.
+- **Verdict:** **APPROVE** exact main candidate và docs-slice sau rà độ tin cậy. Reviewer xác nhận lại ba file docs/archive hash khớp và claim mới chính xác. Receipt hữu hạn và không tự chạy lại test là giới hạn bằng chứng, không phải xác nhận độc lập raw runtime hay hosted.

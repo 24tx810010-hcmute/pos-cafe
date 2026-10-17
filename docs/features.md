@@ -1,5 +1,11 @@
 # Features
 
+## Candidate đang tích hợp — 2026-09-17
+
+UI đã nối catalog15 quyền, bốn vai trò dùng được (chủ quán/quản lý/thu ngân/phục vụ; bếp chưa bật, không còn kế toán), quản trị overrides/ceiling, ẩn thao tác mất quyền, báo cáo theo múi giờ quán và quyền in lại riêng. Owner mới sửa múi giờ và xóa dữ liệu mẫu; dữ liệu tự tạo/giao dịch/audit được giữ theo contract. Đây là code candidate local, **chưa phải tính năng đã phát hành lên product test**. [Checkpoint và gate còn lại](implementation-log/permission-ui-integration-2026-09-17.md), [quyết định đã duyệt](../openspec/changes/redesign-permission-model/proposal.md).
+
+Các phần bên dưới giữ mốc baseline cũ; khi phát hành sẽ đối chiếu lại với postflight đích đã duyệt, không tự coi mock/service cách ly là production.
+
 Cập nhật 2026-09-10 theo `main@3ada48c` đã push và nghiệm thu. Phạm vi/SHA/bằng chứng ở [phase 27](implementation-log/phase-27-idempotent-write-operations.md); chưa triển khai migration lên môi trường thật.
 
 ## Store & Session

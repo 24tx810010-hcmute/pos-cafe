@@ -1,0 +1,34 @@
+# SEC review — failed private setup và đề xuất v2, 16/10/2026
+
+**Verdict: APPROVE** trong phạm vi lần setup v1 thất bại, chẩn đoán metadata và bản sửa local v2. Reviewer độc lập: `ci1_worker_sec`, không tham gia viết candidate. Kết luận này không cấp quyền chạy setup lần hai, copy private inputs hoặc chạy probe DB.
+
+## Candidate và phạm vi
+
+- Manifest: [actor-probe-run-02/candidate-02](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/actor-probe-run-02/candidate-02/manifest.json), SHA256 **`274a5fe18e4c4fd1ef54f4bd8b1343f3dbb96f8302023fadf46dc5ab6aec1073`**, 21 file, 154090 byte snapshot.
+- Đối chiếu độc lập toàn bộ hash/length snapshot và current source theo manifest: **0 mismatch/0 drift**. Module DB `cb3d13b4f6d9844f64e2532b1c5098f5da6531426660b6d032957e8a56baf48e`, launcher `e6c786b31b6f203413aa281b661bf0eec4892f34a5423c5ca186a5867ca68425` giữ nguyên; setup v2 là `d328951b5e1762980ddb686dfd743640c5345ac79f9730eaa21f121d1ccfdd88`.
+- Đã đọc phần có tác dụng phụ của setup, delta v1/v2, test AST/fake, plan, intent/invocation/result/metadata diagnosis và tài liệu. Không sửa candidate, app, shared index hoặc các review cũ.
+
+## Kết luận SEC
+
+1. **Authority và evidence đúng ranh giới.** Intent ghi approval `call_f7a2cc88b3bb46b287bada7a30597905`, tối đa một setup và một probe có điều kiện `PRIVATE_COPY_VERIFIED`. Receipt v1 ghi đúng một invocation, exit 1, 512 ms, `PRIVATE_COPY_FAILED/PRIVATE_COPY_REFUSED`, counters tạo/copy bằng 0, probe mới 0. Metadata sau đó cho thấy destination không tồn tại và C-root TrustedInstaller là owner duy nhất ngoài chính sách v1; đây không phải stage trace của lần chạy. [Biên bản:5–15](D:/Workspace/pos-cafe-docs/docs/implementation-log/permission-private-input-setup-2026-10-16.md:5) giữ phân biệt này và không suy mật khẩu/TLS/SQL thất bại hoặc DB PASS.
+2. **Owner predicate sửa đúng chỗ.** [Setup:37–54](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/actor-probe-retry-v2/setup-private-inputs.ps1:37) từ chối reparse trước ngoại lệ; chỉ nhận SID TrustedInstaller đã resolve cho directory đúng `C:\`, ở vị trí ancestor không phải leaf. Không nhận D-root, subdirectory, file/leaf, root được truyền làm leaf, owner khác hoặc SID rỗng. Lookup account cố định lỗi sẽ đi nhánh từ chối tại [setup:93–101](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/actor-probe-retry-v2/setup-private-inputs.ps1:93).
+3. **Private policy không mở rộng.** `AllowedOwners` vẫn current user/SYSTEM/Administrators, private leaf và hai source directories vẫn yêu cầu current user. [ACL builder/checker:56–83](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/actor-probe-retry-v2/setup-private-inputs.ps1:56) vẫn protected, đúng ba principal explicit FullControl; TrustedInstaller không được thêm quyền hoặc thay owner/ACL Windows.
+4. **Bounds và failure giữ nguyên.** [Setup:110–174](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/actor-probe-retry-v2/setup-private-inputs.ps1:110) chỉ ba source/đích cố định, tổng 25782 byte logic; source handle deny write/delete, size/hash pins trước tạo đích, new-only directory và CreateNew file có ACL trước payload, xác minh ACL/hash sau copy, attempt-all close. [Coordinator:11–35](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/actor-probe-retry-v2/setup-private-inputs.ps1:11) giữ partial output, trả lỗi và không tự retry/delete/overwrite. Setup không DPAPI/decrypt/network/DB; lỗi chỉ ra mã cố định và counters/booleans.
+5. **Điểm dừng được giữ.** [Biên bản:25,35–37](D:/Workspace/pos-cafe-docs/docs/implementation-log/permission-private-input-setup-2026-10-16.md:25) và [plan:3–4,109–115](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/actor-probe-retry-v2/plan.json:3) xác định setup v2/probe chưa chạy, cần owner duyệt mới. Probe chưa dùng không tạo quyền ngầm cho lần setup thứ hai. Không nhận actor/scope metadata thành quyền DDL, backup, cleanup, compatibility hoàn tất hoặc release readiness.
+
+## Kiểm chứng độc lập và giới hạn
+
+- Chạy trực tiếp từ snapshot candidate 02 tại `main/artifacts/permission-online-compatibility-20261016/actor-probe-retry-v2`: `D:/tools/nodejs/node.exe --max-old-space-size=512 --test --test-reporter=tap --test-concurrency=2 actor-probe.test.mjs retry-preparation.test.mjs` — exit 0, **19 PASS / 0 FAIL / 0 SKIP**, khoảng 7,06 s. Đây là cùng 18 ca cũ cộng một test mới, không cộng dồn các lần chạy thành 37 ca.
+- Test mới trích hàm owner guard thật bằng AST, mock metadata và kiểm **11 tình huống: 2 dương/9 âm** tại [test:84–127](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/actor-probe-retry-v2/retry-preparation.test.mjs:84). Test coordinator dùng adapter giả để kiểm thứ tự ACL trước copy, failure và close; không chứng minh filesystem copy thực.
+- Hai PS syntax kiểm độc lập: 0 errors; hai default plans exit 0, không private read/copy/ACL/decrypt/network. Các phép này đã chạy trên source byte-identical trước delta candidate 02; delta không đổi hai script.
+- Chạy riêng hàm `Assert-OwnerPath` thật được trích từ setup v2 trên sáu đường dẫn metadata thực đã được giao: parent D, source root/scope directory và ba input — **6 PASS**. Chỉ Get-Item/Get-Acl; không đọc/hash private bytes, đổi ACL, copy hoặc gọi setup/probe. Đây chỉ là qualification owner/reparse tại thời điểm kiểm.
+- Lỗ hổng tái hiện của candidate 01 thiếu module gốc cho test `../actor-probe/actor-probe.mjs` đã **đóng** ở candidate 02: module gốc được snapshot cùng SHA; phép so sánh bytes và toàn bộ 19 tests replay không cần source ngoài snapshot.
+- Không thực thi `-Prepare` hoặc `-RunReadOnly`, không mở credential/private payload, không DPAPI, DB/network, install, CI/push/deploy hoặc delete. Chưa có actual protected-copy, DPAPI/TLS/actor/SQL proof, OS resource quota hoặc permission-runtime PASS.
+
+## Findings
+
+**Chặn: không còn** trong phạm vi được giao. Lỗi v1 từ chối owner Windows hợp lệ đã có sửa local và phản ví dụ tương ứng; setup v2 vẫn cần quyền mới trước khi chạy.
+
+**Đề xuất không chặn — SEC-SETUP-N01:** [plan.json:68](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/actor-probe-retry-v2/plan.json:68) còn mô tả corrected guard chỉ có fake/default/syntax, trong khi biên bản:31 và receipt đã ghi sáu kiểm metadata thực. Có thể đồng bộ câu này ở lần sửa tiếp theo thành “fake/default/syntax và owner/reparse metadata thực; chưa copy/DPAPI/TLS/actor”. Đây là underclaim evidence, không nới quyền hoặc nhận thao tác chưa chạy là PASS nên không chặn verdict.
+
+Kết luận gắn đúng candidate SHA trên: **APPROVE chỉ cho failed setup + local correction proposal**. Owner vẫn quyết định setup retry và một probe có điều kiện; các gate backend/profile/cutover/release trước đó giữ nguyên.

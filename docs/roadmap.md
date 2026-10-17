@@ -1,5 +1,11 @@
 # Lộ Trình Phát Triển
 
+**Trạng thái phân quyền ngày17/09:** chưa hoàn tất sản phẩm; T01–T07 mới qua gate kỹ thuật cách ly. Chủ dự án yêu cầu nối UI và triển khai trên đích đang dùng, giữ nguyên dữ liệu. [Bàn giao hiện hành](workflow/tasks/redesign-permission-model.md) ghi mốc tiếp theo và phần chưa kiểm chứng. Các mốc bên dưới giữ làm lịch sử kỹ thuật.
+
+**Đính chính trạng thái 2026-09-14:** code/tests chống trùng đã nghiệm thu tại `main@ef2c372`; migration 014–016 đã được chủ dự án áp và kiểm catalog ngày 13/09; frontend Production gắn `ef2c372` đã được xác minh ngày 14/09. Chưa chạy business smoke trên cửa hàng thật và chưa archive/apply delta phase27 vào baseline specs. Nguồn: [follow-up phase27](implementation-log/phase-27-timeout-followup-2026-09-14.md). **Cập nhật ngày15/09:** `redesign-permission-model` đã sửa theo R01–R15/Q15 và N01–N03; chủ dự án cho phép code, **PERM-T01 đã hoàn tất** với 152 tool + 30 DB tests và oracle6.144 expected. Xem [biên bản T01](implementation-log/permission-t01-preflight-2026-09-15.md). **T02 đã hoàn tất catalog/bridge local**, có 52 test và 6.144 comparison cùng regression; xem [biên bản T02](implementation-log/permission-t02-catalog-bridge-2026-09-15.md). **T03 đã hoàn tất core/DTO/ports/mock** theo [biên bản T03](implementation-log/permission-t03-domain-ports-mock-2026-09-15.md). **T04 hoàn tất local ngày16/09** theo [biên bản](implementation-log/permission-t04-identity-owner-sessions-2026-09-16.md); **T05 hoàn tất local** theo [biên bản](implementation-log/permission-t05-employee-administration-audit-2026-09-16.md); **T06 hoàn tất local** theo [biên bản](implementation-log/permission-t06-financial-authority-2026-09-16.md); **T07 hoàn tất local** theo [biên bản](implementation-log/permission-t07-read-projections-2026-09-16.md); T08–T18 chưa bắt đầu, ứng dụng chưa áp mô hình15 quyền. Catalog gồm bảo vệ đọc + ghi; mục4 chỉ xử lý phần ngoài inventory này. Không đổi lịch tuần hoặc đặt ngày cam kết mới.
+
+Đoạn cập nhật 10/09 và các phân tích lịch phía dưới được giữ làm lịch sử kế hoạch; trạng thái hiện hành dùng đính chính 14/09 và cột trạng thái đã cập nhật.
+
 Cập nhật thực hiện 2026-09-10: chủ dự án đã duyệt và bắt đầu mục chống trùng; code/tests đã nghiệm thu và push `main@3ada48c`, docs phê duyệt đã push `0ecf84d`. Tiến độ và cổng cuối tại [phase 27](implementation-log/phase-27-idempotent-write-operations.md). Không tự suy quỹ giờ mỗi ngày từ việc làm hằng ngày; các mốc dự báo dưới đây chưa phải cam kết mới.
 
 Thứ tự thực hiện và tiến độ của dự án. Tài liệu này trả lời câu hỏi **làm gì trước, làm gì sau, và đang ở đâu**.
@@ -16,6 +22,10 @@ Nó không chép lại quan hệ phụ thuộc giữa các change — phần đ�
 | Cập nhật lần cuối | 2026-09-10, chuẩn hóa trình bày và bổ sung mô hình ảnh hưởng lịch; chưa duyệt thay đổi các mốc |
 
 Dự án đi từ tiểu luận cuối kỳ lên đồ án tốt nghiệp. Hai việc bắt buộc đến từ nhận xét của giảng viên phản biện: kiểm soát việc tạo cửa hàng, và tổ chức lại phân quyền cho đúng một hệ POS vận hành thật.
+
+
+
+
 
 ## Quy Ước Trạng Thái
 
@@ -38,8 +48,8 @@ Mười mục, làm tuần tự. Thứ tự dưới đây được xếp lại n
 | # | Tuần | Khoảng | Việc | Kết quả kiểm chứng được | Trạng thái |
 | --- | --- | --- | --- | --- | --- |
 | 1 | 1 | 2026-08-28 – 2026-09-03 | Chiến lược kiểm thử, lưới an toàn và môi trường thử nghiệm | Chiến lược kiểm thử viết trọn theo chuẩn bảy artifact và dùng được làm khuôn mẫu; bộ kiểm thử chạy xanh trên baseline hiện tại | `[x]` xong 2026-09-07 |
-| 2 | 2, lịch gốc | 2026-09-04 – 2026-09-10, cần rà lại | Chống trùng và khôi phục bốn luồng ghi online, hướng đăng ký lệnh trên server | Cùng khóa chỉ áp dụng một lần; tìm lại được lệnh đã đăng ký sau mất phản hồi/đổi máy | `[~]` đã có bộ spec để duyệt; lịch/phạm vi chờ chốt, chưa implement |
-| 3 | 3–5 | 2026-09-11 – 2026-10-01 | Tổ chức lại phân quyền | Sáu vai trò, mười bốn quyền, điều hướng suy ra từ quyền, đổi quyền có hiệu lực ngay | `[ ]` |
+| 2 | 2, lịch gốc | 2026-09-04 – 2026-09-10, cần rà lại | Chống trùng và khôi phục bốn luồng ghi online, hướng đăng ký lệnh trên server | Cùng khóa chỉ áp dụng một lần; tìm lại được lệnh đã đăng ký sau mất phản hồi/đổi máy | `[x]` code/tests nghiệm thu 2026-09-14 tại `ef2c372`; migration đã áp, frontend đã xác minh; business smoke thật và archive chưa thực hiện |
+| 3 | 3–5 | 2026-09-11 – 2026-10-01 | Tổ chức lại phân quyền | Năm vai trò (bốn đang dùng), mười lăm quyền, điều hướng và server enforcement; Q1–Q15 và bỏ Kế toán đã chốt | `[~]` Chưa hoàn tất sản phẩm; T01–T07 qua gate kỹ thuật cách ly; [T05 quản trị/audit](implementation-log/permission-t05-employee-administration-audit-2026-09-16.md); **T06 hoàn tất local** theo [biên bản](implementation-log/permission-t06-financial-authority-2026-09-16.md); **T07 hoàn tất local** theo [biên bản](implementation-log/permission-t07-read-projections-2026-09-16.md); T08–T18 chưa bắt đầu |
 | 4 | 6 | 2026-10-02 – 2026-10-08 | Siết quyền xuống tầng dữ liệu, bản thu hẹp | Gọi thẳng vào cơ sở dữ liệu khi thiếu quyền bị từ chối | `[ ]` |
 | 5 | 7–9 | 2026-10-09 – 2026-10-29 | Tài khoản chủ và kiểm soát tạo quán, giai đoạn 1 | Không có email đã xác thực thì không tạo được cửa hàng | `[ ]` |
 | 6 | 10 | 2026-10-30 – 2026-11-05 | Khôi phục và vòng đời quyền sở hữu, giai đoạn 2 | Mất Store Key vẫn lấy lại được cửa hàng | `[ ]` |
@@ -109,7 +119,7 @@ Phần ngoại tuyến chỉ chạm `submit_order_changes` trong ba lời gọi 
 
 Hai điểm dưới đây, nếu vượt qua mà chưa đạt điều kiện, sẽ dẫn tới tình huống chỉ khôi phục được bằng bản sao lưu.
 
-**Cổng 1 — trong mục 3, trước khi đổi kiểu cột vai trò.** Kiểm thử đối chiếu phải chứng minh hàm kiểm tra quyền mới trả về đúng kết quả như bảng cũ cho ba vai trò cũ. Đây là task 2.3 trong danh sách việc của `redesign-permission-model`.
+**Cổng 1 — trong mục 3, trước khi đổi kiểu cột vai trò.** Pha bridge phải chứng minh tương đương năm quyền/ba role cũ trước activation, theo PERM-T01/T02 trong [tasks permission model](../openspec/changes/redesign-permission-model/tasks.md). Activation sang 15 quyền thay đổi nghiệp vụ có chủ đích: cần preflight, ánh xạ owner và báo cáo chênh lệch quyền; không gọi toàn bộ activation là tương đương hành vi cũ.
 
 **Cổng 2 — trong mục 5, trước khi xóa dữ liệu cũ.** Phải có bản sao lưu đầy đủ cả cơ sở dữ liệu lẫn kho ảnh, và phải có xác nhận rõ ràng của chủ dự án. Quyết định số 9 của proposal là xóa sạch dữ liệu tạo bằng luồng cũ, không chuyển đổi.
 
@@ -124,6 +134,8 @@ Các việc dưới đây không chiếm tuần riêng, nhưng phải xong trư�
 | Dựng đường gửi email ở mức 1: Gmail riêng của dự án, App Password, cấu hình SMTP, gửi thử xác nhận không vào thư rác. Không phải mua gì, không phải chờ duyệt | trước tuần 7 | `[ ]` |
 | ~~Viết ba artifact còn thiếu cho `add-owner-account-and-store-provisioning`~~ | trước tuần 7 | `[x]` xong 2026-08-31 |
 | Chốt và viết spec cho nhóm offline nếu mở lại trong tương lai | Chưa xếp lịch | **Hoãn 2026-09-08** |
+| Ép đổi PIN mặc định ở lần đăng nhập đầu, theo `force-default-pin-change`. Còn 6 câu hỏi phải chốt trước khi viết delta | trước khi kết thúc mục 3 | `[ ]` thêm 2026-09-12 |
+| Lập danh mục tài liệu tham khảo học thuật và chốt quy cách trích dẫn với khoa | trước mục 10 | `[~]` danh mục đề xuất xong 2026-09-12 tại [references.md](references.md); còn đối chiếu bản in và chốt quy cách |
 
 Hai hạn đầu **gấp hơn hẳn thứ tự cũ**: khóa chống trùng chuyển lên tuần 2 nên các câu hỏi của nó phải chốt gần như ngay, và siết quyền tầng dữ liệu chuyển từ tuần 9 lên tuần 6.
 
@@ -138,7 +150,7 @@ Ngân sách 16 tuần chỉ đủ cho đúng một nhóm tính năng mới. Đ�
 Lý do đổi:
 
 - **Quyết định online-only vốn là hoãn theo thời gian, không phải lựa chọn kiến trúc.** `docs/requirements.md` xếp nó ở mục "Ngoài Phạm Vi Hoặc Hoãn" kèm câu "không được tính là thiếu so với baseline tiểu luận hiện tại". Ngân sách 16 tuần làm ràng buộc sinh ra nó hết hiệu lực, nên đây là gỡ một khoản hoãn.
-- **Luận điểm mà nhóm ca làm việc phục vụ đã được chứng minh ở chỗ khác.** `redesign-permission-model` tự nó đã chứng minh việc thêm quyền là thêm dữ liệu: mười bốn quyền lưu ở tầng dữ liệu, điều hướng suy ra từ quyền, không có bảng ánh xạ vai trò sang module. Nhóm ca chỉ là bằng chứng thứ hai cho cùng luận điểm, nên mất nó rẻ hơn nhiều so với mất bằng chứng thứ nhất.
+- **Luận điểm mà nhóm ca làm việc phục vụ đã có kế hoạch kiểm chứng ở mô hình quyền.** Thiết kế `redesign-permission-model` dự kiến lưu mười lăm quyền ở tầng dữ liệu và suy điều hướng từ quyền, bỏ bảng ánh xạ vai trò sang module trong candidate. T02 đã kiểm catalog SQL/bridge; T03 đã kiểm core suy quyền/module từ catalog và boundary domain/ports/mock. Điều hướng UI và cleanup toàn consumer vẫn chưa triển khai; cần gate consumer/architecture cuối trước khi dùng toàn luận điểm làm kết quả đã chứng minh. Nhóm ca sẽ là ví dụ mở rộng thứ hai, nên vẫn ưu tiên hoàn thiện mô hình quyền trước.
 - **Nhóm ngoại tuyến chứng minh một luận điểm khác mà chưa có gì chứng minh:** ranh giới ports và adapters đủ mỏng để cắm một adapter cục bộ mà không sửa `domain`, `core` hay `features`. `src/architectureBoundaries.test.ts` kiểm chứng việc này bằng máy, không phải bằng lời.
 - **Giá trị demo cao hơn hẳn.** Rút mạng trước hội đồng, vẫn nhận đơn, nối lại, đơn tự lên. Nhóm ca là CRUD cộng báo cáo.
 
@@ -185,6 +197,8 @@ Còn lại ở tầng này:
 
 - `optimize-runtime-load`, **bắt buộc sau** `measure-runtime-load`. Giữ ở giai đoạn 2 vì nó đụng nhịp đồng bộ giữa các máy, tức một năng lực đã đặc tả trong `multi-device-sync`, và đó là loại rủi ro không nên nhận trong 16 tuần đã kín.
 - `handle-long-running-session`. Vẫn ở giai đoạn 2. Sau khi hoãn offline ngày 2026-09-08, không còn mâu thuẫn lịch với mục 7–8; quan hệ "nên trước `add-offline-data-layer`" chỉ áp dụng nếu mở lại nhóm offline.
+
+
 
 **Tầng G — Ca làm việc.** Chuyển xuống đây ngày 2026-08-30 để nhường ba tuần cho nhóm ngoại tuyến. Vẫn là ứng viên mạnh nhất cho nhóm tính năng kế tiếp.
 

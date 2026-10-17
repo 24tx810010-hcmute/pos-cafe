@@ -1,0 +1,24 @@
+# EVC — protected runtime execution checkpoint, 16/10/2026
+
+**Verdict: APPROVE** đúng [candidate 01](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/runtime-execution-launch-01/candidate-01/manifest.json), SHA256 `9a5dce3cbb65dbf51bc8dbc0c9792e568208221a1df90deeb3528fa2262ea4a0`. Không có finding blocking cho checkpoint actual copy + offline này. Approval không cấp quyền lặp controller/offline, credential-bearing probe, DB hoặc phát hành.
+
+Tự hash manifest, kiểm regular-file/bytes/SHA của **11 original/snapshot pairs, 41.869 byte: 0 drift**. Sáu reviewed source references hiện khớp bytes/SHA và từng reference trong preparation composite SHA `7e135630001be578af40d77a420e9f3186201fb9911254891c7ac94d331d4ae9`. Controller, copy helper, verifier, offline program, qualified manifest và proof không đổi; không cần chạy lại tests.
+
+Đọc intent, argv/cwd marker, parent result, năm protected safe execution receipts và post-copy public audit. Tất cả thống nhất owner approval `call_3065fd94e628417490366dbae83e5812`, đúng **một controller, một copy, một conditional offline**. Invocation dùng reviewed controller với `-Execute -NewApprovalReference`, cwd D:/Workspace/pos-cafe, explicit PowerShell executable/argv được ghi. Intent/parent record giữ controller read-lock xuyên invocation rồi đóng; source-bound controller tự giữ năm input pins và yêu cầu copy verified trước offline. Không có record retry hoặc quyền credential/PostgreSQL probe trong gói.
+
+Kết quả đủ và phân biệt đúng scope:
+
+- Controller exit0, `RUNTIME_PREPARATION_VERIFIED`, failureStage NONE, handlesClosed=true; 1/1 copy/offline attempts.
+- Safe copy result `COPY_VERIFIED`, **140 files/32 directories**, hash verification completed, handles closed. Qualified payload **92.755.145 logical byte**; đây không phải file allocation đã đo.
+- Actual offline result `OFFLINE_VERIFIED`, 140 verified files, **34 CJS files** trong private graph, networkAttempts=0, credentialRead/databaseConnected/newProbeAuthorized=false. Source đã pin kiểm pg ESM/CJS resolution, chỉ dựng Client bằng password synthetic và không gọi connect. Đây là actual Node/pg offline qualification, khác 35 synthetic/local tests trước đó; không cộng 34 modules hoặc các bước execution thành test cases mới.
+- Post-copy audit của tác giả ghi PASS tại 13:09:47.4325798Z–13:09:49.8967919Z: 140 hash/size khớp manifest, **172 metadata entries = 140 files + 32 directories/root**, protected ACL/current owner/no-reparse, tất cả hash handles đóng. Audit không execute runtime lại. EVC đối chiếu receipt/source binding, không chạy lại whole-runtime hash/ACL audit hoặc pg.
+
+Đối chiếu timing với fractional UTC strings được giữ nguyên: start13:07:30.0349478Z → finish13:07:45.7346843Z là **15.699,7365 ms**. Parent stopwatch ghi **15.640 ms (15,640 giây)**, controller ghi **15.291 ms (15,291 giây)**. Chúng có anchor/đoạn đo khác nhau; không lấy stopwatch làm phép trừ UTC hoặc suy riêng duration copy/offline. Parent stopwatch bắt đầu sau marker theo record/báo cáo. Không có timeout branch; đây không thay đổi giới hạn 90/30s + cleanup waits hoặc tạo OS quota.
+
+Stored controller receipt khớp hoàn toàn `parent.result` khi bỏ riêng `finalReceiptWritten`; parent field=true. Source `Invoke-Controller` lưu safe receipt trước khi thêm flag vào stdout, nên khác field này là đúng implementation, không phải kết quả mâu thuẫn. Parent wrapper exit0 được phân biệt với controller exit/status; checkpoint này có cả controller exit0 và verified result.
+
+Metadata EVC xác nhận runtime và protected receipt root hiện tồn tại. EVC chỉ dùng công cụ có sẵn để đọc safe JSON snapshots/live receipts và hash public reviewed sources; không đọc private inputs/credential bytes, dùng DPAPI, execute Node/pg trong protected runtime, chạy controller/Prepare/Verify/tests, network/DB/install/Git/CI/push/deploy/delete. Không thay candidate hoặc review cũ; chỉ tạo báo cáo này.
+
+[Báo cáo actual execution](D:/Workspace/pos-cafe-docs/docs/implementation-log/permission-runtime-private-execution-2026-10-16.md) và index phân biệt rõ preparation lịch sử với execution mới, actual offline với synthetic tests, logical bytes với allocation chưa đo. Runtime vẫn cần cho bước sau nên không tự coi là temp để xóa. Raw child output/error không được snapshot thành proof; safe receipt có source-bound schema đã review.
+
+Các giới hạn vẫn giữ: targeted networkAttempts=0 không phải host-wide network audit; chưa có TLS/actor/scope79 PostgreSQL PASS, database contract2, backup/recovery/cutover/backend gates hoặc Vercel/push release. Credential launcher cũ cần integration/source review riêng trước một quyền probe mới; runtime tồn tại không tự cho phép dùng lại launcher hoặc quyền vừa tiêu thụ. Checkpoint đủ để báo cáo actual protected copy/offline đã hoàn tất, không mở scope thực thi tiếp theo.

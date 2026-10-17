@@ -1,133 +1,409 @@
-# Thiết kế mô hình phân quyền mới
+# Thiết kế — redesign-permission-model
 
-## Context
+Ngày 2026-09-17. **Tính năng phân quyền chưa hoàn tất, chưa nối UI và chưa phát hành.** T01–T07 đã có code và bằng chứng kiểm thử cách ly trong phạm vi kỹ thuật; không phải các phần sản phẩm đã bàn giao. [Biên bản T07](../../../docs/implementation-log/permission-t07-read-projections-2026-09-16.md) giữ kết quả 919 unit/component, 120 SQL/Auth/REST, typecheck/build và regression T01–T06 của candidate ngày16/09; chưa chứng minh bản đang triển khai. Chủ dự án yêu cầu làm trọn luồng và đã xác nhận cập nhật `https://pos-cafe-azure.vercel.app`, Supabase `kfqjdfwxhkdwihjobpny`, **giữ nguyên dữ liệu hiện có**. Xem [bàn giao triển khai trọn luồng](../../../docs/workflow/tasks/redesign-permission-model.md).
 
-Động cơ và phạm vi xem `proposal.md`, phần Why và phần Quyết định đã chốt. Phần này chỉ nêu hiện trạng kỹ thuật cần thiết để giải thích cách làm.
+## 1. Baseline và lựa chọn tổng thể
 
-Hiện trạng liên quan trực tiếp:
+[client.ts:23](D:/Workspace/pos-cafe/src/adapters/supabase/client.ts:23) chỉ inject token nhân viên vào REST; [016:166](D:/Workspace/pos-cafe/supabase/migrations/016_activate_write_protocol.sql:166) kiểm payment.take cho receipt; [016:198](D:/Workspace/pos-cafe/supabase/migrations/016_activate_write_protocol.sql:198) còn chính sách quản trị admin và SELECT theo store. Do đó thêm catalog/ẩn nút là chưa đủ Q1.
 
-- `employees.role` là kiểu enum `employee_role` với ba giá trị `admin`, `cashier`, `kitchen`, khai báo từ migration đầu tiên.
-- `employees.permission_overrides` là cột `jsonb` nullable, thêm ở migration 011, chứa hai danh sách `grants` và `denies`.
-- Hàm `has_employee_permission(role, overrides, permission)` ở migration 012 hard-code bảng ánh xạ vai trò sang quyền, và chính comment trong migration đó ghi rõ phải giữ đồng bộ thủ công với `src/core/guards.ts`. Đây là nguồn lệch pha đã biết, không phải giả định.
-- `src/core/guards.ts` giữ hai bảng hằng số: `rolePermissions` cho module và `defaultRolePermissions` cho quyền hành động.
-- Publication realtime ở migration 004 gồm chín bảng nghiệp vụ và **không** có `employees`.
-- `verify_employee_pin` trả về định danh, tên, vai trò và `permission_overrides` của nhân viên.
+Chọn **projection RPC qua REST** cho dữ liệu nhân viên/đơn/finance/settings nhạy cảm; thu hồi raw SELECT/DML có thể vượt quyền. Giữ public GET ảnh thực đơn hiện có, thay đường ghi Storage bằng gateway có xác minh employee. Chuyển Realtime nghiệp vụ sang signal tối thiểu, refetch bằng RPC. Không mở tài khoản email mới hoặc viết lại K protocol v1.
 
-## Goals / Non-Goals
+Hai catalog khác nhau: khóa thực đơn `:catalog-write` hiện có không phải khóa **permission-catalog** mới. Nguồn quyền duy nhất là bảng role/defaults/permission; mock đọc cùng manifest fixture nhưng không import adapter vào core.
 
-**Goals**
+## 2. Catalog, kiểu dữ liệu và chuẩn hóa
 
-- Một nguồn sự thật duy nhất cho danh mục quyền và mặc định theo vai trò, dùng chung cho cả tầng nghiệp vụ lẫn tầng database.
-- Giữ `domain`, `core` và `ports` không phụ thuộc Supabase, để kiểm thử ranh giới kiến trúc tiếp tục pass.
-- Thay đổi quyền có hiệu lực trên thiết bị đang mở mà không tăng đáng kể số lượt gọi.
+### 2.1 Bảng dự kiến
 
-**Non-Goals** ở mức thiết kế
+| Bảng | Cột/ràng buộc chính | Quyền truy cập |
+| --- | --- | --- |
+| permission_roles | code text PK; labelVi; enabled boolean; selectable boolean | 5 role owner/manager/cashier/waiter/kitchen; 4 role đầu enabled; chỉ manager/cashier/waiter selectable; kitchen enabled=false; không seed accountant; app không ghi |
+| permission_catalog | code text PK; labelVi; module code; ownerOnly boolean; baseline boolean | Đúng 15 mã; chỉ data.clearDemo ownerOnly; floor.view baseline |
+| role_permission_defaults | roleCode+permissionCode PK/FK | Bảng PERM-02, kitchen rỗng |
+| permission_catalog_state | singleton=true PK; revision bigint≥0 | Tăng mỗi transaction đổi catalog/default; reader qua RPC |
+| employees bổ sung | permission_revision bigint≥0; role text FK thay enum khi activation; overrides nullable jsonb | Client không DML trực tiếp; owner uniqueness+active enforced |
+| employee_admin_audit | PK (storeId,actorType,actorKey,requestId,targetId); targetId là UUID target/candidate cả khi create chưa tồn tại; kind; outcome; reason; details (missingPermissions/fieldErrors); before/proposedAfter/actualAfter; actorEffective; revisions; occurredAt timestamptz | Append-only qua RPC; owner hoặc permission.edit đọc cùng store; không GC; không FK cascade xóa audit |
+| employee_admin_requests (private) | storeId+actorType+actorKey+requestId unique; kind; payloadMac; macKeyVersion; terminalOutcome/auditKeys | Không app SELECT/publication; chống retry/payload mismatch |
+| permission_request_mac_keys (private) | keyVersion; secretBytes | Chỉ hàm server; không response/audit/log. HMAC SHA-256 payload gồm cả PIN không được lưu ở audit |
+| bootstrap_requests (private) | storeId+requestId unique; ownerId; canonical nonsecret input; outcome | Provisioning identity được xác minh, không giả employee actor; no app SELECT/publication; không lưu PIN/Store Key |
+| store_change_signals | storeId+topic PK; revision bigint; eventId UUID; optional targetId | Chỉ metadata tối thiểu; app subscribe/read theo store, không ghi |
+| catalog_change_signal | singleton+revision+eventId | Metadata global, không chứa default/employee; app chỉ đọc |
+| initial_receipt_print_grants (private) | grantId UUID; K unique; orderId; actorId; employeeSessionId; createdAt | Cấp trong execute applied ban đầu; không tiêu hao bởi authorize, lifetime tối đa bằng phiên; không nằm trong R1; không raw SELECT |
+| menu_image_uploads (private) | uploadId UUID; storeId; itemId; actorId; objectKey immutable; state staging/ready/published/cleanup; assetKey | Gateway và finalization; không client tự đổi state |
 
-- Không dựng cơ chế cấu hình vai trò cho người dùng cuối, vì không làm vai trò tùy chỉnh.
-- Không đưa danh mục quyền vào bộ nhớ đệm dài hạn phía client; danh mục là dữ liệu tham chiếu đọc một lần mỗi phiên.
-- Không đụng tới cách xác minh PIN và cách thiết lập phiên nhân viên.
+**Phần đã có ở T02:** [migration 017](D:/Workspace/pos-cafe/supabase/migrations/017_permission_catalog_bridge.sql:1) tạo bốn bảng catalog/default/state, cột employees.permission_revision và ba registry/key private. Ở checkpoint T02 chưa chuyển kiểu role hoặc có audit/signal; T04 đã có audit credential và signal permission trong candidate cách ly. Receipt print grants/upload gateway vẫn chưa triển khai. Legacy bridge dùng catalog private riêng, không lấy defaults candidate cho client hiện hành. Chuẩn hóa SQL/core và authority DTO đã có ở T03; adapter/server identity authority đã có T04, lifecycle UI vẫn T11. Runtime và evidence cụ thể ở [biên bản T02](../../../docs/implementation-log/permission-t02-catalog-bridge-2026-09-15.md).
 
-## Decisions
+UUID entity/request tạo ở client theo quy ước dự án; server opaque secret/session token vẫn tạo server như phase 27. Audit dùng khóa ghép nêu trên, không cần sinh UUID cho từng cascade: một request clear-demo ghi tối đa một audit/target bị đổi identity. API trả auditKey là chuỗi base64url của tuple khóa canonical để phân trang/đối chiếu; không dùng requestId riêng làm PK toàn cục giữa các actor/store. Create có targetId candidate nhưng before=null; không buộc FK target tồn tại trước khi ghi audit denied. Request denied không có target hợp lệ không tạo row chứa target khác store. Clear demo không đổi employee nào không cần giả một target identity bị đổi; audit POS hiện có giữ nguyên.
 
-### 1. Vai trò và quyền là bảng tham chiếu toàn cục, không gắn theo cửa hàng
+Actor snapshot không bao gồm secret. PayloadMac là MAC toàn canonical request để phát hiện đổi nội dung khi retry, nằm ở private request registry; không xuất fingerprint của PIN vào audit. Key có version, giữ key dùng xác minh request cũ; không rotate làm mất tính idempotent. Nhân viên không đọc key/registry. Người toàn quyền DB vẫn là ranh giới tin cậy Q5.
 
-Ba bảng mới: danh mục vai trò, danh mục quyền, và bảng nối vai trò với quyền. Không có cột định danh cửa hàng.
+**Quyết định sau T01, 2026-09-15:** bỏ role Kế toán; giữ catalog 15 quyền. Defaults owner/manager/cashier/waiter/kitchen lần lượt 15/12/7/3/0, bốn role hoạt động có floor.view nền. Fixture A dùng waiter với grants=[orderHistory.view,report.view], denies=[order.create,order.update]; không tạo role hoặc template mới trong UI. Người có quyền quản trị phù hợp có thể điều chỉnh overrides như cơ chế đã chốt. Mất lựa chọn role chỉ xem mặc định là đánh đổi được chấp nhận.
 
-Lý do: đã chốt không làm vai trò tùy chỉnh, nên mọi cửa hàng dùng chung đúng một bộ vai trò và một bộ mặc định. Gắn theo cửa hàng sẽ nhân bản cùng một tập dữ liệu cho mọi cửa hàng, kéo theo chính sách bảo mật mức dòng và việc seed cho từng cửa hàng mới, đổi lấy một khả năng chưa dùng.
+### 2.2 DTO chung
 
-Phương án đã cân nhắc: bảng theo từng cửa hàng ngay từ đầu để sau này mở vai trò tùy chỉnh không phải migration lần hai. Bỏ vì việc thêm cột định danh cửa hàng vào sau là thay đổi cộng thêm, không phải viết lại, nên chi phí hoãn thấp hơn chi phí làm sớm.
-
-Bảng quyền mang cờ đánh dấu quyền dành riêng cho chủ quán và nhóm module mà quyền đó thuộc về. Nhờ cờ nằm trên bản ghi quyền, việc chặn gán quyền dành riêng và việc suy ra điều hướng đều đọc từ cùng một chỗ.
-
-### 2. Cột vai trò của nhân viên đổi từ enum sang khóa ngoại dạng chuỗi
-
-`employees.role` chuyển thành cột chuỗi tham chiếu danh mục vai trò.
-
-Lý do: enum không tham chiếu được bảng, và không xóa được giá trị `admin` khỏi enum sau khi tách thành `owner` và `manager`. Giữ enum nghĩa là vĩnh viễn tồn tại một giá trị không hợp lệ mà mọi chỗ đọc phải phòng thủ.
-
-Phương án đã cân nhắc: thêm giá trị mới vào enum bằng lệnh mở rộng kiểu và bỏ qua giá trị cũ. Bỏ vì để lại giá trị chết trong kiểu dữ liệu, và vẫn không giải quyết được việc vai trò phải là dữ liệu tra cứu được.
-
-### 3. Quyền hiệu lực tính ở một chỗ, và tầng database đọc lại từ chính bảng đó
-
-Hàm `has_employee_permission` được viết lại để tra bảng nối vai trò với quyền thay vì hard-code, nên nó chuyển từ `immutable` sang `stable`. Bổ sung một lời gọi trả về danh sách quyền hiệu lực của một nhân viên, dùng cho client sau khi đăng nhập và mỗi lần nhận tín hiệu làm mới.
-
-Lý do: xóa hẳn nguồn lệch pha giữa bảng hằng số trong mã nguồn và bảng hard-code trong migration. Sau thay đổi này, sửa mặc định vai trò là sửa dữ liệu, cả hai tầng thấy ngay cùng một kết quả.
-
-Cần kiểm tra khi làm: hàm ở mức `stable` không dùng được trong chỉ mục hay cột sinh. Hiện nó chỉ được gọi trong thân các lời gọi nghiệp vụ nên không vướng, nhưng phải xác nhận lại trước khi đổi.
-
-### 4. Suy ra điều hướng bằng hàm thuần trong `core`
-
-`core` nhận danh mục quyền kèm nhóm module như tham số và trả về tập module hiển thị. Không giữ bảng hằng số nào trong `core`.
-
-Lý do: giữ `core` thuần và không phụ thuộc nguồn dữ liệu, nên kiểm thử ranh giới kiến trúc tiếp tục pass và các hàm này kiểm thử được bằng dữ liệu dựng sẵn. Bảng `rolePermissions` hiện tại bị xóa; `defaultRolePermissions` cũng bị xóa vì mặc định nay đến từ dữ liệu.
-
-### 5. Tín hiệu thời gian thực phát trên bảng nhật ký, không phát trên bảng nhân viên
-
-Thêm bảng nhật ký thay đổi quyền vào publication realtime. **Không** thêm bảng nhân viên.
-
-Lý do: bảng nhân viên chứa giá trị băm PIN. Đưa bảng đó vào publication sẽ đẩy nguyên bản ghi tới client theo mỗi lần cập nhật, phá requirement của `employee-session` là client không đọc được giá trị băm PIN. Bảng nhật ký không chứa dữ liệu nhạy cảm, và nó được ghi đúng vào lúc quyền thay đổi, nên một bảng phục vụ cả hai mục đích là kiểm toán và tín hiệu.
-
-Phương án đã cân nhắc: thêm một cột phiên bản quyền trên bảng cửa hàng rồi phát trên bảng cửa hàng. Bỏ vì `add-owner-account-and-store-provisioning` sẽ thêm cột bí mật đã mã hóa vào chính bảng đó, nên phát bảng cửa hàng sẽ thành rủi ro rò rỉ ngay sau đó.
-
-Client lọc theo định danh cửa hàng như các kênh hiện có, và chỉ tải lại khi bản ghi nhật ký nhắc tới chính nhân viên đang đăng nhập.
-
-### 6. Ẩn phần tử điều khiển làm ở một chỗ dùng chung
-
-Một thành phần bao dùng chung quyết định có render hay không dựa trên quyền hiệu lực. Việc vô hiệu hóa vì trạng thái nghiệp vụ giữ nguyên cách làm hiện tại và không đi qua thành phần này.
-
-Lý do: hai lý do ẩn và vô hiệu hóa dễ bị trộn lẫn khi rải rác ở từng màn. Tách thành một điểm duy nhất làm quy tắc kiểm thử được và tránh áp nhầm.
-
-## Ranh giới Ports and Adapters
-
-| Tầng | Nội dung |
+| DTO/trường | Kiểu và ràng buộc |
 | --- | --- |
-| `src/domain` | Kiểu dữ liệu cho mã vai trò, mã quyền, bản ghi danh mục quyền và quyền hiệu lực. Không còn kiểu liệt kê cứng cho quyền. |
-| `src/core` | Hàm thuần tính quyền hiệu lực từ mặc định vai trò cộng ghi đè, hàm suy ra tập module hiển thị, hàm kiểm tra quyền dành riêng chủ quán. Nhận danh mục qua tham số, không giữ hằng số. |
-| `src/ports` | Hợp đồng đọc danh mục quyền và vai trò, đọc quyền hiệu lực của một nhân viên, đăng ký nhận tín hiệu thay đổi quyền, và ghi ghi đè quyền kèm nhật ký. |
-| `src/adapters/supabase` | Hiện thực các hợp đồng trên bằng truy vấn bảng tham chiếu, lời gọi nghiệp vụ và kênh realtime. |
-| `src/features` | Ghép các mảnh trên vào luồng màn hình; không tự tính quyền. |
+| AuthoritySnapshot | storeId UUID, employeeId UUID, role code, active=true, employeeRevision/catalogRevision integer≥0, permissions code[] unique/sorted, sources default/grant/deny/baseline; không token trong snapshot |
+| AuthorityRevision | employeeRevision/catalogRevision integer≥0, serverTime ISO UTC; session invalid trả lỗi, không revision giả |
+| PermissionOverrides | null hoặc {grants:string[],denies:string[]}; mỗi array tối đa15 mã sau khử trùng; input array tối đa100 phần tử để chặn payload quá lớn |
+| EmployeeAdminView | id/name/role/isActive/permissionRevision/overrides/effective/sources; không PIN/hash/token |
+| AdminRequest | requestId UUID, targetId UUID nếu update, expectedRevision integer≥0, expectedCatalogRevision≥0 khi sửa quyền/role, patch whitelist |
+| AuditSnapshot | id/name/role/isActive/permissionRevision/overrides/effective; không PIN/hash/MAC; PIN action chỉ có kind và credentialChanged boolean; true chỉ khi đổi PIN đã tồn tại, create=false |
+| AuditPage | rows≤limit, nextCursor opaque ký MAC gắn store/targetId/outcome/last(timestamp,auditKey); limit default50, range1–100; outcome tùy chọn applied/denied/noop |
+| Envelope | {ok:true,outcome:applied/noop/replayed,data} hoặc {ok:false,error:{code,message,details}}; thông tin chi tiết chỉ trả sau kiểm quyền đọc |
+| Signal | storeId/topic/revision/eventId, targetId nếu signal nhân viên; không totals/employee name/overrides/R1 |
 
-Kiểm thử ranh giới kiến trúc hiện có phải tiếp tục pass, tức `domain`, `core` và `ports` không được import bất kỳ thứ gì thuộc adapter.
+**Hiện thực T03:** [domain/permissions.ts](D:/Workspace/pos-cafe/src/domain/permissions.ts:1) và [ports/permissions.ts](D:/Workspace/pos-cafe/src/ports/permissions.ts:8) định nghĩa DTO camelCase; PermissionFoundationPorts là contract staged cho authority/admin-read/read, chưa thay AppPorts legacy. Mock dùng catalog seed được kiểm từng row với SQL017; core chỉ nhận dữ liệu catalog qua tham số. [permissionInputs.ts](D:/Workspace/pos-cafe/src/core/permissionInputs.ts:14) kiểm revision bằng Number.isSafeInteger không âm, từ chối giá trị đã mất độ chính xác; không ép kiểu số chuỗi. Parse request/preview thuần không phải authorization hoặc mutation server T05. [biên bản T03](../../../docs/implementation-log/permission-t03-domain-ports-mock-2026-09-15.md) ghi giới hạn và bằng chứng.
 
-## Ảnh hưởng tới database
+Input thiếu trường update = giữ; null overrides = reset chủ động; không chấp nhận null name/role/active. Chỉ arrays của mã đã biết; khử trùng, sort theo code, deny thắng. Chuẩn hóa giữ nghĩa **cả deny đang chặn grant trùng**: loại grant bị deny rồi giữ deny nếu cần chặn default; loại grant trùng default và deny không có grant/default. Đọc snapshot luôn ghi sources để giải thích. Đổi role thật xóa overrides cũ rồi áp overrides mới nếu gửi rõ trong cùng request; thiếu bộ mới thì null. Gửi cùng role không reset nếu thiếu overrides. Quyết định chủ dự án ngày 16/09/2026 giải quyết khác biệt giữa UC03 cũ và request chứa cả role/overrides. Catalog revision stale phải conflict trước normalize; không âm thầm tính theo default cũ. Quyền baseline deny và ownerOnly grant sai role là input lỗi, không lưu rồi ignore.
 
-**Migration**
+Tên trim 1–120 Unicode code points, giữ [014:272](D:/Workspace/pos-cafe/supabase/migrations/014_write_identity_and_ledger.sql:272); PIN regex ASCII [0-9] chính xác6; confirm kiểm UI, server kiểm newPin. Không dùng JavaScript string.length đếm UTF-16 thay code points; không cắt dữ liệu legacy khi đọc/sửa. Admin name/role/PIN/active cần employee.manage; explicit overrides/reset cần employee.permission.edit. Mixed request cần cả hai; role đổi reset overrides bắt buộc không tự đòi quyền permission.edit nhưng phải qua ceiling after.
 
-- Thêm ba bảng tham chiếu và seed dữ liệu vai trò, quyền, mặc định theo vai trò.
-- Thêm bảng nhật ký thay đổi quyền.
-- Đổi cột vai trò của nhân viên từ enum sang chuỗi có khóa ngoại, kèm chuyển đổi dữ liệu theo quyết định số 6 trong proposal: bản ghi admin đầu tiên của mỗi cửa hàng thành `owner`, các admin còn lại thành `manager`.
-- Viết lại hàm kiểm tra quyền và bổ sung lời gọi trả về quyền hiệu lực.
-- Rà các lời gọi nghiệp vụ đang kiểm tra quyền để dùng danh mục mới.
+### 2.3 Tính quyền và owner
 
-**Chính sách bảo mật mức dòng**
+ConfiguredEffective tính từ catalog kể cả target inactive. ExecutableEffective chỉ dùng khi actor active, phiên hợp lệ, role enabled. Owner miễn ceiling với non-owner nhưng vẫn cần action và invariants. Owner defaults gồm15 quyền, không self role/override, không owner promote/demote/deactivate. Non-owner không sửa bất kỳ trường owner. Owner được sửa tên mình qua employee.manage; self-change PIN riêng. Cấm self reset qua admin endpoint để không bỏ qua currentPin.
 
-- Ba bảng tham chiếu cho phép đọc với phiên đã xác thực, không cho ghi từ ứng dụng.
-- Bảng nhật ký chỉ cho ghi thêm qua lời gọi nghiệp vụ, không có chính sách sửa hoặc xóa, và chỉ đọc được trong phạm vi cửa hàng của mình.
+Exactly-one-owner kiểm ở transaction boundary: unique partial index mỗi store role=owner + constraint/trigger bảo đảm owner active và store bootstrap/maintenance nguyên tử. Không chỉ dùng unique index vì nó cho phép zero owner. Maintenance có cửa sổ riêng, không expose flag skipOwnerChecks cho app. Catalog maintenance của contract hiện tại phải giữ 15 mã, owner có đủ15 defaults, floor.view là baseline trong cả4 role đang dùng và kitchen disabled/rỗng; thay các bất biến đó cần change/version mới. Thay default còn lại được phép nhưng phải tăng revision, ghi fingerprint/operator/migration trong biên bản phát hành; không tạo audit employee giả khi không đổi employee row.
 
-**Realtime**
+## 3. Inventory 15 quyền và dữ liệu được trả
 
-- Thêm bảng nhật ký thay đổi quyền vào publication. Không thêm bảng nhân viên.
+Mọi predicate dưới đây còn cần session active/cùng store; role kitchen chưa mở phiên. Raw bảng nhạy cảm không được cấp chỉ vì tenant trùng.
 
-## Risks / Trade-offs
+| Permission | Module/UI | RPC/đường đọc dự kiến và projection | Đường ghi / giới hạn |
+| --- | --- | --- | --- |
+| floor.view | Floor home | get_floor_operational: area/decor/table layout+status; open-order summary id/table/type/displayNo/total/createdAt cần để giữ UI; không items/payment/history | Không ghi floor/đơn; luôn có cho4 role đang bật |
+| order.create | Tạo đơn tại bàn/mang đi | get_pos_menu: menu/option active+giá bán; floor projection; không closed history | register/execute submit branch create |
+| order.update | Sửa đơn mở | get_open_order_detail: active lines/options/prices/notes/version cho order open; menu additions | submit branch update; giữ giá retained/OCC |
+| order.voidOpen | Hủy đơn mở | get_open_order_detail cho target open | submit branch void-open |
+| payment.take | Payment/Tra cứu pay | get_open_order_detail; read receipt paid; K pay/split theo protocol | register/execute pay/split; initial print authorization; không tự có reprint |
+| orderHistory.view | Lịch sử | list_order_history/get_order_history_detail: paid/void, snapshot lines/payment/receipt/void metadata cùng store | Không mutation; không tự cho reprint |
+| order.voidPaid | Hủy paid/Tra cứu void | Đọc target paid tối thiểu để hủy, reason/version; K void | void_order qua protocol; không tổng lịch sử nếu thiếu history |
+| menu.manage | Menu editor | get_menu_admin: catalog gồm draft/tombstone cần editor; không settings/employee | apply_menu_changes, seed menu phần được phép; gateway upload/delete/finalize ảnh |
+| floor.manage | Floor editor | get_floor_admin: layout/editor metadata | apply_floor_changes; không ghi table.status thuộc POS |
+| employee.manage | Danh bạ, tạo/tên/role/PIN/active | list/get_employee_admin sanitized cùng store | create_employee_admin/update_employee_admin/reset_employee_pin, ceiling và audit |
+| employee.permission.edit | Editor overrides; audit API | list/get_employee_admin và list_employee_admin_audit | set_employee_permissions/reset overrides; không tên/PIN nếu thiếu manage |
+| report.view | Báo cáo | get_sales_report aggregate theo dates/status, bucket/table/payment summaries cần report; không raw history detail | Không mutation |
+| settings.manage | General/payment settings | get_settings_admin gồm trường editable hiện hữu, không Store Key secret/owner recovery contact | update_store_settings whitelist; riêng thay đổi timezone chỉ owner |
+| data.clearDemo | ClearDemoDialog | Preview phạm vi demo cần xác nhận | clear_demo_data, owner-only; giữ custom/finance/K/R1/audit |
+| receipt.reprint | Nút reprint ở nơi có quyền đọc | prepare_receipt_reprint cần thêm read predicate phía dưới | authorize reprint và trả snapshot; không giao dịch hoặc đọc K tự động |
 
-- **Đổi kiểu cột vai trò làm vỡ mọi chỗ đang đọc vai trò** → Làm trong một migration có thứ tự rõ, và dựa vào biên dịch kiểm tra kiểu nghiêm ngặt cộng bộ kiểm thử hiện có để quét hết chỗ gọi trước khi triển khai.
-- **Ánh xạ module sai làm nhân viên mất màn hình** → Thêm kiểm thử khẳng định mọi module có ít nhất một quyền ánh xạ tới, và kiểm thử ảnh chụp tập module hiển thị cho từng vai trò dựng sẵn.
-- **Hàm kiểm tra quyền chuyển từ `immutable` sang `stable`** → Xác nhận trước rằng nó không được dùng trong chỉ mục hay cột sinh; nếu có thì phải tách phần bất biến ra trước.
-- **Tín hiệu realtime trên bảng nhật ký làm tăng lưu lượng** → Lọc theo định danh cửa hàng như các kênh hiện có, và chỉ tải lại khi bản ghi nhắc tới nhân viên đang đăng nhập.
-- **Chuyển đổi vai trò admin chọn nhầm người thành chủ quán** → Bốn trường hợp kiểm thử chuyển đổi đã nêu trong proposal, và xuất báo cáo chuyển đổi để rà tay trước khi chạy trên môi trường thật.
-- **Ẩn hẳn phần tử làm khó hỗ trợ từ xa** → Bù bằng requirement hiển thị quyền hiệu lực của từng nhân viên trong màn quản lý nhân viên.
+**Đọc phục vụ thao tác không phải quyền đọc tổng quát.** get_open_order_detail chỉ open, predicate order.update OR order.voidOpen OR payment.take; get_paid_order_for_void chỉ paid + order.voidPaid. Nếu trạng thái đã đổi sang closed, trả NOT_FOUND/closed business response tối thiểu, không tự cấp history detail. Order.create riêng đọc menu + summary để tạo, không tải chi tiết order người khác chỉ vì floor hiện.
 
-## Migration Plan
+Floor UI hiện dùng totals open tại [FloorWorkspace.tsx:227](D:/Workspace/pos-cafe/src/app/shell/FloorWorkspace.tsx:227); giữ summary vận hành đó cho quyền nền. Không include paid/void hoặc lịch sử thanh toán. Public menu image GET và public app assets giữ hiện trạng; không phải báo cáo/receipt. get_store_display trả displayName/address/footer và payment presentation tối thiểu cần render bán hàng, không credentials, PIN policy, operator contact hoặc toàn stores row.
 
-1. Thêm bảng tham chiếu và bảng nhật ký, seed dữ liệu. Chưa ai đọc, không ảnh hưởng hành vi.
-2. Thêm lời gọi trả về quyền hiệu lực và viết lại hàm kiểm tra quyền để tra bảng. Kết quả trả về phải trùng khớp với hành vi cũ cho ba vai trò cũ, kiểm chứng bằng kiểm thử đối chiếu trước khi đi tiếp.
-3. Đổi cột vai trò và chuyển đổi dữ liệu. Đây là bước phá vỡ tương thích.
-4. Chuyển tầng nghiệp vụ và giao diện sang danh mục mới, xóa hai bảng hằng số trong `core`.
-5. Bật lan truyền theo thời gian thực.
-6. Cập nhật tài liệu nhánh `docs`.
+**Chốt T07 ngày 2026-09-16 — múi giờ:** chủ dự án chọn giờ cửa hàng, mặc định UTC+7. Dùng IANA `Asia/Ho_Chi_Minh`; alias cũ `Asia/Saigon` được giữ khi đọc dữ liệu cũ, không migration sửa lịch sử. `get_sales_report({businessDate})` lọc `orders.business_date`, paid-only revenue; paid-void tính riêng. Nhãn giờ từ `paid_at ?? created_at` trong `store_settings.timezone`. Đổi múi giờ chỉ đổi cách nhóm giờ, không chuyển ngày doanh thu đã lưu. `averageTicket` làm tròn doanh thu/số đơn như luồng hiện hành, tính numeric trước chia; hòa top-item thì thứ tự tên xác định. Một projection dùng một snapshot sau checkpoint authority.
 
-**Rollback**: các bước 1 và 2 hoàn tác được bằng cách bỏ bảng và khôi phục hàm cũ. Từ bước 3 trở đi phải khôi phục từ bản sao lưu, nên bước 3 chỉ chạy sau khi bước 2 đã được kiểm chứng đối chiếu.
+T08 phải kiểm timezone IANA và so sánh giá trị mới với giá trị dưới khóa: non-owner có `settings.manage` được lưu các trường khác với timezone không đổi, nhưng thay timezone trả `FORBIDDEN` và rollback cả request. Owner được thay timezone; không thêm mã quyền thứ 16. T13 chỉ cho owner sửa control timezone. T07 mới hiện thực phần đọc; chưa coi rào chắn ghi này đã chạy.
 
-## Open Questions
+**Chốt T07 — bảng đơn trong báo cáo:** giữ tối đa 20 đơn paid mới nhất, dùng RPC riêng `permission_list_report_orders(p_filter)`/port `listReportOrders`. Không gọi listOrderHistory dưới quyền report.view. Filter chính xác `{fromDate,toDate}`, cả hai là ngày Gregorian YYYY-MM-DD (0001–9999), fromDate ≤ toDate; không nhận paging/status/actor. Một SQL statement lấy tối đa20 trên toàn range theo business_date/order_no/id DESC, join tên bàn hiện hành cùng store, null khi không có bàn. DTO đúng bảy trường `id/orderNo/businessDate/orderType/total/status/tableName`; status luôn paid. Caller vẫn cần quyền lịch sử/receipt tương ứng khi muốn mở chi tiết; consumer báo cáo ở T13 phải dùng port mới này.
 
-- Nhật ký thay đổi quyền giữ bao lâu và có cần dọn định kỳ không. Câu này trả lời sau được vì nó không đổi spec, không đổi cách làm và không đổi danh sách công việc; mặc định trước mắt là giữ vô thời hạn vì lượng bản ghi rất nhỏ.
+### 3.1 Entry points phải chuyển hoặc đóng
+
+| Bề mặt hiện có | Sau activation |
+| --- | --- |
+| Supabase orderRepo/reportRepo SELECT orders/items/options/payments | Chuyển RPC projection; revoke SELECT raw finance khỏi anon/authenticated; private helpers không public execute |
+| employeeRepo list/update trực tiếp | Roster id/name active enabled trước PIN qua get_employee_roster; admin view/update RPC; revoke employee column SELECT/UPDATE cũ |
+| settings/menu/floor direct read/write | RPC projection/changeset có actor/quyền; raw mutation đóng; raw read chỉ giữ khi chứng minh không bypass bất kỳ projection |
+| register_write_operation/execute/get/list/cancel/capabilities | Giữ protocol v1, thêm catalog checkpoint/authority contract gate; không mở overload cũ |
+| bootstrap_store/start_employee_session/revoke_employee_session | Entry points tường minh ở mục khóa; không yêu cầu employee session cho roster/bootstrap hợp lệ |
+| create_employee/seed_employee/reset_employee_pin/clear_demo_data | Mọi overload công khai phải chuyển guard/audit/lock hoặc revoke; không chỉ sửa overload UI gọi |
+| seedBundle | Seed hiện nhiều calls [seedBundle.ts:170](D:/Workspace/pos-cafe/src/adapters/supabase/seedBundle.ts:170); mỗi call đủ quyền tương ứng, không claim atomic toàn seed |
+| Storage upload/remove/update/copy | Store JWT không được ghi trực tiếp; gateway mới xác minh employee và object store/item binding |
+| Realtime orders/payments/employees/stores/audit | Không phát raw protected row; signal riêng, refetch qua RPC |
+| catalog/public/private helpers | App chỉ read catalog cần cho phiên; không insert/update/delete defaults; SECURITY DEFINER có search_path cố định, revoke PUBLIC execute và kiểm tenant thực |
+| operator recovery/catalog maintenance | Grants hạ tầng tách khỏi app; không giả service_role tự vượt function checks/constraints |
+
+App không tự chọn caller employeeId từ body; token nhân viên + store JWT xác định actor. RPC sơ bộ kiểm store/session để tránh lock dữ liệu khác tenant, sau chờ lại đọc mới như mục4. Permission gate không dựa vào flag source/purpose từ client. Không log headers/PIN/request MAC.
+
+## 4. Transaction, lock và concurrency
+
+### 4.1 Khóa cụ thể
+
+Dùng transaction advisory `permission-catalog` và `store-authority:<storeId>`; key namespace khác pos-write/menu catalog. Không nâng SHARED→EXCLUSIVE trong cùng flow. Transaction isolation READ COMMITTED; sau lần chờ cuối dùng câu lệnh mới đọc actor/session/catalog/clock, không tái dùng record từ preliminary check. Hàm live authority phải VOLATILE hoặc được gọi sau lock bằng statement mới; đổi IMMUTABLE→STABLE đơn thuần không chứng minh tránh snapshot trước chờ.
+
+| Flow | Thứ tự khóa và checkpoint |
+| --- | --- |
+| Catalog maintenance | permission-catalog EXCLUSIVE → catalog/default/revision/global signal; không khóa employee/session/business hoặc gọi admin flow |
+| Financial register | pos-write → K → actor employee SHARE → actor session SHARE → permission-catalog SHARE → final session/clock/permission → register |
+| Financial execute | pos-write → K → business/order/table/items/options/numbering/menu/store locks → actor và mọi employee được FK tham chiếu (đặc biệt initiator của K), SHARE theo UUID tăng → actor session SHARE → permission-catalog SHARE → final permission/session/TTL → effects/audit/R1 |
+| Get/list/cancel/replay K | Giữ order khóa hiện có của endpoint; mọi lock có thể chờ đứng trước final actor/session/catalog checkpoint; list lọc trước phân trang rồi recheck |
+| Single-target admin | store-authority EXCLUSIVE + store FK SHARE → khóa candidate UUID toàn cục khi create → actor+target employee UUID tăng (actor SHARE, target UPDATE; cùng row lấy mode mạnh nhất) → session rows cần dùng/revoke thứ tự token hash tăng → MAC key version SHARE → permission-catalog SHARE → đọc fresh before/after/actor/OCC → effect+audit+revision+signal |
+| Create employee | store-authority EXCLUSIVE → actor employee/session locks → permission-catalog SHARE → actor/candidate-after checks → insert+audit; trước=null |
+| Start session | store-authority EXCLUSIVE → employee SHARE → permission-catalog SHARE → fresh PIN/active/role enabled/expiry → cấp session; không để chen issuance giữa prelock và revoke |
+| Revoke session | store-authority EXCLUSIVE → employee SHARE → target session UPDATE → revoke; idempotent kể cả session đã expired/revoked, không yêu cầu current_employee còn valid để đăng xuất |
+| Self PIN/recovery/reset/deactivate | Mutex single-target như trên; khóa trước mọi session target sẽ revoke; trigger chỉ cập nhật rows đã khóa |
+| Bulk clear/seed identity nội bộ | store-authority EXCLUSIVE → pos-write → menu/business locks nếu có → mọi actor/target employee theo UUID tăng → session locks → permission-catalog SHARE → final checks → effects |
+| Sensitive read | Business/order lock nếu cần giữ trạng thái paid trước actor → actor employee SHARE → session SHARE → permission-catalog SHARE → fresh auth → projection |
+| Bootstrap | store-authority EXCLUSIVE → bootstrap/store identity lock → catalog SHARE sau các row locks cần thiết → store/settings/owner nguyên tử; không public recovery/update owner |
+
+**Không outer authority SHARE cho financial.** Nếu giữ SHARE trước khi chờ order, admin không commit revoke được cho tới execute xong; điều đó trái [TC-IDEM-007:107](D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts:107). Single-target admin không lấy pos-write; revoke có thể commit khi financial chưa đến final employee/session locks. Một request đã qua checkpoint và đang giữ row SHARE được xem là linearize trước revoke đang chờ; không hứa hủy giao dịch đã được phép.
+
+Catalog SHARE lấy **sau employee/session locks ở mọi flow đọc quyền**, để writer catalog đang xếp hàng không tạo vòng chờ catalog→employee khác chiều. Catalog writer không đọc/lock employee. Không acquire khóa này ngầm trong helper gọi ở sàng lọc sớm.
+
+**Mọi FK có thể chờ phải được khóa trước checkpoint, kể cả single-target admin chạy cạnh financial.** Sau khóa K/business, financial xác định đầy đủ employee reference từ K/plan: actor, initiated_by và các reference employee khác của effect/trigger. Prelock tập này SHARE theo UUID tăng, rồi session và catalog; không gọi helper khóa actor riêng trước tập đã sắp thứ tự. Preliminary check chỉ đọc không khóa. Initiator inactive vẫn được giữ khóa FK, không đòi quyền thao tác của initiator; actor mới là người cần quyền hiện hành. Nguồn: [016:87](D:/Workspace/pos-cafe/supabase/migrations/016_activate_write_protocol.sql:87) insert event sau auth, [014:365](D:/Workspace/pos-cafe/supabase/migrations/014_write_identity_and_ledger.sql:365) tham chiếu cả initiator/executor.
+
+Nếu chỉ khóa actor, financial giữ catalog SHARE rồi có thể chờ FK initiator C, trong khi admin giữ C UPDATE chờ catalog SHARE phía sau writer EXCLUSIVE đang xếp hàng. Đây là lịch có nguy cơ vòng chờ và thêm chờ sau kiểm TTL/session. TC41 kiểm riêng lịch ba bên này; không chỉ TC44 bulk. Effect/trigger sau checkpoint không được xuất hiện employee FK chưa prelock; inventory mới phải cập nhật tập khóa và test. Session/TTL/clock đọc lại sau mọi prelock và catalog wait.
+
+Bulk dùng pos-write trước employees vì order_events có FK initiator/executor ([014:365](D:/Workspace/pos-cafe/supabase/migrations/014_write_identity_and_ledger.sql:365)); khóa nhiều target tùy ý có thể deadlock với financial actor khác initiator. Không có endpoint batch employee công khai; clear/seed nội bộ phải tuân protocol bulk. Không lấy business/pos locks sau đã khóa employees. Direct admin DML bị revoke; maintenance đặc quyền phải theo protocol hoặc dừng ghi có biên bản. Gate race thực thi xác minh cả advisory thứ tự lẫn trạng thái, không coi tài liệu là bằng chứng đã tránh mọi deadlock.
+
+### 4.2 Quản trị, audit và retry
+
+Sau actor/target same-store được xác minh, xử lý request registry, field permission, owner/self constraints, expected revisions, normalize candidate, ceiling trước/sau và mutation. Retry còn phải có phiên và quyền thao tác/đọc hiện hành; registry không trả snapshot nhạy cảm cho actor vừa mất quyền. ExpectedRevision trên request đã terminal không chạy lại mutation; kiểm body MAC và trả outcome sanitized đã lưu nếu hiện còn được phép. Same requestId khác canonical payload → ADMIN_REQUEST_REUSED, không sửa row đầu.
+
+Thứ tự từ chối: authentication/tenant → field permission/input shape → owner/self → employee revision → catalog revision → normalize (gồm baseline/ownerOnly) → ceiling → business. TC20 có ưu tiên rõ: catalog stale trả conflict trước normalize. DTO/UI từ chối owner là role không selectable bằng INVALID_EMPLOYEE_REQUEST; gọi RPC tạo/promote owner trả OWNER_PROTECTED. Chỉ ghi denied khi actor/target đã xác minh (create before=null xác minh store và ID/candidate); cross-store/unknown target không lưu foreign target hoặc reveal quyền. Invalid JSON không parse được không có audit snapshot giả.
+
+Audit proposedAfter chỉ dựng từ candidate đã kiểm shape/field, role và chuẩn hóa được theo catalog còn hiện hành, kể cả request bị FORBIDDEN/owner/self/OCC từ chối; không thay đổi reason đã chọn. Null khi không tính được hoặc catalog stale; không sao chép raw patch/PIN. Revision trong proposedAfter là revision làm cơ sở, actualAfter mới là revision đã commit. Create before=null; collision cùng store có actualAfter là snapshot row đang tồn tại, còn foreign collision trả NOT_FOUND và không audit. Thiếu quyền thao tác trả FORBIDDEN trước việc tiết lộ scope. RequestId/targetId sai định dạng không có audit key đáng tin nên không ghi row.
+
+MAC canonical JSON giữ khác biệt omitted/null và thứ tự array, không phụ thuộc chuẩn hóa theo catalog mới; key rotation chỉ append version, cấm sửa/xóa key cũ. Replay trả snapshot/sources của terminal outcome cũ sau kiểm phiên/quyền thao tác và quyền đọc hiện hành; không áp lại ceiling/OCC/mutation. Denied replay vẫn denied, muốn đề nghị lại dùng requestId mới. Empty patch vẫn cần employee.manage OR employee.permission.edit.
+
+Audit phân trang keyset timestamp độ chính xác gốc PostgreSQL rồi auditKey theo COLLATE C; cursor ký MAC gắn store/target/outcome, cho phép đổi limit giữa trang. Reader mock dùng cùng thứ tự code-unit khi timestamp bằng nhau. Raw employee SELECT/DML phải thu hồi cả table grants và column grants còn từ migration016; revoke table một mình không đủ. Legacy create/seed/reset/session/bootstrap/verify/hash overload bị đóng bởi chính fragment T05. Clear-demo và các bề mặt nghiệp vụ khác vẫn do task phụ thuộc cung cấp.
+
+Known denial/no-op trả envelope và commit audit, không RAISE sau insert audit. DB unexpected/audit failure rollback business+audit+signal+registry, trả PERMISSION_UPDATE_UNAVAILABLE. No-op không tăng revision; applied employee change tăng1 và signal store revision tăng1. PIN no-op verify newPin bằng hash hiện tại không sinh hash mới/revoke. Không log PIN test/payload. Audit không lưu MAC.
+
+**Hiện thực T04:** [permission-identity.sql](D:/Workspace/pos-cafe/supabase/candidate/permission-identity.sql:1) là fragment ngoài migrations tự động, đòi role text/mapping owner hợp lệ trước khi cài. Fixture T04 có mapping synthetic riêng và đóng legacy RPC/employee DML khi chạy candidate; không thay launcher activation T16. Catalog writer lấy advisory EXCLUSIVE trước row revision; reader lấy SHARE sau employee/session. Identity mutex còn prelock store SHARE trước employee để không chờ FK registry/store sau checkpoint. Audit credential có actorType=employee/operator, caseRef/proofRef cho operator; registry T02 được chuyển constraint từ recovery sang operator trong candidate. Self PIN trả envelope để denied audit commit, lỗi audit/signal/registry rollback toàn bộ. Signals mới là row metadata; transport/publication/đọc T10 chưa có.
+
+[Adapter T04](D:/Workspace/pos-cafe/src/adapters/supabase/permissionIdentityRepo.ts:1) giữ token trong credential memory, chặn response của generation cũ. Retry self PIN bằng phiên mới trả replay và không thu hồi phiên mới. DTO không chứa token; runtime composition legacy chưa nối candidate. Server bootstrap dùng cùng trim Unicode với parser; không phát PIN/Store Key ở response. [Biên bản T04](../../../docs/implementation-log/permission-t04-identity-owner-sessions-2026-09-16.md) có phạm vi và bằng chứng.
+
+## 5. Receipt read, initial print và reprint
+
+- `get_payment_receipt(orderId)` là **read**: session+same store+paid/not void và (orderHistory.view OR payment.take). Nó không cấp quyền print; history detail có thể chứa receipt theo quyền đọc.
+- `prepare_receipt_reprint(orderId)`: thêm receipt.reprint vào read predicate; giữ paid lock/state kiểm trước trả snapshot. Lối Tra cứu vẫn phải qua action permission để lấy K; endpoint receipt không trả K và không được dùng để execute/cancel/takeover.
+- Preview source=reprint và nút In đều gọi prepare-reprint/check lại. Revoke reprint hủy callback/timer in và ẩn nút; giữ preview nếu còn quyền nguồn đọc. Mất cả quyền đọc hoặc phiên mới đóng/purge preview. Không dùng permission refresh để đổi nguồn initial/reprint.
+- Initial payment preview từ R1 giữ payment.take, không yêu cầu reprint. Nhưng **không** dùng `purpose=initial` làm lời khai đủ cho server bypass quyền reprint.
+
+Để server chứng minh nguồn initial, client cấp một printGrantId UUID ngoài immutable payload khi thực hiện payment ban đầu. Server chỉ tạo private initial grant trong transaction payment chuyển sang applied lần đầu, gắn K/order/executor/current employeeSessionId; replay/late get không cấp grant mới hoặc ghi lại R1. Metadata grant nằm ngoài R1 trong response envelope, không thay schema/fingerprint v1. Không tự mở print từ replay dù client biết ID.
+
+`authorize_initial_receipt_print(grantId,printRequestId)` là RPC chỉ đọc eligibility: UUID hợp lệ, grant tồn tại, actor/session khớp, payment.take hiện hành, K applied trỏ đúng receipt và order còn paid. Khóa order/grant SHARE trước final employee/session/catalog; không cấp, tiêu hao hoặc cập nhật grant và không thêm print ledger. Thành công trả `{authorized:true,grantId,printRequestId}`; ID là correlation cho client, không phải quyền tự khai. Mọi request, kể cả retry cùng PR, kiểm quyền/session/trạng thái mới; thiếu grant hoặc sai binding trả FORBIDDEN sau auth, paid không còn hợp lệ trả RECEIPT_UNAVAILABLE. Không trả lại grant từ get/list/replay K cũ.
+
+Client giữ grant chỉ trong preview initial memory-only, cùng store/actor/session generation; đóng preview bỏ grant, reload/mất phiên không khôi phục từ storage hoặc K. Server không biết một popup đã đóng và không coi điều đó là bằng chứng bảo mật hay số bản in; grant biết bởi actor cũ vẫn bị ràng buộc session/payment.take/order paid tại mỗi request. Quyền đã cấp để đọc receipt không thể ngăn copy/in ngoài POS. Không thêm endpoint tạo grant từ arbitrary K cũ; initial payment mất ACK dùng luồng recovery/reprint đã có, không mint grant thay thế.
+
+Q15 giữ capability trong **preview của luồng payment ban đầu**, cho nhiều lần click còn quyền; không chứng nhận giấy đã in. Phương án tiêu hao sau một lần dispatch bị thay vì Cancel cũng làm mất cơ hội in. Alternative chỉ kiểm flag UI bị loại vì server không có bằng chứng; yêu cầu receipt.reprint cho mọi lần in bị loại vì Q12a. Không sửa R1, thêm printer queue, spooler hoặc bộ đếm giấy.
+
+Vòng đời mỗi click: ready → authorizing(PR1) → pending timer → dispatched(PR1) → ready trong cùng preview. Double-click khi pending gộp PR1. Mất ACK trước dispatch giữ PR1, cho “Thử lại” chủ động; không auto retry/in khi reconnect. Đánh dấu PR1 dispatched đồng bộ trước gọi browser print, repeated callback/ACK PR1 không in thêm. Sau dispatch/Cancel giữ preview và hiện “Đã gửi lệnh in.”; click mới sau đó dùng PR2 và kiểm server lại. Trước dispatch kiểm lifetime, authority hiện hành và trạng thái nút; server giữ checkpoint hiện hành, không hứa thu hồi lệnh đã dispatch.
+
+Mất quyền in tăng generation của thao tác in để PR/timer cũ không sống lại khi được cấp lại; ẩn nút và hủy pending, không tiêu hao grant còn trong preview được phép đọc. Initial mất payment.take nhưng còn orderHistory.view giữ preview để xem; reprint mất receipt.reprint nhưng còn quyền đọc tương tự. Hiện “Quyền in hóa đơn đã thay đổi. Bạn vẫn có thể xem hóa đơn.”. Mất quyền đọc hoặc phiên đóng/purge; cấp lại quyền chỉ hiện nút, click mới tạo PR mới, không tự in. receipt.reprint không làm nút initial hiện khi thiếu payment.take.
+
+## 6. Storage gateway và Realtime
+
+### 6.1 Ảnh thực đơn
+
+Hiện [menuImagePort.ts:35](D:/Workspace/pos-cafe/src/adapters/supabase/menuImagePort.ts:35) upload Storage bằng store session; policy [005:28](D:/Workspace/pos-cafe/supabase/migrations/005_menu_item_images_storage.sql:28) chỉ store path. Gateway nhận store JWT + employee token tường minh, xác minh qua REST RPC bằng caller identity, không dùng service role để giả employee. Credential Storage server không gửi client.
+
+Hai Edge Function dự kiến triển khai cùng candidate service manifest: `supabase/functions/menu-image-gateway/index.ts` cho ghi/đọc staging có xác thực, và `supabase/functions/menu-image-public/index.ts` chỉ đọc ảnh đã công bố. Task hiện tại không tạo file/deploy. Runtime kiểm chứng phải chạy cả hai cùng Storage thật, không thay Storage bằng mock rồi báo đủ gate.
+
+| Function / route | Authentication và giới hạn |
+| --- | --- |
+| menu-image-gateway: upload/delete và staging read handle | `verify_jwt=true`; Authorization Bearer store JWT được platform xác minh, sau đó RPC bằng caller identity kiểm employee token/current menu.manage/cùng store/item/handle. Có store JWT không đủ; thiếu/sai/hết hạn employee token bị chặn. Không lấy actor từ body hoặc tin JWT chỉ decode. Staging read dùng fetch có headers rồi blob cục bộ, không đặt token vào URL/img src. |
+| menu-image-public: GET ảnh theo assetKey | `verify_jwt=false` riêng function này, anonymous GET được phép như public menu image baseline. Handler chỉ lookup published record hiện hành rồi đọc đúng objectKey đã lưu; không nhận bucket/object path khác từ caller, không list hoặc đọc upload handle/staging. Chỉ GET trả ảnh; OPTIONS chỉ CORS metadata, method khác405. Unknown/unpublished404 cùng dạng, DB/service lỗi503; đều no-store. Không mutation hoặc endpoint auth-dependent trong function này. |
+
+URL menu-image-public ổn định theo assetKey được trả làm img src, không cần Authorization hoặc token/query secret. Credentials server để lookup/read private object không gửi client; không expose REST helper/publication cho private registry. [Supabase Edge auth](https://supabase.com/docs/guides/functions/auth) phân biệt platform verify_jwt và public function; không tắt verify_jwt trên write gateway chỉ để img tải được. Policy bucket private vẫn đóng direct reads/staging, GET công khai chỉ qua published lookup. TC45 thử request anonymous thật và mọi HTTP method, không dùng authenticated fetch để giả img src.
+
+Giữ JPEG/PNG/WebP, tối đa5MiB theo source. Object key immutable gắn store/item/uploadId, không upsert hoặc nhận arbitrary path. Direct store-JWT upload/remove/update/copy bị revoke. Gateway upload vào bucket staging **private**, ghi ready; response chỉ upload handle. Preview draft dùng blob cục bộ hoặc read handle đã auth, không public staging URL.
+
+Finalization nằm cùng transaction apply_menu_changes: kiểm current menu.manage/actor/store/item/version và upload handle ready thuộc store/item; gắn assetKey và published flag. Asset mới tiếp tục ở private bucket; URL menu-image-public GET chỉ phục vụ object có published record, nên publication thực sự là DB commit, không copy public object trước auth cuối. Legacy public menu-item-images GET giữ hiện trạng. Unlink/delete yêu cầu menu.manage và DB commit trước, Storage cleanup là tác vụ nội bộ gắn đúng object của quyết định đã được phép, không nhận key mới từ client.
+
+Đánh đổi đường đọc mới: mỗi request thực sự tới gateway phụ thuộc Edge/DB để kiểm published record, có thêm độ trễ và lượt gọi/bytes; chưa có số đo hoặc cam kết luôn nằm trong hạn mức miễn phí. Render lại không đồng nghĩa origin GET. URL ảnh published ổn định theo immutable assetKey; response thành công dùng `Cache-Control: private, max-age=60, must-revalidate`, sau 60 giây request lại phải kiểm published record trước cả phản hồi304. Unpublished/not-found/forbidden/error dùng `no-store`; không cache staging read handle như ảnh public. ETag theo immutable object; byte đã được cache có thể còn được đọc trong TTL, byte đã tải không thu hồi được. Không hứa unlink xóa ảnh khỏi trình duyệt ngay.
+
+**Đóng N03 ngày 2026-09-15:** chưa có biện pháp hạn chế lưu lượng riêng cho function GET công khai. UUID làm khó đoán assetKey; không ngăn gọi dồn URL đã biết hoặc gửi request hỏng. Hành vi khi vượt hạn mức do nhà cung cấp quyết định và nằm ngoài kiểm soát của ứng dụng; tài liệu không cam kết ngừng phục vụ, tiếp tục miễn phí, thông báo trước hoặc cơ chế gia hạn. Cache private 60 giây chỉ giảm request cho client đã có cache còn fresh; mỗi lần revalidate vẫn tới origin, kể cả response304 giảm body bytes. Chưa có số đo không suy ra chi phí, invocation hoặc khả năng chịu tải. Không mở triển khai rate limit trong T01.
+
+Private Storage vẫn có CDN nhưng điều đó không chứng minh Edge GET bất kỳ tự được CDN cache: [Storage CDN](https://supabase.com/docs/guides/storage/cdn/fundamentals), [Edge/Storage](https://supabase.com/docs/guides/functions/storage-caching). Kiểm header, origin request/invocation, bytes và lỗi trong TC45–47; không đặt SLA ảnh khi chưa đo. Khi GET lỗi, UI giữ layout/hiện placeholder ảnh, không treo luồng bán hàng; log chỉ mã lỗi và object binding không secret. Không phục vụ stale sau TTL như một fallback vượt published check.
+
+Phương án copy private→public sau DB commit được cân nhắc nhưng không chọn ở change này: cần durable publication intent, destination immutable, retry/CAS cho replace/unlink, xử lý copy mất ACK và object dư. DB/Storage không có transaction chung; public GET sẽ bypass published check. Giữ gateway giảm nhánh publication mới, đổi lại phải kiểm tải và tình huống gateway/DB lỗi; không mặc nhiên đăng ký dịch vụ trả phí. Đây là lựa chọn của change, không phải bằng chứng public bucket/CDN là phương án cấu trúc duy nhất hoặc không thể có biện pháp giảm nhẹ miễn phí. T09/T15 đo riêng cache fresh, revalidate, request origin/invocation/bytes và lỗi rồi mới đánh giá lựa chọn tiếp theo.
+
+DB transaction không bao trùm Storage I/O: upload lỗi không finalize; revoke giữa stage/finalize làm finalize FORBIDDEN, object vẫn private; cleanup lỗi để lại private orphan được ghi vào runbook, không giả rollback Storage. Không dùng signed-upload URL sống dài có thể tiếp tục ghi sau revoke. Gate Storage thật kiểm HTTP bypass, mid-upload revoke và object publication; runtime phase27 hiện không đủ gate này.
+
+### 6.2 Signal và quyền
+
+Thay subscription raw orders/payments/menu/config bằng signal store/topic revision; trigger ghi signal **cùng transaction** business/identity change. Bảo toàn các invalidation hiện có trong [realtimePort.ts:24](D:/Workspace/pos-cafe/src/adapters/supabase/realtimePort.ts:24). Join table đã được thêm có điều kiện vào publication tại [008:54](D:/Workspace/pos-cafe/supabase/migrations/008_modifier_rework.sql:54), nhưng adapter chưa subscribe; không gọi đó là invalidation đã có. Giữ giới hạn manual reload/reconnect khi chỉ gắn/bỏ nhóm tùy chọn; add-modifier-link-realtime-subscription sẽ bổ sung qua signal tối thiểu và test riêng, không phục hồi raw payload. Vì baseline chỉ quy định signal/invalidate, thay transport không cần MODIFIED; chưa bỏ giới hạn join table của baseline trong change này.
+
+Realtime table ACL theo store JWT chỉ cho metadata tối thiểu; employee authorization tiếp tục ở RPC refetch. Catalog signal toàn cục chỉ revision. Roster/Store Key/PIN/audit/receipt không publish. Inventory phải đánh giá hoặc loại mọi raw protected publication route kể cả join table; không chỉ đổi callback để ignore payload. Giữ hành vi thiếu invalidation không có nghĩa giữ một đường raw publication trái Q1.
+
+## 7. Client authority, cache, drawer và thời gian
+
+Authority state: unverified → loading → verified hoặc unavailable; expired/revoked → lock đúng phiên. Catalog loaded kèm revision, không cache dài hạn không refresh. Snapshot response cần (storeId,employeeId,sessionGeneration) khớp và revision không thấp hơn đã áp. Lấy catalog+employee trong cùng read transaction; nếu trả reference đến catalog cached thì revision phải khớp tuyệt đối.
+
+Một scheduler/tab visible; interval theo **thời điểm bắt đầu** 30s, không +30s sau response. Coalesce event/focus/reconnect; không dời fallback mãi vì signal duplicate. Request chain timeout5s; gồm revision+snapshot+apply. Failure chuyển unavailable, ngừng render/query protected data, giữ token và retry chỉ đọc theo lịch/Thử lại. Hidden tab dừng authority timer; visible/focus/reconnect set unverified trước query/render. Không dựa refetchOnWindowFocus/refetchOnReconnect default thư viện; cấu hình/tích hợp explicit.
+
+Không tăng employeeSessionVersion khi chỉ refresh profile/quyền. [useAppStore.ts:54](D:/Workspace/pos-cafe/src/app/useAppStore.ts:54) và [WriteLifecycle.tsx:15](D:/Workspace/pos-cafe/src/app/WriteLifecycle.tsx:15) phải tách identity transition khỏi permission revision. Chỉ invalidation theo diff quyền; no-op không cắt coordinator. Tất cả cache protected key phải có store/employee/session scope; kết quả authority revision được kiểm trước dùng. Cancel/purge nhóm mất quyền trước render mới; không chỉ invalidate khiến dữ liệu cũ vẫn hiện.
+
+Drawer đóng theo action: mất menu.manage bỏ menu draft, không reset order draft; mất payment.take bỏ payment amount/selection đang chưa gửi; mất order.update bỏ nháp sửa order; mất order.create bỏ nháp tạo. Preview theo Q15: mất payment.take ẩn nút initial/hủy pending print; mất receipt.reprint ẩn nút nguồn reprint/hủy pending print. Chỉ đóng/purge preview khi không còn quyền đọc hóa đơn hoặc phiên; còn quyền đọc thì giữ và không xóa history. Mọi print generation cũ bị vô hiệu khi mất quyền, grant lại không khôi phục timer/ACK cũ. K đã register/mất ACK giữ ID và frozen payload riêng trong coordinator scope; detach UI không server cancel. Không show payload K cho actor thiếu action. Quyền floor nền làm fallback, dirty-exit không veto forced close.
+
+## 8. Migration, bootstrap và rollback
+
+### 8.1 Preflight
+
+Không chạy live trong task tài liệu. Report chứa store/employee IDs, role/active/createdAt, nguồn bootstrap, candidateOwner, overrides normalized/rights diff và trạng thái READY/NEEDS_REVIEW. Không PIN/hash/token. Primary UUID một mình không đủ proof: bootstrap SQL [014:247](D:/Workspace/pos-cafe/supabase/migrations/014_write_identity_and_ledger.sql:247) nhận UUID caller. Đòi provenance/mapping operator xác minh; active primary xác minh ưu tiên; thiếu primary/đã đổi role dùng earliest active admin duy nhất; inactive primary, timestamp tie/missing, no active admin, role lạ/unknown overrides cần mapping rõ hoặc sửa dữ liệu được phê duyệt rồi preflight lại.
+
+Không tự activate một phần store READY; mọi blocking store resolved mới activate. Admin→owner/manager có thể tăng/giảm quyền vì defaults mới và data.clearDemo reserved; report từng chênh lệch, không gọi là parity. Legacy grants/denies giữ nghĩa năm mã cũ với role mapping được duyệt; owner không mang denies phá quyền nền/owner defaults, ca mâu thuẫn phải chốt trong mapping trước chạy. Không auto activate inactive hoặc chọn non-owner “thật” thay user. Nhân viên chưa map được chặn toàn activation.
+
+T01 chỉ xây và kiểm core preflight trên fixture legacy cách ly. T16 đóng gói launcher chỉ đọc cho đích phát hành trước gate nguồn cuối; target config schema có project/backend reference kỳ vọng, read connection reference qua kênh không log, source/bundle hash và input mapping reference. Sai binding/thiếu cấu hình từ chối trước đọc business; không lấy .env.local hoặc tự chọn live khi test profile thất bại. T16 chỉ thử synthetic/dry-run, không cấp quyền chạy live. T17 vận hành đúng launcher trong bundle đã kiểm khi chủ dự án yêu cầu riêng, lấy mapping thực được duyệt trước T18; activation recheck dưới khóa, drift chặn và yêu cầu xác minh lại. Thay code launcher sau gate tạo source mới phải kiểm lại.
+
+### 8.2 Pha tương thích
+
+| Pha | DB/client/catalog | Gate |
+| --- | --- | --- |
+| A baseline | Code phase27, enum3/helper5 | Fingerprint, fixture, auth/grants/baseline report |
+| B additive bridge | Thêm catalog/registry/row revision; giữ legacy admin bridge không exposed như role mới; wrapper chưa activate new semantics | Exhaustive parity5 quyền trên3 role/override/active; protocolv1 và revoked grants giữ nguyên |
+| C candidate | Client biết authority contract/new DTO và có bootstrap compatibility gate; full new RPC/projections/Storage/Realtime staged ở cách ly | Unit/build + DB/Auth/REST + Storage + Realtime + E2E cùng source fingerprint, execution profile đúng backend/pha |
+| D activation | Cửa sổ dừng mutation được kiểm soát; backup/preflight locked recheck; role FK/data mapping/defaults15/owner constraint/grants/contract version bật nguyên tử | Postflight owner count, catalog count, grants, historical hashes; không thiếu owner giữa pha |
+| E verify/open | Client tương thích mới được mở protected shell, old client bị server từ chối mutation/protected read | Regression K pending trước activation, receipt schema, new/revoked quyền, business smoke chỉ khi được phép |
+
+Không claim nhóm1–3 đều “không đổi hành vi” nếu đã activate guard15. T13 loại guard/admin check/module map cũ khỏi production candidate sau chuyển consumers, TC57 gate tổng tại T15 kiểm candidate này; T03 chỉ kiểm phần domain/ports/mock đã chuyển. T16 gỡ bridge/enum DB trong activation cuối sau dependency checks, kiểm lại candidate sau chuyển đổi. Migration lịch sử và fixture bridge vẫn giữ để diễn tập TC50, không dùng chúng làm nguồn quyền cho production candidate. Capabilities trả permissionContractVersion; client mới phải hiểu phiên bản mới. Việc báo version từ client không cấp quyền; server vẫn reject legacy surfaces và auth đầy đủ.
+
+**Làm rõ kỹ thuật TC51 ngày22/09, đang hiện thực:** field mới trong capabilities không đủ chặn client phase27 vì client đó bỏ qua field lạ; retry/resume còn gọi RPC trực tiếp. Candidate gửi `x-pos-permission-contract: 1` chỉ tới REST origin đã cấu hình. Đây là tín hiệu tương thích, không phải credential hoặc quyền; không thêm nó vào K/payload/fingerprint/R1 và không đổi write protocol v1. Sau activation, thiếu/sai contract trên protected Data API request phải trả `WRITE_PROTOCOL_UNSUPPORTED` trước read/effect, kể cả get/cancel/list/recovery. Header đúng vẫn phải qua JWT, employee session và quyền hiện hành; legacy ACL/RPC/DML tiếp tục bị thu hồi. Metadata public an toàn `permission_get_contract` có ngoại lệ tường minh.
+
+Hook PostgREST pre-request cần phủ cả direct-table startup reads của client cũ. Chuẩn bị hook pass-through trước cutover, xác minh REST thực sự dùng hook, rồi đổi sang strict cùng transaction activation; rollback activation giữ pha trước. Preflight phát hiện hook có sẵn và dừng khi chưa có chiến lược bảo toàn nó; không ghi đè ngầm cấu hình đích. Hook không thay guard Storage/Realtime. Bundle và bằng chứng phải chứa cấu hình/hàm hook cùng kiểm negative control, không chỉ so SQL schema.
+
+Client candidate đưa lỗi compatibility từ startup, authority và thao tác vào cổng cập nhật thường trực với câu PMSG-E07 và nút tải lại; không mount protected shell/query khi bị gate. Suspend coordinator nhưng giữ K/frozen payload; không cancel/tạo K mới hoặc tự replay khi reload/reconnect. SQL không thể thay JavaScript phase27 đã cache hoặc xóa dữ liệu trong RAM tab đó: HEAD cũ chỉ có thông báo lỗi typed khi request bị từ chối. Trong pha D/E, các thiết bị vận hành phải tải lại candidate và xác minh tương thích trước mở ghi. Không tự tuyên bố client HEAD có màn gate mới; browser rehearsal phải dùng artifact HEAD thật để chứng minh old begin/recovery/fresh-load bị chặn, rồi candidate tiếp quản cùng K theo quyền hiện hành.
+
+Bootstrap store mới trong D/E tạo owner trực tiếp, một transaction stores/settings/employee/catalog initialization. Gọi lại same store không đổi PIN/owner; same request replay trả safe existing identity, incompatible owner payload trả BOOTSTRAP_CONFLICT. Seed demo không promote owner hoặc reset owner thông qua seed_employee; mọi seed calls có guards và chính sách PIN/owner như admin.
+
+Contract bootstrap candidate nhận requestId UUID, ownerId UUID khác zero, storeNo integer1–2147483647, displayName trim1–120 Unicode code points, address trim0–500; giữ giới hạn [014:253](D:/Workspace/pos-cafe/supabase/migrations/014_write_identity_and_ledger.sql:253). StoreId/provisioning identity lấy từ store Auth hợp lệ và kiểm tương ứng storeNo như baseline. Không nhận PIN từ caller: giữ chính sách cấp PIN khởi tạo hiện tại ở [014:247](D:/Workspace/pos-cafe/supabase/migrations/014_write_identity_and_ledger.sql:247), [authRepo.ts:58](D:/Workspace/pos-cafe/src/adapters/supabase/authRepo.ts:58); owner email/force-default-pin-change là change riêng. PIN tự chèn hoặc field ngoài whitelist bị INVALID_WRITE_REQUEST (adapter chuẩn hóa lỗi signature/overload không tồn tại), không có hiệu ứng. Bootstrap requestId lưu trong registry provisioning riêng theo store, không giả actor employee trước bootstrap; retry trả identity an toàn, không reset PIN hoặc phát lại secret. seedDemo boolean mặc định false là tùy chọn flow client sau bootstrap, không tham gia transaction tạo store. Phiên owner tạm dùng seed phải được xác minh và revoke theo flow hiện tại; seed lỗi giữ store và cảnh báo retry.
+
+### 8.2.1 Cutover sau cleanup dữ liệu test theo DELIVERY-03
+
+Làm rõ ngày 28/09/2026 trong phạm vi phát hành đã được duyệt. Cleanup chỉ áp dụng đúng 77 UUID trong inventory đã xác minh, không dùng mapping 77 admin→owner đã được thay thế. Backup phải có bằng chứng restore dữ liệu/metadata/sequence và restore payload Storage; các bằng chứng này không tự thay quyền thực thi hoặc gate tích hợp của candidate.
+
+Controller phát hành riêng dùng các bước SQL activation chung tại [permission-activation-steps.mjs](D:/Workspace/pos-cafe/scripts/permission-activation-steps.mjs). Wrapper synthetic tiếp tục đòi loopback và marker thử nghiệm. Controller release không lấy `.env.local`, không tạo marker giả để vượt guard và không tự chuyển sang live khi runtime test lỗi. Đích, source fingerprint, bundle hash, inventory UUID, backup/restore proof và cấu hình phải được ràng buộc trước truy vấn nghiệp vụ; mặc định diễn tập rollback, chỉ mode commit được chỉ rõ mới commit.
+
+Prepare hook tương thích là pha riêng có ghi nhận: đối chiếu catalog gốc với backup, pin SQL prepare, lưu catalog/hook trước–sau và kết quả probe REST pass-through thực tế. Baseline catalog dùng cho cutover phải là kết quả chuẩn bị được xác minh từ baseline gốc; không bỏ kiểm drift chỉ vì prepare đã thêm hàm/bảng/cấu hình.
+
+Cleanup và activation chạy trên **cùng connection, cùng transaction READ COMMITTED**: lấy khóa → kiểm lại tập đích, FK, dữ liệu và catalog đã chuẩn bị → xóa đúng closure được duyệt → kiểm tenant rỗng → chạy 11 fragment activation, gỡ legacy và bật strict → kiểm postflight → commit. Không commit cleanup rồi mở transaction activation khác. Bất kỳ sai khác hoặc lỗi fragment nào trước commit đều rollback cả cleanup và activation. Lock set bao phủ dữ liệu ứng dụng, Auth liên quan qua FK, `auth.refresh_tokens` và metadata object cần giữ; không khóa mặc định mọi bảng migration/provider không thuộc phạm vi. Diễn tập phải chạy dưới quyền tương đương `postgres` production (NOSUPERUSER/BYPASSRLS), không lấy thành công của restore operator superuser làm bằng chứng đủ quyền.
+
+Khóa và thu hồi grants không tự hủy RPC legacy đã được nhận trước cutover. Gate phải có ca bootstrap legacy đã bắt đầu/đang đợi trước khi strict bật; sau cutover không được tạo quán có admin cũ hoặc quán thiếu owner. Auth user mới ngoài 77 UUID phải được bảo toàn; nếu có dữ liệu mới không thuộc snapshot hoặc tập đích đã thay đổi, controller dừng để đối chiếu, không mở rộng cleanup.
+
+Storage là bước sau DB commit, có journal riêng: chỉ xóa đúng hai object đã backup và xác minh lại metadata/version/path/size/hash; bảo đảm đường ghi không thay thế object giữa kiểm và xóa. Dùng Storage API, không DELETE trực tiếp metadata để giả xóa payload. Object ngoài phạm vi phải còn nguyên. Lỗi Storage không được ghi là DB rollback; ghi chính xác việc đã commit và phần cleanup còn chờ. Sau DB/gateway/signal và contract kiểm đạt mới mở frontend đã duyệt. Candidate hiện hành dùng permission contract **2**, write protocol vẫn **1**; forced-PIN owner bootstrap/recovery đã được duyệt là điều kiện trước phát hành theo change `force-default-pin-change`.
+
+### 8.3 Rollback
+
+B/C trước activation: gỡ additive candidate có kiểm dependency, giữ phase27 guard/grants; không mất business data. Sau activation: ưu tiên forward fix hoặc client/server bundle vẫn hiểu15 quyền. Không hạ role/schema khi đang tiếp nhận ghi. Backup restore chỉ khi đã dừng ghi và chứng minh không có giao dịch mới sau backup, hoặc đã đối soát/khôi phục đầy đủ giao dịch sau backup với bằng chứng; nếu không chứng minh được, không restore. K/payload/R1/receipt hashes phải nguyên trạng. Không mở lại old RPC/DML như rollback.
+
+## 9. Mã lỗi và thông báo
+
+**Đóng N01 ngày 2026-09-15:** catalog dưới đây là nguồn câu chữ chính xác cho các thông báo được change khai báo. `Trạng thái mã` và `trạng thái câu chữ` độc lập: code có sẵn không có nghĩa câu mới đã chạy. **Có** là giữ chuỗi đã đọc trong code; **Mới** là khai báo thêm cho ngữ cảnh mới; **Thay chuỗi hiện có** là sửa lời hiện hành, gồm dấu câu. Không đổi nghĩa mã lỗi hoặc luồng nghiệp vụ khi thống nhất lời; những mã phase27 không được change khai báo lại vẫn giữ contract cũ.
+
+Các mã nền ở [appError.ts:3](D:/Workspace/pos-cafe/src/core/appError.ts:3) và [writeOperations.ts:17](D:/Workspace/pos-cafe/src/domain/writeOperations.ts:17). Chuỗi hiện hành đối chiếu tại [writeErrors.ts:4](D:/Workspace/pos-cafe/src/core/writeErrors.ts:4) và từng nguồn trong bảng. Các dòng mới/thay đổi là việc của task implementation tương ứng, chưa được báo PASS.
+
+| ID | Loại / ngữ cảnh | Mã | Trạng thái mã / câu chữ | Thông báo chính xác | Nguồn khai báo / chỗ thay hiện hành | TC sở hữu oracle |
+| --- | --- | --- | --- | --- | --- | --- |
+| PMSG-E01 | Lỗi: AUTH_REQUIRED / EMPLOYEE_SESSION_REQUIRED | AUTH_REQUIRED / EMPLOYEE_SESSION_REQUIRED | Có / Thay chuỗi hiện có | Phiên nhân viên không còn hợp lệ. Vui lòng đăng nhập lại. | [writeErrors:5–6](D:/Workspace/pos-cafe/src/core/writeErrors.ts:5) | TC02/TC28 |
+| PMSG-E02 | Lỗi: FORBIDDEN | FORBIDDEN | Có / Có | Bạn không có quyền thực hiện thao tác này. | [writeErrors:8](D:/Workspace/pos-cafe/src/core/writeErrors.ts:8) | TC25/TC28 |
+| PMSG-E03 | Lỗi: NOT_FOUND | NOT_FOUND | Có / Thay chuỗi hiện có | Không tìm thấy dữ liệu được phép truy cập. | [writeErrors:16](D:/Workspace/pos-cafe/src/core/writeErrors.ts:16) | TC22/TC28 |
+| PMSG-E04 | Lỗi: Login: PIN sai hoặc employee inactive | INVALID_PIN | Có / Thay chuỗi hiện có | PIN không đúng. | [writeErrors:7](D:/Workspace/pos-cafe/src/core/writeErrors.ts:7); [errors:8](D:/Workspace/pos-cafe/src/adapters/supabase/errors.ts:8) | TC02 |
+| PMSG-E05 | Lỗi: RECEIPT_UNAVAILABLE | RECEIPT_UNAVAILABLE | Có / Thay chuỗi hiện có | Không thể in hóa đơn này. Đơn chưa thanh toán hoặc đã bị hủy. | [writeErrors:28](D:/Workspace/pos-cafe/src/core/writeErrors.ts:28) | TC38 |
+| PMSG-E06 | Lỗi: OPEN_ORDERS_BLOCK_CLEAR_DEMO | OPEN_ORDERS_BLOCK_CLEAR_DEMO | Có / Thay chuỗi hiện có | Còn đơn đang mở. Hãy hoàn tất các đơn trước khi xóa dữ liệu mẫu. | [uiError:87](D:/Workspace/pos-cafe/src/features/integration/uiError.ts:87) | TC12 |
+| PMSG-E07 | Lỗi: WRITE_PROTOCOL_UNSUPPORTED | WRITE_PROTOCOL_UNSUPPORTED | Có / Thay chuỗi hiện có | Ứng dụng cần được cập nhật trước khi tiếp tục. | [writeErrors:27](D:/Workspace/pos-cafe/src/core/writeErrors.ts:27) | TC51 |
+| PMSG-E08 | Lỗi: OPERATION_NOT_FOUND | OPERATION_NOT_FOUND | Có / Thay chuỗi hiện có | Không tìm thấy thao tác được phép truy cập. | [writeErrors:11](D:/Workspace/pos-cafe/src/core/writeErrors.ts:11) | TC54 |
+| PMSG-E09 | Lỗi: OPERATION_EXPIRED | OPERATION_EXPIRED | Có / Thay chuỗi hiện có | Thao tác đã hết hạn. Hãy kiểm tra đơn trước khi tạo thao tác mới. | [writeErrors:12](D:/Workspace/pos-cafe/src/core/writeErrors.ts:12) | TC54 |
+| PMSG-E10 | Lỗi: IDEMPOTENCY_KEY_REUSED | IDEMPOTENCY_KEY_REUSED | Có / Thay chuỗi hiện có | Mã thao tác đã được dùng cho nội dung khác. | [writeErrors:10](D:/Workspace/pos-cafe/src/core/writeErrors.ts:10) | TC54 |
+| PMSG-E11 | Lỗi: Bootstrap: input sai | INVALID_WRITE_REQUEST | Có / Thay chuỗi hiện có | Thông tin khởi tạo cửa hàng không hợp lệ. | [writeErrors:9](D:/Workspace/pos-cafe/src/core/writeErrors.ts:9); [UC-PERM-14](usecases.md) chỉ ngữ cảnh bootstrap | TC52 |
+| PMSG-E12 | Lỗi: WRITE_RESULT_UNKNOWN | WRITE_RESULT_UNKNOWN | Có / Thay chuỗi hiện có | Chưa xác định được kết quả. Hãy tra cứu thao tác trên server. | [writeErrors:25](D:/Workspace/pos-cafe/src/core/writeErrors.ts:25) | TC54 |
+| PMSG-E13 | Lỗi: INVALID_EMPLOYEE_REQUEST | INVALID_EMPLOYEE_REQUEST | Mới / Mới | Thông tin nhân viên không hợp lệ. Kiểm tra các trường được đánh dấu. | [UC-PERM-02](usecases.md) / [UC-PERM-04](usecases.md) | TC19/TC24/TC59 |
+| PMSG-E14 | Lỗi: EMPLOYEE_ROLE_UNAVAILABLE | EMPLOYEE_ROLE_UNAVAILABLE | Mới / Mới | Vai trò này chưa được hỗ trợ trên ứng dụng. | [UC-PERM-01](usecases.md) | TC02 |
+| PMSG-E15 | Lỗi: OWNER_PROTECTED | OWNER_PROTECTED | Mới / Mới | Không thể thay đổi chủ quán bằng thao tác này. | [UC-PERM-02](usecases.md) / [UC-PERM-03](usecases.md) | TC05/TC14 |
+| PMSG-E16 | Lỗi: SELF_DISABLE_FORBIDDEN | SELF_DISABLE_FORBIDDEN | Mới / Thay chuỗi hiện có | Bạn không thể tự tạm khóa tài khoản đang dùng. | [UC-PERM-05](usecases.md); thay guard cũ [EmployeesDrawer:154](D:/Workspace/pos-cafe/src/app/drawers/admin/EmployeesDrawer.tsx:154) | TC14 |
+| PMSG-E17 | Lỗi: SELF_PERMISSION_EDIT_FORBIDDEN | SELF_PERMISSION_EDIT_FORBIDDEN | Mới / Mới | Bạn không thể tự sửa vai trò hoặc quyền của mình. | [UC-PERM-03](usecases.md) / [UC-PERM-04](usecases.md) | TC14 |
+| PMSG-E18 | Lỗi: OWNER_ONLY_PERMISSION | OWNER_ONLY_PERMISSION | Mới / Mới | Quyền này chỉ dành cho chủ quán. | [UC-PERM-04](usecases.md) | TC04 |
+| PMSG-E19 | Lỗi: PERMISSION_BASELINE_REQUIRED | PERMISSION_BASELINE_REQUIRED | Mới / Mới | Quyền xem sơ đồ bàn luôn được cấp và không thể tắt. | [UC-PERM-04](usecases.md) | TC04 |
+| PMSG-E20 | Lỗi: PERMISSION_CEILING_EXCEEDED | PERMISSION_CEILING_EXCEEDED | Mới / Mới | Không thể quản lý nhân viên này vì vượt quyền của bạn. Quyền còn thiếu: {danh sách tên quyền}. | [UC-PERM-02](usecases.md) / [UC-PERM-04](usecases.md) | TC15/TC16/TC17 |
+| PMSG-E21 | Lỗi: EMPLOYEE_VERSION_CONFLICT | EMPLOYEE_VERSION_CONFLICT | Mới / Mới | Thông tin nhân viên đã thay đổi. Tải lại trước khi lưu. | [UC-PERM-03](usecases.md) | TC20/TC42/TC59 |
+| PMSG-E22 | Lỗi: PERMISSION_CATALOG_STALE | PERMISSION_CATALOG_STALE | Mới / Mới | Danh mục quyền đã thay đổi. Tải lại trước khi lưu. | [UC-PERM-03](usecases.md) / [UC-PERM-04](usecases.md) | TC20 |
+| PMSG-E23 | Lỗi: ADMIN_REQUEST_REUSED | ADMIN_REQUEST_REUSED | Mới / Mới | Mã yêu cầu đã được dùng cho nội dung khác. | [UC-PERM-02](usecases.md) / [UC-PERM-10](usecases.md) | TC12/TC23 |
+| PMSG-E24 | Lỗi: PERMISSION_UPDATE_UNAVAILABLE | PERMISSION_UPDATE_UNAVAILABLE | Mới / Mới | Chưa thể xác nhận thay đổi. Kiểm tra kết quả trước khi thử lại. | [UC-PERM-02](usecases.md) / [UC-PERM-07](usecases.md) / [UC-PERM-08](usecases.md) | TC10/TC11/TC12/TC21/TC59 |
+| PMSG-E25 | Lỗi: PERMISSION_REFRESH_UNAVAILABLE | PERMISSION_REFRESH_UNAVAILABLE | Mới / Mới | Chưa xác minh được quyền. Kiểm tra kết nối và thử lại. | [UC-PERM-01](usecases.md) / [UC-PERM-12](usecases.md) | TC03/TC32/TC59 |
+| PMSG-E26 | Lỗi: OWNER_MIGRATION_REVIEW_REQUIRED | OWNER_MIGRATION_REVIEW_REQUIRED | Mới / Mới | Chưa xác định được chủ quán. Cần xác minh ánh xạ trước khi chuyển đổi. | [UC-PERM-14](usecases.md) | TC49 |
+| PMSG-E27 | Lỗi: OWNER_RECOVERY_REVIEW_REQUIRED | OWNER_RECOVERY_REVIEW_REQUIRED | Mới / Mới | Chưa đủ căn cứ khôi phục chủ quán. Cần xác minh hồ sơ hỗ trợ. | [UC-PERM-08](usecases.md) | TC58 |
+| PMSG-E28 | Lỗi: BOOTSTRAP_CONFLICT | BOOTSTRAP_CONFLICT | Mới / Mới | Cửa hàng đã được khởi tạo; không thể thay chủ quán bằng thao tác này. | [UC-PERM-14](usecases.md) | TC52 |
+| PMSG-E29 | Lỗi: Owner self-change: currentPin sai | INVALID_PIN | Có / Mới | PIN hiện tại không đúng. | [UC-PERM-07](usecases.md) | TC10/TC59 |
+| PMSG-E30 | Lỗi: Ảnh sai loại | UNKNOWN | Có / Có | Ảnh món chỉ hỗ trợ JPG, PNG hoặc WebP. | [menuImagePort:24](D:/Workspace/pos-cafe/src/adapters/supabase/menuImagePort.ts:24); [menuImageDraft:25](D:/Workspace/pos-cafe/src/features/admin/menuImageDraft.ts:25) | TC45 |
+| PMSG-E31 | Lỗi: Ảnh quá 5MiB | UNKNOWN | Có / Có | Ảnh món tối đa 5MB. | [menuImagePort:28](D:/Workspace/pos-cafe/src/adapters/supabase/menuImagePort.ts:28); [menuImageDraft:29](D:/Workspace/pos-cafe/src/features/admin/menuImageDraft.ts:29) | TC45 |
+| PMSG-E32 | Lỗi: Field name rỗng | INVALID_EMPLOYEE_REQUEST; field name | Mới / Có | Tên nhân viên không được để trống. | [employeeDrawerFlow:102](D:/Workspace/pos-cafe/src/features/admin/employeeDrawerFlow.ts:102) | TC19/TC59 |
+| PMSG-E33 | Lỗi: Field name quá 120 code points | INVALID_EMPLOYEE_REQUEST; field name | Mới / Mới | Tên nhân viên tối đa 120 ký tự. | Design2.2; [UC-PERM-02](usecases.md) | TC19/TC59 |
+| PMSG-E34 | Lỗi: Field PIN không đúng sáu số ASCII | INVALID_EMPLOYEE_REQUEST; field pin | Mới / Thay chuỗi hiện có | PIN phải gồm đúng 6 chữ số. | [employeeDrawerFlow:108](D:/Workspace/pos-cafe/src/features/admin/employeeDrawerFlow.ts:108) hiện là 4–6 chữ số | TC09/TC19/TC59 |
+| PMSG-E35 | Lỗi: Confirm PIN không khớp | Validation UI; field confirmPin | Không áp dụng / Có | Xác nhận PIN không khớp. | [employeeDrawerFlow:110](D:/Workspace/pos-cafe/src/features/admin/employeeDrawerFlow.ts:110) | TC19/TC59 |
+| PMSG-S01 | Trạng thái: No-op thường | — | Không áp dụng / Thay chuỗi hiện có | Không có thay đổi để lưu. | [MenuEditorDrawer:248](D:/Workspace/pos-cafe/src/app/drawers/admin/MenuEditorDrawer.tsx:248); [FloorEditorDrawer:239](D:/Workspace/pos-cafe/src/app/drawers/admin/FloorEditorDrawer.tsx:239) hiện là Không có thay đổi cần lưu. | TC20/TC59 |
+| PMSG-S02 | Trạng thái: PIN mới trùng PIN hiện tại | — | Không áp dụng / Mới | PIN mới trùng PIN hiện tại; không có thay đổi. | [UC-PERM-07](usecases.md) | TC10/TC59 |
+| PMSG-S03 | Trạng thái: Nút in lại disabled: đơn void, actor đủ quyền | — | Không áp dụng / Mới | Đơn đã hủy không thể in lại hóa đơn. | [PERM-04](specs/access-control/spec.md); [UC-PERM-11](usecases.md) | TC38 |
+| PMSG-S04 | Trạng thái: Thu hồi quyền làm đóng phần đang thao tác | — | Không áp dụng / Mới | Quyền của bạn đã thay đổi. Phần đang thao tác không còn được phép đã đóng; dữ liệu chưa lưu của phần đó đã được bỏ. | [PERM-25](specs/multi-device-sync/spec.md); [UC-PERM-12](usecases.md) | TC34/TC59 |
+| PMSG-S05 | Trạng thái: Mất quyền in, preview vẫn có quyền đọc | — | Không áp dụng / Mới | Quyền in hóa đơn đã thay đổi. Bạn vẫn có thể xem hóa đơn. | [UC-PERM-11](usecases.md) / [UC-PERM-12](usecases.md); Q15 | TC36/TC60 |
+| PMSG-OK01 | Thành công: Create employee applied | — | Không áp dụng / Thay chuỗi hiện có | Đã tạo nhân viên. | [EmployeesDrawer:189](D:/Workspace/pos-cafe/src/app/drawers/admin/EmployeesDrawer.tsx:189) hiện thiếu dấu chấm; [UC-PERM-02](usecases.md) | TC05/TC56/TC59 |
+| PMSG-OK02 | Thành công: Lưu tên/role employee applied | — | Không áp dụng / Thay chuỗi hiện có | Đã lưu nhân viên. | [EmployeesDrawer:212](D:/Workspace/pos-cafe/src/app/drawers/admin/EmployeesDrawer.tsx:212) hiện thiếu dấu chấm; [UC-PERM-03](usecases.md) | TC06/TC59 |
+| PMSG-OK03 | Thành công: Lưu overrides applied | — | Không áp dụng / Mới | Đã cập nhật quyền nhân viên. | [UC-PERM-04](usecases.md) | TC07/TC56 |
+| PMSG-OK04 | Thành công: Tạm khóa employee applied | — | Không áp dụng / Mới | Đã tạm khóa nhân viên. | [UC-PERM-05](usecases.md); [EmployeesDrawer:212](D:/Workspace/pos-cafe/src/app/drawers/admin/EmployeesDrawer.tsx:212) trước dùng thông báo lưu chung | TC08 |
+| PMSG-OK05 | Thành công: Mở khóa employee applied | — | Không áp dụng / Mới | Đã mở khóa nhân viên. | [UC-PERM-05](usecases.md); [EmployeesDrawer:212](D:/Workspace/pos-cafe/src/app/drawers/admin/EmployeesDrawer.tsx:212) trước dùng thông báo lưu chung | TC08 |
+| PMSG-OK06 | Thành công: Reset PIN nhân viên khác applied | — | Không áp dụng / Thay chuỗi hiện có | Đã đặt lại PIN. Nhân viên cần đăng nhập lại. | [EmployeesDrawer:212](D:/Workspace/pos-cafe/src/app/drawers/admin/EmployeesDrawer.tsx:212) trước gộp Đã lưu nhân viên và đặt lại PIN; [UC-PERM-06](usecases.md) | TC09/TC59 |
+| PMSG-OK07 | Thành công: Owner tự đổi PIN applied | — | Không áp dụng / Mới | Đã đổi PIN. Vui lòng đăng nhập lại. | [UC-PERM-07](usecases.md); [PERM-21](specs/employee-session/spec.md) | TC10/TC59 |
+| PMSG-OK08 | Thành công: Clear demo applied | — | Không áp dụng / Thay chuỗi hiện có | Đã xóa dữ liệu mẫu. | [ClearDemoDialog:29](D:/Workspace/pos-cafe/src/app/drawers/admin/ClearDemoDialog.tsx:29) trước là Đã đặt lại dữ liệu mẫu; Q3 / [UC-PERM-10](usecases.md) | TC12 |
+| PMSG-OK09 | Thành công: Lưu thay đổi module thành công theo UC09 | — | Không áp dụng / Thay chuỗi hiện có | Đã lưu thay đổi. | [UC-PERM-09](usecases.md); [MenuEditorDrawer:261](D:/Workspace/pos-cafe/src/app/drawers/admin/MenuEditorDrawer.tsx:261) / [FloorEditorDrawer:251](D:/Workspace/pos-cafe/src/app/drawers/admin/FloorEditorDrawer.tsx:251) / [GeneralSettingsDrawer:99](D:/Workspace/pos-cafe/src/app/drawers/admin/GeneralSettingsDrawer.tsx:99) / [PaymentSettingsDrawer:56](D:/Workspace/pos-cafe/src/app/drawers/admin/PaymentSettingsDrawer.tsx:56) | TC25/TC56 |
+| PMSG-OK10 | Thành công: Print command đã dispatch tới browser | — | Không áp dụng / Mới | Đã gửi lệnh in. | [UC-PERM-11](usecases.md); design5.3/Q15 | TC60 |
+
+Bổ sung đủ 15 câu N01: nhóm Q15 là PMSG-S05/OK10; ba câu đã có ở M0 là PMSG-OK07/S03/S04; mười câu chỉ có ở UC là PMSG-OK01–OK06/OK08/OK09/E30/E31. Hai lỗi ảnh giữ nguyên câu code hiện hành. PMSG-OK08 thay lời đặt lại thành xóa dữ liệu mẫu theo Q3, vẫn giữ nguyên phạm vi bảo toàn dữ liệu. PMSG-OK09 áp cho các lưu module trong UC09; flow employee/clear/receipt dùng dòng riêng, không thay mọi toast khác của sản phẩm.
+
+**Phân loại để kiểm máy:** ID PMSG là khóa ổn định; mỗi dòng gồm loại `Lỗi/Trạng thái/Thành công`, code/context, exact text, nguồn khai báo và TC sở hữu. [M0](testplan.md) phải chứa cùng 50 dòng, ID/context/text không khác. TC57 đọc chính các dòng đã phân loại và đối chiếu các thông báo ở nguồn UC/delta được dòng đó chỉ định; không dùng regex gom mọi chuỗi trong dấu ngoặc kép làm danh mục UI. Tên fixture như Mai/Cà phê An, chuỗi rỗng của địa chỉ, nhãn nút Thử lại và từ trích dẫn để giải thích như thiếu quyền/không có module/tương thích không phải thông báo kết quả của catalog này. Khi thêm một thông báo kết quả, phải đăng ký dòng PMSG, nguồn và TC trước khi phép kiểm nhận coverage; không suy một chuỗi không có ID là đã kiểm.
+
+Mỗi TC trong cột sở hữu phải có variant exact-text cho đúng flow khi dependency consumer đã có; một TC tích hợp mới chỉ kiểm RPC chưa thay cho variant toast/UI. TC59 chỉ kiểm các flow đã được truy vết của chính nó, không được nhận tất cả thông báo vào TC59 rồi giả đủ coverage cho UC khác. Manifest ghi riêng variant và task cung cấp; đầy đủ oracle tài liệu không có nghĩa đã hiện thực hoặc thực thi.
+
+Error details `fieldErrors` dùng key whitelist, không echo PIN. `missingPermissions` thay placeholder trong PMSG-E20 bằng tên catalog theo code tăng dần, chỉ sau khi actor được đọc target; không trả danh sách quyền target khác store. Start session với PIN sai hoặc employee inactive giữ INVALID_PIN theo [014:218](D:/Workspace/pos-cafe/supabase/migrations/014_write_identity_and_ledger.sql:218); không dùng EMPLOYEE_SESSION_REQUIRED cho người chưa có phiên. Request token hết hạn/revoked vẫn dùng mã lỗi phiên phase27.
+
+Session/scope auth error trước target lookup nhạy cảm không có audit target; infrastructure error không trả SQL stack/private key. No-op không phát thông báo applied. Refresh unavailable chưa kết luận revoked, không tự logout. PMSG-OK10 chỉ xác nhận dispatch lệnh tới browser, không xác nhận giấy đã in.
+
+## 10. Runbook owner và giới hạn
+
+Theo [limitations](../../../docs/limitations.md): operator được chỉ định, xác minh hồ sơ ngoài app độc lập, xác minh store/owner đúng, nhập PIN qua kênh không log, recovery atomic/retry/audit, bàn giao qua kênh đã xác minh, lưu evidence ngoài DB; exit khi email recovery verified. DB recovery contract chỉ cấp cho role hạ tầng riêng; service_role không mặc nhiên vượt grants/function checks. Mỗi ca phải có operatorRef/caseRef; app tokens kể cả owner không gọi được.
+
+Dữ liệu audit giữ toàn bộ; chưa GC và không thể chứng minh tamper-proof trước DB admin. Private Storage orphan cần cleanup vận hành nếu compensation lỗi. Hai giới hạn này cần theo dõi vận hành, không đặt lịch tự động ngoài scope. Gate Realtime/Storage/physical support verification chưa chạy trong task spec.
+
+## 11. Rủi ro và bằng chứng cần có trước release
+
+[Tests hiện có](D:/Workspace/pos-cafe/tests/contracts/writeConcurrency.contract.test.ts:107) cho baseline chờ lock/revoke; [ReceiptPrintLifecycle.test.tsx:45](D:/Workspace/pos-cafe/src/app/components/ReceiptPrintLifecycle.test.tsx:45) cho stale print; không chứng minh catalog15 mới. [Testplan](testplan.md) phải kiểm explicit concurrency, privilege bypass, no-op/retry/rollback, multi-device/catalog, migration ambiguity và K trước activation. Các gate thiếu runtime là NOT RUN, không PASS từ mock; thiếu prerequisite khi thực hiện thì task BLOCKED.
+
+### 11.1 Evidence theo nguồn và pha thực thi
+
+Source fingerprint khóa bytes code/test/scripts/migration bundle kể cả dirty files đã được chấp thuận; không chứa trạng thái DB biến đổi. Execution profile ghi riêng loại static/unit/legacy/bridge/candidate/transition, backend identity không secret, runtime/dependency versions, applied migration hashes, catalog/fixture/config/command và trước/sau từng pha. T15 gom 55 TC (01–47,49/50,55–60) theo cùng nguồn nhưng đúng profile: TC49 legacy, TC50 bridge, phần còn lại theo mức và tiền điều kiện. T16 có source mới khi bổ sung activation scripts phải chạy full60 lại trên đúng các profile; không lấy report nguồn cũ để đủ số.
+
+TC raw SELECT/DML/overload/Storage bypass cần candidate fixture đã áp phần ACL task đó tạo. T05/T07/T08/T09 cung cấp DDL tương ứng trước nghiệm thu cách ly; T16 chỉ thêm điều phối chuyển dữ liệu A→E và final teardown, không phải nơi đầu tiên viết toàn bộ candidate ACL. Các biến thể chưa có dependency chỉ được báo PARTIAL, không toàn TC PASS. Gate service tổng dùng full Supabase candidate đã chứng minh các dịch vụ cùng deployment/DB và manifest; không ghép native phase27 thiếu service với một backend khác để gọi full gate. Legacy/bridge/transition là các trạng thái fixture được dựng có chủ đích và ghi manifest, không yêu cầu một DB cố định cùng lúc ở mọi pha.
+
+### 11.2 Runtime và tái sử dụng công cụ
+
+**Đóng N02 ngày 2026-09-15:** T01 chỉ cần PostgreSQL thật cách ly cho observer preflight/catalog. Lõi nhận `ObserverEnvironment` gồm observer DSN và metadata kiểm môi trường/profile, không cần API URL, anon key, store JWT hoặc employee token; không gọi Auth/REST, không cấp/revoke phiên. Thiếu mọi khóa Auth/REST vẫn phải chạy được T01 nếu DSN/profile/marker hợp lệ. DSN và secret không vào báo cáo. Native phase27 có thể dùng khi marker và trạng thái legacy đáp ứng; kiểm tĩnh không được báo DB PASS.
+
+T01 tách `ObserverEnvironment` và `observerPreflight(db, env)` vào [observerPreflight.ts](D:/Workspace/pos-cafe/tests/contracts/observerPreflight.ts:11); parser riêng chỉ nhận profile legacy synthetic ở [permission-preflight-core.mjs](D:/Workspace/pos-cafe/scripts/permission-preflight-core.mjs:23). `parseTestEnvironment()` và `preflight()` phase27 giữ nguyên yêu cầu API/JWT, parse errors và các bước REST/binding/capability/revoke hiện hành. `withObserver` nhận type observer chung. Không gọi nguyên `preflight()` trong T01 vì [start session](D:/Workspace/pos-cafe/tests/contracts/preflight.ts:84)/[revoke session](D:/Workspace/pos-cafe/tests/contracts/preflight.ts:103) có mutation; không nhân bản hoặc nới guard suite phase27.
+
+Cấu phần observer giữ các [kiểm tra phase27](D:/Workspace/pos-cafe/tests/contracts/observerPreflight.ts:25): current_database; marker/engine/store_ids; checksum file so với marker; store ngoài fixture; authenticated không được đọc marker hoặc gọi write_clock. T01 bổ sung chặn USAGE private của anon và quyền marker/helper test của anon; observer phải đọc được toàn bộ fixture, kết quả có đúng S1/S2. **Đính chính sau kiểm DB T01:** [016:261](D:/Workspace/pos-cafe/supabase/migrations/016_activate_write_protocol.sql:261) đã cấp authenticated USAGE private + EXECUTE is_verified_admin cho RLS hiện hành. Giữ đúng baseline này, không áp blanket-deny authenticated USAGE vào legacy. **Checksum khớp marker chỉ chứng minh file nguồn trùng bản ghi marker, không chứng minh schema/grants hiện hành chưa bị sửa ngoài migration.** Inventory hash catalog thực tế của public/private/storage, gồm ACL, policy, routine và publication; không coi metadata là kết quả kiểm quyền HTTP/Realtime. T01 dùng transaction chỉ đọc; snapshot sau lấy ở transaction mới để có thể thấy thay đổi đã commit. Checksum cả row dùng nội bộ để kiểm bất biến; báo cáo chỉ có hash/count từ projection whitelist, loại PIN/hash/token/MAC.
+
+Giữ `IDEM_ENV_FILE`, không đọc .env/.env.local. [Parser:59](D:/Workspace/pos-cafe/tests/contracts/preflight.ts:59) khóa tên DB và [65](D:/Workspace/pos-cafe/tests/contracts/preflight.ts:65) khóa fixture IDs; profile permissions khai manifest riêng cho S1/S2/legacy cases. Profile full CLI có database postgres chỉ được nhận khi dedicated project/container/volume, loopback, marker, danh sách store và checksum/schema guards phù hợp. T01 chỉ chứng minh observer-side identity đó; **không có API trong phạm vi nên không đặt gate API/observer binding hoặc đòi API keys cho T01**. Chỉ gate có Auth/REST/Storage/Realtime/E2E mới xác minh API/observer cùng deployment/DB trước khi ghi kết quả service.
+
+Môi trường gate tổng là full Supabase CLI trên Docker-compatible runtime trong WSL2; T02 chuẩn bị stack/fixture/marker và khóa CLI/image/config, T09 kiểm gateway+Storage thật, T10 kiểm Realtime hai client. Đây là kế hoạch, chưa dựng hoặc chạy stack trong T01. [CLI chính thức](https://supabase.com/docs/guides/local-development/cli/getting-started) là nguồn công cụ; phiên bản cụ thể ghi ở manifest khi chuẩn bị runtime, Node harness giữ24.16.0. Không dùng bootstrap Storage shell giả cho full Supabase.
+
+Tái dùng [loader](D:/Workspace/pos-cafe/tests/contracts/preflight.ts:16), [source hash](D:/Workspace/pos-cafe/scripts/idempotency-artifacts.mjs:6), [case manifest](D:/Workspace/pos-cafe/tests/contracts/caseManifest.ts:1), [discovery](D:/Workspace/pos-cafe/scripts/idempotency-discover.mjs:1), [verify-results](D:/Workspace/pos-cafe/scripts/idempotency-verify-results.mjs:1) và [redaction](D:/Workspace/pos-cafe/scripts/idempotency-redact-artifacts.mjs:6) bằng cấu phần tương thích; không lấy expected từ helper đang kiểm. Report chỉ serialize whitelist, không giả redactor JWT/StoreKey cũ đã lọc PIN/hash/MAC. Bằng chứng và trạng thái T01 ghi ở biên bản implementation riêng; T01 chưa được đánh xong chỉ vì N01–N03 đã đóng tài liệu.
+
+**Hiện thực T05:** [SQL candidate](D:/Workspace/pos-cafe/supabase/candidate/permission-administration.sql:1), [adapter](D:/Workspace/pos-cafe/src/adapters/supabase/permissionAdminRepo.ts:1), [mock](D:/Workspace/pos-cafe/src/adapters/mock/permissionAdminRepo.ts:1) đã được kiểm local. PermissionFoundationPorts.employeeAdmin đã là full IEmployeeAdminRepo; AppPorts/UI hiện hành vẫn legacy. Fragment T05 cài sau T04 trong transaction staging của fixture, chưa là launcher activation. [Biên bản T05](../../../docs/implementation-log/permission-t05-employee-administration-audit-2026-09-16.md) ghi gate và giới hạn.
+
+**Hiện thực T06:** [financial SQL candidate](D:/Workspace/pos-cafe/supabase/candidate/permission-financial.sql:1) giữ protocol v1, thêm final authority sau business wait và prelock employee FK theo UUID. Actor là executor; initiator của K bất biến, có thể inactive khi người đủ quyền takeover. Register prelock store/actor; execute prelock store trong business helper, sau đó actor+initiator, current session và catalog. Get/cancel/list/replay khóa actor/session/catalog trước trả dữ liệu; list lọc action trước LIMIT và kiểm phiên từng item. Không outer store-authority SHARE hoặc khóa actor trước business wait. CREATE OR REPLACE giữ timezone UTC từ migration016. [Biên bản T06](../../../docs/implementation-log/permission-t06-financial-authority-2026-09-16.md) có kiểm lock trace/mutation controls, TTL và business regressions; chưa là activation launcher.
+
+**Hiện thực T07:** [SQL candidate](D:/Workspace/pos-cafe/supabase/candidate/permission-read.sql:1), [adapter](D:/Workspace/pos-cafe/src/adapters/supabase/permissionReadRepo.ts:1), [mock](D:/Workspace/pos-cafe/src/adapters/mock/permissionRepos.ts:1) và [strict parsers](D:/Workspace/pos-cafe/src/core/permissionReadInputs.ts:1). Public VOLATILE RPC khóa target order trước actor/session/catalog khi cần, lấy projection STABLE trong statement mới và kiểm phiên lần cuối. DTO receipt whitelist sâu trước REST, không sửa snapshot/R1. ACL đóng SELECT ở bảng/cột và view legacy nếu tồn tại; không tuyên bố đóng Storage/Realtime bằng ACL SELECT. Runtime AppPorts/UI chưa nối candidate. [Biên bản T07](../../../docs/implementation-log/permission-t07-read-projections-2026-09-16.md) ghi evidence và regression.
+
+### Addendum 8.2.1 — DELIVERY-03-NEW79, 13/10/2026
+
+Các câu exact77 ở §8.2.1 ghi scope lịch sử ngày28/09. Phạm vi hiện tại cho bước chuẩn bị kế tiếp là exact79 dẫn xuất theo [quyết định NEW79](../../../docs/workflow/tasks/permission-close3-scope79-2026-10-13.md);77 gốc SHA f231f4bc811d2d0551a2e3f4c23ff87696f9e9ede832c2c2f162073ee8a15af0 + exact2 từ checkpoint SHA1d3378aba00bf468d4a771eff2e4fd124599e205a47cf62d1b2311fe16f0032b. Manifest scope-only SHA362883c12c6d5a1666258572fc7acb32d283c702725520dc06d8a1705ed8ddb8 chưa là proof/config controller. Auth79 liên kết qua stores.id FK validated; preserve66 exact IDs ở private fresh observation. Storage vẫn delete exact2 gốc, preserve object3; prefix/owner/owner_id object3 ngoài79, không FK tới Auth/store trong catalog quan sát.
+
+Không đổi same-connection/same-transaction cleanup+empty activation, closure/lock/full-row digests, NOSUPERUSER/provider binding hoặc kiểm bootstrap chờ. Controller/preflight nhận exact set từ config pin hash, không hard-code77; helper backup cũ pin77 và chưa được sửa. Bước backup mới phải có helper/config pin đúng manifest79+provenance, snapshot/test riêng; không thay số77 bằng live count hoặc sửa manifest backup lịch sử. Chưa chạy provider rehearsal; source31 nguyên trạng, support artifacts riêng không thuộc application fingerprint. Chi tiết code/line và dependency ở [biên bản](../../../docs/implementation-log/permission-close3-scope79-2026-10-13.md).
+
+## Delta BACKUP-AB-14 — 14/10/2026
+
+[Quyết định owner](../../../docs/workflow/tasks/permission-backup-v2-2026-10-14.md) đã chấp nhận A cho B/I + B cho C/Storage. [Contract v2 và pre-run matrix](../../../docs/runbooks/permission-backup-v2-2026-10-14.md) là phần normative của PERM-06/PERM-30 → UC-PERM-14 → TC-PERM-53-V2 (các subcase, không thêm TC), design8.2.1 và T17/T18. Archive fidelity, allocation safety, concurrency observations và C/L tách rõ; không full64/global sequence no-drift mặc định chỉ để dump. Full-row locked recheck, ngoài scope66Auth/object3, exact79 provenance, exact2 Storage delete và live restore assessor giữ nguyên. Knonempty chặn empty-target cleanup; không bypass ledger/FK. Gate executionReady/cleanupEligible vẫn false khi thiếu C/Storage/provider capability. Các số77,74/75 và checkpoint trước đây là lịch sử, không được đổi thành proof79/PASS. Phạm vi này chỉ triển khai/kiểm chứng LOCAL; không cấp quyền hosted/window/release. Kết quả và review hiện hành được ghi trong handoff/implementation-log được liên kết. Scope/số30requirements,15UC,60TC không đổi.
+
+
+### SEC-01 — oracle globals đã kiểm LOCAL (14/10/2026, chờ review)
+
+Candidate01/source39 bị SEC yêu cầu sửa: projection roles thiếu expiration/comment/security labels. Source40 đã bổ sung `rolvaliduntil`, shared comment/security-label catalog, cùng bốn bản `pg_dumpall --roles-only --no-role-passwords` từ source trước capture, source cuối cửa sổ, pristine và allocation clone. Cùng binary/flags/restrict-key ngẫu nhiên cho một run; so toàn văn, không bỏ dòng. Mọi artifact/command được pin và loader tự recompute ba check bắt buộc `catalog:complete-roles`, `catalog:probe-roles`, `catalog:roles-window`. Cửa sổ source lệch phải refuse `BACKUP_V2_CATALOG_WINDOW_DRIFT`. Password vẫn ngoài profile đã ghi; không suy ra hosted global actor control. Positive fixture có expiration/comment; negative sửa riêng từng thuộc tính trên clone mới và trong source window, cộng forged PASS proof. Đây là sửa completeness trong phạm vi backup được ủy quyền, không đổi nghiệp vụ hoặc mở phase2. Source39 và candidate01 giữ nguyên, không tái gán PASS.
+
+
+## Hosted path — thiết kế kế tiếp, 14/10/2026
+
+[Task được giao mới](../../../docs/workflow/tasks/permission-hosted-path-2026-10-14.md) và [contract/profile/action plan hosted](../../../docs/runbooks/permission-hosted-path-2026-10-14.md) bổ sung phạm vi chuẩn bị PERM-06/30 → UC-PERM-14 → TC-PERM-53-V2-HP → T17/T18, tham chiếu PIN-T07. Đây là scoped normative design, chưa implementation, chưa có supported hosted profile/control hoặc quyền capture/window/cutover. Matrix ghi fresh SELECT exact79/66/3/K0/closure33 và giới hạn actor/consumers/Storage/deployment; không nhận chúng là backup hoặc locked full-row proof. Schema3 reserve/adapter/trust anchor/errors/mandatory checks và test matrix ở runbook; LOCAL v2/source40 và 60TC/19PIN không đổi. Eligibility/release vẫn BLOCKED; kế hoạch tests không là runtime PASS. Không nới C/L, không thay scope hay no-push. Khi owner giao implementation phải mở source mới và kiểm affected+mandatory gates trước action hosted.
+
+
+
+### HP1 — implementation LOCAL được giao ngày14/10/2026
+
+[Ủy quyền HP1](D:/Workspace/pos-cafe-docs/docs/workflow/tasks/permission-hosted-hp1-2026-10-14.md) triển khai [contract successor](D:/Workspace/pos-cafe-docs/docs/runbooks/permission-hosted-hp1-2026-10-14.md) theo TC53-V2-HP, PERM06/30→UC14→T17/T18 và PIN-T07. Normative schema/check/error/guard/negative matrix tham chiếu runbook và [biên bản pre-run](D:/Workspace/pos-cafe-docs/docs/implementation-log/permission-hosted-hp1-2026-10-14.md). Không thay requirement/usecase/60TC/19PIN hoặc acceptance. Producer/comparator/loader v3 đã hiện thực và kiểm LOCAL nguồn56; registry certified hosted vẫn rỗng. LOCAL_PASS không là provider certification. Các checkpoint “chưa giao implementation” trước đây giữ lịch sử; ủy quyền mới chỉ HP1, STOP trước HP2/hosted capture/backup/cutover/deploy, không push. Runtime nguồn56 đạt mandatory execution gates theo receipts trong biên bản; package/teardown đã hoàn tất LOCAL, chờ SEC→EVC cùng final candidate trước bàn giao. Không suy certification hoặc release từ execution PASS.

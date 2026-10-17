@@ -2,6 +2,14 @@
 
 Tài liệu này gom bằng chứng kiểm thử hiện hành để dùng trong báo cáo. Kết quả phải được đọc cùng **baseline, ngày chạy và môi trường**; không suy rộng local mock thành cloud production.
 
+## Candidate phân quyền đang tích hợp — 2026-09-22
+
+UI đang dùng contract candidate 15 quyền trên worktree `main@ef2c372` có thay đổi chưa commit. [Checkpoint](implementation-log/permission-ui-integration-2026-09-17.md) giữ kết quả unit/component, smoke mock, audit rendered UI và service Supabase cách ly theo từng lượt; chưa có PASS toàn bộ trên cùng source cuối, chưa phát hành. Các kết quả phase27 dưới đây là lịch sử độc lập.
+
+Gate tổng mới `scripts/permission-aggregate-verify.mjs` dùng expected manifest tĩnh theo TC/profile/file/test title. Manifest checkpoint21:53 ngày22/09 có60 TC/693 variant được map; TC51/52/54 còn `PENDING_T16`. TC48 đã map cả preflight legacy và activation transition; TC53/55/56 có bằng chứng runtime riêng nhưng chưa có aggregate execution attestation cùng source cuối. Không dùng manifest có cấu trúc hợp lệ thay kết quả chạy, không cộng variant thành số TC, không tính viewport exclusions là ca đã PASS.
+
+[Checkpoint22/09](implementation-log/permission-completion-2026-09-22.md) ghi TC12 DB retention9/9, transition4/4 theo scope, TC56 browser1/1 và full unit97 files/1.043 tests PASS trên các fingerprint được nêu riêng. Compatibility client/server TC51 tiếp tục sửa sau các lần chạy đó, nên các kết quả này không chứng nhận source đang thay đổi. Chưa triển khai lên product test.
+
 ## Nghiệm thu giao thức chống trùng — 2026-09-10
 
 Baseline code **main@3ada48c0c9c494d9b34838fd3739bda6091e0bb9**, đã push. Môi trường Windows/Node 24.16, PostgreSQL 16.15/PostgREST 16.2/GoTrue v2.197.0 loopback. Bốn stage dùng cùng fingerprint và report được verifier kiểm trước/sau commit.
@@ -176,9 +184,9 @@ Bốn lệnh đầu là cổng chất lượng, chạy được cục bộ và k
 ## Khoảng Trống Kiểm Thử
 
 - ~~Chưa có số liệu code coverage chính thức~~ **Đã có từ 2026-09-07**, xem mục "Độ Phủ Nền" ở trên. Khi ghi vào báo cáo phải kèm **phạm vi đo**, vì con số là của phần logic nghiệp vụ thuần chứ không phải của toàn bộ `src`.
-- Chưa có load/performance test hoặc đo latency realtime có kiểm soát.
+- Chưa có load/performance test. TC55 đã đo Realtime có kiểm soát với hai browser trên Supabase cách ly22/09; chưa chứng nhận latency trên Production.
 - Polling 5 giây là khoảng cấu hình, không phải cam kết mọi thiết bị hội tụ dưới 5 giây.
-- Reconnect self-heal có unit test nhưng lần kiểm chứng cross-device gần nhất vẫn cần diễn tập thủ công.
+- Candidate permission reconnect đã có unit và TC55 hai browser/service thật; kiểm chứng trên thiết bị vật lý và bản đã triển khai còn thiếu.
 - Chưa có test cho thiết bị in thật, offline, QR/bank processing hoặc kitchen queue vì các phần đó ngoài scope.
 - URL Vercel/live deployment và ngày kiểm tra live phải được bổ sung riêng trước khi đưa vào báo cáo như bằng chứng triển khai.
 

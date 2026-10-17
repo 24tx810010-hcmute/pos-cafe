@@ -1,0 +1,34 @@
+# CLOSE-3 — bằng chứng phạm vi 79, 13/10/2026
+
+Scope-only; chưa cleanup/activation/release. [Quyết định và handoff](../workflow/tasks/permission-close3-scope79-2026-10-13.md), [review](../reviews/2026-10-13-permission-close3-scope79.md). Quyết định NEW79 bổ sung đúng hai quán TEST do người dùng xác nhận trực tiếp ngày13/10. Kết quả cũ trong [bước1](permission-close3-step1-2026-10-13.md) giữ lịch sử: preservation-only backup, strict74/75 FAIL.
+
+## Phép kiểm đã chạy
+
+Chạy từ `D:/Workspace/pos-cafe`, Node Windows; tuần tự. Support tại `artifacts/permission-close3-scope79-20261013`, dữ liệu private tại `C:/Users/nguye/AppData/Local/pos-cafe-release/close3-scope79-20261013`, ACL chỉ account hiện tại+SYSTEM. Không có secrets/raw IDs/names/payload trong docs/public snapshot.
+
+| Lệnh / bằng chứng | Kết quả | Giới hạn |
+| --- | --- | --- |
+| `& artifacts/permission-close3-scope79-20261013/invoke-read-scope.ps1`, exit0; [read receipt](D:/Workspace/pos-cafe/artifacts/permission-close3-scope79-20261013/fresh-scope-safe.json) | Supabase `kfqjdfwxhkdwihjobpny`, database/actor/session_user postgres, repeatable-read READ ONLY; pooler username pin, CA SHA pin/TLS verify-full;08:28:33Z | Chỉ đọc identity/UUID/metadata/FK/counts, không write capability hoặc full-row proof |
+| `node artifacts/permission-close3-scope79-20261013/build-validate-scope.mjs`, exit0; [manifest receipt](D:/Workspace/pos-cafe/artifacts/permission-close3-scope79-20261013/scope79-safe.json) | Hash baseline77+checkpoint exact2+fresh read; private union79, Auth79/preserve66, Storage delete2/preserve1 | Không phát sinh controller inventory/config, backup hoặc quyền thi hành live |
+| `node artifacts/permission-close3-scope79-20261013/check-scope.mjs`, exit0,08:30:58Z; [validation](D:/Workspace/pos-cafe/artifacts/permission-close3-scope79-20261013/validation.json) |18/18 local, không DB/network;812 source entries drift0 | Không phải18 TC mới của PERM60; không rehearsal/runtime/cutoverPASS |
+
+Fresh raw SHA `14edddcbae38c0f37faa842bdfa6acccb6907eca2d329707f0a323f1f4c83e60`. Manifest79 SHA `362883c12c6d5a1666258572fc7acb32d283c702725520dc06d8a1705ed8ddb8`. Main/docs HEAD và source/bundle ghi tại handoff. Source31 archive/hash tiếp tục là bằng chứng local lịch sử; support riêng chưa thuộc fingerprint ứng dụng. Không đổi source để tránh lẫn scope approval và implementation cho release.
+
+## Bất biến đã kiểm và chưa kiểm
+
+1.77 UUID từ bản inventory byte-identical, bổ sung đúng hai UUID `outside` trong checkpoint frozen; không chọn bằng live count, ngày hoặc prefix.79 store identities (gồm tên/timestamps private), Auth145, count11 bảng liên quan và closure33/FK hash không drift so phần có trong checkpoint. Row content ngoài các trường đọc chưa được so; nếu lần sau có store80/object mới/version/row drift thì giữ và dừng dependency để đối chiếu, không tự duyệt.
+2.Auth79 có ID bằng store, FK validated cascade.66 Auth ngoài79 lưu exact IDs private, không được xóa. So Auth count145 với checkpoint không chứng minh tập66 không đổi từ quá khứ; tập preserve66 được khóa bằng observation mới, trước cutover vẫn cần full-row/digest/provenance và recheck.
+3.Storage object3 không thuộc prefix77/2, owner/owner_id ngoài79; catalog hiện chỉ có FK `storage.objects.bucket_id→storage.buckets.id`, không cascade Auth/store. Quan hệ này đủ xác định object3 không tự thuộc quyền bổ sung; không khẳng định đã kiểm mọi URL tham chiếu ứng dụng. Nó phải còn cả metadata/payload/version sau DB cleanup và Storage cleanup trong rehearsal. Hai object được xóa vẫn đối chiếu manifest gốc SHA `2cb4a9391fdd18babb383fe1a0ee064c8eb2b821be18c8028cb92892dda99bb3`, bản payload local đúng SHA; payload live chưa được tải lại.
+4.Validation chỉ nhận nội dung dẫn xuất chính xác từ các nguồn pin cứng; sửa UUID/path/hash/authorization/Auth/Storage/FK/eligibility thất bại. Source31 loader thực được gọi bằng hàm chỉ đọc file: scope-only manifest trả `INVENTORY_SCOPE_INVALID`; backup thật trả `BACKUP_PROOF_INVALID`. Comparison thật statusFAIL được kiểm riêng bằng envelope backup **synthetic diagnostic**, trả `RESTORE_PROOF_INVALID`. Fixture private mang tên synthetic, không dùng cho release. Test này chứng minh các nhánh reject, không chứng minh một bộ proof79 hợp lệ có thể cutover.
+
+## Khảo sát tooling và việc phải làm ở bước sau
+
+- [Parser/controller:74](D:/Workspace/pos-cafe/scripts/permission-release-cutover.mjs:74) pin references và binding; [inventory/backup/restore:155](D:/Workspace/pos-cafe/scripts/permission-release-cutover.mjs:155) không hard-code77, so exact current/baseline UUID và matched Auth; backup yêu cầu exact baseline, restore đòi không failed check. `cleanupEligible` của support không phải cơ chế bảo vệ duy nhất: actual backup bị từ chối vì `storeBaselineExactMatch=false`/baselineCount77.
+- [Preflight:19](D:/Workspace/pos-cafe/scripts/permission-release-preflight.mjs:19), [live set check:98](D:/Workspace/pos-cafe/scripts/permission-release-preflight.mjs:98) nhận danh sách cụ thể và kiểm exact set. Không chuyển sang admin→owner mapping đã bị thay thế cho cleanup này.
+- [Closure/locks/digest:392](D:/Workspace/pos-cafe/scripts/permission-release-cutover.mjs:392), [locked scope:437](D:/Workspace/pos-cafe/scripts/permission-release-cutover.mjs:437), [delete closure:470](D:/Workspace/pos-cafe/scripts/permission-release-cutover.mjs:470) phải được rehearsal cho79 bằng source phù hợp sau này. Không đổi lock/atomicity/provider guards. Current Storage logic suy tập cần kiểm từ prefix thuộc target; object3 hiện ngoài79 nên không làm tập deletion thành3. Future drift phải dừng, không dựa prefix để mở quyền.
+- Private backup helper `backup-database.mjs:530,568,840,916` pin77/count77. **Chưa sửa/chưa chạy helper79.** Nó là dependency của bước backup mới, không phải lý do nới helper gốc hoặc làm backup cũ eligible. Bước sau phải tạo helper/config mới pin exact manifest79 SHA và provenance77+2, snapshot source hỗ trợ, test negative/backup/restore mới; nếu sửa executable release code/test/config thì tạo source mới và chạy affected gates/review, không mượn source31PASS.
+
+Không có authorized release config hoặc proof79 usable được phát sinh. Gate tiếp theo vẫn theo thứ tự người dùng: kiểm quyền/cấu hình deployment/controlled rollout rồi backup nhất quán, provider rehearsal, review release/postflight và owner. Scope task dừng ở đây sau hai review. Không sửa các receipt cũ hay tự đặt CLOSE-3 complete.
+
+
+**Metadata review NEW79 ngày13/10/2026:** SEC rồi EVC cùng APPROVE exact candidate-01 SHA `d4ac17c0be198bd2725a9afb9e1ab183d83622995c4acfd156b09fbb373823de`; [verdict](D:/Workspace/pos-cafe-docs/docs/reviews/2026-10-13-permission-close3-scope79.md). Gate bàn giao scope79 đạt; các dòng/checklist chờ review là trạng thái lúc khóa snapshot. Chỉ bổ sung metadata review, không đổi candidate; release vẫn BLOCKED và STOP trước quyền/cấu hình deployment.

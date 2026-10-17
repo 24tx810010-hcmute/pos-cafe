@@ -4,6 +4,15 @@
 
 Đọc [quy trình làm việc với AI](../docs/workflow/README.md) cùng [SPEC-STANDARD.md](SPEC-STANDARD.md). [Mẫu dùng ngay](../docs/workflow/templates.md) bổ sung đầu vào, quyết định có căn cứ, bằng chứng nghiệm thu và bàn giao; giữ bộ bảy phần cho change chính thức. [Change quy trình](changes/adopt-ai-task-workflow/proposal.md) ghi phạm vi và lý do; không đổi trạng thái các feature bên dưới.
 
+## Trạng thái đối chiếu 2026-09-15
+
+- `add-idempotent-write-operations`: code/tests đã nghiệm thu tại `main@ef2c372`; migration 014–016 đã áp và kiểm catalog ngày 13/09; frontend Production gắn `ef2c372` đã xác minh ngày 14/09. Chưa chạy business smoke cửa hàng thật, chưa archive/apply delta vào baseline `specs/`. [Bằng chứng phase 27](../docs/implementation-log/phase-27-timeout-followup-2026-09-14.md).
+- `redesign-permission-model`: **chưa hoàn tất sản phẩm / chưa phát hành**. T01–T07 có bằng chứng kỹ thuật cách ly ngày16/09; UI chưa nối. Ngày17/09 chủ dự án yêu cầu làm trọn luồng và xác nhận cập nhật bản đang dùng, giữ nguyên dữ liệu. [Bàn giao hiện hành](../docs/workflow/tasks/redesign-permission-model.md), [T07](../docs/implementation-log/permission-t07-read-projections-2026-09-16.md), [kế hoạch tích hợp/phát hành](changes/redesign-permission-model/tasks.md).
+- **Quyết định sau T01, 15/09:** bỏ role Kế toán; catalog còn năm role, bốn hoạt động, ba selectable và giữ 15 quyền. [Bàn giao chuẩn bị T02](../docs/reviews/2026-09-14-permission-model/11-bo-ke-toan-chuan-bi-t02-2026-09-15.md) là mốc trước code; phần SQL đã thực hiện ở T02. Các review trước quyết định này giữ giá trị lịch sử, không còn là nguồn số role hoặc fixture Accountant.
+- Chủ dự án đã chốt change phân quyền bao cả đọc + ghi trong danh mục quyền; đổi `data.wipe` thành quyền xóa dữ liệu mẫu dành riêng owner; hai quyền settings/permission edit có thể được owner ủy quyền. Các dependency của `enforce-permissions-at-database` và các change phía sau sẽ được đối chiếu lại khi đóng câu hỏi; không tự hoàn thiện hoặc đánh dấu xong change khác.
+
+Các mốc kiểm kê 09–12/09 bên dưới là lịch sử. Những câu “đã chốt hết/chờ implement” ở mốc cũ không thay thế trạng thái khảo sát ngày 14/09.
+
 ## Cập nhật bộ chống trùng ngày 2026-09-10
 
 [add-idempotent-write-operations](changes/add-idempotent-write-operations/proposal.md) có **bảy loại artifact / 13 file Markdown**, gồm 33 requirement, 12 use case, 93 testcase gốc và các ma trận biến thể. [Testplan](changes/add-idempotent-write-operations/testplan.md) ghi expected trước code; [đối chiếu review ngoài](../docs/reviews/2026-09-07-idempotency/15-doi-chieu-review-ngoai-va-bien-tap.md) ghi các đính chính sau mốc ba reviewer. Chủ dự án đã duyệt triển khai ngày 2026-09-10; docs đã push `0ecf84d`. Code `main@3ada48c` và tests đã nghiệm thu tại [phase 27](../docs/implementation-log/phase-27-idempotent-write-operations.md), đã push code sau khi đủ gate; chưa deploy migration thật. Ước lượng 76,5 + 2n giờ là dự báo công sức; không có quỹ giờ tuần cố định.
@@ -46,7 +55,7 @@ Các proposal trỏ tới phần đã di chuyển đã được cập nhật the
 
 Các số đếm dưới đây là mốc kiểm kê cũ; thay đổi mới nhất của chống trùng được ghi ở đầu trang. Không dùng số lỗi validate tổng cũ để kết luận bộ chống trùng hiện còn thiếu delta.
 
-27 trong 29 change đang ở trạng thái **mới có `proposal.md`**, chưa có các artifact còn lại. Đây là chủ ý, không phải thiếu sót. Hai change đã có đủ bốn artifact và sẵn sàng implement: `redesign-permission-model` và `add-owner-account-and-store-provisioning` (viết ngày 2026-08-31).
+Tại mốc kiểm kê cũ, 27 trong 29 change **mới có `proposal.md`**. Hai change có đủ bốn artifact cũ là `redesign-permission-model` và `add-owner-account-and-store-provisioning` (viết ngày 2026-08-31). Đây không phải trạng thái sẵn sàng triển khai theo chuẩn bảy artifact hiện nay; trạng thái permission model hiện hành nằm ở đầu trang.
 
 `define-test-strategy` đã hoàn tất và archive ngày 2026-09-07 thành `changes/archive/2026-09-07-define-test-strategy`. Nó là **khuôn mẫu** của chuẩn bảy artifact.
 
@@ -56,7 +65,7 @@ Vì vậy `openspec validate --changes` báo lỗi `Change must have at least on
 
 Hai change đã có mục `## Quyết định đã chốt` được điền:
 
-- `redesign-permission-model`: **đã chốt hết và đã có đủ artifact** gồm `specs/`, `design.md` và `tasks.md`. Chờ implement.
+- `redesign-permission-model`: mốc31/08 có bốn artifact cũ; bản15/09 sau review ngoài gồm bảy artifact,15 quyền và Q1–Q15. Sau đó chủ dự án đã cho phép T01 và task này đã hoàn tất; trạng thái hiện hành ở đầu trang. Không dùng mốc spec cũ làm bằng chứng đã activation.
 - `add-owner-account-and-store-provisioning`: **đã chốt hết**, 21 quyết định, không còn câu hỏi bỏ ngỏ. Bốn artifact đã viết xong ngày 2026-08-31, delta chia bốn capability là `owner-account` (mới), `store-onboarding`, `store-isolation` và `employee-session`. Chờ implement.
 
 Hai change này phải làm nối tiếp: `redesign-permission-model` đưa vào vai trò chủ quán, `add-owner-account-and-store-provisioning` sau đó gắn vai trò đó với tài khoản chủ đã xác thực email. `add-provider-admin-console` tách ra từ trao đổi ngày 2026-08-28 và làm sau cùng.
@@ -90,6 +99,7 @@ Mỗi proposal có section `## Phụ thuộc`. Các quan hệ chính:
 - `add-multi-store-ownership` bắt buộc trước `add-cross-store-reporting`.
 - `add-idempotent-write-operations` phối hợp với `enforce-permissions-at-database`: phần xác minh danh tính nhân viên/quyền server tối thiểu là điều kiện nghiệm thu giao thức mới, không thể mặc định chống trùng luôn làm trước xác thực chỉ để tiết kiệm sửa chữ ký RPC. Nếu mở lại offline, change chống trùng vẫn bắt buộc trước `add-offline-data-layer`.
 - `measure-runtime-load` bắt buộc trước `optimize-runtime-load`.
+- `force-default-pin-change` không phụ thuộc change nào. Nên trước `redesign-permission-model` để bước đổi PIN đã có sẵn khi màn đăng nhập được dựng lại. `add-owner-account-and-store-provisioning` phải giữ bất biến do nó đặt ra: không tồn tại PIN mặc định dùng chung giữa các cửa hàng.
 - `handle-long-running-session` nên trước `add-offline-data-layer`.
 - `add-offline-data-layer` bắt buộc trước hai change offline còn lại. Riêng lát mỏng hiển thị trạng thái mạng trong `add-offline-status-ux` làm được độc lập trước.
 
@@ -128,4 +138,4 @@ Tóm tắt: mỗi change cần bảy file thay vì bốn. Ba file bổ sung là 
 
 `define-test-strategy` là change đầu tiên viết trọn theo chuẩn này và đóng vai **khuôn mẫu** — cần biết một file nên trông như thế nào thì mở change đó ra xem.
 
-Hai change viết trước ngày 2026-09-07 là `redesign-permission-model` và `add-owner-account-and-store-provisioning` đã có khung ba file mới nhưng để trống, sẽ điền khi bắt đầu thực hiện.
+Hai change viết trước ngày 2026-09-07 từng chỉ có khung ba file mới. `redesign-permission-model` được hoàn thiện theo chuẩn bảy artifact trong task spec 15/09; không suy trạng thái đó cho `add-owner-account-and-store-provisioning`.

@@ -1,0 +1,24 @@
+# SEC review — checkpoint runtime execution, 16/10/2026
+
+**APPROVE** checkpoint [candidate-01](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/runtime-execution-launch-01/candidate-01/manifest.json), SHA256 **`9a5dce3cbb65dbf51bc8dbc0c9792e568208221a1df90deeb3528fa2262ea4a0`**, **11 file/41869 byte** và sáu unchanged reviewed source references. Verdict ghi nhận lần copy/offline đã thực hiện; không cấp quyền lặp hoặc dùng credential/probe DB.
+
+Reviewer độc lập `ci1_worker_sec` không thực hiện lượt controller/copy/offline. Chỉ đọc hồ sơ, source references và metadata runtime công khai; không chạy code/runtime hoặc tests mới. Các báo cáo preparation/controller trước giữ nguyên lịch sử.
+
+## Kiểm chứng và kết quả
+
+- Đối chiếu hash/length đủ 11 live/snapshot files và sáu source references: **0 mismatch**. Controller giữ SHA `0f7c4273a836b68b764c5594ec2177fc1522e0e2a59a36c228b68da21ec1efdb`; helper/verifier/program/manifest/proof vẫn đúng các pins đã review. Không ghép source mới với evidence cũ.
+- Approval `call_3065fd94e628417490366dbae83e5812`, intent/argv/start marker và protected invocation markers nhất quán: **một controller, một copy, một offline có điều kiện**. Quyền này đã dùng. Không có retry trong evidence; không biến approval copy/offline thành quyền PostgreSQL.
+- Parent/controller exit 0, `RUNTIME_PREPARATION_VERIFIED`, failureStage NONE, copyAttempts=offlineAttempts=1, handlesClosed=true. Controller elapsed **15291 ms**, parent stopwatch **15640 ms**; timestamp interval có phần ghi marker trước stopwatch nên không buộc các số bằng nhau. [Controller:65–91](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/runtime-preparation-v1/invoke-private-runtime-preparation.ps1:65) hỗ trợ đúng thứ tự và kết luận này.
+- Copy safe receipt ghi 140 files/32 directories/hash verification/handles closed. Đọc metadata runtime độc lập, không đọc payload: xác nhận tồn tại **140 files/92755145 logical bytes/32 directories kể cả root**. Audit public sau copy ghi đủ 140 size/hash khớp manifest, 172 owner/ACL/no-reparse checks, handles đóng và không re-execute. Reviewer không chạy lại audit/hash toàn runtime; đó là evidence root đã lưu và bind với source không đổi.
+- Actual offline safe receipt ghi **34 CJS files**, private resolution, networkAttempts=0, credentialRead/databaseConnected/newProbeAuthorized=false. Đây là pg thật trong protected runtime, chỉ dựng Client synthetic; không phải 34 test cases, kết nối SQL, TLS credential hoặc actor/scope proof. [Offline program:15–43](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/runtime-preparation-v1/offline-runtime-program.mjs:15) và verifier đã review chỉ import/construct, không connect; hook/resolution checks có phạm vi hữu hạn, không là sandbox/OS network audit tổng quát.
+- So sánh stored controller receipt với parent: mọi stored field khớp. Stored không có `finalReceiptWritten`, parent có true, phù hợp [source:86–90](D:/Workspace/pos-cafe/artifacts/permission-online-compatibility-20261016/runtime-preparation-v1/invoke-private-runtime-preparation.ps1:86): SaveFinal trước rồi mới thêm field vào stdout. Không có evidence conflict hoặc tự nâng FAIL thành PASS.
+
+## Secret, authority và acceptance
+
+[Biên bản:5–23](D:/Workspace/pos-cafe-docs/docs/implementation-log/permission-runtime-private-execution-2026-10-16.md:5) phân biệt actual copy/offline với preparation và ghi đúng source pins/read-lock, markers, env/timeouts. Snapshot không chứa runtime payload hoặc credential/private input contents; chỉ safe receipts/source references và docs. Chương trình offline dùng literal synthetic, không đọc ba private inputs hoặc gọi actor-probe CLI. Không thấy quyền đọc credential/DB được mở qua scope này.
+
+[Biên bản:35–49](D:/Workspace/pos-cafe-docs/docs/implementation-log/permission-runtime-private-execution-2026-10-16.md:35) giữ đúng logical size khác allocation, dự trữ C/D hơn30GiB, timeout child cộng cleanup chứ không nhận OS quota/total hard wall cap, không tự xóa runtime đang cần. **Không có finding chặn hoặc đề xuất cần sửa đối với checkpoint này.**
+
+Actual protected runtime/offline milestone đã đạt. **Launcher credential cũ vẫn trỏ Node alias/shared dependency và chưa được sửa**; sự tồn tại của runtime mới không cho dùng lại launcher đó. Chưa có PostgreSQL actor/scope79 online PASS mới, Supabase contract2/cutover/recovery, backend release gates hoặc Vercel deploy. Tích hợp launcher/giữ pins-locks cần scope chuẩn bị, kiểm/review và quyền probe mới riêng; review checkpoint không tự cấp các quyền đó.
+
+Reviewer không `-Execute`/`-Prepare`/`-Verify`, chạy Node/pg hoặc tests, đọc/hash/decrypt private input, network/DB/install, copy/ACL, Git/CI/deploy/delete. Chỉ tạo báo cáo này, dưới **10 KiB** tổng phát sinh. **APPROVE đúng SHA trên cho checkpoint một lần copy + offline đã được duyệt và hoàn tất; không phải approval execution kế tiếp hoặc release readiness.**

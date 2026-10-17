@@ -1,5 +1,9 @@
 # Data Model
 
+## Candidate quyền — 2026-09-17, chưa áp lên đích phát hành
+
+Candidate bổ sung catalog quyền/defaults/revisions, owner mapping, audit quản trị, registry retry, tín hiệu tối thiểu, private image staging/published lookup và receipt print grants. Role chuyển enum cũ sang mã catalog với đúng một owner active/store. Đã diễn tập chuyển đổi và rollback cách ly giữ hash business/K/R1; không suy dữ liệu Supabase đích đã chuyển. Chi tiết contract nằm ở [design](../openspec/changes/redesign-permission-model/design.md), tiến độ/evidence ở [checkpoint](implementation-log/permission-ui-integration-2026-09-17.md). Bảng/ERD baseline bên dưới chưa được thay bằng trạng thái candidate chưa phát hành.
+
 Cập nhật 2026-09-10 theo `main@3ada48c` đã push và nghiệm thu. Phạm vi/SHA/bằng chứng ở [phase 27](implementation-log/phase-27-idempotent-write-operations.md); chưa triển khai migration lên môi trường thật.
 
 Data model dùng PostgreSQL/Supabase với **15 bảng nghiệp vụ chính**, thiết kế theo store-scoped multi-tenant: hầu hết bảng nghiệp vụ có `store_id`, UUID primary key, `created_at`, `updated_at`, và một số bảng editor có `deleted_at` để xóa mềm.

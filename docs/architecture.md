@@ -1,5 +1,15 @@
 # Architecture
 
+## Candidate phân quyền — cập nhật 2026-09-17, chưa phát hành
+
+Working tree đã tích hợp mô hình15 quyền; [checkpoint tích hợp](implementation-log/permission-ui-integration-2026-09-17.md) ghi nguồn, kiểm thử và phần còn chờ. Các phần baseline bên dưới giữ mốc ghi nhận cũ; không dùng chúng để suy candidate mới đã triển khai.
+
+- Production `AppPorts` gồm `permission`, `write`, `auth`, `seed`, `print`; legacy raw repositories nằm ở surface riêng cho regression phase27/bridge, không được runtime UI khởi tạo.
+- Employee profile trong UI chỉ có id/name. Catalog và snapshot phiên đã xác minh là nguồn quyền; mọi read/write nhạy cảm còn kiểm quyền hiện hành ở server.
+- Query key theo store/employee/generation phiên/purpose. Revision thay đổi không đồng nghĩa đăng nhập lại. Revoke đóng/purge đúng phần, bỏ nháp bị ảnh hưởng, giữ nháp khác và K đã gửi.
+- Foreground revision poll30s; focus/reconnect xác minh trước khi hiển thị lại. Chuỗi refresh deadline5s; signal liên tục không được kéo dài deadline. Trần35s chỉ có điều kiện online/server đáp ứng, không là bảo đảm khi mất mạng.
+- Receipt initial grant là metadata ngoài immutable K/R1. Mỗi click in kiểm server; thu hồi quyền vô hiệu callback cũ, không tự replay sau reconnect/regrant. Realtime chỉ tín hiệu tối thiểu; ảnh staging private đi qua gateway/finalization có kiểm quyền.
+
 Cập nhật 2026-09-10 theo `main@3ada48c` đã push và nghiệm thu. Phạm vi/SHA/bằng chứng ở [phase 27](implementation-log/phase-27-idempotent-write-operations.md); chưa triển khai migration lên môi trường thật.
 
 ## Hexagonal Architecture / Ports & Adapters
