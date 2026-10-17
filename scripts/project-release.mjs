@@ -19,7 +19,9 @@ export function verifyReleaseRun(run, input, policy) {
 export function verifyReleaseEnvironment(environment, branches, policy) {
   const review = environment.protection_rules?.find(rule => rule.type === 'required_reviewers');
   const reviewers = review?.reviewers?.map(entry => entry.type === 'User' ? entry.reviewer?.login : null);
-  if (environment.name !== 'production' || environment.can_admins_bypass !== false || !reviewers
+  // GitHub environment names are case-insensitive; Vercel's existing environment
+  // is named Production. Never create a duplicate or erase deployment history.
+  if (typeof environment.name !== 'string' || environment.name.toLowerCase() !== 'production' || environment.can_admins_bypass !== false || !reviewers
     || reviewers.length !== policy.reviewers.length || [...reviewers].sort().join(',') !== [...policy.reviewers].sort().join(',')
     || review.prevent_self_review !== false || environment.deployment_branch_policy?.protected_branches !== false
     || environment.deployment_branch_policy?.custom_branch_policies !== true

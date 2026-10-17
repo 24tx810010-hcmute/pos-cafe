@@ -82,6 +82,11 @@ test('failed Vitest diagnostics retain known counters and source paths without r
     diagnostic: { ...diagnostic, codes: [...diagnostic.codes, 'FAKE_PRIVATE_TOKEN'], metrics: { ...diagnostic.metrics, raw: 'FAKE_PRIVATE_TOKEN' } } };
   assert.equal(JSON.stringify(publicSummary(binding, [row], {source:digest,lock:digest})).includes('FAKE_PRIVATE_TOKEN'), false);
   assert.ok(privateDiagnostics('ERROR: Coverage for lines (89%) does not meet global threshold (90%)', null).codes.includes('COVERAGE_LINES'));
+  const architectureReport = { testResults: [{ name: '/source/src/architectureBoundaries.test.ts', status: 'failed',
+    assertionResults: [{status:'passed'}, {status:'failed', message:'FAKE_PRIVATE_TOKEN'}] }] };
+  const precise = privateDiagnostics('', architectureReport, ['src/architectureBoundaries.test.ts'], '/source');
+  assert.equal(precise.metrics.architectureAssertion, 2);
+  assert.equal(JSON.stringify(precise).includes('FAKE_PRIVATE_TOKEN'), false);
 });
 
 test('fresh capture retains output privately; guard refusal stops dependent process and never echoes output', async () => {
@@ -156,6 +161,8 @@ test('CD requires the exact owner, branch restrictions and no admin bypass; prod
   const environment = { name: 'production', can_admins_bypass: false, deployment_branch_policy: { protected_branches: false, custom_branch_policies: true },
     protection_rules: [{ type: 'required_reviewers', prevent_self_review: false, reviewers: [{ type: 'User', reviewer: { login: 'nguyentronglinh045' } }] }] };
   assert.equal(verifyReleaseEnvironment(environment, [{ name: 'main', type: 'branch' }], policy), true);
+  assert.equal(verifyReleaseEnvironment({ ...environment, name: 'Production' }, [{ name: 'main', type: 'branch' }], policy), true);
+  assert.throws(() => verifyReleaseEnvironment({ ...environment, name: 'Preview' }, [{ name: 'main', type: 'branch' }], policy));
   assert.throws(() => verifyReleaseEnvironment({ ...environment, can_admins_bypass: true }, [{ name: 'main', type: 'branch' }], policy));
   assert.throws(() => verifyReleaseEnvironment(environment, [{ name: '*', type: 'branch' }], policy));
   assert.equal(PRODUCTION_ENABLED, false);

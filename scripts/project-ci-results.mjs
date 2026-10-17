@@ -27,6 +27,11 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
     const path = typeof file.name === 'string' ? file.name.replaceAll('\\', '/').replace(root.replaceAll('\\', '/') + '/', '') : '';
     return expectedFiles.includes(path) && /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path) ? path : null;
   }).filter(Boolean).slice(0, 32);
+  const architecture = (report?.testResults ?? []).find(file => file.name?.replaceAll('\\', '/') === root.replaceAll('\\', '/') + '/src/architectureBoundaries.test.ts');
+  if (failedFiles.includes('src/architectureBoundaries.test.ts') && Array.isArray(architecture?.assertionResults)) {
+    const index = architecture.assertionResults.findIndex(item => item.status === 'failed');
+    if (index >= 0 && index < 5) metrics.architectureAssertion = index + 1;
+  }
   return { codes, metrics, failedFiles };
 }
 const sameSet = (a, b) => a.length === b.length && new Set(a).size === a.length
@@ -152,7 +157,7 @@ export function publicSummary(binding, rows, fingerprints) {
       ['run', 'pass', 'fail', 'skip', 'acceptedFindings', 'detectedFindings'].includes(key) && integer(value))) : null,
     diagnostic: diagnostic ? { codes: diagnostic.codes.filter(code => DIAGNOSTIC_CODES.includes(code)),
       metrics: Object.fromEntries(Object.entries(diagnostic.metrics).filter(([key, value]) =>
-        ['numTotalTests', 'numPassedTests', 'numFailedTests', 'numPendingTests', 'numRuntimeErrorTestSuites'].includes(key) && integer(value))),
+        ['numTotalTests', 'numPassedTests', 'numFailedTests', 'numPendingTests', 'numRuntimeErrorTestSuites', 'architectureAssertion'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));
   return { schemaVersion: 'pos-cafe-light-ci-v1', verificationScope: 'LIGHT_MOCK_ONLY', repository: PROJECT_REPOSITORY,
     event: binding.event, sourceSHA: binding.sourceSHA, prHeadSHA: binding.prHeadSHA, workflowSHA: binding.workflowSHA,
