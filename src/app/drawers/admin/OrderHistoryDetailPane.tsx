@@ -17,6 +17,7 @@ interface OrderHistoryDetailPaneProps {
   paymentMethodLabel: string;
   paidTimeLabel: string;
   canVoid: boolean;
+  canReprint?: boolean;
   voidedByLabel: string;
   voidedTimeLabel: string;
   onReprint: () => void;
@@ -36,6 +37,7 @@ export function OrderHistoryDetailPane({
   paymentMethodLabel,
   paidTimeLabel,
   canVoid,
+  canReprint = false,
   voidedByLabel,
   voidedTimeLabel,
   onReprint,
@@ -55,14 +57,14 @@ export function OrderHistoryDetailPane({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <IconButton
+          {canReprint && <IconButton
             disabled={!selected || selected.status === "void"}
             label="In lại hóa đơn"
             onClick={onReprint}
             testId="history-reprint-button"
           >
             <Printer size={16} />
-          </IconButton>
+          </IconButton>}
           <IconButton disabled={!selected} label="Sao chép mã đơn" onClick={onCopyDisplayNo}>
             <Copy size={16} />
           </IconButton>

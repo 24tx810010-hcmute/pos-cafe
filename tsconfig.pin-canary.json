@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.pin-canary.tsbuildinfo",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "vitest.permission-canary-oracle.config.ts",
+    "vitest.permission-canary-empty-runtime.config.ts",
+    "tests/contracts/permissionCanaryOracle.ts",
+    "tests/contracts/permissionCanaryOracle.tool.test.ts",
+    "tests/contracts/permissionCanaryArtifacts.tool.test.ts",
+    "tests/contracts/permissionCanaryScenarioMatrix.ts",
+    "tests/contracts/permissionCanaryScenarioMatrix.tool.test.ts",
+    "tests/contracts/permissionCanaryEmptyRuntime.contract.test.ts"
+  ]
+}

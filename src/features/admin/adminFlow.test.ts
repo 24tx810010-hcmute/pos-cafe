@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createMockPorts, createSeededMockState } from "@/adapters/mock";
+import { createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import type { Employee } from "@/domain";
 import {
   clearDemoDataForAdmin,
@@ -41,29 +42,23 @@ describe("adminFlow", () => {
   });
 
   it("saves menu and floor plan changes through ports", async () => {
-    const state = createSeededMockState();
-    state.session = { storeId: state.settings.storeId, storeNo: 1 };
-    const ports = createMockPorts(state);
-    await ports.employee.startSession(admin.id, "123456");
+    const { ports, actor } = await createCandidateRuntimeFixture();
     const menuChanges = createEmptyMenuChanges();
     const floorChanges = createEmptyFloorPlanChanges();
-    const menuSpy = vi.spyOn(ports.menu, "saveMenuChanges");
-    const floorSpy = vi.spyOn(ports.floorPlan, "saveFloorPlan");
+    const menuSpy = vi.spyOn(ports.permission!.changes, "saveMenuChanges");
+    const floorSpy = vi.spyOn(ports.permission!.changes, "saveFloorPlan");
 
-    await saveMenuForAdmin(ports, { actor: admin, changes: menuChanges });
-    await saveFloorPlanForAdmin(ports, { actor: admin, changes: floorChanges });
+    await saveMenuForAdmin(ports, { actor, changes: menuChanges });
+    await saveFloorPlanForAdmin(ports, { actor, changes: floorChanges });
 
     expect(menuSpy).toHaveBeenCalledWith(menuChanges);
     expect(floorSpy).toHaveBeenCalledWith(floorChanges);
   });
 
   it("blocks menu and floor mutations for non-admin actors before calling ports", async () => {
-    const state = createSeededMockState();
-    state.session = { storeId: state.settings.storeId, storeNo: 1 };
-    const ports = createMockPorts(state);
-    await ports.employee.startSession(admin.id, "123456");
-    const menuSpy = vi.spyOn(ports.menu, "saveMenuChanges");
-    const floorSpy = vi.spyOn(ports.floorPlan, "saveFloorPlan");
+    const { ports } = await createCandidateRuntimeFixture();
+    const menuSpy = vi.spyOn(ports.permission!.changes, "saveMenuChanges");
+    const floorSpy = vi.spyOn(ports.permission!.changes, "saveFloorPlan");
 
     await expect(
       saveMenuForAdmin(ports, { actor: cashier, changes: createEmptyMenuChanges() }),
@@ -100,29 +95,23 @@ describe("adminFlow", () => {
   });
 
   it("updates settings and passes admin employee id to clear demo", async () => {
-    const state = createSeededMockState();
-    state.session = { storeId: state.settings.storeId, storeNo: 1 };
-    const ports = createMockPorts(state);
-    await ports.employee.startSession(admin.id, "123456");
-    const clearSpy = vi.spyOn(ports.settings, "clearDemoData").mockResolvedValue(undefined);
+    const { ports, actor } = await createCandidateRuntimeFixture();
+    const clearSpy = vi.spyOn(ports.permission!.changes, "clearDemoData").mockResolvedValue(undefined);
 
     const settings = await updateSettingsForAdmin(ports, {
-      actor: admin,
+      actor,
       settings: { displayName: "Cafe mới" },
     });
-    await clearDemoDataForAdmin(ports, { actor: admin });
+    await clearDemoDataForAdmin(ports, { actor, requestId: "73000000-0000-4000-8000-000000000001", confirmation: true });
 
     expect(settings.displayName).toBe("Cafe mới");
-    expect(clearSpy).toHaveBeenCalledWith("6b7bd350-7db2-4160-8471-cca2668c070d");
+    expect(clearSpy).toHaveBeenCalledWith({ requestId: "73000000-0000-4000-8000-000000000001", confirmation: true });
   });
 
   it("keeps clear-demo blocked errors from settings port visible to UI", async () => {
-    const state = createSeededMockState();
-    state.session = { storeId: state.settings.storeId, storeNo: 1 };
-    const ports = createMockPorts(state);
-    await ports.employee.startSession(admin.id, "123456");
+    const { ports, actor } = await createCandidateRuntimeFixture();
 
-    await expect(clearDemoDataForAdmin(ports, { actor: admin })).rejects.toMatchObject({
+    await expect(clearDemoDataForAdmin(ports, { actor, requestId: "73000000-0000-4000-8000-000000000002", confirmation: true })).rejects.toMatchObject({
       code: "OPEN_ORDERS_BLOCK_CLEAR_DEMO",
     });
   });

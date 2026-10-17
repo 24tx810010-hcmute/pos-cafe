@@ -37,6 +37,21 @@ describe("Supabase write transport contract",()=>{
     const repo=new SupabaseWriteOperationRepo(client);await repo.register(id,payload);await repo.execute(id,payload);
     expect(rpc.mock.calls).toEqual([["register_write_operation",{p_operation_id:id,p_payload:payload}],["execute_write_operation",{p_operation_id:id,p_payload:payload}]]);
   });
+  it("T14 keeps initial print grant outside immutable operation/R1 and validates binding",async()=>{
+    const grantId="70000000-0000-4000-8000-000000000001";const operation={operationId:id,schemaVersion:1,status:"applied",payload,result:{kind:"pay_order"}};
+    const rpc=vi.fn().mockResolvedValue({data:{ok:true,operation,initialReceiptPrintGrant:{grantId,orderId:id}},error:null});
+    const result=await new SupabaseWriteOperationRepo({rpc} as unknown as SupabaseAnyClient).executeForInitialReceipt(id,payload,{grantId});
+    expect(result).toEqual({operation,initialReceiptPrintGrant:{grantId,orderId:id}});
+    expect(rpc).toHaveBeenCalledWith("execute_write_operation",{p_operation_id:id,p_payload:payload,p_print_grant_id:grantId});
+    expect(JSON.stringify(result.operation)).not.toContain(grantId);
+  });
+  it("T14 terminal replay may omit grant and nonpayment cannot request one",async()=>{
+    const grantId="70000000-0000-4000-8000-000000000001",operation={operationId:id,schemaVersion:1,status:"applied"};
+    const rpc=vi.fn().mockResolvedValue({data:{ok:true,operation},error:null});const repo=new SupabaseWriteOperationRepo({rpc} as unknown as SupabaseAnyClient);
+    await expect(repo.executeForInitialReceipt(id,payload,{grantId})).resolves.toEqual({operation});
+    const nonpayment={schemaVersion:1,kind:"void_order",orderId:id,expectedVersion:1,reason:"other"} as WritePayloadV1;
+    await expect(repo.executeForInitialReceipt(id,nonpayment,{grantId})).rejects.toMatchObject({code:"INVALID_WRITE_REQUEST"});expect(rpc).toHaveBeenCalledTimes(1);
+  });
   it("terminal rejected is data; envelope auth error rejects without carrying request secrets",async()=>{
     const client={rpc:vi.fn().mockResolvedValue({data:{ok:true,operation:{operationId:id,schemaVersion:1,status:"rejected",error:{code:"PRICE_CHANGED"}}},error:null})} as unknown as SupabaseAnyClient;
     expect((await new SupabaseWriteOperationRepo(client).execute(id,payload)).status).toBe("rejected");

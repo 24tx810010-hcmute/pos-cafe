@@ -4,7 +4,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import toast from 'react-hot-toast';
 import { AppError } from '@/core/appError';
 import type { OperationView } from '@/domain';
-import { createMockPorts, createSeededMockState } from '@/adapters/mock';
+import { activateCandidateUi, createCandidateRuntimeFixture } from '@/test/candidateRuntimeFixture';
 import { PortsContext } from '@/features/shared/portsContext';
 import { OrderDrawer } from '@/app/drawers/pos/OrderDrawer';
 import { WriteLifecycle } from '@/app/WriteLifecycle';
@@ -14,10 +14,8 @@ const clients: QueryClient[] = [];
 afterEach(() => { cleanup(); clients.splice(0).forEach(client => client.clear()); vi.restoreAllMocks(); useAppStore.setState({ currentEmployee: null, drawer: null, orderContext: null, paymentOrderId: null, draftItems: [], receiptPreview: null }); });
 function Surface() { return useAppStore(state => state.drawer) === 'order' ? <OrderDrawer /> : null; }
 async function fixture() {
-  const state = createSeededMockState(); state.session = { storeId: state.settings.storeId, storeNo: 1 }; state.orders = [];
+  const candidate=await createCandidateRuntimeFixture({demoCredentials:true}),state=candidate.business,ports=candidate.ports,actor=candidate.actor;state.orders=[];activateCandidateUi(candidate);
   state.menu.optionGroups = []; state.menu.optionValues = []; state.menu.menuItemOptionGroups = [];
-  const ports = createMockPorts(state); const actor = state.employees.find(employee => employee.role === 'admin')!;
-  await ports.employee.startSession(actor.id, state.pins[actor.id]);
   useAppStore.setState({ currentEmployee: actor, drawer: 'order', orderContext: { orderId: null, tableId: null, orderType: 'takeaway' }, draftItems: [], receiptPreview: null });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }); clients.push(client);
   vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true);
@@ -32,12 +30,12 @@ for (const transition of ['same_employee', 'offline_online'] as const) {
       vi.spyOn(f.ports.write, 'execute').mockImplementationOnce(() => new Promise<OperationView>((_, fail) => { reject = fail; }));
       fireEvent.click(screen.getByTestId('submit-order-button')); await waitFor(() => expect(reject).toBeDefined());
       if (transition === 'same_employee') {
-        await f.ports.employee.startSession(f.actor.id, f.state.pins[f.actor.id]);
+        await f.ports.permission!.session.startSession(f.actor.id, '123456');
         act(() => useAppStore.getState().setCurrentEmployee(f.actor));
       } else {
         act(() => { vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false); window.dispatchEvent(new Event('offline')); vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true); window.dispatchEvent(new Event('online')); });
       }
-      const before = useAppStore.getState(); const error = vi.spyOn(toast, 'error'); const revoke = vi.spyOn(f.ports.employee, 'revokeSession');
+      const before = useAppStore.getState(); const error = vi.spyOn(toast, 'error'); const revoke = vi.spyOn(f.ports.permission!.session, 'revokeSession');
       await act(async () => reject(new AppError(code, 'Old initial submit error')));
       await waitFor(() => expect(f.client.getMutationCache().getAll().map(mutation => mutation.state.status)).toEqual(['error']));
       expect.soft(useAppStore.getState().currentEmployee).toBe(f.actor);
@@ -50,7 +48,7 @@ for (const code of ['EMPLOYEE_SESSION_REQUIRED', 'AUTH_REQUIRED'] as const) {
   test(`TC-IDEM-006/core/initial=submit/error=${code} still signs out on a current authentication error`, async () => {
     const f = await fixture();
     vi.spyOn(f.ports.write, 'execute').mockRejectedValueOnce(new AppError(code, 'Current initial submit error'));
-    const error = vi.spyOn(toast, 'error'); const revoke = vi.spyOn(f.ports.employee, 'revokeSession');
+    const error = vi.spyOn(toast, 'error'); const revoke = vi.spyOn(f.ports.permission!.session, 'revokeSession');
     fireEvent.click(screen.getByTestId('submit-order-button'));
     await waitFor(() => expect(useAppStore.getState().currentEmployee).toBeNull());
     expect(useAppStore.getState().screen).toBe(code === 'AUTH_REQUIRED' ? 'landing' : 'passcode');
@@ -71,7 +69,7 @@ for (const transition of ['same_employee', 'offline_online'] as const) {
     fireEvent.click(screen.getByTestId('submit-order-button')); await waitFor(() => expect(release).toBeDefined());
     expect(f.state.orders).toHaveLength(1);
     if (transition === 'same_employee') {
-      await f.ports.employee.startSession(f.actor.id, f.state.pins[f.actor.id]);
+      await f.ports.permission!.session.startSession(f.actor.id, '123456');
       act(() => useAppStore.getState().setCurrentEmployee(f.actor));
     } else {
       act(() => { vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false); window.dispatchEvent(new Event('offline')); vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true); window.dispatchEvent(new Event('online')); });

@@ -1,0 +1,210 @@
+[
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-01/db five roles, 75 cells, 15 codes and exact enabled/selectable flags"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db normalize null"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db normalize empty arrays"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db normalize redundant default"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db normalize duplicate grant"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db normalize deny default beats grant"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db normalize deny nondefault beats grant"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db normalize irrelevant deny"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db normalize 100 repeated grants"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db reject empty object"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db reject array"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db reject missing denies"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db reject wrong grants"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db reject wrong item"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db reject unknown code"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db reject extra field"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db reject 101 items"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db reject baseline deny"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db reject owner-only grant"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-04/db read-only waiter fixture keeps history/report separate from payment and reprint"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/db 6144 bridge profiles agree with independent oracle, legacy SQL and current UI guards"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/db null, empty and duplicate legacy override forms 0"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/db null, empty and duplicate legacy override forms 1"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/db null, empty and duplicate legacy override forms 2"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/db null, empty and duplicate legacy override forms 3"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/db legacy null permission and unknown explicit grants retain old helper semantics"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/db catalog maintenance changes once per transaction and leaves legacy bridge untouched"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-01/db two catalog writers serialize and do not lose revisions"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-01/db catalog and revision constraints reject invalid state 0"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-01/db catalog and revision constraints reject invalid state 1"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-01/db catalog and revision constraints reject invalid state 2"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-01/db catalog and revision constraints reject invalid state 3"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-01/db catalog and revision constraints reject invalid state 4"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-01/db catalog and revision constraints reject invalid state 5"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-01/db catalog and revision constraints reject invalid state 6"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-01/db catalog and revision constraints reject invalid state 7"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/db old RPC definitions and grants stay closed; new catalog and secrets are inaccessible"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/REST real session, create, update, pay, split, void and replay preserve protocol v1"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/REST direct catalog, registry and private schema access fail"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/REST revoked action refuses execution without cancelling pending K"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/preflight rejects config, marker, phase and service binding drift before migration"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/db app callers cannot execute bridge internals or edit row revision"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/db revert refuses a revision already used by candidate consumers"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/preflight refuses implicit env"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/preflight refuses application env"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/preflight refuses wrong profile"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/preflight refuses remote observer"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/preflight refuses wrong database"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/preflight refuses remote API"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/preflight refuses missing marker"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/preflight refuses wrong stores"
+  },
+  {
+    "file": "permissionBridge.contract.test.ts",
+    "name": "TC-PERM-50/preflight refuses invalid Auth JWT"
+  }
+]

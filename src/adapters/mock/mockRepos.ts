@@ -1,4 +1,4 @@
-import type { AppPorts } from "@/ports";
+import type { LegacyAppPorts } from "@/ports";
 import { MockAuthRepo } from "./authRepo";
 import { MockEmployeeRepo } from "./employeeRepo";
 import { MockFloorPlanRepo } from "./floorPlanRepo";
@@ -17,7 +17,7 @@ import { MockWriteOperationRepo } from "./writeOperationRepo";
 export { createMockState, createSeededMockState } from "./mockState";
 export type { MockState } from "./mockState";
 
-export const createMockPorts = (state: MockState = createMockState()): AppPorts => {
+export const createMockPorts = (state: MockState = createMockState()): LegacyAppPorts => {
   const credential = { token: null as string | null };
   return ({
   write: new MockWriteOperationRepo(state, credential),

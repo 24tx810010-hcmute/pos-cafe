@@ -12,6 +12,7 @@ const parseStoreNo = (storeKey: string): number => {
 };
 
 export class MockAuthRepo implements IAuthRepo {
+  acknowledgeCreatedStore(): void { /* Legacy mock has no pending creation context. */ }
   constructor(private readonly state: MockState, private readonly credential: MockEmployeeCredential = {token:null}) {}
 
   async pairStore(storeKey: string): Promise<void> {

@@ -2,14 +2,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMockPorts, createSeededMockState, type MockState } from "@/adapters/mock";
+import type { MockState } from "@/adapters/mock";
+import { activateCandidateUi, createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import type { Employee } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 
-const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
-const cashier: Employee = { id: "22828322-623b-42e7-8a28-a2bdf367c364", name: "Thu ngân 1", role: "cashier", isActive: true };
+const admin: Employee = { id: "30000000-0000-4000-8000-000000000011", name: "Chủ cửa hàng", role: "admin", isActive: true };
+const cashier: Employee = { id: "30000000-0000-4000-8000-000000000013", name: "Thu ngân", role: "cashier", isActive: true };
 
 class ResizeObserverMock {
   observe() {}
@@ -41,7 +42,7 @@ const seedOrdersForToday = (state: MockState, businessDate: string) => {
   }));
 };
 
-const resetStore = (actor: Employee) => {
+const resetStore = (actor: Pick<Employee, "id" | "name">) => {
   useAppStore.setState({
     screen: "passcode",
     currentEmployee: actor,
@@ -55,9 +56,9 @@ const resetStore = (actor: Employee) => {
 };
 
 const renderDrawer = async (options: { actor?: Employee; voidPaidOrder?: boolean } = {}) => {
-  const actor = options.actor ?? admin;
-  const state = createSeededMockState();
-  state.session = { storeId: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", storeNo: 1 };
+  const requestedActor = options.actor ?? admin;
+  const fixture = await createCandidateRuntimeFixture({ role: requestedActor.role === "cashier" ? "cashier" : "owner" });
+  const actor = fixture.actor; const state = fixture.business; const ports = fixture.ports;
   const businessDate = businessDateForTest();
   seedOrdersForToday(state, businessDate);
 
@@ -65,18 +66,17 @@ const renderDrawer = async (options: { actor?: Employee; voidPaidOrder?: boolean
     const paid = state.orders.find((order) => order.id === "3f6c6266-12b8-4f8b-8564-44d00d9210f8")!;
     paid.status = "void";
     paid.voidedAt = `${businessDate}T10:00:00.000Z`;
-    paid.voidedByEmployeeId = "6b7bd350-7db2-4160-8471-cca2668c070d";
+    paid.voidedByEmployeeId = actor.id;
     paid.voidReasonCode = "customer_request";
     paid.voidReasonNote = "Khách đổi ý";
   }
 
-  const ports = createMockPorts(state);
-  await ports.employee.startSession(actor.id, state.pins[actor.id]);
   const voidSpy = vi.spyOn(ports.write, "execute");
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
 
+  activateCandidateUi(fixture);
   resetStore(actor);
   render(
     <PortsContext.Provider value={ports}>
@@ -162,7 +162,7 @@ describe("Order history — void paid order", () => {
     await user.click(await screen.findByTestId("history-row-3f6c6266-12b8-4f8b-8564-44d00d9210f8"));
 
     const voidInfo = await screen.findByTestId("history-void-info");
-    expect(voidInfo).toHaveTextContent("Quản lý");
+    expect(voidInfo).toHaveTextContent("Chủ quán");
     expect(voidInfo).toHaveTextContent("Khách đổi ý / trả món");
     expect(screen.queryByTestId("history-void-order")).not.toBeInTheDocument();
     expect(screen.getByLabelText("In lại hóa đơn")).toBeDisabled();

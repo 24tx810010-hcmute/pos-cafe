@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { posQueryKeys } from "@/features/shared/queryKeys";
-import type { AppPorts, RealtimeInvalidationInput } from "@/ports";
+import type { LegacyAppPorts, RealtimeInvalidationInput } from "@/ports";
 
 export const createRealtimeInvalidationInput = (
   queryClient: QueryClient,
@@ -26,7 +26,7 @@ export const createRealtimeInvalidationInput = (
 });
 
 export const startRealtimeInvalidation = (
-  ports: AppPorts,
+  ports: LegacyAppPorts,
   queryClient: QueryClient,
   storeId: string,
 ): (() => void) => ports.realtime.startStoreInvalidation(createRealtimeInvalidationInput(queryClient, storeId));

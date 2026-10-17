@@ -1,18 +1,18 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { createMockPorts, createSeededMockState } from "@/adapters/mock";
+import type { MockState } from "@/adapters/mock";
+import { activateCandidateUi, createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import type { Employee } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
 import { useAppStore } from "../useAppStore";
 import { FloorWorkspace } from "./FloorWorkspace";
 
-const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "30000000-0000-4000-8000-000000000011", name: "Chủ cửa hàng", role: "admin", isActive: true };
 
-const renderWorkspace = (configureState?: (state: ReturnType<typeof createSeededMockState>) => void) => {
-  const state = createSeededMockState();
+const renderWorkspace = async (configureState?: (state: MockState) => void) => {
+  const fixture = await createCandidateRuntimeFixture(); const state = fixture.business; const ports = fixture.ports;
   configureState?.(state);
-  const ports = createMockPorts(state);
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -20,6 +20,7 @@ const renderWorkspace = (configureState?: (state: ReturnType<typeof createSeeded
     },
   });
 
+  activateCandidateUi(fixture);
   useAppStore.setState({
     screen: "passcode",
     currentEmployee: admin,
@@ -56,7 +57,7 @@ afterEach(() => {
 
 describe("FloorWorkspace", () => {
   it("renders the selected table background while keeping the status border", async () => {
-    renderWorkspace((state) => {
+    await renderWorkspace((state) => {
       state.floorPlan.tables[0].backgroundAssetKey = "/floor-assets/tables/table-bg-11.png";
     });
 
@@ -66,7 +67,7 @@ describe("FloorWorkspace", () => {
   });
 
   it("renders catalog decoration images on the POS floor", async () => {
-    renderWorkspace((state) => {
+    await renderWorkspace((state) => {
       state.floorPlan.decorItems.push({
         id: "decor-seat-image",
         areaId: state.floorPlan.areas[0].id,
@@ -91,7 +92,7 @@ describe("FloorWorkspace", () => {
   });
 
   it("keeps refresh near the floor controls without rendering the old top chrome", async () => {
-    renderWorkspace();
+    await renderWorkspace();
 
     expect(await screen.findByTestId("floor-view")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Sơ đồ bàn" })).not.toBeInTheDocument();

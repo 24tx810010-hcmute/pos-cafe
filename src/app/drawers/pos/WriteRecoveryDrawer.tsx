@@ -6,6 +6,8 @@ import { formatVnd } from "@/core/money";
 import { isAppError } from "@/core/appError";
 import { useStoreSessionQuery } from "@/features/session";
 import { usePorts } from "@/features/shared/portsContext";
+import { permissionRead, sessionHasPermission, usePermissionSession, usePermission } from "@/features/shared/permissionSession";
+import { writePermission } from "@/core/writePayload";
 import { getWriteCoordinator, invalidateAfterOrderMutation, receiptToPrint, useWriteAttempt } from "@/features/pos";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { notifyUiError, toToastError } from "../../appErrors";
@@ -29,6 +31,10 @@ export function WriteRecoveryDrawer() {
 
 function SessionWriteRecoveryDrawer({ storeId, employeeId, sessionVersion }: { storeId: string; employeeId: string; sessionVersion: number }) {
   const ports = usePorts();
+  const authority = usePermissionSession();
+  const canReprint = usePermission("receipt.reprint");
+  const canTakePayment = usePermission("payment.take"), canReadHistory = usePermission("orderHistory.view");
+  const canReadReceipt = canTakePayment || canReadHistory;
   const queryClient = useQueryClient();
   const scope = useMemo(() => ["write-recovery", storeId, employeeId, sessionVersion] as const, [storeId, employeeId, sessionVersion]);
   const [accessError, setAccessError] = useState<unknown>(null);
@@ -41,7 +47,7 @@ function SessionWriteRecoveryDrawer({ storeId, employeeId, sessionVersion }: { s
   };
   const read = async <T,>(signal: AbortSignal, request: () => Promise<T>): Promise<T> => {
     try {
-      const data = await request();
+      const data = await permissionRead(["order.create", "order.update", "order.voidOpen", "payment.take", "order.voidPaid"], request);
       signal.throwIfAborted();
       return data;
     } catch (error) {
@@ -52,7 +58,8 @@ function SessionWriteRecoveryDrawer({ storeId, employeeId, sessionVersion }: { s
   useEffect(() => {
     if (accessError) queryClient.removeQueries({ queryKey: scope });
   }, [accessError, queryClient, scope]);
-  const queryOptions = { enabled: !accessError, refetchInterval: 5_000, retry: false, staleTime: 0, gcTime: 0 } as const;
+  const queryOptions = { enabled: !accessError && authority.status === "verified", refetchInterval: 5_000,
+    refetchIntervalInBackground: false, refetchOnWindowFocus: false, refetchOnReconnect: false, retry: false, staleTime: 0, gcTime: 0 } as const;
   const close = useAppStore((state) => state.closeDrawer);
   const openPreview = useAppStore((state) => state.openReceiptPreview);
   const [status, setStatus] = useState<WriteStatus | "">("");
@@ -68,12 +75,22 @@ function SessionWriteRecoveryDrawer({ storeId, employeeId, sessionVersion }: { s
     ...(kind ? { kinds: [kind] } : {}), ...(from ? { registeredFrom: new Date(from).toISOString() } : {}),
     ...(to ? { registeredTo: new Date(to).toISOString() } : {}), limit: 50, cursor };
   const list = useQuery({ ...queryOptions, queryKey: [...scope, "list", filter], queryFn: ({ signal }) => read(signal, () => ports.write.list(filter)) });
-  const selected = useQuery({ ...queryOptions, queryKey: [...scope, "detail", selectedId], queryFn: ({ signal }) => read(signal, () => ports.write.get(selectedId!)), enabled: !accessError && !!selectedId });
+  const selected = useQuery({ ...queryOptions, queryKey: [...scope, "detail", selectedId], queryFn: ({ signal }) => read(signal, () => ports.write.get(selectedId!)), enabled: queryOptions.enabled && !!selectedId });
   const page = !accessError && !list.isError ? list.data : undefined;
-  const operation = !accessError && !selected.isError ? selected.data : undefined;
+  const operation = !accessError && !selected.isError && selected.data && sessionHasPermission(writePermission(selected.data.payload)) ? selected.data : undefined;
   const current = useQuery({ ...queryOptions, queryKey: [...scope, "current", operation?.payload.orderId],
-    queryFn: ({ signal }) => read(signal, () => ports.order.getOrder(operation!.payload.orderId)), enabled: !accessError && !!operation });
-  const employees = useQuery({ ...queryOptions, queryKey: [...scope, "employees"], queryFn: ({ signal }) => read(signal, () => ports.employee.listActiveEmployees()) });
+    queryFn: ({ signal }) => read(signal, async () => {
+      try {
+        return await (operation!.kind === "void_order"
+          ? ports.permission!.read.getPaidOrderForVoid(operation!.payload.orderId)
+          : ports.permission!.read.getOpenOrderDetail(operation!.payload.orderId));
+      } catch (error) {
+        if (!isAppError(error) || error.code !== "NOT_FOUND") throw error;
+        return sessionHasPermission("orderHistory.view")
+          ? ports.permission!.read.getOrderHistoryDetail(operation!.payload.orderId) : null;
+      }
+    }), enabled: queryOptions.enabled && !!operation });
+  const employees = useQuery({ ...queryOptions, queryKey: [...scope, "employees"], queryFn: ({ signal }) => read(signal, () => ports.permission!.authority.listRoster()) });
   const employeeName = (id: string | null) => id ? employees.data?.find((employee) => employee.id === id)?.name ?? id : "Chưa ghi nhận";
   const action = useMutation({ retry: false, networkMode: "always",
     mutationFn: async ({ kind }: { kind: "resume" | "cancel"; isCurrent: () => boolean }) => {
@@ -97,11 +114,10 @@ function SessionWriteRecoveryDrawer({ storeId, employeeId, sessionVersion }: { s
     const canShow = () => viewIsCurrent() && generation === accessGeneration.current;
     if (!canShow()) return;
     try {
-      const fresh = await ports.order.getOrder(receipt.orderId);
-      if (!canShow()) return;
-      const document = await ports.order.getReceipt(receipt.orderId);
-      if (!canShow()) return;
-      openPreview({ variant: "receipt", doc: receiptToPrint(document.receipt, fresh.orderType), legacyMetadata: document.legacyMetadata });
+      const document = await ports.permission!.print.prepareReceiptReprint(receipt.orderId);
+      if (!canShow() || !sessionHasPermission("receipt.reprint") || !(sessionHasPermission("payment.take") || sessionHasPermission("orderHistory.view"))) return;
+      const orderType = operation.result.kind === "pay_order_items" ? operation.result.paidOrder.orderType : operation.result.order.orderType;
+      openPreview({ variant: "receipt", doc: receiptToPrint(document.receipt, orderType), legacyMetadata: document.legacyMetadata, source: { kind: "reprint" } });
     } catch (error) {
       if (canShow()) { denyAccess(error); notifyUiError(error); }
     }
@@ -126,7 +142,7 @@ function SessionWriteRecoveryDrawer({ storeId, employeeId, sessionVersion }: { s
       {!accessError && list.isError && <p role="alert">{toToastError(list.error)}</p>}
       {!online && <p role="alert">Cần kết nối để tra cứu và xử lý thao tác.</p>}
       <div className="grid gap-4 md:grid-cols-2">
-        <section aria-label="Danh sách thao tác">{page?.items.map((item) => <button key={item.operationId} data-testid={`operation-${item.operationId}`} className={`mb-2 block w-full rounded border p-3 text-left ${selectedId === item.operationId ? "border-teal-600 bg-teal-50" : "bg-white"}`} onClick={() => setSelectedId(item.operationId)}>
+        <section aria-label="Danh sách thao tác">{page?.items.filter(item => sessionHasPermission(writePermission(item.payload))).map((item) => <button key={item.operationId} data-testid={`operation-${item.operationId}`} className={`mb-2 block w-full rounded border p-3 text-left ${selectedId === item.operationId ? "border-teal-600 bg-teal-50" : "bg-white"}`} onClick={() => setSelectedId(item.operationId)}>
           <strong>{kindLabel(item)} · {labels[item.status]}</strong><br />
           <span>{item.registeredAt} · {employeeName(item.initiatedByEmployeeId)}</span><br /><span className="break-all text-xs">Mã thao tác: {item.operationId}</span><br /><span className="break-all text-xs">Mã đơn: {item.payload.orderId}</span>
         </button>)}{page?.items.length === 0 && <p>Không tìm thấy thao tác phù hợp.</p>}
@@ -149,9 +165,9 @@ function SessionWriteRecoveryDrawer({ storeId, employeeId, sessionVersion }: { s
             </div>}
             {operation.error && <p role="alert">{operation.error.message}</p>}
             {operation.result && <div data-testid="historical-result" className="rounded border bg-teal-50 p-2"><strong>Kết quả đã ghi của đúng lần này</strong><p>{"paidOrder" in operation.result ? `Đơn đã thanh toán #${operation.result.paidOrder.orderNo}, ${formatVnd(operation.result.paidOrder.total)}; đơn nguồn còn ${formatVnd(operation.result.sourceOrder.total)}` : `Đơn #${operation.result.order.orderNo}: ${operation.result.order.status}, ${formatVnd(operation.result.order.total)}`}</p></div>}
-            <div data-testid="current-order" className="my-3 rounded border p-2"><strong>Trạng thái đơn hiện tại</strong><p>{current.data ? `Đơn #${current.data.orderNo}: ${current.data.status}, ${formatVnd(current.data.total)}, phiên bản ${current.data.lockVersion}` : current.isError ? "Chưa có dữ liệu đơn hiện tại hoặc không thể tải." : "Đang tải..."}</p></div>
+            <div data-testid="current-order" className="my-3 rounded border p-2"><strong>Trạng thái đơn hiện tại</strong><p>{current.data ? `Đơn #${current.data.orderNo}: ${current.data.status}, ${formatVnd(current.data.total)}, phiên bản ${current.data.lockVersion}` : current.isPending ? "Đang tải..." : "Chưa có dữ liệu đơn hiện tại hoặc không thể tải."}</p></div>
             <div className="flex flex-wrap gap-2"><Button data-testid="write-recovery-resume" variant="contained" disabled={action.isPending || operation.status !== "pending" || !navigator.onLine} onClick={() => action.mutate({ kind: "resume", isCurrent: captureView() })}>Tiếp tục đúng thao tác này</Button><Button data-testid="write-recovery-cancel" color="error" disabled={action.isPending || operation.status !== "pending" || !navigator.onLine} onClick={() => action.mutate({ kind: "cancel", isCurrent: captureView() })}>Hủy lệnh chưa thực hiện</Button>
-              {operation.result && "receipt" in operation.result && <Button data-testid="write-recovery-reprint" onClick={() => void reprint()}>In lại hóa đơn</Button>}
+              {canReprint && canReadReceipt && operation.result && "receipt" in operation.result && <Button data-testid="write-recovery-reprint" onClick={() => void reprint()}>In lại hóa đơn</Button>}
             </div>
             {(operation.status === "expired" || operation.status === "cancelled" || operation.status === "rejected") && <p>Đơn vẫn được giữ trên server. Hãy mở trạng thái đơn hiện tại và xác nhận một thao tác mới nếu cần.</p>}
           </>}

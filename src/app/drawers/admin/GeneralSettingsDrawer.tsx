@@ -1,16 +1,12 @@
 import clsx from "clsx";
-import { AlertTriangle, Database, PackagePlus, ReceiptText, Save, ShieldAlert, Store, Trash2 } from "lucide-react";
+import { AlertTriangle, Database, ReceiptText, Save, ShieldAlert, Store, Trash2 } from "lucide-react";
 import { Button, TextField } from "@mui/material";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { canAccessModule } from "@/core/guards";
+import { usePermission, usePermissionSession } from "@/features/shared/permissionSession";
 import { useStoreSessionQuery } from "@/features/session";
-import {
-  useSeedDemoDataMutation,
-  useStoreSettingsQuery,
-  useUpdateSettingsMutation,
-} from "@/features/admin";
+import { useStoreSettingsQuery, useUpdateSettingsMutation } from "@/features/admin";
 import { useAppStore } from "../../useAppStore";
 import { toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
@@ -22,6 +18,7 @@ interface SettingsForm {
   displayName: string;
   address: string;
   billFooter: string;
+  timezone: string;
 }
 
 const SECTIONS: Array<{ key: SettingsSection; label: string; desc: string; detail: string; icon: ReactNode }> = [
@@ -33,23 +30,16 @@ const SECTIONS: Array<{ key: SettingsSection; label: string; desc: string; detai
 export function GeneralSettingsDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
-  const allowed = canAccessModule(currentEmployee, "settings");
+  const allowed = usePermission("settings.manage");
+  const canClear = usePermission("data.clearDemo");
+  const isOwner = usePermissionSession(state => state.bundle?.snapshot.role === "owner");
   const settingsQuery = useStoreSettingsQuery();
   const sessionQuery = useStoreSessionQuery();
   const storeNoLabel = sessionQuery.data?.status === "paired" ? String(sessionQuery.data.session.storeNo).padStart(4, "0") : "—";
   const updateSettingsMutation = useUpdateSettingsMutation(currentEmployee);
-  const seedDemoMutation = useSeedDemoDataMutation(currentEmployee);
-
-  const handleSeedDemo = () => {
-    seedDemoMutation.mutate(undefined, {
-      onSuccess: () => toast.success("Đã khởi tạo dữ liệu mẫu"),
-      onError: (error) => toast.error(toToastError(error)),
-    });
-  };
-
   const [seeded, setSeeded] = useState(false);
   const [base, setBase] = useState<SettingsForm | null>(null);
-  const [form, setForm] = useState<SettingsForm>({ displayName: "", address: "", billFooter: "" });
+  const [form, setForm] = useState<SettingsForm>({ displayName: "", address: "", billFooter: "", timezone: "Asia/Ho_Chi_Minh" });
   const [section, setSection] = useState<SettingsSection>("info");
   const [nameError, setNameError] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -61,6 +51,7 @@ export function GeneralSettingsDrawer() {
         displayName: settingsQuery.data.displayName,
         address: settingsQuery.data.address,
         billFooter: settingsQuery.data.billFooter,
+        timezone: settingsQuery.data.timezone,
       };
       setForm(f);
       setBase(f);
@@ -68,7 +59,7 @@ export function GeneralSettingsDrawer() {
     }
   }, [settingsQuery.data, seeded]);
 
-  const dirty = !!base && (form.displayName !== base.displayName || form.address !== base.address || form.billFooter !== base.billFooter);
+  const dirty = !!base && (form.displayName !== base.displayName || form.address !== base.address || form.billFooter !== base.billFooter || form.timezone !== base.timezone);
 
   const patch = (p: Partial<SettingsForm>) => setForm((prev) => ({ ...prev, ...p }));
 
@@ -85,6 +76,7 @@ export function GeneralSettingsDrawer() {
           displayName: form.displayName.trim(),
           address: form.address,
           billFooter: form.billFooter,
+          ...(isOwner ? { timezone: form.timezone } : {}),
         },
       },
       {
@@ -93,6 +85,7 @@ export function GeneralSettingsDrawer() {
             displayName: saved.displayName,
             address: saved.address,
             billFooter: saved.billFooter,
+            timezone: saved.timezone,
           };
           setBase(next);
           setForm(next);
@@ -195,7 +188,7 @@ export function GeneralSettingsDrawer() {
                 ))}
               </div>
               <div className="grid gap-0.5 rounded-[10px] border border-pos-line bg-white p-3 max-[980px]:hidden">
-                <span className="text-[9.5px] font-black uppercase tracking-[0.05em] text-[#64748b]">Mã quán</span>
+                <span className="text-[11px] font-black uppercase tracking-[0.05em] text-[#64748b]">Mã quán</span>
                 <strong className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">{storeNoLabel} · {form.displayName || "Chưa đặt tên"}</strong>
               </div>
             </aside>
@@ -219,6 +212,8 @@ export function GeneralSettingsDrawer() {
                     inputProps={{ "data-testid": "settings-name-input" }}
                   />
                   <TextField label="Địa chỉ" value={form.address} onChange={(e) => patch({ address: e.target.value })} size="small" fullWidth multiline minRows={2} helperText="In ngay dưới tên quán trên hoá đơn." />
+                  {isOwner ? <TextField label="Múi giờ cửa hàng" value={form.timezone} onChange={e => patch({ timezone: e.target.value })} size="small" fullWidth helperText="Tên IANA, ví dụ Asia/Ho_Chi_Minh (UTC+7). Chỉ chủ quán được đổi." inputProps={{ "data-testid": "settings-timezone-input" }} />
+                    : <p>Múi giờ cửa hàng: {form.timezone}</p>}
                 </div>
               ) : section === "bill" ? (
                 <div className="grid content-start gap-5 rounded-pos border border-pos-line bg-pos-surface p-5 max-[980px]:p-3">
@@ -240,21 +235,9 @@ export function GeneralSettingsDrawer() {
               ) : (
                 <div className="grid justify-items-start gap-2.5 rounded-pos border border-[#fde68a] bg-[#fffbeb] p-3.5 [&_p]:m-0 [&_strong]:text-sm">
                   <strong>Dữ liệu mẫu</strong>
-                  <p className="text-pos-muted">Khởi tạo bộ dữ liệu mẫu (menu, sơ đồ bàn, thu ngân demo) để thử nhanh, hoặc đặt lại/xoá phần dữ liệu mẫu. Không ảnh hưởng dữ liệu bạn tự tạo.</p>
+                  <p className="text-pos-muted">Xoá phần dữ liệu mẫu đã tạo khi thiết lập quán. Không ảnh hưởng dữ liệu bạn tự tạo.</p>
                   <div className="flex flex-wrap gap-2.5">
-                    <Button
-                      variant="outlined"
-                      startIcon={<PackagePlus size={15} />}
-                      data-testid="seed-demo-button"
-                      disabled={seedDemoMutation.isPending}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleSeedDemo();
-                      }}
-                    >
-                      {seedDemoMutation.isPending ? "Đang khởi tạo..." : "Khởi tạo dữ liệu mẫu"}
-                    </Button>
-                    <Button
+                    {canClear && <Button
                       variant="outlined"
                       color="error"
                       startIcon={<Trash2 size={15} />}
@@ -265,7 +248,7 @@ export function GeneralSettingsDrawer() {
                       }}
                     >
                       Đặt lại dữ liệu mẫu
-                    </Button>
+                    </Button>}
                   </div>
                 </div>
               )}

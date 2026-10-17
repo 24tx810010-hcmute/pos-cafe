@@ -9,9 +9,10 @@ import type {
   StoreSettingsUpdate,
 } from "@/domain";
 import { emptyChangeset } from "@/domain";
-import type { AppPorts } from "@/ports";
+import type { AppPorts, LegacyAppPorts } from "@/ports";
+import { assertCompatibilityCurrent, requireCurrentPermission } from "@/features/shared/permissionSession";
 
-export type AdminActor = Pick<Employee, "id" | "role"> | null;
+export type AdminActor = (Pick<Employee, "id"> & Partial<Pick<Employee, "role">>) | null;
 
 export type SaveMenuForAdminInput = {
   actor: AdminActor;
@@ -46,6 +47,8 @@ export type UpdateSettingsForAdminInput = {
 
 export type ClearDemoDataForAdminInput = {
   actor: AdminActor;
+  requestId: string;
+  confirmation: true;
 };
 
 export type SeedDemoDataForAdminInput = {
@@ -57,7 +60,7 @@ export const requireAdminActor = (actor: AdminActor): Pick<Employee, "id" | "rol
     throw new AppError("FORBIDDEN", "Chỉ quản lý mới được thực hiện thao tác này.");
   }
 
-  return actor;
+  return { id: actor.id, role: actor.role };
 };
 
 export const createEmptyMenuChanges = (): MenuChanges => ({
@@ -75,6 +78,7 @@ export const createEmptyFloorPlanChanges = (): FloorPlanChanges => ({
 });
 
 export const hasMenuChanges = (changes: MenuChanges): boolean =>
+  (changes.imageChanges?.length ?? 0) > 0 ||
   changes.categories.created.length > 0 ||
   changes.categories.updated.length > 0 ||
   changes.categories.deleted.length > 0 ||
@@ -106,20 +110,22 @@ export const saveMenuForAdmin = async (
   ports: AppPorts,
   input: SaveMenuForAdminInput,
 ): Promise<void> => {
-  requireAdminActor(input.actor);
-  await ports.menu.saveMenuChanges(input.changes);
+  await requireCurrentPermission(ports, input.actor, "menu.manage");
+  assertCompatibilityCurrent();
+  await ports.permission!.changes.saveMenuChanges(input.changes);
 };
 
 export const saveFloorPlanForAdmin = async (
   ports: AppPorts,
   input: SaveFloorPlanForAdminInput,
 ): Promise<void> => {
-  requireAdminActor(input.actor);
-  await ports.floorPlan.saveFloorPlan(input.changes);
+  await requireCurrentPermission(ports, input.actor, "floor.manage");
+  assertCompatibilityCurrent();
+  await ports.permission!.changes.saveFloorPlan(input.changes);
 };
 
 export const createEmployeeForAdmin = async (
-  ports: AppPorts,
+  ports: LegacyAppPorts,
   input: CreateEmployeeForAdminInput,
 ): Promise<Employee> => {
   requireAdminActor(input.actor);
@@ -127,7 +133,7 @@ export const createEmployeeForAdmin = async (
 };
 
 export const updateEmployeeForAdmin = async (
-  ports: AppPorts,
+  ports: LegacyAppPorts,
   input: UpdateEmployeeForAdminInput,
 ): Promise<Employee> => {
   requireAdminActor(input.actor);
@@ -135,7 +141,7 @@ export const updateEmployeeForAdmin = async (
 };
 
 export const resetPinForAdmin = async (
-  ports: AppPorts,
+  ports: LegacyAppPorts,
   input: ResetPinForAdminInput,
 ): Promise<void> => {
   requireAdminActor(input.actor);
@@ -146,28 +152,32 @@ export const updateSettingsForAdmin = async (
   ports: AppPorts,
   input: UpdateSettingsForAdminInput,
 ): Promise<StoreSettings> => {
-  requireAdminActor(input.actor);
-  return ports.settings.updateSettings(input.settings);
+  await requireCurrentPermission(ports, input.actor, "settings.manage");
+  assertCompatibilityCurrent();
+  return ports.permission!.changes.updateSettings(input.settings);
 };
 
 export const clearDemoDataForAdmin = async (
   ports: AppPorts,
   input: ClearDemoDataForAdminInput,
 ): Promise<void> => {
-  const actor = requireAdminActor(input.actor);
-  await ports.settings.clearDemoData(actor.id);
+  await requireCurrentPermission(ports, input.actor, "data.clearDemo");
+  assertCompatibilityCurrent();
+  await ports.permission!.changes.clearDemoData({ requestId: input.requestId, confirmation: input.confirmation });
 };
 
 export const seedDemoDataForAdmin = async (
   ports: AppPorts,
   input: SeedDemoDataForAdminInput,
 ): Promise<void> => {
-  requireAdminActor(input.actor);
+  await requireCurrentPermission(ports, input.actor, "settings.manage");
+  assertCompatibilityCurrent();
   const session = await ports.auth.getStoreSession();
 
   if (!session) {
     throw new AppError("AUTH_REQUIRED", "Phiên cửa hàng không hợp lệ.");
   }
 
+  assertCompatibilityCurrent();
   await ports.seed.seedDemo(session.storeId);
 };

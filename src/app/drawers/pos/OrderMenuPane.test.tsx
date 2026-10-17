@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { OrderMenuPane } from "./OrderMenuPane";
 import type { Category, MenuItem } from "@/domain";
@@ -57,5 +57,32 @@ describe("OrderMenuPane", () => {
     const soldOutCard = screen.getByTestId("menu-item-9491e262-856d-4408-82b7-c9d7f7ac3f27");
     expect(within(soldOutCard).getByText("Đã bán hết")).toBeInTheDocument();
     expect(within(soldOutCard).queryByText("Tạm hết")).not.toBeInTheDocument();
+  });
+
+  it("TC-PERM-47 keeps the item actionable when its published image fails", () => {
+    const onAddItem = vi.fn();
+    render(<OrderMenuPane categories={categories} items={[items[0]]} categoryId={categories[0].id} search=""
+      isLoading={false} isError={false} error={null} onSelectCategory={vi.fn()} onSearchChange={vi.fn()}
+      onRetry={vi.fn()} onAddItem={onAddItem} getMenuImageUrl={() => "https://assets.local/unavailable.webp"} />);
+    const card = screen.getByTestId(`menu-item-${items[0].id}`);
+    fireEvent.error(screen.getByAltText("Ảnh Latte"));
+    expect(within(card).getByText("Latte")).toBeVisible();
+    expect(within(card).getByText(/45\.000/)).toBeVisible();
+    expect(within(card).getByTestId("menu-image-placeholder")).toBeVisible();
+    fireEvent.click(card);
+    expect(onAddItem).toHaveBeenCalledExactlyOnceWith(items[0]);
+  });
+
+  it("TC-PERM-47 resets an image failure when publication returns a new asset URL", () => {
+    let url = "https://assets.local/old.webp";
+    const props = { categories, items: [items[0]], categoryId: categories[0].id, search: "", isLoading: false,
+      isError: false, error: null, onSelectCategory: vi.fn(), onSearchChange: vi.fn(), onRetry: vi.fn(), onAddItem: vi.fn() };
+    const view = render(<OrderMenuPane {...props} getMenuImageUrl={() => url} />);
+    fireEvent.error(screen.getByAltText("Ảnh Latte"));
+    expect(screen.getByTestId("menu-image-placeholder")).toBeVisible();
+    url = "https://assets.local/new.webp";
+    view.rerender(<OrderMenuPane {...props} getMenuImageUrl={() => url} />);
+    expect(screen.getByAltText("Ảnh Latte")).toHaveAttribute("src", url);
+    expect(screen.queryByTestId("menu-image-placeholder")).not.toBeInTheDocument();
   });
 });

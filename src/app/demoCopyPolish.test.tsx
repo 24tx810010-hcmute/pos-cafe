@@ -2,13 +2,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
-import { createMockPorts, createSeededMockState } from "@/adapters/mock";
+import { activateCandidateUi, createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import type { Employee } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 
-const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "30000000-0000-4000-8000-000000000011", name: "Chủ cửa hàng", role: "admin", isActive: true };
 
 const implementationCopyPatterns = [
   /mock/i,
@@ -54,15 +54,12 @@ const resetAppStore = (override: Partial<ReturnType<typeof useAppStore.getState>
   });
 };
 
-const renderApp = (
+const renderApp = async (
   override: Partial<ReturnType<typeof useAppStore.getState>> = {},
   options: { paired?: boolean } = {},
 ) => {
-  const state = createSeededMockState();
-  if (options.paired ?? true) {
-    state.session = { storeId: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", storeNo: 1 };
-  }
-  const ports = createMockPorts(state);
+  const fixture = await createCandidateRuntimeFixture(); const state = fixture.business; const ports = fixture.ports;
+  if (!(options.paired ?? true)) await ports.auth.unpairStore();
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -70,6 +67,7 @@ const renderApp = (
     },
   });
 
+  if ((options.paired ?? true) && override.currentEmployee !== null) activateCandidateUi(fixture);
   resetAppStore(override);
   const view = render(
     <PortsContext.Provider value={ports}>
@@ -87,6 +85,8 @@ afterEach(() => {
   useAppStore.setState({
     screen: "landing",
     currentEmployee: null,
+    createdStoreResult: null,
+    pendingStoreCreationInput: null,
     activeAreaId: null,
     activeCategoryId: null,
     drawer: null,
@@ -99,13 +99,14 @@ afterEach(() => {
 describe("demo copy polish", () => {
   it("keeps setup screens free of implementation copy", async () => {
     const user = userEvent.setup();
-    const { container } = renderApp({ screen: "landing", currentEmployee: null }, { paired: false });
+    const { container } = await renderApp({ screen: "landing", currentEmployee: null }, { paired: false });
 
     expect(await screen.findByTestId("landing-screen")).toBeInTheDocument();
     expectNoImplementationCopy(container);
 
     await user.click(screen.getByTestId("go-create-store"));
     await user.type(screen.getByTestId("store-name-input"), "Cafe Sáng");
+    await user.click(screen.getByTestId("key-loss-acknowledgement"));
     await user.click(screen.getByTestId("create-store-button"));
 
     expect(await screen.findByTestId("create-store-result")).toBeInTheDocument();
@@ -113,7 +114,7 @@ describe("demo copy polish", () => {
   });
 
   it("does not show feature bullets on the landing screen", async () => {
-    renderApp({ screen: "landing", currentEmployee: null }, { paired: false });
+    await renderApp({ screen: "landing", currentEmployee: null }, { paired: false });
 
     expect(await screen.findByTestId("landing-screen")).toBeInTheDocument();
     expect(screen.queryByText("Dùng được trên máy tính, máy tính bảng và điện thoại nằm ngang.")).not.toBeInTheDocument();
@@ -123,7 +124,7 @@ describe("demo copy polish", () => {
 
   it("keeps the sample Store Key as placeholder copy instead of a submitted value", async () => {
     const user = userEvent.setup();
-    renderApp({ screen: "landing", currentEmployee: null }, { paired: false });
+    await renderApp({ screen: "landing", currentEmployee: null }, { paired: false });
 
     await user.click(await screen.findByTestId("go-store-pairing"));
     const input = screen.getByTestId("store-key-input");
@@ -135,15 +136,15 @@ describe("demo copy polish", () => {
   });
 
   it("keeps the future kitchen role out of the employee PIN screen", async () => {
-    renderApp({ screen: "passcode", currentEmployee: null });
+    await renderApp({ screen: "passcode", currentEmployee: null });
 
-    expect(await screen.findByTestId("employee-6b7bd350-7db2-4160-8471-cca2668c070d")).toBeInTheDocument();
-    expect(screen.getByTestId("employee-22828322-623b-42e7-8a28-a2bdf367c364")).toBeInTheDocument();
-    expect(screen.queryByTestId("employee-b1885ef9-c9c0-4a02-8757-875a44e8c814")).not.toBeInTheDocument();
+    expect(await screen.findByTestId("employee-30000000-0000-4000-8000-000000000011")).toBeInTheDocument();
+    expect(screen.getByTestId("employee-30000000-0000-4000-8000-000000000013")).toBeInTheDocument();
+    expect(screen.queryByTestId("employee-30000000-0000-4000-8000-000000000015")).not.toBeInTheDocument();
   });
 
   it("keeps order UI free of database and draft wording", async () => {
-    const { container } = renderApp({
+    const { container } = await renderApp({
       drawer: "order",
       orderContext: { orderId: null, tableId: "7b035353-73d6-44bc-8ec4-1ab9951f7a58", orderType: "dine_in" },
     });
@@ -155,7 +156,7 @@ describe("demo copy polish", () => {
   it("keeps admin drawers free of implementation copy", async () => {
     for (const drawer of ["menuEditor", "floorEditor", "report", "paymentSettings"] as const) {
       cleanup();
-      const { container } = renderApp({ drawer });
+      const { container } = await renderApp({ drawer });
       expect(await screen.findByTestId(drawer === "report" ? "report" : drawer === "menuEditor" ? "menu-editor" : drawer === "floorEditor" ? "floor-editor" : "payment-settings-drawer")).toBeInTheDocument();
       expectNoImplementationCopy(container);
     }
@@ -163,7 +164,7 @@ describe("demo copy polish", () => {
 
   it("keeps maintenance reset copy user-facing", async () => {
     const user = userEvent.setup();
-    const { container } = renderApp({ drawer: "settings" });
+    const { container } = await renderApp({ drawer: "settings" });
 
     expect(await screen.findByTestId("settings-drawer")).toBeInTheDocument();
     await user.click(await screen.findByRole("button", { name: "Bảo trì dữ liệu" }));
@@ -176,7 +177,7 @@ describe("demo copy polish", () => {
 
 describe("drawer overlays", () => {
   it("closes the active drawer when the overlay is clicked", async () => {
-    renderApp({ drawer: "paymentSettings" });
+    await renderApp({ drawer: "paymentSettings" });
 
     const drawer = await screen.findByTestId("payment-settings-drawer");
     const overlay = drawer.parentElement;

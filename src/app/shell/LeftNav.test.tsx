@@ -1,10 +1,9 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import type { Employee } from "@/domain";
 import { useAppStore } from "../useAppStore";
 import { LeftNav } from "./LeftNav";
 
-const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
+const admin = { id: "30000000-0000-4000-8000-000000000011", name: "Chủ cửa hàng" };
 
 afterEach(() => {
   cleanup();
@@ -41,7 +40,7 @@ describe("LeftNav", () => {
 
     render(<LeftNav />);
 
-    expect(screen.getByTestId("left-nav-session")).toHaveAttribute("aria-label", "Đang đăng nhập: Quản lý · Quản lý");
+    expect(screen.getByTestId("left-nav-session")).toHaveAttribute("aria-label", "Đang đăng nhập: Chủ cửa hàng · ");
     expect(screen.getByText("Đang đăng nhập")).toBeInTheDocument();
   });
 

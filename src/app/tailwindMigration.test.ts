@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { describe, expect, test } from "vitest";
 
 const sourceFile = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
@@ -7,7 +7,7 @@ const appSourceRoot = join(process.cwd(), "src/app");
 const appFiles = (dir = appSourceRoot): string[] =>
   readdirSync(dir).flatMap((entry) => {
     const fullPath = join(dir, entry);
-    const relativePath = fullPath.replace(`${process.cwd()}\\`, "").replace(/\\/g, "/");
+    const relativePath = relative(process.cwd(), fullPath).replace(/\\/g, "/");
 
     if (statSync(fullPath).isDirectory()) {
       return appFiles(fullPath);

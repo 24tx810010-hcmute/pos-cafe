@@ -1,12 +1,13 @@
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button, TextField } from "@mui/material";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useOpenOrdersQuery } from "@/features/pos";
 import { useClearDemoDataMutation } from "@/features/admin";
 import { useAppStore } from "../../useAppStore";
 import { notifyUiError, toToastError } from "../../appErrors";
 import { PortalPopup } from "../../components/PortalPopup";
+import { useViewLifetime } from "../../useViewLifetime";
 
 export function ClearDemoDialog({ onClose }: { onClose: () => void }) {
   const currentEmployee = useAppStore((state) => state.currentEmployee);
@@ -14,6 +15,8 @@ export function ClearDemoDialog({ onClose }: { onClose: () => void }) {
   const clearDemoMutation = useClearDemoDataMutation(currentEmployee);
   const openCount = openOrdersQuery.data?.length ?? 0;
   const [confirmText, setConfirmText] = useState("");
+  const requestId = useRef<string | null>(null);
+  const captureView = useViewLifetime("clearDemo");
 
   const checkingOpenOrders = openOrdersQuery.isLoading || (openOrdersQuery.isFetching && !openOrdersQuery.data);
   const openOrdersError = openOrdersQuery.isError;
@@ -21,15 +24,25 @@ export function ClearDemoDialog({ onClose }: { onClose: () => void }) {
   const ready = openOrdersQuery.isSuccess && !blocked && confirmText.trim().toUpperCase() === "CLEAR";
   const processing = clearDemoMutation.isPending;
 
+  const handleClose = () => {
+    if (!processing) requestId.current = null;
+    onClose();
+  };
+
   const checklist = ["Menu mẫu", "Sơ đồ bàn mẫu", "Trang trí mẫu", "Nhân viên mẫu", "Giữ lại tài khoản quản lý"];
 
   const handleClear = () => {
-    clearDemoMutation.mutate(undefined, {
+    const isCurrent = captureView();
+    requestId.current ??= crypto.randomUUID();
+    clearDemoMutation.mutate({ requestId: requestId.current, confirmation: true }, {
       onSuccess: () => {
-        toast.success("Đã đặt lại dữ liệu mẫu");
+        if (!isCurrent()) return;
+        requestId.current = null;
+        toast.success("Đã xóa dữ liệu mẫu.");
         onClose();
       },
       onError: (error) => {
+        if (!isCurrent()) return;
         const uiError = notifyUiError(error);
         if (uiError.action === "closeOpenOrders") {
           void openOrdersQuery.refetch();
@@ -43,7 +56,7 @@ export function ClearDemoDialog({ onClose }: { onClose: () => void }) {
       placement="Centered"
       viewport="workspace"
       overlayClassName="bg-slate-900/50"
-      onOutsideClick={processing ? undefined : onClose}
+      onOutsideClick={processing ? undefined : handleClose}
     >
       <div className="grid max-h-[88%] w-[min(600px,92vw)] gap-3 overflow-auto rounded-pos bg-pos-surface p-6 text-left shadow-[0_20px_60px_rgb(0_0_0_/_25%)] [&_h3]:m-0 [&_p]:m-0 [&_p]:text-sm [&_p]:text-pos-muted" data-testid="clear-demo-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 [&_h3]:m-0">
@@ -70,9 +83,9 @@ export function ClearDemoDialog({ onClose }: { onClose: () => void }) {
         ) : blocked ? (
           <div className="grid gap-1 rounded-pos border border-[#fecaca] bg-[#fef2f2] p-3 [&_strong]:text-pos-danger" data-testid="clear-demo-blocked">
             <strong>Còn {openCount} đơn đang mở</strong>
-            <span className="text-pos-muted">Cần thanh toán hoặc huỷ các đơn đang mở trước khi đặt lại dữ liệu mẫu.</span>
+            <span className="text-[#586477]">Còn đơn đang mở. Hãy hoàn tất các đơn trước khi xóa dữ liệu mẫu.</span>
             <div className="mt-1.5 flex flex-wrap items-center gap-3">
-              <Button variant="contained" size="small" onClick={onClose}>Đóng đơn đang mở trước</Button>
+              <Button variant="contained" size="small" onClick={handleClose}>Đóng đơn đang mở trước</Button>
             </div>
           </div>
         ) : (
@@ -94,7 +107,7 @@ export function ClearDemoDialog({ onClose }: { onClose: () => void }) {
         )}
 
         <div className="flex flex-wrap justify-end gap-2.5 [&_.MuiButton-root]:min-w-24">
-          <Button variant="outlined" onClick={onClose} disabled={processing}>Huỷ</Button>
+          <Button variant="outlined" onClick={handleClose} disabled={processing}>Huỷ</Button>
           <Button
             variant="contained"
             color="error"

@@ -3,11 +3,12 @@ import clsx from "clsx";
 import { CalendarDays, ChevronDown, RefreshCw, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { hasPermission } from "@/core/guards";
+import { sessionHasPermission, usePermission, usePermissionSession } from "@/features/shared/permissionSession";
+import { usePermissionPorts } from "@/features/shared/portsContext";
+import { receiptToPrint } from "@/features/pos/orderFlow";
 import { formatVndShort } from "@/core/money";
 import type { OrderDetail, VoidReasonCode } from "@/domain";
-import { useFloorPlanQuery, useOrderDetailQuery, useOrderHistoryQuery, useVoidOrderMutation } from "@/features/pos";
-import { useAdminEmployeesQuery, useStoreSettingsQuery } from "@/features/admin";
+import { useFloorPlanQuery, useOrderHistoryDetailQuery, useOrderHistoryQuery, useStoreDisplayQuery, useVoidOrderMutation } from "@/features/pos";
 import { useAppStore } from "../../useAppStore";
 import { useViewLifetime } from "../../useViewLifetime";
 import {
@@ -19,7 +20,6 @@ import {
   formatBusinessDate,
   historyDisplayNo,
   historyRowFromOrder,
-  tableNameMap,
   type BusinessDateRange,
   type HistoryDateRange,
   type HistoryOrderTypeFilter,
@@ -28,8 +28,6 @@ import {
 import { notifyUiError, toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { PortalPopup } from "../../components/PortalPopup";
-import { receiptToPrint } from "@/features/pos/orderFlow";
-import { usePorts } from "@/features/shared/portsContext";
 import { WriteAttemptNotice } from "../pos/WriteAttemptNotice";
 import { useWriteAttempt } from "@/features/pos/useWriteAttempt";
 import { OrderHistoryDetailPane } from "./OrderHistoryDetailPane";
@@ -61,14 +59,12 @@ const orderTypeOptions: Array<{ key: HistoryOrderTypeFilter; label: string }> = 
 ];
 
 export function OrderHistoryDrawer() {
-  const ports = usePorts();
   const { blocked } = useWriteAttempt();
   const closeDrawer = useAppStore((state) => state.closeDrawer);
-  const openReceiptPreview = useAppStore((state) => state.openReceiptPreview);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
-  const settingsQuery = useStoreSettingsQuery();
-  const employeesQuery = useAdminEmployeesQuery();
+  const settingsQuery = useStoreDisplayQuery();
   const floorQuery = useFloorPlanQuery();
+  const tableNames = useMemo(() => new Map(floorQuery.data?.tables.map(table => [table.id, table.name]) ?? []), [floorQuery.data]);
   const voidMutation = useVoidOrderMutation();
   const [dateRange, setDateRange] = useState<OrderHistoryRange>("recent");
   const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
@@ -85,7 +81,17 @@ export function OrderHistoryDrawer() {
   const captureView = useViewLifetime(selectedId);
   const closeVoidConfirm = () => { voidGeneration.current += 1; setVoidConfirmOpen(false); setIsVoiding(false); };
 
-  const canVoid = hasPermission(currentEmployee, "order.voidPaid");
+  const canVoid = usePermission("order.voidPaid");
+  const authorityStatus = usePermissionSession(state => state.status);
+  const previousCanVoid = useRef(canVoid);
+  useEffect(() => {
+    if (authorityStatus !== "verified") return;
+    const lost = previousCanVoid.current && !canVoid;
+    previousCanVoid.current = canVoid;
+    if (!lost) return;
+    if (voidConfirmOpen || isVoiding) toast("Quyền của bạn đã thay đổi. Phần đang thao tác không còn được phép đã đóng; dữ liệu chưa lưu của phần đó đã được bỏ.");
+    closeVoidConfirm(); setVoidSnapshot(null); setVoidReasonCode("wrong_order"); setVoidReasonNote("");
+  }, [canVoid, authorityStatus]);
 
   const timezone = settingsQuery.data?.timezone ?? DEFAULT_TIMEZONE;
   const today = businessDateInTimezone(new Date(), timezone);
@@ -96,7 +102,6 @@ export function OrderHistoryDrawer() {
     [customFrom, customTo, dateRange, today],
   );
 
-  const tables = useMemo(() => tableNameMap(floorQuery.data), [floorQuery.data]);
   const historyQuery = useOrderHistoryQuery({
     ...selectedRange,
     page,
@@ -104,19 +109,14 @@ export function OrderHistoryDrawer() {
     status: statusFilter === "all" ? undefined : statusFilter,
     orderType: orderTypeFilter === "all" ? undefined : orderTypeFilter,
   });
-  const detailQuery = useOrderDetailQuery(selectedId);
-
-  const employeeNames = useMemo(
-    () => new Map((employeesQuery.data ?? []).map((employee) => [employee.id, employee.name])),
-    [employeesQuery.data],
-  );
+  const detailQuery = useOrderHistoryDetailQuery(selectedId);
   const historyRows = useMemo(
     () => (historyQuery.data?.items ?? []).map((order, index) => historyRowFromOrder(
       order,
-      tables,
+      tableNames,
       historyDisplayNo(historyQuery.data?.total ?? 0, page, PAGE_SIZE, index),
     )),
-    [historyQuery.data?.items, historyQuery.data?.total, page, tables],
+    [historyQuery.data?.items, historyQuery.data?.total, page, tableNames],
   );
 
   const filtered = historyRows;
@@ -126,9 +126,7 @@ export function OrderHistoryDrawer() {
   const selectedDetail = detailQuery.data?.id === selectedId ? detailQuery.data : null;
   const selectedPayment = selectedDetail?.payment ?? null;
   const selectedDateLabel = dateRangeOptions.find((option) => option.key === dateRange)?.label ?? "Gần đây";
-  const cashierLabel = selectedPayment?.employeeId
-    ? employeeNames.get(selectedPayment.employeeId) ?? selectedPayment.employeeId
-    : "Chưa ghi nhận";
+  const cashierLabel = selectedDetail?.cashierName ?? "Chưa ghi nhận";
   const paymentMethodLabel = selectedPayment?.method
     ? PAY_METHOD_LABEL[selectedPayment.method] ?? selectedPayment.method
     : "Chưa ghi nhận";
@@ -141,9 +139,7 @@ export function OrderHistoryDrawer() {
         year: "numeric",
       }).format(new Date(selectedDetail.paidAt))
     : "Chưa ghi nhận";
-  const voidedByLabel = selectedDetail?.voidedByEmployeeId
-    ? employeeNames.get(selectedDetail.voidedByEmployeeId) ?? selectedDetail.voidedByEmployeeId
-    : "Không rõ";
+  const voidedByLabel = selectedDetail?.voidedByName ?? "Không rõ";
   const voidedTimeLabel = selectedDetail?.voidedAt
     ? new Intl.DateTimeFormat("vi-VN", {
         hour: "2-digit",
@@ -188,17 +184,17 @@ export function OrderHistoryDrawer() {
     toast.success(`Đã sao chép ${text}`);
   };
 
+  const permissionPorts = usePermissionPorts();
+  const canReprint = usePermission("receipt.reprint");
   const reprintReceipt = async () => {
-    if (!selectedDetail) return;
-    const id = selectedDetail.id;
-    const stillHere = captureView();
+    if (!selectedDetail || !canReprint) return;
+    const current = captureView();
     try {
-      const fresh = await ports.order.getOrder(id);
-      if (!stillHere()) return;
-      const document = await ports.order.getReceipt(id);
-      if (!stillHere()) return;
-      openReceiptPreview({ variant: "receipt", doc: receiptToPrint(document.receipt, fresh.orderType), orderId: id, legacyMetadata: document.legacyMetadata });
-    } catch (error) { if (stillHere()) notifyUiError(error); }
+      const document = await permissionPorts.print.prepareReceiptReprint(selectedDetail.id);
+      if (!current() || !sessionHasPermission("receipt.reprint") || !sessionHasPermission("orderHistory.view")) return;
+      useAppStore.getState().openReceiptPreview({ variant: "receipt", doc: receiptToPrint(document.receipt, selectedDetail.orderType),
+        legacyMetadata: document.legacyMetadata, source: { kind: "reprint" } });
+    } catch (error) { if (current()) notifyUiError(error); }
   };
 
   const clearFilters = () => {
@@ -433,6 +429,7 @@ export function OrderHistoryDrawer() {
             voidedByLabel={voidedByLabel}
             voidedTimeLabel={voidedTimeLabel}
             onReprint={reprintReceipt}
+            canReprint={canReprint}
             onCopyDisplayNo={copyDisplayNo}
             onRetry={() => void detailQuery.refetch()}
             onVoid={openVoidConfirm}

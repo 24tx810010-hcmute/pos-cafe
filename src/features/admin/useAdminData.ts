@@ -1,45 +1,24 @@
-import { useQuery } from "@tanstack/react-query";
 import type { ReportFilter } from "@/domain";
-import { usePorts } from "@/features/shared/portsContext";
-import { adminQueryKeys } from "./adminQueryKeys";
+import { usePermissionPorts } from "@/features/shared/portsContext";
+import { usePurposeQuery } from "@/features/pos/usePosData";
 
 export const useAdminEmployeesQuery = (enabled = true) => {
-  const ports = usePorts();
-  return useQuery({
-    queryKey: adminQueryKeys.employees,
-    queryFn: () => ports.employee.listEmployees(),
-    enabled,
-  });
+  const ports = usePermissionPorts();
+  return usePurposeQuery("employees", ["employee.manage", "employee.permission.edit"], [], () => ports.employeeAdmin.listEmployees(), enabled);
 };
-
 export const useStoreSettingsQuery = () => {
-  const ports = usePorts();
-  return useQuery({
-    queryKey: adminQueryKeys.settings,
-    queryFn: () => ports.settings.getSettings(),
-  });
+  const ports = usePermissionPorts();
+  return usePurposeQuery("settings", ["settings.manage"], [], () => ports.read.getSettingsAdmin());
 };
-
 export const useAdminMenuQuery = () => {
-  const ports = usePorts();
-  return useQuery({
-    queryKey: adminQueryKeys.menu,
-    queryFn: () => ports.menu.getMenu(),
-  });
+  const ports = usePermissionPorts();
+  return usePurposeQuery("menu-admin", ["menu.manage"], [], () => ports.read.getMenuAdmin());
 };
-
 export const useAdminFloorPlanQuery = () => {
-  const ports = usePorts();
-  return useQuery({
-    queryKey: adminQueryKeys.floorPlan,
-    queryFn: () => ports.floorPlan.getFloorPlan(),
-  });
+  const ports = usePermissionPorts();
+  return usePurposeQuery("floor-admin", ["floor.manage"], [], () => ports.read.getFloorAdmin());
 };
-
 export const useAdminReportQuery = (filter: ReportFilter) => {
-  const ports = usePorts();
-  return useQuery({
-    queryKey: adminQueryKeys.report(filter.businessDate),
-    queryFn: () => ports.report.getCoreReport(filter),
-  });
+  const ports = usePermissionPorts();
+  return usePurposeQuery("report", ["report.view"], [filter], () => ports.read.getSalesReport(filter));
 };

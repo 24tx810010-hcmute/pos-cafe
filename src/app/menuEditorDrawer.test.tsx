@@ -2,14 +2,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMockPorts, createSeededMockState } from "@/adapters/mock";
 import type { MockState } from "@/adapters/mock";
+import { activateCandidateUi, createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import type { Employee } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 
-const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "30000000-0000-4000-8000-000000000011", name: "Chủ cửa hàng", role: "admin", isActive: true };
 
 const resetAppStoreForMenuEditor = () => {
   useAppStore.setState({
@@ -25,12 +25,9 @@ const resetAppStoreForMenuEditor = () => {
 };
 
 const renderMenuEditor = async (configureState?: (state: MockState) => void) => {
-  const state = createSeededMockState();
-  state.session = { storeId: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", storeNo: 1 };
+  const fixture = await createCandidateRuntimeFixture(); const state = fixture.business; const ports = fixture.ports;
   configureState?.(state);
-  const ports = createMockPorts(state);
-  await ports.employee.startSession("6b7bd350-7db2-4160-8471-cca2668c070d", state.pins["6b7bd350-7db2-4160-8471-cca2668c070d"]);
-  const saveSpy = vi.spyOn(ports.menu, "saveMenuChanges");
+  const saveSpy = vi.spyOn(ports.permission!.changes, "saveMenuChanges");
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -38,6 +35,7 @@ const renderMenuEditor = async (configureState?: (state: MockState) => void) => 
     },
   });
 
+  activateCandidateUi(fixture);
   resetAppStoreForMenuEditor();
   render(
     <PortsContext.Provider value={ports}>
@@ -123,12 +121,8 @@ describe("MenuEditorDrawer", () => {
       value: vi.fn(),
     });
     const { ports, saveSpy } = await renderMenuEditor();
-    const uploadSpy = vi
-      .spyOn(ports.menuImages, "uploadMenuItemImage")
-      .mockResolvedValue({
-        assetKey: "menu-item-images/e572ea5f-9adf-493c-8d84-dca3cd86e1eb/menu-items/d50ff72b-d0bc-4832-8888-183c19f5a158/new.webp",
-        publicUrl: "https://assets.local/d50ff72b-d0bc-4832-8888-183c19f5a158/new.webp",
-      });
+    const uploadHandle = "90000000-0000-4000-8000-000000000001";
+    const uploadSpy = vi.spyOn(ports.permission!.menuImages, "stageMenuItemImage").mockResolvedValue({ uploadHandle });
 
     await user.click(await screen.findByTestId("menu-edit-card-d50ff72b-d0bc-4832-8888-183c19f5a158"));
     const imageInput = await screen.findByLabelText("Chọn ảnh món");
@@ -145,12 +139,7 @@ describe("MenuEditorDrawer", () => {
 
     await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
     expect(uploadSpy).toHaveBeenCalledWith(expect.objectContaining({ itemId: "d50ff72b-d0bc-4832-8888-183c19f5a158", file }));
-    expect(saveSpy.mock.calls[0][0].menuItems.updated).toEqual([
-      {
-        id: "d50ff72b-d0bc-4832-8888-183c19f5a158",
-        imageAssetKey: "menu-item-images/e572ea5f-9adf-493c-8d84-dca3cd86e1eb/menu-items/d50ff72b-d0bc-4832-8888-183c19f5a158/new.webp",
-      },
-    ]);
+    expect(saveSpy.mock.calls[0][0].imageChanges).toEqual([{ itemId: "d50ff72b-d0bc-4832-8888-183c19f5a158", uploadHandle }]);
   });
 
   it("warns about the menu image size limit and blocks oversized files", async () => {
@@ -160,7 +149,7 @@ describe("MenuEditorDrawer", () => {
       value: vi.fn(() => "blob:oversized-preview"),
     });
     const { ports } = await renderMenuEditor();
-    const uploadSpy = vi.spyOn(ports.menuImages, "uploadMenuItemImage");
+    const uploadSpy = vi.spyOn(ports.permission!.menuImages, "stageMenuItemImage");
 
     await user.click(await screen.findByTestId("menu-edit-card-d50ff72b-d0bc-4832-8888-183c19f5a158"));
     expect(screen.getByText("JPG, PNG hoặc WebP. Tối đa 5MB.")).toBeInTheDocument();

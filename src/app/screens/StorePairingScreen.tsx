@@ -88,7 +88,7 @@ export function StorePairingScreen() {
               {loading ? "Đang ghép..." : "Ghép thiết bị"}
             </Button>
 
-            <button className="cursor-pointer border-0 bg-transparent p-0 text-left text-[13px] font-semibold text-pos-primary hover:underline" onClick={() => setScreen("createStore")}>
+            <button className="min-h-6 cursor-pointer border-0 bg-transparent py-0.5 text-left text-[13px] font-semibold text-pos-primary hover:underline" onClick={() => setScreen("createStore")}>
               Chưa có quán? Tạo quán mới
             </button>
           </div>

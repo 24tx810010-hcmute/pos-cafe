@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import toast from 'react-hot-toast';
-import { createMockPorts, createSeededMockState } from '@/adapters/mock';
+import { activateCandidateUi, createCandidateRuntimeFixture } from '@/test/candidateRuntimeFixture';
 import { AppError } from '@/core/appError';
 import type { OperationView } from '@/domain';
 import { PortsContext } from '@/features/shared/portsContext';
@@ -22,9 +22,7 @@ function Surface(){
   return employee&&drawer==='payment'?<PaymentDrawer/>:null;
 }
 async function fixture(mode:'pay'|'split'){
-  const state=createSeededMockState();state.session={storeId:state.settings.storeId,storeNo:1};
-  const ports=createMockPorts(state),admin=state.employees.find(e=>e.role==='admin')!;
-  await ports.employee.startSession(admin.id,state.pins[admin.id]);
+  const candidate=await createCandidateRuntimeFixture({demoCredentials:true}),state=candidate.business,ports=candidate.ports,admin=candidate.actor;activateCandidateUi(candidate);
   const client=new QueryClient({defaultOptions:{queries:{retry:false,staleTime:30000},mutations:{retry:false}}});clients.push(client);
   useAppStore.setState({currentEmployee:admin,drawer:'payment',paymentOrderId:orderId,orderContext:null,receiptPreview:null,draftItems:structuredClone(draft),screen:'passcode'});
   vi.spyOn(navigator,'onLine','get').mockReturnValue(true);
@@ -61,7 +59,7 @@ for(const mode of ['pay','split'] as const){
       fireEvent.click(screen.getByTestId('pay-button'));await waitFor(()=>expect(execute).toHaveBeenCalledTimes(1));
       expect(register.mock.calls[0][1].kind).toBe(mode==='pay'?'pay_order':'pay_order_items');
       transition(f,step);const current=useAppStore.getState();
-      const error=vi.spyOn(toast,'error'),success=vi.spyOn(toast,'success'),revoke=vi.spyOn(f.ports.employee,'revokeSession');
+      const error=vi.spyOn(toast,'error'),success=vi.spyOn(toast,'success'),revoke=vi.spyOn(f.ports.permission!.session,'revokeSession');
       await act(async()=>{reject(new AppError(code,'Payment response from previous lifetime'));});await errorSettled(f.client);
       expect.soft(useAppStore.getState().currentEmployee).toBe(current.currentEmployee);
       expect.soft(useAppStore.getState().draftItems).toEqual(current.draftItems);
@@ -92,7 +90,7 @@ for(const mode of ['pay','split'] as const){
   }
   for(const code of ['AUTH_REQUIRED','EMPLOYEE_SESSION_REQUIRED'] as const){
     test(`TC-IDEM-006/core/payment=${mode}/error=${code} still handles a current payment authentication rejection`,async()=>{
-      const f=await fixture(mode);const error=vi.spyOn(toast,'error'),revoke=vi.spyOn(f.ports.employee,'revokeSession');
+      const f=await fixture(mode);const error=vi.spyOn(toast,'error'),revoke=vi.spyOn(f.ports.permission!.session,'revokeSession');
       vi.spyOn(f.ports.write,'execute').mockRejectedValueOnce(new AppError(code,'Current payment authentication rejection'));
       fireEvent.click(screen.getByTestId('pay-button'));await errorSettled(f.client);
       expect(useAppStore.getState().currentEmployee).toBeNull();expect(useAppStore.getState().draftItems).toEqual([]);

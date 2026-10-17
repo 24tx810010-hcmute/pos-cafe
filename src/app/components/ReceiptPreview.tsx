@@ -1,15 +1,17 @@
 import { Printer, X } from "lucide-react";
-import { forwardRef, useEffect, useRef } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import type { CSSProperties } from "react";
 import { formatVnd } from "@/core/money";
 import type { OrderDetail, PrintReceipt, PrintTicket } from "@/domain";
-import { useStoreSettingsQuery } from "@/features/admin";
+import { useStoreDisplayQuery } from "@/features/pos";
+import { ReceiptPrintClick } from "@/core/receiptPrintClick";
+import { requireCurrentPermission, sessionHasPermission, usePermissionSession } from "@/features/shared/permissionSession";
 import { receiptToPrint } from "@/features/pos/orderFlow";
 import { usePorts } from "@/features/shared/portsContext";
 import { notifyUiError } from "../appErrors";
 import { PortalPopup } from "./PortalPopup";
 import { useAppStore } from "../useAppStore";
-import { useViewLifetime } from "../useViewLifetime";
 
 // ---- Builders: domain order -> print doc -------------------------------------
 
@@ -27,7 +29,7 @@ const linesFromItems = (items: OrderDetail["items"]): PrintTicket["lines"] =>
     };
   });
 
-export const ticketFromOrderDetail = (order: OrderDetail, tableName: string | null): PrintTicket => ({
+export const ticketFromOrderDetail = (order: Pick<OrderDetail, "orderNo" | "orderType" | "total" | "items">, tableName: string | null): PrintTicket => ({
   orderNo: order.orderNo,
   tableName,
   orderType: order.orderType,
@@ -48,7 +50,7 @@ export const receiptFromOrderDetail = (order: OrderDetail, tableName: string | n
 
 // ---- Print: isolate the receipt in a hidden iframe ---------------------------
 
-const printDocElement = (element: HTMLElement, isCurrent: () => boolean) => {
+const printDocElement = (element: HTMLElement, isCurrent: () => boolean, markDispatched: () => boolean) => {
   const frame = document.createElement("iframe");
   frame.setAttribute("aria-hidden", "true");
   frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
@@ -65,7 +67,7 @@ const printDocElement = (element: HTMLElement, isCurrent: () => boolean) => {
   );
   frameDoc.close();
   const timer = window.setTimeout(() => {
-    if (!isCurrent()) { frame.remove(); return; }
+    if (!isCurrent() || !markDispatched()) { frame.remove(); return; }
     frame.contentWindow?.focus();
     frame.contentWindow?.print();
     window.setTimeout(() => frame.remove(), 800);
@@ -259,23 +261,51 @@ export function ReceiptPreviewPopup() {
   const ports = usePorts();
   const preview = useAppStore((state) => state.receiptPreview);
   const close = useAppStore((state) => state.closeReceiptPreview);
-  const settings = useStoreSettingsQuery().data;
+  const settings = useStoreDisplayQuery().data;
   const docRef = useRef<HTMLDivElement>(null);
-  const captureCurrent = useViewLifetime(preview);
-  const cancelPrint = useRef<(() => void) | undefined>(undefined);
+  const controller = useRef<ReceiptPrintClick | null>(null);
+  const [pending, setPending] = useState(false);
+  const authority = usePermissionSession();
+  const eligible = () => {
+    if (!preview || useAppStore.getState().receiptPreview !== preview || !navigator.onLine) return false;
+    if (preview.variant !== "receipt") return sessionHasPermission(preview.requiredPermission ?? "payment.take");
+    const canRead = sessionHasPermission("payment.take") || sessionHasPermission("orderHistory.view");
+    return canRead && (preview.source?.kind === "initial" ? sessionHasPermission("payment.take") : sessionHasPermission("receipt.reprint"));
+  };
+  const canPrint = eligible();
   useEffect(() => {
-    const cancel = () => { cancelPrint.current?.(); cancelPrint.current = undefined; };
+    if (!preview) return;
+    const click = new ReceiptPrintClick({ eligible, changed: setPending,
+      failed: notifyUiError, sent: () => toast.success("Đã gửi lệnh in."),
+      authorize: async requestId => {
+        if (preview.variant === "receipt") {
+          if (!ports.permission) throw new Error("Chưa thể xác minh quyền in.");
+          if (preview.source?.kind === "initial") await ports.permission.print.authorizeInitialReceiptPrint(preview.source.grant.grantId, requestId);
+          else await ports.permission.print.prepareReceiptReprint(preview.doc.snapshot?.orderId ?? preview.orderId!);
+        } else {
+          const code = preview.requiredPermission ?? "payment.take";
+          if (!code) throw new Error("Bạn không có quyền thực hiện thao tác này.");
+          await requireCurrentPermission(ports, useAppStore.getState().currentEmployee, code);
+        }
+      },
+      dispatch: (current, mark) => docRef.current ? printDocElement(docRef.current, current, mark) : undefined,
+    });
+    controller.current = click;
+    const cancel = () => click.invalidate();
     const stop = useAppStore.subscribe((state, previous) => {
       if (state.receiptPreview !== previous.receiptPreview || state.employeeSessionVersion !== previous.employeeSessionVersion
         || state.currentEmployee !== previous.currentEmployee || state.drawer !== previous.drawer
         || state.orderContext !== previous.orderContext || state.paymentOrderId !== previous.paymentOrderId
         || state.screen !== previous.screen) cancel();
     });
+    const stopAuthority = usePermissionSession.subscribe((state, previous) => {
+      if (state.generation !== previous.generation || !eligible()) cancel();
+    });
     window.addEventListener("offline", cancel);
-    return () => { cancel(); stop(); window.removeEventListener("offline", cancel); };
-  }, []);
+    return () => { cancel(); controller.current = null; stop(); stopAuthority(); window.removeEventListener("offline", cancel); };
+  }, [preview, ports]);
 
-  if (!preview) return null;
+  if (!preview || authority.status !== "verified") return null;
 
   const store: ReceiptStore = {
     name: settings?.displayName ?? "Cửa hàng",
@@ -319,6 +349,7 @@ export function ReceiptPreviewPopup() {
       </div>
 
       <div className="flex items-center justify-end gap-2 border-t border-pos-line px-4 py-3">
+        {!canPrint && preview.variant === "receipt" && <p className="text-xs text-pos-muted">Quyền in hóa đơn đã thay đổi. Bạn vẫn có thể xem hóa đơn.</p>}
         <button
           type="button"
           data-testid="receipt-close-footer"
@@ -327,29 +358,15 @@ export function ReceiptPreviewPopup() {
         >
           Đóng
         </button>
-        <button
+        {canPrint && <button
           type="button"
           data-testid="receipt-print-button"
-          onClick={() => {
-            const currentPreview = preview;
-            const isCurrent = captureCurrent();
-            if (!isCurrent()) return;
-            void (async () => {
-              try {
-                if (currentPreview.variant === "receipt" && (currentPreview.doc.snapshot || currentPreview.orderId)) {
-                  await ports.order.getReceipt(currentPreview.doc.snapshot?.orderId ?? currentPreview.orderId!);
-                }
-                if (isCurrent() && useAppStore.getState().receiptPreview === currentPreview && docRef.current) {
-                  cancelPrint.current?.();
-                  cancelPrint.current = printDocElement(docRef.current, isCurrent);
-                }
-              } catch (error) { if (isCurrent()) notifyUiError(error); }
-            })();
-          }}
+          disabled={pending}
+          onClick={() => void controller.current?.click()}
           className="inline-flex h-9 items-center gap-2 rounded-[9px] bg-pos-primary px-4 text-sm font-bold text-white hover:brightness-110"
         >
-          <Printer size={15} /> In
-        </button>
+          <Printer size={15} /> {pending ? "Đang xác minh..." : "In"}
+        </button>}
       </div>
     </PortalPopup>
   );

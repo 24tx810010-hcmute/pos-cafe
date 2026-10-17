@@ -10,7 +10,7 @@ import type {
 export type CreateStoreInput = {
   displayName?: string;
   address?: string;
-  /** Tạo sẵn dữ liệu mẫu (menu/floor/cashier demo) khi tạo store. Mặc định false. */
+  /** Yêu cầu dữ liệu mẫu sau khi owner đổi PIN tạm và đăng nhập lại. Mặc định false. */
   seedDemo?: boolean;
 };
 
@@ -19,7 +19,7 @@ export type CreateStoreResult = {
   storeNo: number;
   storeKey: string;
   adminPin: string;
-  seedStatus: Exclude<SeedStatus, "pending">;
+  seedStatus: SeedStatus;
   canRetrySeed: boolean;
 };
 

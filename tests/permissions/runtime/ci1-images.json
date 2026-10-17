@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "permission-ci1-images-v1",
+  "platform": "linux/amd64",
+  "sourceReceiptSHA256": "7223ef9d7459d9e11424d7dbf1956215397796ac30e08af8ecae5c2a661e01f5",
+  "images": [
+    {
+      "ref": "public.ecr.aws/supabase/postgres:17.6.1.167",
+      "indexDigest": "sha256:6942962433a569e87f228b4d4ab7e11db5deca64e43babb3a038443ad6c4f1bb",
+      "manifestDigest": "sha256:16c0944c77885446d4f2ebbb2191b357feeb3b1295bde2fb1978c113129dbeb4",
+      "configDigest": "sha256:66089200353d90686fe9b252a47d17d078364bf47c50190852c33dc850a0191f"
+    },
+    {
+      "ref": "public.ecr.aws/supabase/gotrue:v2.196.0",
+      "indexDigest": "sha256:c0c25187a6b835e65a6f6e6c6b39d090e832d40e6de5186f2c038e0411944232",
+      "manifestDigest": "sha256:7e813221b93fbf54b515036438550e483bfaf057b9db52fe9bc1ce91c47e817e",
+      "configDigest": "sha256:688edbb786f6d736edaa478438f23c7044a22a6a5f19502a7138d38caca6c2f6"
+    },
+    {
+      "ref": "public.ecr.aws/supabase/postgrest:v16.2",
+      "indexDigest": "sha256:85258123312dc496ad4c2ed832154a65e9746f84df0d6d09b44229ff9230c08e",
+      "manifestDigest": "sha256:6e83b0277ea5de980847e9246d2ec2803e99dfce0e69066f6484bd10c4a5b819",
+      "configDigest": "sha256:f5760d38760adfede0c11fe505b56a82940ed27fe4ada1214ce7a0f7c5f4950f"
+    },
+    {
+      "ref": "public.ecr.aws/supabase/kong:2.8.1",
+      "indexDigest": "sha256:1b53405d8680a09d6f44494b7990bf7da2ea43f84a258c59717d4539abf09f6d",
+      "manifestDigest": "sha256:e21b0b793879ab96720ed4188f9441260273f4bf775bcbff8d435e019ffb759a",
+      "configDigest": "sha256:3cefb958bcd694597b65adc00053a762b1f9a6df3c6031af528d052d75a64e1a"
+    },
+    {
+      "ref": "public.ecr.aws/supabase/realtime:v2.130.0",
+      "indexDigest": "sha256:002193c9ff840a4946918641901bb6aa9e2036dc9ff7590e2b11e91d1e06bf86",
+      "manifestDigest": "sha256:625e21a15e923b53ebbee4ce15232bba174dc998c02a9c5cc6c26d068a555362",
+      "configDigest": "sha256:e2cd06c5e92e018beecd112a92dcbdc9e4938d04dcbbe7360534dddf9fd2958a"
+    },
+    {
+      "ref": "public.ecr.aws/supabase/edge-runtime:v1.74.3",
+      "indexDigest": "sha256:c52405002a890ca9fcf77978671c57f3a988e03174afb277f84ac65bc917013c",
+      "manifestDigest": "sha256:cc355c3d0e9c063a351cad56d1c4c52a3c4d85aff4e1fad9d91688e75f9aad09",
+      "configDigest": "sha256:04332d354964b089d81eb872ce1604119a9cf62b54d3556338f3a46d81bfcc8e"
+    },
+    {
+      "ref": "public.ecr.aws/supabase/studio:2026.08.24-sha-8ec45b2",
+      "indexDigest": "sha256:4905784b715cb22b265d26405067649544b40faffff89fd8dc7a28736f42afb0",
+      "manifestDigest": "sha256:433ef92be3ee4d830cd950be326e7e9000f069e625d969cb22e97f8c85ee2a16",
+      "configDigest": "sha256:02440659a283c433fca5ccac099b6075ab12ebe5450b3635be4a2f38490799e5"
+    },
+    {
+      "ref": "public.ecr.aws/supabase/postgres-meta:v0.99.0",
+      "indexDigest": "sha256:9a079ac1c94d89629262822a4bd1902d5b1be4adb464e5a0a8fd078aaed72158",
+      "manifestDigest": "sha256:09b00cdd401f830cc8db5c7da14468e99d04a63900371b1ec06463674ac4877e",
+      "configDigest": "sha256:645aad8dfdd7fe43451263cccff8efe01b0b88c684d4d7e309933d76a7a8ea53"
+    },
+    {
+      "ref": "public.ecr.aws/supabase/mailpit:v1.30.2",
+      "indexDigest": "sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+      "manifestDigest": "sha256:f0b0ed33c8cf53aac0dd004abbe245c83420a7ae44914e25178f7791dec5723a",
+      "configDigest": "sha256:cdb09a322d77e0b233727104beaafb4b7b503fd3badce6a6d9e58fd9993025f6"
+    },
+    {
+      "ref": "public.ecr.aws/supabase/vector:0.53.0-alpine",
+      "indexDigest": "sha256:ca92d617e905953c3f852e7e88061f7039460e733522e3f0c21bc6ae946b2558",
+      "manifestDigest": "sha256:7a74872eb7791f65357b200813bcf613c8dedcac561b4f1a68f9d290f6e6a40c",
+      "configDigest": "sha256:dbd1d86387c3fe901ff1bd17910a779744a5312597815296d08153ec06d2f346"
+    },
+    {
+      "ref": "public.ecr.aws/supabase/logflare:1.50.6",
+      "indexDigest": "sha256:ba88b97954573852eb18524d07507724000be02dbc94e22ee32c186ea006f1b6",
+      "manifestDigest": "sha256:667d30e83133e9f4e3d2e5de109fe47fe912d8c6d276992bf7a51c741a9e60f4",
+      "configDigest": "sha256:0835a284c77333002d97c6fa53ec47c7b1032f1b9c3289f8f2e173286191dd7c"
+    },
+    {
+      "ref": "public.ecr.aws/supabase/storage-api:v1.72.1",
+      "indexDigest": "sha256:105a2584129c9600aebed6f5ac49ca4371c92b996ecd1af7179750333e9e2120",
+      "manifestDigest": "sha256:c2b7d1c10948bed6b5335cfa600d85f0d490511eddc87560f00911e7b04c3388",
+      "configDigest": "sha256:390139ee1ddd11362f42638fa3b4432d57a8758a70e01dd9c1a3d4d5bb212a7e"
+    }
+  ]
+}

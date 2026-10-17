@@ -1,0 +1,293 @@
+{
+  "contractVersion": 1,
+  "revision": 0,
+  "roles": [
+    {
+      "code": "owner",
+      "labelVi": "Chủ quán",
+      "enabled": true,
+      "selectable": false
+    },
+    {
+      "code": "manager",
+      "labelVi": "Quản lý",
+      "enabled": true,
+      "selectable": true
+    },
+    {
+      "code": "cashier",
+      "labelVi": "Thu ngân",
+      "enabled": true,
+      "selectable": true
+    },
+    {
+      "code": "waiter",
+      "labelVi": "Phục vụ",
+      "enabled": true,
+      "selectable": true
+    },
+    {
+      "code": "kitchen",
+      "labelVi": "Bếp",
+      "enabled": false,
+      "selectable": false
+    }
+  ],
+  "permissions": [
+    {
+      "code": "floor.view",
+      "labelVi": "Xem sơ đồ bàn",
+      "module": "floor",
+      "ownerOnly": false,
+      "baseline": true
+    },
+    {
+      "code": "order.create",
+      "labelVi": "Tạo đơn",
+      "module": "order",
+      "ownerOnly": false,
+      "baseline": false
+    },
+    {
+      "code": "order.update",
+      "labelVi": "Sửa đơn mở",
+      "module": "order",
+      "ownerOnly": false,
+      "baseline": false
+    },
+    {
+      "code": "order.voidOpen",
+      "labelVi": "Hủy đơn mở",
+      "module": "order",
+      "ownerOnly": false,
+      "baseline": false
+    },
+    {
+      "code": "payment.take",
+      "labelVi": "Thu tiền",
+      "module": "payment",
+      "ownerOnly": false,
+      "baseline": false
+    },
+    {
+      "code": "orderHistory.view",
+      "labelVi": "Xem lịch sử đơn",
+      "module": "orderHistory",
+      "ownerOnly": false,
+      "baseline": false
+    },
+    {
+      "code": "order.voidPaid",
+      "labelVi": "Hủy đơn đã thanh toán",
+      "module": "orderHistory",
+      "ownerOnly": false,
+      "baseline": false
+    },
+    {
+      "code": "menu.manage",
+      "labelVi": "Quản lý thực đơn",
+      "module": "menuEditor",
+      "ownerOnly": false,
+      "baseline": false
+    },
+    {
+      "code": "floor.manage",
+      "labelVi": "Điều chỉnh sơ đồ bàn",
+      "module": "floorEditor",
+      "ownerOnly": false,
+      "baseline": false
+    },
+    {
+      "code": "employee.manage",
+      "labelVi": "Quản lý nhân viên",
+      "module": "employees",
+      "ownerOnly": false,
+      "baseline": false
+    },
+    {
+      "code": "employee.permission.edit",
+      "labelVi": "Chỉnh quyền nhân viên",
+      "module": "employees",
+      "ownerOnly": false,
+      "baseline": false
+    },
+    {
+      "code": "report.view",
+      "labelVi": "Xem báo cáo",
+      "module": "report",
+      "ownerOnly": false,
+      "baseline": false
+    },
+    {
+      "code": "settings.manage",
+      "labelVi": "Quản lý thiết lập",
+      "module": "settings",
+      "ownerOnly": false,
+      "baseline": false
+    },
+    {
+      "code": "data.clearDemo",
+      "labelVi": "Xóa dữ liệu mẫu",
+      "module": "clearDemo",
+      "ownerOnly": true,
+      "baseline": false
+    },
+    {
+      "code": "receipt.reprint",
+      "labelVi": "In lại hóa đơn",
+      "module": "receipt",
+      "ownerOnly": false,
+      "baseline": false
+    }
+  ],
+  "defaults": [
+    {
+      "roleCode": "owner",
+      "permissionCode": "floor.view"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "order.create"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "order.update"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "order.voidOpen"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "payment.take"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "orderHistory.view"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "order.voidPaid"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "menu.manage"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "floor.manage"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "employee.manage"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "employee.permission.edit"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "report.view"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "settings.manage"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "data.clearDemo"
+    },
+    {
+      "roleCode": "owner",
+      "permissionCode": "receipt.reprint"
+    },
+    {
+      "roleCode": "manager",
+      "permissionCode": "floor.view"
+    },
+    {
+      "roleCode": "manager",
+      "permissionCode": "order.create"
+    },
+    {
+      "roleCode": "manager",
+      "permissionCode": "order.update"
+    },
+    {
+      "roleCode": "manager",
+      "permissionCode": "order.voidOpen"
+    },
+    {
+      "roleCode": "manager",
+      "permissionCode": "payment.take"
+    },
+    {
+      "roleCode": "manager",
+      "permissionCode": "orderHistory.view"
+    },
+    {
+      "roleCode": "manager",
+      "permissionCode": "order.voidPaid"
+    },
+    {
+      "roleCode": "manager",
+      "permissionCode": "menu.manage"
+    },
+    {
+      "roleCode": "manager",
+      "permissionCode": "floor.manage"
+    },
+    {
+      "roleCode": "manager",
+      "permissionCode": "employee.manage"
+    },
+    {
+      "roleCode": "manager",
+      "permissionCode": "report.view"
+    },
+    {
+      "roleCode": "manager",
+      "permissionCode": "receipt.reprint"
+    },
+    {
+      "roleCode": "cashier",
+      "permissionCode": "floor.view"
+    },
+    {
+      "roleCode": "cashier",
+      "permissionCode": "order.create"
+    },
+    {
+      "roleCode": "cashier",
+      "permissionCode": "order.update"
+    },
+    {
+      "roleCode": "cashier",
+      "permissionCode": "order.voidOpen"
+    },
+    {
+      "roleCode": "cashier",
+      "permissionCode": "payment.take"
+    },
+    {
+      "roleCode": "cashier",
+      "permissionCode": "orderHistory.view"
+    },
+    {
+      "roleCode": "cashier",
+      "permissionCode": "receipt.reprint"
+    },
+    {
+      "roleCode": "waiter",
+      "permissionCode": "floor.view"
+    },
+    {
+      "roleCode": "waiter",
+      "permissionCode": "order.create"
+    },
+    {
+      "roleCode": "waiter",
+      "permissionCode": "order.update"
+    }
+  ]
+}

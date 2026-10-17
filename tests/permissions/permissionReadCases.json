@@ -1,0 +1,1147 @@
+[
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps foundation layers pure and dependency-light"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps feature, adapter, and app layers pointed in the right direction"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps seed fixtures imported only by adapter seed paths"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > TC-PERM-57/T03 keeps candidate core/DTO/ports independent of legacy guards and SDKs"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps retired helper and adapter boundaries from regressing"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionReadRepo.test.ts",
+    "name": "T07 mock permission read projections > projects only active POS menu data, open floor summaries, and whitelisted open-order fields"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionReadRepo.test.ts",
+    "name": "T07 mock permission read projections > keeps paid-void lookup minimal and history limited to closed, whitelisted orders"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionReadRepo.test.ts",
+    "name": "T07 mock permission read projections > allows receipt content for history or payment without granting reprint or write takeover"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionReadRepo.test.ts",
+    "name": "T07 mock permission read projections > returns an immutable stored receipt and rejects open, void, or missing receipt targets"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionReadRepo.test.ts",
+    "name": "T07 mock permission read projections > matches canonical history filters, grouped lookup, deterministic ties, and paging"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionReadRepo.test.ts",
+    "name": "T07 mock permission read projections > validates history, report, and order IDs only after current authority"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionReadRepo.test.ts",
+    "name": "T07 mock permission read projections > buckets paid revenue in the store timezone while retaining the stored business date"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionReadRepo.test.ts",
+    "name": "T07 mock permission read projections > grants report summaries without granting history and rejects forged summary filters"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionReadRepo.test.ts",
+    "name": "T07 mock permission read projections > returns a globally capped, sorted, minimal list of paid report orders"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionReadRepo.test.ts",
+    "name": "T07 mock permission read projections > whitelists full admin and report DTOs instead of cloning injected state fields"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > routes every staged read RPC with the current credential and passes typed filters unchanged"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > preserves long and legacy business text without applying write-only bounds"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > validates and canonicalizes read inputs locally before issuing RPCs"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects invalid open order input without sending a request"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects invalid paid order input without sending a request"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects invalid history detail input without sending a request"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects invalid receipt input without sending a request"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects invalid history filter input without sending a request"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects invalid report filter input without sending a request"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects invalid report summary limit input without sending a request"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects invalid report summary range input without sending a request"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects invalid report summary field input without sending a request"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > checks local employee credential availability before validating caller input"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed floor DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed menu DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed open order DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed paid order DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed history page DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed history detail DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed receipt DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed report DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed report orders DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed menu admin DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed floor admin DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed settings DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects malformed display DTOs as a sanitized refresh failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > discards stale successful and failed responses before exposing old-session data or errors"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > rejects an old projection when credential replacement is queued with the successful transport resolution"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > preserves safe denial FORBIDDEN with its standard message and removes server details"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > preserves safe denial NOT_FOUND with its standard message and removes server details"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > preserves safe denial EMPLOYEE_SESSION_REQUIRED with its standard message and removes server details"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > preserves safe denial AUTH_REQUIRED with its standard message and removes server details"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > preserves safe denial RECEIPT_UNAVAILABLE with its standard message and removes server details"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > preserves safe denial INVALID_WRITE_REQUEST with its standard message and removes server details"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > preserves safe denial EMPLOYEE_ROLE_UNAVAILABLE with its standard message and removes server details"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionReadRepo.test.ts",
+    "name": "SupabasePermissionReadRepo > maps transport failures to a redacted refresh error without retaining requests or credentials"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > accepts an inclusive report summary date range without client pagination"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects report summary range missing"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects report summary range null"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects report summary range invalid date"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects report summary range reversed"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects report summary range pagination"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects report summary range status"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects report summary range actor"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > parses the complete history filter, sanitizes search, canonicalizes UUIDs, and deduplicates tables"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > accepts omitted optional fields, explicit undefined, empty search, and an empty table list"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects non-object or forged/unknown history input 0"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects non-object or forged/unknown history input 1"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects non-object or forged/unknown history input 2"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects non-object or forged/unknown history input 3"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects non-object or forged/unknown history input 4"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects non-object or forged/unknown history input 5"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects non-object or forged/unknown history input 6"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects non-object or forged/unknown history input 7"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects missing or out-of-range pagination 0"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects missing or out-of-range pagination 1"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects missing or out-of-range pagination 2"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects missing or out-of-range pagination 3"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects missing or out-of-range pagination 4"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects missing or out-of-range pagination 5"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects missing or out-of-range pagination 6"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects missing or out-of-range pagination 7"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects missing or out-of-range pagination 8"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects missing or out-of-range pagination 9"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects missing or out-of-range pagination 10"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects missing or out-of-range pagination 11"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 0"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 1"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 2"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 3"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 4"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 5"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 6"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 7"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 8"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 9"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 10"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 11"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects invalid Gregorian history dates 12"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects a reversed history date interval"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects explicit null, wrong enums, and malformed optional fields 0"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects explicit null, wrong enums, and malformed optional fields 1"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects explicit null, wrong enums, and malformed optional fields 2"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects explicit null, wrong enums, and malformed optional fields 3"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects explicit null, wrong enums, and malformed optional fields 4"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects explicit null, wrong enums, and malformed optional fields 5"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects explicit null, wrong enums, and malformed optional fields 6"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects explicit null, wrong enums, and malformed optional fields 7"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects explicit null, wrong enums, and malformed optional fields 8"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects explicit null, wrong enums, and malformed optional fields 9"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > rejects explicit null, wrong enums, and malformed optional fields 10"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > preserves literal search characters that are not part of the production sanitizer"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > accepts only a strict report date object and validates leap days"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionReadInputs.test.ts",
+    "name": "permission read inputs > canonicalizes nonzero UUIDs and rejects zero, malformed, or non-string order IDs"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 read endpoint manifest has exactly thirteen non-overloaded JSON contracts"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'floor operational'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'POS menu'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'open order detail'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'paid order for void'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'order history page'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'order history detail'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'payment receipt'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'sales report'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'report paid-order summaries'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'menu administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'floor administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'settings administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 allowed projection: 'store display'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'floor operational'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'POS menu'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'open order detail'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'paid order for void'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'order history page'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'order history detail'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'payment receipt'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'sales report'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'report paid-order summaries'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'menu administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'floor administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'settings administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 missing permission or invalid baseline session: 'store display'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'floor operational'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'POS menu'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'open order detail'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'paid order for void'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'order history page'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'order history detail'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'payment receipt'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'sales report'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'report paid-order summaries'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'menu administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'floor administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'settings administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 expired session is rechecked: 'store display'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'floor operational'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'POS menu'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'open order detail'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'paid order for void'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'order history page'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'order history detail'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'payment receipt'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'sales report'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'report paid-order summaries'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'menu administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'floor administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'settings administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 wrong-store session is rejected: 'store display'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'floor operational'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'POS menu'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'open order detail'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'paid order for void'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'order history page'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'order history detail'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'payment receipt'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'sales report'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'report paid-order summaries'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'menu administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'floor administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'settings administration'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 forged actor fields cannot bind any read RPC: 'store display'"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-02/26 T07 pre-PIN roster remains minimal while raw employee reads stay closed"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-13 T07 history and payment independently permit receipt reads without granting reprint or write authority"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 each alternative open-order action grants only the operational detail"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 one isolated action never opens unrelated read endpoints"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report-only authority can list report summaries but cannot read history detail or receipt"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-26/27 T07 all sensitive public relations lose table and inherited column SELECT grants"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-26 T07 real authenticated SQL cannot read raw tables through owner or cashier sessions"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-26 T07 authenticated cannot execute private projection helpers by grant or actual SQL call"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/26 T07 positive REST controls distinguish closed raw access from an unavailable backend"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history accepts typed boundaries and sanitizes REST grammar characters without widening scope"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 REST preserves integral JSON decimals for history page bounds"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: missing page"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: missing pageSize"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: page zero"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: page fractional"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: page string"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: page above safe integer"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: pageSize zero"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: pageSize above 100"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: date format"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: impossible date"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: descending dates"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: open status"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: unknown order type"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: non-string search"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: non-array tableIds"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: invalid table UUID"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 history rejects typed filter boundary: unknown key"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report rejects typed filter boundary: missing businessDate"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report rejects typed filter boundary: non-string businessDate"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report rejects typed filter boundary: bad businessDate format"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report rejects typed filter boundary: impossible businessDate"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report rejects typed filter boundary: unknown report key"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report-order filter rejects boundary: forged limit"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report-order filter rejects boundary: forged page"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report-order filter rejects boundary: forged status"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report-order filter rejects boundary: missing fromDate"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report-order filter rejects boundary: invalid date format"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report-order filter rejects boundary: impossible date"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report-order filter rejects boundary: descending dates"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 wrong-state, missing, and cross-store targets use safe purpose-specific errors"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-38 T07 stored and legacy receipts preserve historical lines and expose the legacy marker"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/38 T07 receipt projections deep-redact unknown root line and option fields without rewriting storage"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-38 T07 voided receipt becomes unavailable while terminal R1 remains byte-equivalent"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-38 T07 a revoked token cannot reuse an already-read receipt"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/38 T07 every read endpoint is side-effect free"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report buckets paid timestamps in store timezone and rounds a noninteger average"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 report summaries cap the whole inclusive date range at twenty paid orders in deterministic order"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/38 T07 open-detail and receipt state transitions committed during an order lock wait are observed"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 session becomes expired while open-detail waits and is rejected after the lock"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-28 T07 session becomes revoked while open-detail waits and is rejected after the lock"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 employee action revoke committed during an order wait is observed"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25/28 T07 catalog default removal committed during an order wait is observed"
+  },
+  {
+    "stage": "database",
+    "file": "permissionRead.contract.test.ts",
+    "name": "TC-PERM-25 T07 negative control proves the post-lock permission detector fails when removed"
+  }
+]

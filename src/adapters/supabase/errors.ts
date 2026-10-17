@@ -1,8 +1,10 @@
 import { AppError, type AppErrorCode, isAppError } from "@/core/appError";
 import { writeErrorMessages } from "@/core/writeErrors";
+import { permissionErrorMessages } from "@/core/permissionErrors";
 
 const appErrorMessages: Record<AppErrorCode, string> = {
   ...writeErrorMessages,
+  ...permissionErrorMessages,
   AUTH_REQUIRED: "Phiên cửa hàng không hợp lệ.",
   FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",
   INVALID_PIN: "PIN không đúng.",

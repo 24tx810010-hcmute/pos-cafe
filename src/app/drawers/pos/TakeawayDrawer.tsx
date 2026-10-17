@@ -2,7 +2,7 @@ import { AlertTriangle, ClipboardList, CreditCard, Plus } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "@mui/material";
 import { useEffect, useState } from "react";
-import type { FloorPlan, OrderSummary } from "@/domain";
+import { usePermission } from "@/features/shared/permissionSession";
 import { formatCompactVnd, formatVnd } from "@/core/money";
 import { useOrderDetailQuery, useTakeawayOpenOrdersQuery } from "@/features/pos";
 import { toToastError } from "../../appErrors";
@@ -12,6 +12,9 @@ import { useAppStore } from "../../useAppStore";
 type TakeawayFilter = "open" | "paid" | "today";
 
 export function TakeawayDrawer() {
+  const canCreate = usePermission("order.create"), canUpdate = usePermission("order.update"),
+    canVoid = usePermission("order.voidOpen"), canPay = usePermission("payment.take");
+  const canOpen = canUpdate || canVoid;
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const openOrder = useAppStore((state) => state.openOrder);
   const openPayment = useAppStore((state) => state.openPayment);
@@ -64,13 +67,13 @@ export function TakeawayDrawer() {
               </button>
             ))}
           </div>
-          <Button
+          {canCreate && <Button
             variant="contained"
             startIcon={<Plus size={16} />}
             onClick={() => { closeDrawer(); openOrder({ orderId: null, tableId: null, orderType: "takeaway" }); }}
           >
             Tạo đơn mang đi
-          </Button>
+          </Button>}
           <Button variant="outlined" onClick={closeDrawer}>Đóng</Button>
         </div>
       </header>
@@ -101,13 +104,13 @@ export function TakeawayDrawer() {
                 <div className="flex flex-col items-center justify-center gap-3 px-5 py-10 text-center text-pos-muted">
                   <ClipboardList size={32} color="#94a3b8" />
                   <p>Chưa có đơn mang đi đang mở.</p>
-                  <Button
+                  {canCreate && <Button
                     variant="contained"
                     size="small"
                     onClick={() => { closeDrawer(); openOrder({ orderId: null, tableId: null, orderType: "takeaway" }); }}
                   >
                     Tạo đơn đầu tiên
-                  </Button>
+                  </Button>}
                 </div>
               ) : (
                 <div className="flex flex-col gap-2 p-2">
@@ -142,18 +145,18 @@ export function TakeawayDrawer() {
                         </div>
                         {!isPaid && (
                           <div className="flex flex-wrap gap-2">
-                            <button
+                            {canOpen && <button
                               className="cursor-pointer rounded-[6px] border-[1.5px] border-pos-line bg-transparent px-2.5 py-1 text-xs font-semibold text-pos-ink transition-[background,border-color] hover:border-pos-primary hover:bg-pos-surface2"
                               onClick={(e) => { e.stopPropagation(); closeDrawer(); openOrder({ orderId: ord.id, tableId: null, orderType: "takeaway" }); }}
                             >
                               Mở đơn
-                            </button>
-                            <button
+                            </button>}
+                            {canPay && <button
                               className="cursor-pointer rounded-[6px] border-[1.5px] border-pos-primary bg-pos-primary px-2.5 py-1 text-xs font-semibold text-white transition-[background,border-color] hover:bg-[#0d6560]"
                               onClick={(e) => { e.stopPropagation(); closeDrawer(); openPayment(ord.id); }}
                             >
                               Thanh toán
-                            </button>
+                            </button>}
                           </div>
                         )}
                         {isPaid && (
@@ -179,14 +182,14 @@ export function TakeawayDrawer() {
                 <div className="flex flex-col items-center justify-center gap-3 px-5 py-10 text-center text-pos-muted">
                   <ClipboardList size={30} color="#94a3b8" />
                   <p>Chưa có đơn để xem. Tạo đơn mang đi để bắt đầu.</p>
-                  <Button
+                  {canCreate && <Button
                     variant="contained"
                     size="small"
                     startIcon={<Plus size={15} />}
                     onClick={() => { closeDrawer(); openOrder({ orderId: null, tableId: null, orderType: "takeaway" }); }}
                   >
                     Tạo đơn mang đi
-                  </Button>
+                  </Button>}
                 </div>
               ) : detailQuery.isLoading ? (
                 <p className="text-pos-muted p-4">Đang tải...</p>
@@ -201,7 +204,6 @@ export function TakeawayDrawer() {
               ) : detailQuery.data ? (
                 <div className="flex flex-col gap-2 px-3.5 py-3">
                   <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Đơn số</span><strong>#{detailQuery.data.orderNo}</strong></div>
-                  <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted"><span>Ngày</span><strong>{detailQuery.data.businessDate}</strong></div>
                   <div className="my-1 border-t border-pos-line" />
                   {detailQuery.data.items.map((item) => (
                     <div key={item.id} className="flex justify-between gap-2 text-[13px]">
@@ -212,7 +214,7 @@ export function TakeawayDrawer() {
                   <div className="my-1 border-t border-pos-line" />
                   <div className="flex justify-between gap-2 text-[13px] [&_span]:text-pos-muted mt-1 text-[15px]"><span>Tổng</span><strong className="font-black text-pos-primary">{formatVnd(detailQuery.data.total)}</strong></div>
                   <div className="mt-2 flex flex-col gap-2">
-                    <Button
+                    {canOpen && <Button
                       variant="outlined"
                       size="small"
                       fullWidth
@@ -220,8 +222,8 @@ export function TakeawayDrawer() {
                       onClick={() => { closeDrawer(); openOrder({ orderId: detailQuery.data!.id, tableId: null, orderType: "takeaway" }); }}
                     >
                       Mở đơn
-                    </Button>
-                    <Button
+                    </Button>}
+                    {canPay && <Button
                       variant="contained"
                       size="small"
                       fullWidth
@@ -229,7 +231,7 @@ export function TakeawayDrawer() {
                       onClick={() => { closeDrawer(); openPayment(detailQuery.data!.id); }}
                     >
                       Thanh toán
-                    </Button>
+                    </Button>}
                   </div>
                 </div>
               ) : (

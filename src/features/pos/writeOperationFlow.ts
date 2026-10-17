@@ -1,9 +1,12 @@
 import { AppError } from "@/core/appError";
+import { writeError } from "@/core/writeErrors";
 import { validateWritePayload } from "@/core/writePayload";
 import type { OperationView, WritePayloadV1 } from "@/domain";
 import type { IWriteOperationRepo } from "@/ports";
+import type { InitialReceiptPrintGrant } from "@/ports/permissionPrint";
 
 export type ActiveAttempt = {
+  registrationStarted?: boolean;
   operationId: string;
   payload: WritePayloadV1;
   generation: number;
@@ -24,6 +27,7 @@ const freeze = <T>(value: T): T => {
 /** One active confirmation, in memory only. No connectivity event invokes a write. */
 export class WriteOperationCoordinator {
   private generation = 0;
+  private inhibited = false;
   private attempt: ActiveAttempt | null = null;
   private listeners = new Set<() => void>();
   constructor(
@@ -39,9 +43,14 @@ export class WriteOperationCoordinator {
   }
   /** Closing/locking makes late replies inert. It does not cancel the server operation. */
   leave() { this.generation += 1; this.update(null); }
+  /** A compatibility failure is process-lifetime: no later async continuation may start another write. */
+  inhibit() { this.inhibited = true; this.suspend(); }
   suspend() {
     this.generation += 1;
-    if (this.attempt && this.attempt.status !== "settled") this.update({ ...this.attempt, status: "unknown" });
+    if (this.attempt && this.attempt.status !== "settled") {
+      if (this.attempt.status === "registering" && !this.attempt.registrationStarted) this.update(null);
+      else this.update({ ...this.attempt, status: "unknown" });
+    }
   }
   private async request<T>(work: () => Promise<T>, generation: number): Promise<T> {
     this.check(generation);
@@ -55,7 +64,8 @@ export class WriteOperationCoordinator {
       return result;
     } finally { if (timer) clearTimeout(timer); }
   }
-  async begin(payload: WritePayloadV1): Promise<{ operation: OperationView; initial: boolean }> {
+  async begin(payload: WritePayloadV1, options?: { initialReceiptPrintGrantId: string }): Promise<{ operation: OperationView; initial: boolean; initialReceiptPrintGrant?: InitialReceiptPrintGrant }> {
+    if (this.inhibited) throw writeError("WRITE_PROTOCOL_UNSUPPORTED");
     if (!this.online() || (this.attempt && this.attempt.status !== "settled")) throw unknownWrite();
     validateWritePayload(payload);
     const generation = ++this.generation;
@@ -65,16 +75,22 @@ export class WriteOperationCoordinator {
     let registerStarted = false;
     try {
       const capabilities = await this.request(() => this.repo.capabilities(), generation);
-      if (capabilities.writeProtocolVersion !== 1) throw new AppError("WRITE_PROTOCOL_UNSUPPORTED", "Phiên bản ứng dụng và server chưa tương thích. Tạm dừng ghi và tải lại ứng dụng.");
-      const registered = await this.request(() => { registerStarted = true; return this.repo.register(operationId, immutable); }, generation);
+      if (capabilities.writeProtocolVersion !== 1) throw writeError("WRITE_PROTOCOL_UNSUPPORTED");
+      const registered = await this.request(() => { registerStarted = true;
+        this.update({ ...this.attempt!, registrationStarted: true });
+        return this.repo.register(operationId, immutable); }, generation);
       if (registered.status !== "pending") {
         this.update({ ...this.attempt!, status: "settled", operation: registered });
         return { operation: registered, initial: false };
       }
       this.update({ ...this.attempt!, status: "executing", operation: registered });
-      const operation = await this.request(() => this.repo.execute(operationId, immutable), generation);
+      const execution: import("@/ports").InitialReceiptExecutionResult = await this.request(() => options
+        ? this.repo.executeForInitialReceipt(operationId, immutable, { grantId: options.initialReceiptPrintGrantId })
+        : this.repo.execute(operationId, immutable).then(operation => ({ operation })), generation);
+      const { operation } = execution;
       this.update({ ...this.attempt!, status: operation.status === "pending" ? "unknown" : "settled", operation });
-      return { operation, initial: operation.status === "applied" && operation.replayCount === "0" };
+      const initial = operation.status === "applied" && operation.replayCount === "0";
+      return { operation, initial, ...(initial && "initialReceiptPrintGrant" in execution ? { initialReceiptPrintGrant: execution.initialReceiptPrintGrant } : {}) };
     } catch (error) {
       if (this.attempt?.generation === generation) this.update(registerStarted ? { ...this.attempt, status: "unknown" } : null);
       throw error;
@@ -82,6 +98,7 @@ export class WriteOperationCoordinator {
   }
   /** Explicit recovery uses only the exact server payload selected by the operator. */
   async retryCurrent(): Promise<OperationView> {
+    if (this.inhibited) throw writeError("WRITE_PROTOCOL_UNSUPPORTED");
     const previous = this.attempt;
     if (!previous || previous.status !== "unknown" || !this.online()) throw unknownWrite();
     const generation = ++this.generation;
@@ -101,6 +118,7 @@ export class WriteOperationCoordinator {
 
   /** Explicit recovery uses only the exact server payload selected by the operator. */
   async resume(stored: OperationView): Promise<OperationView> {
+    if (this.inhibited) throw writeError("WRITE_PROTOCOL_UNSUPPORTED");
     if (!this.online()) throw unknownWrite();
     const generation = ++this.generation;
     const payload = freeze(structuredClone(stored.payload));
@@ -118,6 +136,7 @@ export class WriteOperationCoordinator {
     }
   }
   async cancel(stored: OperationView): Promise<OperationView> {
+    if (this.inhibited) throw writeError("WRITE_PROTOCOL_UNSUPPORTED");
     if (!this.online()) throw unknownWrite();
     const generation = ++this.generation;
     this.update({ operationId: stored.operationId, payload: freeze(structuredClone(stored.payload)), generation,

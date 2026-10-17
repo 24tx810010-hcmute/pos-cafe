@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MenuCatalog, OperationView, OrderDetail, SplitWritePayload, WritePayloadV1 } from "@/domain";
 import type { IWriteOperationRepo } from "@/ports";
-import { createMockPorts, createSeededMockState } from "@/adapters/mock";
+import { createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import { WriteOperationCoordinator } from "./writeOperationFlow";
 import { addDraftMenuItem, adjustDraftQuantity, buildCartLines, buildPayableLines, fullSelection, getOrderPrimaryAction, isDraftChangedFromOrder, orderDetailToDraft, payOrderAndPrint, payOrderItemsAndPrint, voidPaidOrder } from "./orderFlow";
 
@@ -16,6 +16,7 @@ const repository = () => {
     capabilities: vi.fn(async () => ({ writeProtocolVersion: 1, maxPayloadBytes: 262144, pendingTtlSeconds: 86400 } as const)),
     register: vi.fn(async (key, body) => pending(key, body)),
     execute: vi.fn(async (key, body) => ({ ...pending(key, body), status: "applied" as const })),
+    executeForInitialReceipt: vi.fn(async (key, body) => ({ operation: { ...pending(key, body), status: "applied" as const } })),
     get: vi.fn(async (key) => pending(key)), list: vi.fn(async () => ({ items: [], nextCursor: null, serverTime: "2026-09-10T00:00:00Z" })),
     cancel: vi.fn(async (key) => ({ ...pending(key), status: "cancelled" as const })),
   };
@@ -116,6 +117,30 @@ describe("immutable online confirmation", () => {
     expect(repo.execute).not.toHaveBeenCalled();
     expect(coordinator.snapshot()).toBeNull();
   });
+  it("forced navigation before registration clears only the unsent local attempt", async () => {
+    const repo = repository(), gate = deferred<Awaited<ReturnType<IWriteOperationRepo["capabilities"]>>>();
+    vi.mocked(repo.capabilities).mockReturnValueOnce(gate.promise);
+    const coordinator = new WriteOperationCoordinator(repo);
+    const result = coordinator.begin(payload()).catch(error => error);
+    coordinator.suspend();
+    expect(coordinator.snapshot()).toBeNull();
+    gate.resolve({ writeProtocolVersion: 1, maxPayloadBytes: 262144, pendingTtlSeconds: 86400 });
+    expect(await result).toMatchObject({ code: "WRITE_RESULT_UNKNOWN" });
+    expect(repo.register).not.toHaveBeenCalled(); expect(repo.execute).not.toHaveBeenCalled();
+  });
+  it("forced navigation after registration started retains frozen K and blocks another confirmation", async () => {
+    const repo = repository(), gate = deferred<OperationView>();
+    vi.mocked(repo.register).mockReturnValueOnce(gate.promise);
+    const coordinator = new WriteOperationCoordinator(repo), input = payload();
+    const result = coordinator.begin(input).catch(error => error); await flush();
+    const key = coordinator.snapshot()!.operationId;
+    coordinator.suspend(); input.receivedAmount = 999_000;
+    expect(coordinator.snapshot()).toMatchObject({ operationId: key, status: "unknown", payload: payload() });
+    await expect(coordinator.begin(payload())).rejects.toMatchObject({ code: "WRITE_RESULT_UNKNOWN" });
+    gate.resolve(pending(key)); expect(await result).toMatchObject({ code: "WRITE_RESULT_UNKNOWN" });
+    expect(repo.execute).not.toHaveBeenCalled(); expect(repo.cancel).not.toHaveBeenCalled();
+    expect(coordinator.snapshot()).toMatchObject({ operationId: key, status: "unknown" });
+  });
 
   it("TC-IDEM-052/core late applied ACK does not turn unknown into UI success", async () => {
     vi.useFakeTimers();
@@ -194,22 +219,18 @@ describe("server-priced portions in the draft", () => {
 });
 
 const flowFixture = async () => {
-  const state = createSeededMockState();
-  state.session = { storeId: state.settings.storeId, storeNo: 1 };
-  const actor = state.employees.find((employee) => employee.role === "admin")!;
-  const ports = createMockPorts(state);
-  await ports.employee.startSession(actor.id, state.pins[actor.id]);
-  return { state, actor, ports };
+  const { business: state, actor, ports, legacyPorts } = await createCandidateRuntimeFixture();
+  return { state, actor, ports, legacyPorts };
 };
 
 describe("payment and void confirmation boundaries", () => {
   it("TC-IDEM-042/core resolves full selection to pay_order before registration", async () => {
-    const { state, actor, ports } = await flowFixture();
+    const { state, actor, ports, legacyPorts } = await flowFixture();
     const source = state.orders.find((candidate) => candidate.status === "open")!;
     const register = vi.spyOn(ports.write, "register");
     const execute = vi.spyOn(ports.write, "execute");
-    const legacyFull = vi.spyOn(ports.payment, "payOrder");
-    const legacySplit = vi.spyOn(ports.payment, "payOrderItems");
+    const legacyFull = vi.spyOn(legacyPorts.payment, "payOrder");
+    const legacySplit = vi.spyOn(legacyPorts.payment, "payOrderItems");
     const paid = await payOrderItemsAndPrint(ports, { actor, order: source, selection: fullSelection(buildPayableLines(source)), receivedAmount: source.total });
     expect(paid).toMatchObject({ mode: "full", status: "paid", changeAmount: 0 });
     expect(register).toHaveBeenCalledTimes(1);

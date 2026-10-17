@@ -2,8 +2,10 @@ import type { MenuCatalog } from "@/domain";
 import type { IMenuImagePort } from "@/ports";
 import type { DraftItem } from "./menuDraft";
 import { clearPendingImageFields } from "./menuImageDraft";
+import { assertCompatibilityCurrent } from "@/features/shared/permissionSession";
 
 export async function deleteMenuImagesBestEffort(menuImages: IMenuImagePort, assetKeys: string[]) {
+  assertCompatibilityCurrent();
   const uniqueAssetKeys = [...new Set(assetKeys.filter(Boolean))];
   await Promise.allSettled(uniqueAssetKeys.map((assetKey) => menuImages.deleteMenuItemImage(assetKey)));
 }
@@ -23,11 +25,12 @@ export async function uploadPendingMenuItemImages(
       continue;
     }
 
+    assertCompatibilityCurrent();
     const uploaded = await menuImages.uploadMenuItemImage({
       itemId: item.id,
       file: item.pendingImageFile,
     });
-    uploadedAssetKeys.push(uploaded.assetKey);
+    assertCompatibilityCurrent(); uploadedAssetKeys.push(uploaded.assetKey);
     itemsForSave.push(clearPendingImageFields({ ...item, imageAssetKey: uploaded.assetKey }));
   }
 

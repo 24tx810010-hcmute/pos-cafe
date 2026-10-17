@@ -55,6 +55,8 @@ export type MenuItemOptionGroupCreate = {
 export type MenuItemOptionGroupUpdate = Partial<MenuItemOptionGroupCreate> & { id: string };
 
 export type MenuChanges = {
+  /** Server finalizes private staging handles in the same transaction as the menu changes. */
+  imageChanges?: { itemId: string; uploadHandle: string | null }[];
   categories: Changeset<CategoryCreate, CategoryUpdate, TombstoneDelete>;
   menuItems: Changeset<MenuItemCreate, MenuItemUpdate, TombstoneDelete>;
   optionGroups: Changeset<OptionGroupCreate, OptionGroupUpdate, TombstoneDelete>;

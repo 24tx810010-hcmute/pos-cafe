@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMockPorts, createSeededMockState } from "@/adapters/mock";
-import type { OrderDetail, WritePayloadV1 } from "@/domain";
+import { activateCandidateUi, createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
+import type { WritePayloadV1 } from "@/domain";
+import type { OrderHistoryView } from "@/ports/permissions";
 import { PortsContext } from "@/features/shared/portsContext";
 import { adjustDraftQuantity, getWriteCoordinator, orderDetailToDraft } from "@/features/pos";
 import { OrderDrawer } from "./drawers/pos/OrderDrawer";
@@ -21,9 +22,7 @@ afterEach(() => {
   useAppStore.setState({ currentEmployee: null, drawer: null, orderContext: null, draftItems: [], receiptPreview: null });
 });
 const fixture = async () => {
-  const state = createSeededMockState(); state.session = { storeId: state.settings.storeId, storeNo: 1 };
-  const actor = state.employees.find(employee => employee.role === "admin")!;
-  const ports = createMockPorts(state); await ports.employee.startSession(actor.id, state.pins[actor.id]);
+  const candidate=await createCandidateRuntimeFixture({demoCredentials:true}),state=candidate.business,actor=candidate.actor,ports=candidate.ports;activateCandidateUi(candidate);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }); clients.push(client);
   const renderUI = (children: React.ReactNode) => render(<PortsContext.Provider value={ports}><QueryClientProvider client={client}><WriteLifecycle />{children}</QueryClientProvider></PortsContext.Provider>);
   return { state, actor, ports, renderUI };
@@ -53,7 +52,7 @@ describe("review: navigation and asynchronous reads", () => {
   });
 
   it("locking clears an unsent draft and revokes credentials without a discard prompt", async () => {
-    const { state, actor, ports, renderUI } = await fixture(); const revoke = vi.spyOn(ports.employee, "revokeSession");
+    const { state, actor, ports, renderUI } = await fixture(); const revoke = vi.spyOn(ports.permission!.session, "revokeSession");
     useAppStore.setState({ currentEmployee: actor, drawer: "order", orderContext: { orderId: null, tableId: null, orderType: "takeaway" } });
     renderUI(<CurrentDrawer />); await screen.findByTestId("order-drawer");
     act(() => useAppStore.getState().setDraftItems([{ id: id(1), menuItemId: state.menu.menuItems[0].id, quantity: 1, options: [] }]));
@@ -70,15 +69,15 @@ describe("review: navigation and asynchronous reads", () => {
     renderUI(<CurrentDrawer />);
     fireEvent.click(await screen.findByTestId(`history-row-${paid.id}`));
     const button = await screen.findByTestId("history-void-order"); await waitFor(() => expect(button).not.toBeDisabled());
-    let release!: (order: OrderDetail) => void;
-    vi.spyOn(ports.order, "getOrder").mockImplementationOnce(() => new Promise(done => { release = done; }));
+    let release!: (order: OrderHistoryView) => void;
+    vi.spyOn(ports.permission!.read, "getOrderHistoryDetail").mockImplementationOnce(() => new Promise(done => { release = done; }));
     fireEvent.click(button); await waitFor(() => expect(release).toBeDefined());
     act(() => {
       if (variant === "lock") useAppStore.getState().setCurrentEmployee(null);
       else if (variant === "offline") { Object.defineProperty(navigator, "onLine", { configurable: true, value: false }); window.dispatchEvent(new Event("offline")); }
       else { useAppStore.getState().closeDrawer(); if (variant === "leave_and_return") useAppStore.getState().openDrawer("orderHistory"); }
     });
-    await act(async () => { release(structuredClone(paid)); await Promise.resolve(); });
+    await act(async () => { release({...structuredClone(paid),cashierName:null,voidedByName:null}); await Promise.resolve(); });
     expect(screen.queryByTestId("history-void-popup")).not.toBeInTheDocument();
     expect(register).not.toHaveBeenCalled(); expect(execute).not.toHaveBeenCalled(); expect(paid.status).toBe("paid");
   });

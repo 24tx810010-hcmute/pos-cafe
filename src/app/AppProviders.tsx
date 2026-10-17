@@ -1,10 +1,11 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { useMemo, type ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
 import { PortsContext } from "@/features/shared/portsContext";
 import { createAppPortsFromViteEnv } from "./runtimePorts";
 import { WriteLifecycle } from "./WriteLifecycle";
+import { requireCompatibilityUpdate } from "./compatibilityGate";
 
 const theme = createTheme({
   palette: {
@@ -24,21 +25,18 @@ const theme = createTheme({
   },
 });
 
+export const createCompatibilityQueryClient = () => new QueryClient({
+  queryCache: new QueryCache({ onError: requireCompatibilityUpdate }),
+  mutationCache: new MutationCache({ onError: requireCompatibilityUpdate }),
+  defaultOptions: {
+    mutations: { retry: false, networkMode: "always" },
+    queries: { staleTime: 30_000, retry: false },
+  },
+});
+
 export function AppProviders({ children }: { children: ReactNode }) {
   const ports = useMemo(() => createAppPortsFromViteEnv(), []);
-  const queryClient = useMemo(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          mutations: { retry: false, networkMode: "always" },
-          queries: {
-            staleTime: 30_000,
-            retry: false,
-          },
-        },
-      }),
-    [],
-  );
+  const queryClient = useMemo(createCompatibilityQueryClient, []);
 
   return (
     <ThemeProvider theme={theme}>

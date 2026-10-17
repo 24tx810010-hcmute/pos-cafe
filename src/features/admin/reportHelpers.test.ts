@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CoreReport, OrderSummary } from "@/domain";
+import type { CoreReport } from "@/domain";
+import type { ReportOrderSummary } from "@/ports/permissions";
 import { buildReportDatasetFromReports } from "./reportHelpers";
 
 describe("buildReportDatasetFromReports", () => {
@@ -26,16 +27,15 @@ describe("buildReportDatasetFromReports", () => {
         voidAmount: 30_000,
       },
     ];
-    const orders: OrderSummary[] = [
+    const orders: ReportOrderSummary[] = [
       {
         id: "ord-1",
         orderNo: 1,
         status: "paid",
         total: 100_000,
-        lockVersion: 1,
-        tableId: "tbl-1",
         orderType: "dine_in",
         businessDate: "2026-06-21",
+        tableName: "B01",
       },
     ];
 
@@ -43,7 +43,6 @@ describe("buildReportDatasetFromReports", () => {
       reports,
       ["2026-06-20", "2026-06-21"],
       orders,
-      new Map([["tbl-1", "B01"]]),
     );
 
     expect(dataset.revenue).toBe(150_000);
@@ -55,5 +54,17 @@ describe("buildReportDatasetFromReports", () => {
     expect(dataset.orders).toEqual([
       { id: "ord-1", orderNo: 1, time: "21/06/2026", table: "B01", total: 100_000, method: "paid" },
     ]);
+  });
+
+  it("consumes the bounded report projection directly without floor or history fields", () => {
+    const orders: ReportOrderSummary[] = Array.from({ length: 21 }, (_, index) => ({
+      id: `ord-${index}`, orderNo: index + 1, status: "paid", total: 10_000,
+      orderType: index === 0 ? "takeaway" : "dine_in", businessDate: "2026-06-21",
+      tableName: index === 1 ? null : `B${index}`,
+    }));
+    const dataset = buildReportDatasetFromReports([], ["2026-06-21"], orders);
+    expect(dataset.orders).toHaveLength(20);
+    expect(dataset.orders[0].table).toBe("Mang đi");
+    expect(dataset.orders[1].table).toBe("Tại bàn");
   });
 });

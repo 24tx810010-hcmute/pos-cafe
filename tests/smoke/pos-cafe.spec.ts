@@ -107,7 +107,7 @@ test("portrait pre-login flow keeps primary actions reachable", async ({ page },
 
   await expect(page.getByTestId("passcode-screen")).toBeVisible();
   await expect(page.getByTestId("unlock-button")).toBeInViewport();
-  await page.getByTestId("employee-6b7bd350-7db2-4160-8471-cca2668c070d").click();
+  await page.getByTestId("employee-30000000-0000-4000-8000-000000000011").click();
   for (const digit of ["1", "2", "3", "4", "5", "6"]) {
     await page.getByTestId(`pin-${digit}`).click();
   }
@@ -234,7 +234,7 @@ test("admin mock modules are reachable without changing URL", async ({ page }, t
   await page.getByTestId("nav-employees").click();
   await expect(page.getByTestId("employees-drawer")).toBeVisible();
   await expect(page.getByTestId("add-employee-button")).toBeVisible();
-  await expect(page.getByTestId("employee-row-6b7bd350-7db2-4160-8471-cca2668c070d")).toHaveClass(/bg-pos-primary/);
+  await expect(page.getByTestId("employee-row-30000000-0000-4000-8000-000000000011")).toHaveClass(/bg-pos-primary/);
 
   const employeeSplitGeometry = await page.getByTestId("employees-split-layout").evaluate((split) => {
     const list = split.querySelector('[data-testid="employee-list-pane"]');
@@ -412,19 +412,19 @@ test("employee permission editor gates payment after re-login", async ({ page },
 
   await page.getByTestId("nav-employees").click();
   await expect(page.getByTestId("employees-drawer")).toBeVisible();
-  await page.getByTestId("employee-row-22828322-623b-42e7-8a28-a2bdf367c364").click();
+  await page.getByTestId("employee-row-30000000-0000-4000-8000-000000000013").click();
 
-  const paymentPermission = page.getByTestId("employee-permission-payment.take");
+  const paymentPermission = page.getByTestId("permission-payment.take");
   await expect(paymentPermission).toBeChecked();
   await paymentPermission.uncheck();
   await page.getByTestId("save-employee-button").click();
-  await expect(page.getByText("Đã lưu nhân viên", { exact: true })).toBeVisible();
+  await expect(page.getByText("Đã cập nhật quyền nhân viên.", { exact: true })).toBeVisible();
   await expect(page.getByTestId("save-employee-button")).toBeEnabled();
 
   await closeCleanDrawer(page, "employees-drawer");
   await page.getByTestId("nav-lock").click();
   await expect(page.getByTestId("passcode-screen")).toBeVisible();
-  await page.getByTestId("employee-22828322-623b-42e7-8a28-a2bdf367c364").click();
+  await page.getByTestId("employee-30000000-0000-4000-8000-000000000013").click();
   for (const digit of ["1", "1", "1", "1", "1", "1"]) {
     await page.getByTestId(`pin-${digit}`).click();
   }
@@ -434,8 +434,8 @@ test("employee permission editor gates payment after re-login", async ({ page },
   await page.getByTestId("table-a254abd0-b883-4d5c-85c1-89f660409e02").click();
   await expect(page.getByTestId("order-drawer")).toBeVisible();
   const paymentAction = page.getByTestId("submit-order-button-footer");
-  await expect(paymentAction).toBeDisabled();
-  await expect(paymentAction).toHaveAttribute("title", "Không có quyền thanh toán");
+  await expect(paymentAction).toHaveCount(0);
+  await expect(page.getByTestId("payment-drawer")).toHaveCount(0);
 });
 
 test("payment drawer exposes complete action for occupied table", async ({ page }, testInfo) => {

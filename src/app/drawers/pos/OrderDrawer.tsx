@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { Button } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { hasPermission } from "@/core/guards";
+import { usePermission } from "@/features/shared/permissionSession";
 import type { EmployeePermission, PriceChangedDetails } from "@/domain";
 import { AppError } from "@/core/appError";
 import { PriceChangedNotice } from "./PriceChangedNotice";
@@ -77,7 +77,9 @@ export function OrderDrawer() {
     : allCategoryItems;
   const orderDetail = editingOrder;
   const table = context?.tableId ? floorPlanQuery.data?.tables.find((candidate) => candidate.id === context.tableId) : null;
-  const cartLines = useMemo(() => (menu ? buildCartLines(menu, draftItems) : []), [draftItems, menu]);
+  const cartLines = useMemo(() => buildCartLines(menu, draftItems), [draftItems, menu]);
+  const canEdit = usePermission(context?.orderId ? "order.update" : "order.create");
+  const canVoidOpen = usePermission("order.voidOpen"), canPay = usePermission("payment.take");
   const total = calculateCartTotal(cartLines);
   const draftChanged = isDraftChangedFromOrder(orderDetail, draftItems);
   useEffect(() => registerDrawerExitGuard((navigate) => {
@@ -88,14 +90,8 @@ export function OrderDrawer() {
   const primaryAction = getOrderPrimaryAction(orderDetail, draftItems);
   const requiredPermission: EmployeePermission = primaryAction === "payment"
     ? "payment.take" : getSubmitOrderPermission(context ?? { orderId: null }, draftItems);
-  const permissionDenied = primaryAction !== "closed" && !hasPermission(currentEmployee, requiredPermission);
-  const permissionTitle = permissionDenied ? ({
-    "order.create": "Không có quyền tạo đơn",
-    "order.update": "Không có quyền sửa đơn",
-    "order.voidOpen": "Không có quyền hủy đơn",
-    "payment.take": "Không có quyền thanh toán",
-    "order.voidPaid": "Không có quyền hủy đơn đã thanh toán",
-  } satisfies Record<EmployeePermission, string>)[requiredPermission] : undefined;
+  const actionAllowed = usePermission(requiredPermission);
+  const permissionDenied = primaryAction !== "closed" && !actionAllowed;
   const submitDisabled =
     submitMutation.isPending || menuQuery.isError || orderQuery.isError || (!!context?.orderId && orderQuery.isLoading);
   const primaryDisabled =
@@ -157,6 +153,7 @@ export function OrderDrawer() {
           if (result.initialSuccess && result.status !== "void" && addedLines.length > 0) {
             openReceiptPreview({
               variant: "kitchen",
+              requiredPermission: context.orderId ? "order.update" : "order.create",
               doc: {
                 orderNo: result.orderNo,
                 tableName: table?.name ?? null,
@@ -230,20 +227,20 @@ export function OrderDrawer() {
           <Button variant="outlined" data-testid="order-close-button" onClick={handleClose}>
             Đóng
           </Button>
-          {orderDetail && draftChanged && primaryAction !== "closed" && (
+          {canPay && orderDetail && draftChanged && primaryAction !== "closed" && (
             <Button variant="outlined" startIcon={<CreditCard size={16} />} disabled>
               Thanh toán
             </Button>
           )}
-          <Button
+          {canVoidOpen && orderDetail && draftItems.length > 0 && <Button color="error" variant="outlined" disabled={blocked || submitMutation.isPending} data-testid="clear-open-order" onClick={() => setDraftItems([])}>Hủy đơn mở</Button>}
+          {!permissionDenied && <Button
             variant="contained"
             data-testid="submit-order-button"
             disabled={primaryDisabledWithPermission}
-            title={permissionTitle}
             onClick={runPrimaryAction}
           >
             {primaryActionLabel}
-          </Button>
+          </Button>}
         </div>
       </header>
 
@@ -270,7 +267,7 @@ export function OrderDrawer() {
           </div>
         )}
         <fieldset disabled={blocked} className="m-0 grid h-full min-h-0 min-w-[620px] grid-cols-[minmax(300px,1fr)_minmax(280px,360px)] gap-2.5 border-0 p-0">
-          <OrderMenuPane
+          {canEdit ? <OrderMenuPane
             categories={menu?.categories}
             items={items}
             categoryId={categoryId}
@@ -278,7 +275,7 @@ export function OrderDrawer() {
             isLoading={menuQuery.isLoading}
             isError={menuQuery.isError}
             error={menuQuery.error}
-            getMenuImageUrl={(assetKey) => ports.menuImages.getImageUrl(assetKey)}
+            getMenuImageUrl={(assetKey) => ports.permission!.menuImages.getImageUrl(assetKey)}
             onSelectCategory={(selectedCategoryId) => {
               setActiveCategoryId(selectedCategoryId);
               setSearch("");
@@ -286,7 +283,7 @@ export function OrderDrawer() {
             onSearchChange={setSearch}
             onRetry={() => void menuQuery.refetch()}
             onAddItem={picker.requestAdd}
-          />
+          /> : <div className="p-4 text-pos-muted">Các món đã lưu trong đơn. Quyền hiện tại không cho phép sửa món.</div>}
           <OrderCartPane
             cartLines={cartLines}
             draftItems={draftItems}
@@ -294,8 +291,9 @@ export function OrderDrawer() {
             total={total}
             showPaymentHint={!!orderDetail && draftChanged && primaryAction !== "closed"}
             primaryDisabled={primaryDisabledWithPermission}
+            primaryVisible={!permissionDenied}
+            canEdit={canEdit}
             primaryActionLabel={primaryActionLabel}
-            primaryActionTitle={permissionTitle}
             onAdjustQuantity={adjustQuantity}
             onToggleNote={(lineId) => setNoteOpenId(noteOpenId === lineId ? null : lineId)}
             onUpdateNote={updateNote}

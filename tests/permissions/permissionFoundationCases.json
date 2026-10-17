@@ -1,0 +1,662 @@
+[
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps foundation layers pure and dependency-light"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps feature, adapter, and app layers pointed in the right direction"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps seed fixtures imported only by adapter seed paths"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > TC-PERM-57/T03 keeps candidate core/DTO/ports independent of legacy guards and SDKs"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps retired helper and adapter boundaries from regressing"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > checks all 15 default cells for owner"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > checks all 15 default cells for manager"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > checks all 15 default cells for cashier"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > checks all 15 default cells for waiter"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > checks all 15 default cells for kitchen"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > has five roles, four enabled and three selectable without removed or future codes"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > uses modified catalog defaults with no second role map"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > rejects duplicate permission"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > rejects unknown permission"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > rejects unknown role"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > rejects missing owner default"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > rejects missing floor baseline"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > rejects owner-only default on manager"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > rejects duplicate default"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > rejects enabled kitchen"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > rejects kitchen default"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > rejects invalid revision"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-01/core candidate catalog > rejects unsupported contract"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-03/core navigation and authority > read-only waiter has floor/history/report without action, lookup or reprint"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-03/core navigation and authority > reprint is independent of payment/lookup and still requires receipt read"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-03/core navigation and authority > paid void grants lookup and not general history or receipt read"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-03/core navigation and authority > cashier can retain only floor and gains menu without employee/settings"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-03/core navigation and authority > fails closed while unverified"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-03/core navigation and authority > fails closed while loading"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-03/core navigation and authority > fails closed while unavailable"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-03/core navigation and authority > rejects stale catalog and performs no network request in repeated guards"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionCatalog.test.ts",
+    "name": "TC-PERM-03/core navigation and authority > separates inactive configured permissions from session execution"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > TC01 returns data catalog and a matching sanitized snapshot without mutating legacy employees"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > TC03 revision poll returns only current revisions and time, refresh observes catalog changes"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > TC01 roster before PIN has only id/name of enabled active employees in this store"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > rejects protected reads with no session"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > rejects protected reads with revoked"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > rejects protected reads with expired"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > rejects protected reads with wrong store"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > rejects protected reads with inactive"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > rejects protected reads with missing employee"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > rejects protected reads with kitchen"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > requires a paired store even for roster"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > T05 delegated permission editor reads sanitized targets through the full candidate admin repo"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > TC03 read-only waiter reads history/report/floor but cannot access operational details or K"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > TC03 action-specific reads reject closed/open transitions and do not grant general history"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > TC03 grants only the requested editor and applies current revocation on each read"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionRepos.test.ts",
+    "name": "T03 mock authority/admin/read contract > TC03 owner can read admin projections; display excludes settings/credentials"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > accepts name with 1 code points (65)"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > accepts name with 2 code points (32)"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > accepts name with 120 code points (233)"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > accepts name with 120 code points (128512)"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > accepts name with 120 code points (84)"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects name empty"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects name spaces"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects name 121 ascii"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects name 121 astral"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects name null"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects name number"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > keeps names 101–120 intact and returns only safe field errors"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects invalid PIN \"12345\""
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects invalid PIN \"1234567\""
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects invalid PIN \"１２３４５６\""
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects invalid PIN \"١٢٣٤٥٦\""
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects invalid PIN \"12345a\""
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects invalid PIN \"123456\\n\""
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects invalid PIN \" 123456\""
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects invalid PIN 123456"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects invalid PIN null"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > preserves leading zero PIN and validates confirmation"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects revision null"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects revision undefined"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects revision -1"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects revision 7"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects revision 0.5"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects revision NaN"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects revision Infinity"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects revision 9007199254740992"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > accepts integer revisions without coercion"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects UUID bad"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects UUID 00000000-0000-0000-0000-000000000000"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects UUID null"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects UUID 1"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects administrative role owner"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects administrative role kitchen"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects administrative role accountant"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects administrative role admin"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects administrative role x.invalid"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > rejects administrative role null"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-19/core employee input bounds > creates a normalized request without coercing fields or sending confirmation"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-04/19/core patch presence and role preview > distinguishes missing overrides from explicit reset and preserves field authority"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-04/19/core patch presence and role preview > a same-role preview keeps deny; an actual role change resets it without touching input or revision"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-04/19/core patch presence and role preview > checks catalog revision before normalizing overrides"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-04/19/core patch presence and role preview > rejects null name"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-04/19/core patch presence and role preview > rejects null role"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-04/19/core patch presence and role preview > rejects null active"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-04/19/core patch presence and role preview > rejects string active"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-04/19/core patch presence and role preview > rejects unknown field"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-04/19/core patch presence and role preview > rejects undefined overrides"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-04/19/core patch presence and role preview > rejects missing arrays"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-04/19/core patch presence and role preview > rejects missing patch"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionInputs.test.ts",
+    "name": "TC-PERM-04/19/core patch presence and role preview > keeps explicit empty patch as a no-op candidate"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > normalizes null"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > normalizes empty"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > normalizes default grant"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > normalizes unneeded deny"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > normalizes duplicate and sorted"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > normalizes overlap on default"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > normalizes overlap outside default"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > normalizes 100 grants"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > normalizes 100 denies"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects undefined"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects empty object"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects array"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects boolean"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects missing denies"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects wrong grants"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects wrong denies"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects number element"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects unknown code"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects removed code"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects extra field"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects sparse array"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects 101 grants"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects 101 denies"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > rejects forbidden baseline and owner-only overrides even when overlapping"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > explains baseline/default/grant/deny with denied defaults preserved"
+  },
+  {
+    "stage": "unit",
+    "file": "permissionOverrides.test.ts",
+    "name": "TC-PERM-04/core override normalization > matches an independent set oracle for every grant/deny state across default and extra rights"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFoundation.contract.test.ts",
+    "name": "TC-PERM-01/T03 SQL catalog and shared mock fixture have identical rows"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFoundation.contract.test.ts",
+    "name": "TC-PERM-01/04/T03 core and SQL agree on 1280 override profiles across five roles"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFoundation.contract.test.ts",
+    "name": "TC-PERM-04/T03 SQL and core reject the same malformed and forbidden overrides"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFoundation.contract.test.ts",
+    "name": "TC-PERM-03/T03 a SQL default update changes core authority at the new catalog revision"
+  }
+]

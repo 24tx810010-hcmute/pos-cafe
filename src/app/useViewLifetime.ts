@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useAppStore } from "./useAppStore";
+import { usePermissionSession } from "@/features/shared/permissionSession";
 
 /** Capture before an asynchronous read that could later start a write or preview. */
 export function useViewLifetime(context: unknown) {
@@ -12,12 +13,16 @@ export function useViewLifetime(context: unknown) {
     const invalidate = () => { lifetime.current.generation += 1; };
     const stop = useAppStore.subscribe((state, previous) => {
       if (state.currentEmployee !== previous.currentEmployee || state.employeeSessionVersion !== previous.employeeSessionVersion
+        || state.updateRequired !== previous.updateRequired
         || state.screen !== previous.screen || state.drawer !== previous.drawer
         || state.orderContext !== previous.orderContext || state.paymentOrderId !== previous.paymentOrderId
         || state.receiptPreview !== previous.receiptPreview) invalidate();
     });
     window.addEventListener("offline", invalidate);
-    return () => { invalidate(); stop(); window.removeEventListener("offline", invalidate); };
+    const stopAuthority = usePermissionSession.subscribe((state, previous) => {
+      if (state.generation !== previous.generation || state.status !== "verified" && previous.status === "verified") invalidate();
+    });
+    return () => { invalidate(); stop(); stopAuthority(); window.removeEventListener("offline", invalidate); };
   }, []);
   return useCallback(() => {
     const generation = lifetime.current.generation;

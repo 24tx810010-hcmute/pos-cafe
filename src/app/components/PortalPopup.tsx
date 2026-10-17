@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { usePermissionSession } from "@/features/shared/permissionSession";
 
 type PopupPlacement =
   | "Centered"
@@ -72,11 +73,12 @@ export function PortalPopup({
   bottom = 0,
 }: PortalPopupProps) {
   const root = getPortalRoot(containerId);
+  const gated = usePermissionSession(state => !!state.session && state.status !== "verified");
   const contentRef = useRef<HTMLDivElement>(null);
   const [relativeStyle, setRelativeStyle] = useState<CSSProperties>({ opacity: 0 });
 
   const overlayStyle = useMemo<CSSProperties>(() => {
-    const style: CSSProperties = { zIndex };
+    const style: CSSProperties = { zIndex, ...(gated ? { visibility: "hidden", pointerEvents: "none" } as const : {}) };
     if (overlayColor) {
       style.backgroundColor = overlayColor;
     }
@@ -112,7 +114,7 @@ export function PortalPopup({
     }
 
     return style;
-  }, [overlayColor, placement, relativeLayerRef, zIndex]);
+  }, [overlayColor, placement, relativeLayerRef, zIndex, gated]);
 
   const setPosition = useCallback(() => {
     const relativeItem = relativeLayerRef?.current?.getBoundingClientRect();

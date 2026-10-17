@@ -1,5 +1,5 @@
 import type { BusinessError, OperationView, WriteCapabilities, WriteOperationFilter, WriteOperationPage, WritePayloadV1 } from "@/domain";
-import type { IWriteOperationRepo } from "@/ports";
+import type { InitialReceiptExecutionResult, IWriteOperationRepo } from "@/ports";
 import { AppError } from "@/core/appError";
 import { writeError } from "@/core/writeErrors";
 import { isWriteUuid, validateWritePayload } from "@/core/writePayload";
@@ -7,13 +7,15 @@ import { mapSupabaseError } from "./errors";
 import type { SupabaseAnyClient } from "./repoShared";
 
 type Envelope<T> = { ok: true; operation: T } | { ok: false; error: BusinessError };
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export class SupabaseWriteOperationRepo implements IWriteOperationRepo {
-  constructor(private readonly client: SupabaseAnyClient) {}
+  constructor(private readonly client: SupabaseAnyClient, private readonly permissionContractRequired = false) {}
   async capabilities(): Promise<WriteCapabilities> {
     const { data, error } = await this.client.rpc("get_write_capabilities");
     if (error) throw mapSupabaseError(error, "WRITE_PROTOCOL_UNSUPPORTED");
     if (data?.ok === false) throw new AppError(data.error.code, data.error.message, data.error.details);
     if (data?.writeProtocolVersion !== 1 || data?.maxPayloadBytes !== 262144 || data?.pendingTtlSeconds !== 86400) throw writeError("WRITE_PROTOCOL_UNSUPPORTED");
+    if (this.permissionContractRequired && data.permissionContractVersion !== 2) throw writeError("WRITE_PROTOCOL_UNSUPPORTED");
     return data as WriteCapabilities;
   }
   private async operation(name: string, operationId: string, payload?: WritePayloadV1): Promise<OperationView> {
@@ -30,6 +32,23 @@ export class SupabaseWriteOperationRepo implements IWriteOperationRepo {
   }
   register(id: string, payload: WritePayloadV1): Promise<OperationView> { return this.operation("register_write_operation", id, payload); }
   execute(id: string, payload: WritePayloadV1): Promise<OperationView> { return this.operation("execute_write_operation", id, payload); }
+  async executeForInitialReceipt(id: string, payload: WritePayloadV1, input: { grantId: string }): Promise<InitialReceiptExecutionResult> {
+    if (!isWriteUuid(id) || !UUID.test(input.grantId)) throw writeError("INVALID_WRITE_REQUEST");
+    validateWritePayload(payload);
+    if (payload.kind !== "pay_order" && payload.kind !== "pay_order_items") throw writeError("INVALID_WRITE_REQUEST");
+    const grantId=input.grantId.toLowerCase();
+    const {data,error}=await this.client.rpc("execute_write_operation",{p_operation_id:id,p_payload:payload,p_print_grant_id:grantId});
+    if(error)throw mapSupabaseError(error,"WRITE_TEMPORARILY_UNAVAILABLE");
+    const envelope=data as (Envelope<OperationView>&{initialReceiptPrintGrant?:unknown})|null;
+    if(!envelope||typeof envelope.ok!=="boolean")throw writeError("WRITE_PROTOCOL_UNSUPPORTED");
+    if(!envelope.ok)throw new AppError(envelope.error.code,envelope.error.message,envelope.error.details);
+    const operation=envelope.operation;
+    if(operation?.schemaVersion!==1||typeof operation.operationId!=="string"||operation.operationId.toLowerCase()!==id.toLowerCase())throw writeError("WRITE_PROTOCOL_UNSUPPORTED");
+    if(envelope.initialReceiptPrintGrant===undefined)return{operation};
+    const grant=envelope.initialReceiptPrintGrant as Record<string,unknown>;
+    if(!grant||Object.keys(grant).some(key=>!['grantId','orderId'].includes(key))||typeof grant.grantId!=="string"||grant.grantId.toLowerCase()!==grantId||typeof grant.orderId!=="string"||!UUID.test(grant.orderId))throw writeError("WRITE_PROTOCOL_UNSUPPORTED");
+    return{operation,initialReceiptPrintGrant:{grantId,orderId:grant.orderId.toLowerCase()}};
+  }
   get(id: string): Promise<OperationView> { return this.operation("get_write_operation", id); }
   cancel(id: string): Promise<OperationView> { return this.operation("cancel_write_operation", id); }
   async list(filter: WriteOperationFilter = {}): Promise<WriteOperationPage> {

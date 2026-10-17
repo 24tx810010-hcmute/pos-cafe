@@ -23,7 +23,7 @@ test("kịch bản demo chính chạy liền mạch qua 14 bước", async ({ pa
 
   await test.step("Bước 3 — đăng nhập quản lý bằng PIN", async () => {
     await loginAsAdmin(page);
-    await expect(page.getByTestId("left-nav-session")).toHaveAttribute("data-employee-id", "6b7bd350-7db2-4160-8471-cca2668c070d");
+    await expect(page.getByTestId("left-nav-session")).toHaveAttribute("data-employee-id", "30000000-0000-4000-8000-000000000011");
   });
 
   await test.step("Bước 4 — mở bàn B01 đang trống", async () => {
@@ -191,8 +191,8 @@ test("kịch bản demo chính chạy liền mạch qua 14 bước", async ({ pa
   await test.step("Bước 14 — bỏ quyền thanh toán, kiểm tạo/sửa đơn, rồi khôi phục quyền", async () => {
     await page.getByTestId("report-close-button").click();
     await page.getByTestId("nav-employees").click();
-    await page.getByTestId("employee-row-22828322-623b-42e7-8a28-a2bdf367c364").click();
-    const paymentPermission = page.getByTestId("employee-permission-payment.take");
+    await page.getByTestId("employee-row-30000000-0000-4000-8000-000000000013").click();
+    const paymentPermission = page.getByTestId("permission-payment.take");
     await expect(paymentPermission).toBeChecked();
     await paymentPermission.uncheck();
     await page.getByTestId("save-employee-button").click();
@@ -200,12 +200,12 @@ test("kịch bản demo chính chạy liền mạch qua 14 bước", async ({ pa
 
     await page.getByTestId("employees-close-button").click();
     await page.getByTestId("nav-lock").click();
-    await page.getByTestId("employee-22828322-623b-42e7-8a28-a2bdf367c364").click();
+    await page.getByTestId("employee-30000000-0000-4000-8000-000000000013").click();
     for (const digit of ["1", "1", "1", "1", "1", "1"]) {
       await page.getByTestId(`pin-${digit}`).click();
     }
     await page.getByTestId("unlock-button").click();
-    await expect(page.getByTestId("left-nav-session")).toHaveAttribute("data-employee-id", "22828322-623b-42e7-8a28-a2bdf367c364");
+    await expect(page.getByTestId("left-nav-session")).toHaveAttribute("data-employee-id", "30000000-0000-4000-8000-000000000013");
 
     await page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").click();
     await page.getByTestId("menu-item-80cfbd5a-a538-4da6-888d-2f732b7b8e2d").click();
@@ -223,14 +223,14 @@ test("kịch bản demo chính chạy liền mạch qua 14 bước", async ({ pa
 
     await page.getByTestId("table-7b035353-73d6-44bc-8ec4-1ab9951f7a58").click();
     const paymentAction = page.getByTestId("submit-order-button-footer");
-    await expect(paymentAction).toBeDisabled();
-    await expect(paymentAction).toHaveAttribute("title", /.+/);
+    await expect(paymentAction).toHaveCount(0);
+    await expect(page.getByTestId("payment-drawer")).toHaveCount(0);
 
     await page.getByTestId("order-close-button").click();
     await page.getByTestId("nav-lock").click();
     await loginAsAdmin(page);
     await page.getByTestId("nav-employees").click();
-    await page.getByTestId("employee-row-22828322-623b-42e7-8a28-a2bdf367c364").click();
+    await page.getByTestId("employee-row-30000000-0000-4000-8000-000000000013").click();
     await expect(paymentPermission).not.toBeChecked();
     await paymentPermission.check();
     await page.getByTestId("save-employee-button").click();

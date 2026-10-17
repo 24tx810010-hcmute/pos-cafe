@@ -1,0 +1,162 @@
+{
+  "baseUrl": "http://127.0.0.1:5178",
+
+  "devServer": {
+    "command": "npm run dev -- --host 127.0.0.1 --port 5178 --strictPort",
+    "env": {
+      "VITE_DATA_MODE": "mock",
+      "VITE_SUPABASE_URL": "",
+      "VITE_SUPABASE_ANON_KEY": ""
+    },
+    "readyTimeoutMs": 120000
+  },
+
+  "routes": [],
+
+  "states": [
+    {
+      "name": "compatibility-update-gate",
+      "describe": "man hinh yeu cau cap nhat, component ung dung that trong fixture mock",
+      "route": "/ui-audit/compatibility-gate.html",
+      "steps": [{ "waitFor": "@compatibility-update-gate" }]
+    },
+    {
+      "name": "compatibility-created-store",
+      "describe": "ma quan synthetic chua xac nhan luu khi yeu cau cap nhat",
+      "route": "/ui-audit/compatibility-gate.html?created=1",
+      "steps": [{ "waitFor": "@compatibility-created-store-result" }]
+    },
+    {
+      "name": "required-pin-change",
+      "describe": "form owner doi PIN tam, proof check hop le",
+      "route": "/ui-audit/required-pin-change.html",
+      "steps": [{ "waitFor": "@required-pin-change-screen" }, { "waitFor": "@complete-required-pin" }]
+    },
+    {
+      "name": "landing",
+      "describe": "man hinh mo dau, chua ghep cua hang",
+      "steps": [{ "waitFor": "@landing-screen" }]
+    },
+    {
+      "name": "store-pairing",
+      "describe": "nhap ma cua hang",
+      "extends": "landing",
+      "steps": [{ "click": "@go-store-pairing" }, { "waitFor": "@store-pairing-screen" }]
+    },
+    {
+      "name": "passcode",
+      "describe": "chon nhan vien + ban phim PIN",
+      "extends": "store-pairing",
+      "steps": [
+        { "fill": "@store-key-input", "value": "0001-X8F3QA" },
+        { "click": "@go-passcode" },
+        { "waitFor": "@passcode-screen" }
+      ]
+    },
+    {
+      "name": "floor",
+      "describe": "so do ban sau khi dang nhap (trang thai goc cua POS)",
+      "extends": "passcode",
+      "steps": [
+        { "click": "@employee-30000000-0000-4000-8000-000000000011" },
+        {
+          "clickAll": ["@pin-1", "@pin-2", "@pin-3", "@pin-4", "@pin-5", "@pin-6"]
+        },
+        { "click": "@unlock-button" },
+        { "waitFor": "@floor-view" },
+        { "wait": 4500 }
+      ]
+    },
+    {
+      "name": "order-drawer",
+      "describe": "mo ban trong -> drawer goi mon voi menu",
+      "extends": "floor",
+      "steps": [
+        { "click": "@table-7b035353-73d6-44bc-8ec4-1ab9951f7a58" },
+        { "waitFor": "@order-drawer" }
+      ]
+    },
+    {
+      "name": "order-cart",
+      "describe": "drawer goi mon co 1 mon trong gio",
+      "extends": "order-drawer",
+      "steps": [
+        { "click": "@menu-item-3e43bb8c-198f-443f-83ab-18696983edaa" },
+        { "waitFor": "@modifier-confirm" },
+        { "click": "@modifier-value-62ca9453-5d44-47f4-8f85-a943d526348d" },
+        { "click": "@modifier-confirm" },
+        { "waitFor": "@order-cart-line" }
+      ]
+    },
+    {
+      "name": "menu-editor",
+      "describe": "drawer quan tri menu",
+      "extends": "floor",
+      "steps": [{ "click": "@nav-menu-editor" }, { "waitFor": "@save-menu-button" }]
+    },
+    {
+      "name": "report",
+      "describe": "drawer bao cao (co bieu do recharts)",
+      "extends": "floor",
+      "steps": [{ "click": "@nav-report" }, { "waitFor": "@report-summary" }]
+    },
+    {
+      "name": "employees",
+      "describe": "drawer quan ly nhan vien va quyen candidate",
+      "extends": "floor",
+      "steps": [{ "click": "@nav-employees" }, { "waitFor": "@employees-drawer" }]
+    },
+    {
+      "name": "settings",
+      "describe": "drawer cai dat cua hang",
+      "extends": "floor",
+      "steps": [{ "click": "@nav-settings" }, { "waitFor": "@save-settings-button" }]
+    },
+    {
+      "name": "clear-demo-dialog",
+      "describe": "xac nhan xoa du lieu mau va rao chan don dang mo",
+      "extends": "settings",
+      "steps": [
+        { "click": "@settings-section-demo" },
+        { "click": "@open-clear-demo" },
+        { "waitFor": "@clear-demo-dialog" }
+      ]
+    },
+    {
+      "name": "payment",
+      "describe": "drawer thanh toan cua ban dang phuc vu",
+      "extends": "floor",
+      "steps": [
+        { "click": "@table-a254abd0-b883-4d5c-85c1-89f660409e02" },
+        { "click": "@submit-order-button-footer" },
+        { "waitFor": "@payment-drawer" }
+      ]
+    },
+    {
+      "name": "receipt-preview",
+      "describe": "xem truoc hoa don sau thanh toan",
+      "extends": "payment",
+      "steps": [
+        { "click": "@pay-button-footer" },
+        { "waitFor": "@receipt-preview" }
+      ]
+    }
+  ],
+
+  "viewports": [
+    { "name": "tablet", "width": 1024, "height": 768 },
+    { "name": "desktop", "width": 1440, "height": 900 },
+    { "name": "mobile", "width": 844, "height": 390 }
+  ],
+
+  "failOn": ["error"],
+  "collapse": true,
+  "minTarget": 24,
+  "minFont": 10,
+  "contrastMin": 4.5,
+  "checkContrast": true,
+  "ignore": ".recharts-wrapper, .recharts-responsive-container, [data-ui-audit-skip]",
+  "settleMs": 600,
+  "waitFor": null,
+  "timeout": 30000
+}

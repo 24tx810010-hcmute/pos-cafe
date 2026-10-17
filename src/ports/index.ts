@@ -36,9 +36,19 @@ import type {
   VoidOrderResult,
 } from "@/domain";
 
+export type * from "./permissions";
+export type * from "./permissionPrint";
+
+export type InitialReceiptExecutionResult = {
+  operation: OperationView;
+  initialReceiptPrintGrant?: import("./permissionPrint").InitialReceiptPrintGrant;
+};
+
 export interface IAuthRepo {
   pairStore(storeKey: string): Promise<void>;
   createStore(input: CreateStoreInput): Promise<CreateStoreResult>;
+  /** Explicit acknowledgement releases the only in-memory copy of the generated secret. */
+  acknowledgeCreatedStore(): void;
   unpairStore(): Promise<void>;
   getStoreSession(): Promise<StoreSession | null>;
 }
@@ -58,6 +68,7 @@ export interface IWriteOperationRepo {
   capabilities(): Promise<WriteCapabilities>;
   register(operationId: string, payload: WritePayloadV1): Promise<OperationView>;
   execute(operationId: string, payload: WritePayloadV1): Promise<OperationView>;
+  executeForInitialReceipt(operationId: string, payload: WritePayloadV1, input: { grantId: string }): Promise<InitialReceiptExecutionResult>;
   get(operationId: string): Promise<OperationView>;
   list(filter?: WriteOperationFilter): Promise<WriteOperationPage>;
   cancel(operationId: string): Promise<OperationView>;
@@ -141,6 +152,15 @@ export interface IRealtimePort {
 }
 
 export type AppPorts = {
+  permission: import("./permissions").PermissionRuntimePorts;
+  write: IWriteOperationRepo;
+  auth: IAuthRepo;
+  seed: ISeedRepo;
+  print: IPrintPort;
+};
+
+/** Pre-permission repository surface retained for isolated legacy adapter tests. */
+export type LegacyAppPorts = {
   write: IWriteOperationRepo;
   auth: IAuthRepo;
   employee: IEmployeeRepo;

@@ -5,6 +5,11 @@ import { writeError } from "@/core/writeErrors";
 import type { MockState } from "./mockState";
 
 export type MockEmployeeCredential = { token: string | null };
+export type MockWriteActor = Pick<Employee, "id" | "name">;
+export type MockWriteAuthorization = {
+  actor(payload?: WritePayloadV1): MockWriteActor;
+  has(permission: ReturnType<typeof writePermission>): boolean;
+};
 export type MockWriteState = {
   operations: Record<string, OperationView>;
   sessions: Record<string, { storeId: string; employeeId: string; expiresAt: number; revoked: boolean }>;

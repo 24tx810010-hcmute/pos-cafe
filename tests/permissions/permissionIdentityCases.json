@@ -1,0 +1,372 @@
+[
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps foundation layers pure and dependency-light"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps feature, adapter, and app layers pointed in the right direction"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps seed fixtures imported only by adapter seed paths"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > TC-PERM-57/T03 keeps candidate core/DTO/ports independent of legacy guards and SDKs"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps retired helper and adapter boundaries from regressing"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionIdentityRepo.test.ts",
+    "name": "T04 mock issues minimal twelve hour authority and logout accepts expired session"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionIdentityRepo.test.ts",
+    "name": "T04 mock same PIN does not revoke while real change revokes every old session and replay preserves new"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionIdentityRepo.test.ts",
+    "name": "T04 mock denies wrong PIN and stale revision with no mutation"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionIdentityRepo.test.ts",
+    "name": "T04 mock refuses nonowner self PIN and inactive or reserved login"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionIdentityRepo.test.ts",
+    "name": "T04 mock authority sees role override changes without logging in again"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionIdentityRepo.test.ts",
+    "name": "T04 adapter discards an earlier login response after a newer login"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionIdentityRepo.test.ts",
+    "name": "T04 adapter clears immediately on logout and old ACK does not clear a new login"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionIdentityRepo.test.ts",
+    "name": "T04 adapter stale self PIN response cannot clear a newer login"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionIdentityRepo.test.ts",
+    "name": "T04 adapter discards stale authority and keeps noop or replay sessions"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionIdentityRepo.test.ts",
+    "name": "T04 adapter maps wrong current PIN without attaching raw response secrets"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects spoofed self PIN field actorId"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects spoofed self PIN field permissions"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects spoofed self PIN field targetId"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects spoofed self PIN field role"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects invalid revision variant null"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects invalid revision variant -1"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects invalid revision variant 1.1"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects invalid revision variant 0"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects invalid revision variant 9007199254740992"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > accepts exact request and preserves its identity"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > bootstrap trims Unicode boundaries and accepts maximum store number"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects invalid bootstrap PIN injection"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects invalid bootstrap seed option"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects invalid bootstrap zero store"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects invalid bootstrap overflow"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects invalid bootstrap long name"
+  },
+  {
+    "stage": "unit",
+    "file": "core/permissionIdentityInputs.test.ts",
+    "name": "T04 identity inputs > rejects invalid bootstrap long address"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-02/20 T04 real Auth REST login returns catalog authority matching core and minimal roster"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-20 T04 login rejects malformed or wrong PIN variant empty"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-20 T04 login rejects malformed or wrong PIN variant short"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-20 T04 login rejects malformed or wrong PIN variant long"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-20 T04 login rejects malformed or wrong PIN variant unicode"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-20 T04 login rejects malformed or wrong PIN variant space"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-20 T04 login rejects malformed or wrong PIN variant incorrect"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-08/28 T04 inactive disabled foreign and forged identities cannot start or authorize"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-08/09 T04 prelocked PIN and deactivation revoke all sessions while role changes preserve them"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10 T04 self PIN is atomic audited and replay never revokes a new session"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10 T04 verified denial persists audit without identity effects: wrong current"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10 T04 verified denial persists audit without identity effects: revision"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10 T04 verified denial persists audit without identity effects: short PIN"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10 T04 verified denial persists audit without identity effects: null PIN"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10 T04 same PIN is noop and unverified session cannot write an audit"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10/19 T04 rejects malformed self PIN envelope missing without fictitious audit"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10/19 T04 rejects malformed self PIN envelope null without fictitious audit"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10/19 T04 rejects malformed self PIN envelope text without fictitious audit"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10/19 T04 rejects malformed self PIN envelope negative without fictitious audit"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10/19 T04 rejects malformed self PIN envelope fraction without fictitious audit"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10/19 T04 rejects malformed self PIN envelope unsafe without fictitious audit"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10/19 T04 rejects malformed self PIN envelope zero uuid without fictitious audit"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10/19 T04 rejects malformed self PIN envelope forged target without fictitious audit"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10/11 T04 failure in public.employee_admin_audit rolls back PIN sessions revision and all evidence"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10/11 T04 failure in public.store_change_signals rolls back PIN sessions revision and all evidence"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-10/11 T04 failure in private.employee_admin_requests rolls back PIN sessions revision and all evidence"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-11/58 T04 operator recovery needs dedicated role and evidence and replays exactly once"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-14/58 T04 application and service_role have no recovery helper registry or identity DML privileges"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-14 T04 database owner invariant rejects second owner state"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-14 T04 database owner invariant rejects inactive owner state"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-14 T04 database owner invariant rejects zero owner state"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-14 T04 database owner invariant rejects empty store owner state"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-43 T04 expired and revoked logout is idempotent and only affects the presented token"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-43 T04 concurrent issuance recovery barrier: start first"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-43 T04 concurrent issuance recovery barrier: reset first"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-28 T04 final authority rechecks expiry after catalog lock wait and negative control is detected"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-28/30 T04 authority reads catalog changes committed during lock wait"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-52 T04 bootstrap accepts storeNo boundary 1 with matching provisioning"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-52 T04 bootstrap accepts storeNo boundary 2147483647 with matching provisioning"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-52 T04 bootstrap is atomic has strict bounds and retry cannot replace owner or PIN"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-52 T04 bootstrap owner insert failure rolls back store settings and registry"
+  },
+  {
+    "stage": "database",
+    "file": "permissionIdentity.contract.test.ts",
+    "name": "TC-PERM-20 T04 Supabase adapter uses real REST and keeps credential out of returned state"
+  }
+]

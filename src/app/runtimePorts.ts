@@ -1,6 +1,7 @@
-import { createMockPorts, createSeededMockState } from "@/adapters/mock";
+import { createMockPermissionRuntime, createMockPermissionState } from "@/adapters/mock";
 import { createSupabaseBrowserClient, createSupabasePorts } from "@/adapters/supabase";
 import type { AppPorts } from "@/ports";
+import { usePermissionSession } from "@/features/shared/permissionSession";
 
 export type AppDataMode = "mock" | "supabase";
 
@@ -28,11 +29,31 @@ export const createAppPorts = (env: RuntimePortEnv = {}): AppPorts => {
       createSupabaseBrowserClient({
         url: env.supabaseUrl,
         anonKey: env.supabaseAnonKey,
-      }),
+        isCompatibilityBlocked: () => usePermissionSession.getState().compatibilityBlocked,
+      }), env.supabaseUrl,
     );
   }
 
-  return createMockPorts(createSeededMockState());
+  const state = createMockPermissionState({ demoCredentials: true });
+  state.paired = false;
+  const runtime = createMockPermissionRuntime(state);
+  return {
+    permission: {
+      authority: runtime.authority,
+      employeeAdmin: runtime.employeeAdmin,
+      read: runtime.read,
+      session: runtime.session,
+      initialSeed: runtime.initialSeed,
+      changes: runtime.changes,
+      signals: runtime.signals,
+      menuImages: runtime.menuImages,
+      print: runtime.print,
+    },
+    write: runtime.write,
+    auth: runtime.auth,
+    seed: runtime.seed,
+    print: runtime.legacyPrint,
+  };
 };
 
 let viteEnvPorts: AppPorts | null = null;

@@ -8,6 +8,7 @@ export function RailButton({
   label,
   onClick,
   disabled,
+  hidden,
   testId,
 }: {
   active: boolean;
@@ -15,9 +16,11 @@ export function RailButton({
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  hidden?: boolean;
   testId?: string;
 }) {
   const compactRail = useMediaQuery("(max-width: 980px)");
+  if (hidden) return null;
   const btn = (
     <button
       aria-disabled={disabled}

@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
-import { createMockPorts, createSeededMockState } from '@/adapters/mock';
+import { activateCandidateUi, createCandidateRuntimeFixture } from '@/test/candidateRuntimeFixture';
 import { PortsContext } from '@/features/shared/portsContext';
 import { getWriteCoordinator } from '@/features/pos/writeOperationFlow';
 import { OrderDrawer } from '@/app/drawers/pos/OrderDrawer';
@@ -12,8 +12,7 @@ const clients:QueryClient[]=[];
 afterEach(()=>{cleanup();clients.splice(0).forEach(client=>client.clear());vi.restoreAllMocks();useAppStore.setState({currentEmployee:null,drawer:null,orderContext:null,paymentOrderId:null,draftItems:[],receiptPreview:null});});
 function Surface(){return useAppStore(state=>state.drawer)==='order'?<OrderDrawer/>:null;}
 async function fixture(){
-  const state=createSeededMockState();state.session={storeId:state.settings.storeId,storeNo:1};state.orders=[];state.menu.optionGroups=[];state.menu.optionValues=[];state.menu.menuItemOptionGroups=[];
-  const ports=createMockPorts(state);const actor=state.employees.find(employee=>employee.role==='admin')!;await ports.employee.startSession(actor.id,state.pins[actor.id]);
+  const candidate=await createCandidateRuntimeFixture({demoCredentials:true});const state=candidate.business,ports=candidate.ports,actor=candidate.actor;state.orders=[];state.menu.optionGroups=[];state.menu.optionValues=[];state.menu.menuItemOptionGroups=[];activateCandidateUi(candidate);
   useAppStore.setState({currentEmployee:actor,drawer:'order',orderContext:{orderId:null,tableId:null,orderType:'takeaway'},draftItems:[],receiptPreview:null});
   const client=new QueryClient({defaultOptions:{queries:{retry:false},mutations:{retry:false}}});clients.push(client);
   render(<PortsContext.Provider value={ports}><QueryClientProvider client={client}><WriteLifecycle/><Surface/></QueryClientProvider></PortsContext.Provider>);

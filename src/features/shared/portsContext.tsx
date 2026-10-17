@@ -12,3 +12,7 @@ export const usePorts = (): AppPorts => {
 
   return ports;
 };
+
+export const usePermissionPorts = () => {
+  return usePorts().permission;
+};

@@ -4,6 +4,13 @@ import { Button, TextField } from "@mui/material";
 import type { Category, MenuItem } from "@/domain";
 import { formatVnd } from "@/core/money";
 import { toToastError } from "../../appErrors";
+import { useState } from "react";
+
+function MenuItemImage({ imageUrl, name }: { imageUrl: string | null; name: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!imageUrl || failed) return <Coffee size={22} data-testid="menu-image-placeholder" />;
+  return <img src={imageUrl} alt={`Ảnh ${name}`} className="h-full w-full object-cover" onError={() => setFailed(true)} />;
+}
 
 type OrderMenuPaneProps = {
   categories: Category[] | undefined;
@@ -101,11 +108,7 @@ export function OrderMenuPane({
                         : "border-[#fecaca] bg-[#fff7f7] text-pos-danger",
                     )}
                   >
-                    {imageUrl ? (
-                      <img src={imageUrl} alt={`Ảnh ${item.name}`} className="h-full w-full object-cover" />
-                    ) : (
-                      <Coffee size={22} />
-                    )}
+                    <MenuItemImage key={imageUrl ?? "no-image"} imageUrl={imageUrl} name={item.name} />
                     {!item.isAvailable && (
                       <>
                         <span className="absolute inset-0 bg-white/70" />

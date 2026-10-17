@@ -14,6 +14,8 @@ import { WriteRecoveryDrawer } from "../drawers/pos/WriteRecoveryDrawer";
 import { ReceiptPreviewPopup } from "../components/ReceiptPreview";
 import { FloorWorkspace } from "./FloorWorkspace";
 import { LeftNav } from "./LeftNav";
+import { usePermissionSession } from "@/features/shared/permissionSession";
+import { drawerAllowed } from "../permissionUi";
 
 const DRAWER_REGISTRY: Record<NonNullable<DrawerModule>, ComponentType> = {
   order: OrderDrawer,
@@ -31,12 +33,16 @@ const DRAWER_REGISTRY: Record<NonNullable<DrawerModule>, ComponentType> = {
 
 export function AppShell() {
   const drawer = useAppStore((state) => state.drawer);
-  const ActiveDrawer = drawer ? DRAWER_REGISTRY[drawer] : null;
+  const context = useAppStore(state => state.orderContext);
+  const authority = usePermissionSession();
+  const ActiveDrawer = drawer && drawerAllowed(authority.bundle, drawer, context) ? DRAWER_REGISTRY[drawer] : null;
 
   return (
     <main
       className="grid h-[100dvh] w-full grid-cols-[176px_minmax(0,1fr)] overflow-hidden [@media(orientation:portrait)]:hidden max-[980px]:grid-cols-[68px_minmax(0,1fr)]"
       data-testid="app-shell"
+      style={authority.status !== "verified" ? { visibility: "hidden", pointerEvents: "none" } : undefined}
+      aria-hidden={authority.status !== "verified"}
     >
       <LeftNav />
 

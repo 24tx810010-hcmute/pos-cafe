@@ -2,14 +2,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMockPorts, createSeededMockState } from "@/adapters/mock";
+import type { MockState } from "@/adapters/mock";
+import type { AppPorts } from "@/ports";
+import { activateCandidateUi, createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import { AppError } from "@/core/appError";
-import type { Employee, OrderSummary } from "@/domain";
+import type { Employee } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 
-const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "30000000-0000-4000-8000-000000000011", name: "Chủ cửa hàng", role: "admin", isActive: true };
 
 const resetAppStore = (override: Partial<ReturnType<typeof useAppStore.getState>> = {}) => {
   useAppStore.setState({
@@ -27,12 +29,9 @@ const resetAppStore = (override: Partial<ReturnType<typeof useAppStore.getState>
 
 const renderAppWithPorts = async (
   override: Partial<ReturnType<typeof useAppStore.getState>> = {},
-  configure?: (ports: ReturnType<typeof createMockPorts>, state: ReturnType<typeof createSeededMockState>) => void,
+  configure?: (ports: AppPorts, state: MockState) => void,
 ) => {
-  const state = createSeededMockState();
-  state.session = { storeId: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", storeNo: 1 };
-  const ports = createMockPorts(state);
-  await ports.employee.startSession("6b7bd350-7db2-4160-8471-cca2668c070d", state.pins["6b7bd350-7db2-4160-8471-cca2668c070d"]);
+  const fixture = await createCandidateRuntimeFixture(); const state = fixture.business; const ports = fixture.ports;
   configure?.(ports, state);
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -41,6 +40,7 @@ const renderAppWithPorts = async (
     },
   });
 
+  activateCandidateUi(fixture);
   resetAppStore(override);
   render(
     <PortsContext.Provider value={ports}>
@@ -80,7 +80,7 @@ afterEach(() => {
 describe("Demo hardening", () => {
   it("does not allow clear-demo while open orders are still being checked", async () => {
     await renderAppWithPorts({}, (ports) => {
-      vi.spyOn(ports.order, "listOpenOrders").mockReturnValue(new Promise<OrderSummary[]>(() => {}));
+      vi.spyOn(ports.permission!.read, "getFloorOperational").mockReturnValue(new Promise(() => {}));
     });
 
     await openClearDemoDialog();
@@ -94,14 +94,14 @@ describe("Demo hardening", () => {
     let rejectOpenOrders: (error: unknown) => void = () => {};
     await renderAppWithPorts({}, (ports) => {
       listSpy = vi
-        .spyOn(ports.order, "listOpenOrders")
+        .spyOn(ports.permission!.read, "getFloorOperational")
         .mockImplementationOnce(
           () =>
-            new Promise<OrderSummary[]>((_, reject) => {
+            new Promise((_, reject) => {
               rejectOpenOrders = reject;
             }),
         )
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce({ floorPlan: { areas: [], tables: [], decorItems: [] }, openOrders: [] });
     });
 
     const user = await openClearDemoDialog();
@@ -118,9 +118,37 @@ describe("Demo hardening", () => {
     expect(await screen.findByTestId("clear-demo-confirm-input")).toBeInTheDocument();
   });
 
+  it("keeps one request id across a lost ACK retry and generates a new id for a new action", async () => {
+    let clearSpy!: ReturnType<typeof vi.spyOn>;
+    await renderAppWithPorts({}, (ports) => {
+      vi.spyOn(ports.permission!.read, "getFloorOperational").mockResolvedValue({
+        floorPlan: { areas: [], tables: [], decorItems: [] }, openOrders: [],
+      });
+      clearSpy = vi.spyOn(ports.permission!.changes, "clearDemoData")
+        .mockRejectedValueOnce(new AppError("PERMISSION_UPDATE_UNAVAILABLE", "Chưa thể xác nhận thay đổi."))
+        .mockResolvedValue(undefined);
+    });
+
+    const user = await openClearDemoDialog();
+    await user.type(await screen.findByTestId("clear-demo-confirm-input"), "CLEAR");
+    await user.click(screen.getByTestId("clear-demo-confirm-button"));
+    await waitFor(() => expect(clearSpy).toHaveBeenCalledTimes(1));
+    await user.click(screen.getByTestId("clear-demo-confirm-button"));
+    await waitFor(() => expect(clearSpy).toHaveBeenCalledTimes(2));
+    expect(clearSpy!.mock.calls[1][0]).toEqual(clearSpy!.mock.calls[0][0]);
+    await waitFor(() => expect(screen.queryByTestId("clear-demo-dialog")).not.toBeInTheDocument());
+
+    await user.click(await screen.findByRole("button", { name: "Bảo trì dữ liệu" }));
+    await user.click(await screen.findByTestId("open-clear-demo"));
+    await user.type(await screen.findByTestId("clear-demo-confirm-input"), "CLEAR");
+    await user.click(screen.getByTestId("clear-demo-confirm-button"));
+    await waitFor(() => expect(clearSpy).toHaveBeenCalledTimes(3));
+    expect(clearSpy!.mock.calls[2][0]).not.toEqual(clearSpy!.mock.calls[0][0]);
+  });
+
   it("shows a payment error state instead of a zero-value bill when the order cannot load", async () => {
     const { ports } = await renderAppWithPorts({ drawer: "payment", paymentOrderId: "missing-order" });
-    vi.spyOn(ports.order, "getOrder").mockRejectedValue(new AppError("NOT_FOUND", "Không tìm thấy đơn."));
+    vi.spyOn(ports.permission!.read, "getOpenOrderDetail").mockRejectedValue(new AppError("NOT_FOUND", "Không tìm thấy đơn."));
 
     expect(await screen.findByTestId("payment-error-state")).toBeInTheDocument();
     expect(screen.getByTestId("pay-button")).toBeDisabled();
@@ -129,7 +157,7 @@ describe("Demo hardening", () => {
   it("refetches the payment order after an order conflict", async () => {
     const user = userEvent.setup();
     const { ports } = await renderAppWithPorts({ drawer: "payment", paymentOrderId: "7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c" });
-    const getOrderSpy = vi.spyOn(ports.order, "getOrder");
+    const getOrderSpy = vi.spyOn(ports.permission!.read, "getOpenOrderDetail");
     const paySpy = vi.spyOn(ports.write, "execute").mockRejectedValue(
       new AppError("ORDER_VERSION_CONFLICT", "Dữ liệu đã thay đổi, vui lòng tải lại."),
     );
@@ -143,7 +171,7 @@ describe("Demo hardening", () => {
     await waitFor(() => expect(getOrderSpy.mock.calls.length).toBeGreaterThan(callsBeforePayment));
   });
 
-  it("disables payment when the order was already paid on another device", async () => {
+  it("refuses payment when an order is no longer open on another device", async () => {
     await renderAppWithPorts({ drawer: "payment", paymentOrderId: "7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c" }, (_ports, state) => {
       const order = state.orders.find((candidate) => candidate.id === "7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
       if (order) {
@@ -153,9 +181,9 @@ describe("Demo hardening", () => {
       }
     });
 
-    expect(await screen.findByTestId("payment-closed-state")).toBeInTheDocument();
+    expect(await screen.findByTestId("payment-error-state")).toBeInTheDocument();
     expect(screen.getByTestId("pay-button")).toBeDisabled();
-    expect(screen.getByTestId("pay-button-footer")).toBeDisabled();
+    expect(screen.queryByTestId("pay-button-footer")).not.toBeInTheDocument();
   });
 
   it("renders the cashier payment console with balanced payment summary", async () => {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { OrderDetail } from "@/domain";
+import type { OpenOrderOperationalView as OrderDetail } from "@/ports/permissions";
 import { isDraftChangedFromOrder, orderDetailToDraft } from "@/features/pos/orderFlow";
 import { useAppStore, type OrderDrawerContext } from "../../useAppStore";
 

@@ -1,0 +1,497 @@
+[
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps foundation layers pure and dependency-light"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps feature, adapter, and app layers pointed in the right direction"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps seed fixtures imported only by adapter seed paths"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > TC-PERM-57/T03 keeps candidate core/DTO/ports independent of legacy guards and SDKs"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps retired helper and adapter boundaries from regressing"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-051/mock replay keeps historical 120k while current source is 90k and never duplicates payment"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-076/mock quoted total plus retained total overflow precedes PRICE_CHANGED"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-057/mock keyset cursor stays bounded and binds filters"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-013/mock registration retry preserves initial timestamps through expiry"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-030/mock old modifier snapshot plus current new portion and new split"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-030/mock/old old modifier snapshot plus current new portion and old split"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-046/mock void paid preserves original payment and new occupant"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-072/mock unexpected error never becomes durable business rejection"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-012/mock register has no business effects"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-014/mock create R1 correct, replay immutable after catalog change"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-015/mock key ordering is irrelevant"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-016/mock array order remains significant"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-017/mock absent versus null note"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-019/mock serial concurrent execute creates one result"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-021/mock different keys same table"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-025/mock preserves 2 x 30k plus new 40k as distinct rows"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-028/mock removed line keeps original quantity and snapshots"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-034/mock/35000 changed quote rejected durably"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-034/mock/25000 changed quote rejected durably"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-037/mock void open preserves removed history"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-038/mock receipt uses option quantity, literal 80k"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-039/mock low cash leaves entire business state untouched"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-040/mock split partial keeps numbering and exact quantities"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-043/mock full split rejected, no implicit full pay"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-056/mock takeover uses current actor but keeps initiator and creator"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-058/mock execute and cancel do not implicitly register"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-059/mock pending cancellation never touches business"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-066/mock 48h open order can be paid using new K"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-067/mock applied replay at 48h preserves exact R1"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-070/mock/after_business fault rolls back everything and retry works"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-070/mock/before_commit fault rolls back everything and retry works"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-073/mock reads and registration never increment replay counter"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/writeOperationRepo.test.ts",
+    "name": "write protocol mock (memory only) > TC-IDEM-093/mock terminal mismatch and denied actor leave record unchanged"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > normalizes RPC employee overrides {} before the UI checks permissions"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > normalizes RPC employee overrides {\"grants\":[\"payment.take\"]} before the UI checks permissions"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > normalizes RPC employee overrides {\"denies\":[\"payment.take\"]} before the UI checks permissions"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > TC-IDEM-074/core/field=register.operationId/variant=missing"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > TC-IDEM-074/core/field=register.operationId/variant=null"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > TC-IDEM-074/core/field=register.operationId/variant=wrong_type"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > TC-IDEM-074/core/field=register.operationId/variant=positive"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > TC-IDEM-074/core/field=execute.operationId/variant=missing"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > TC-IDEM-074/core/field=execute.operationId/variant=null"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > TC-IDEM-074/core/field=execute.operationId/variant=wrong_type"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > TC-IDEM-074/core/field=execute.operationId/variant=positive"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > TC-IDEM-084/core rejects missing or unsupported capability"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > TC-IDEM-090/core sends only frozen operation payload, never employee or credentials"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > terminal rejected is data; envelope auth error rejects without carrying request secrets"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > clear memory credential synchronously on revoke, captures token only for revoke request"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > late start response after lock never restores credential"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/writeOperationRepo.test.ts",
+    "name": "Supabase write transport contract > missing Supabase configuration does not fall back to mock"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-25 T06 action matrix grants only order.create across write protocol endpoints"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-25 T06 action matrix grants only order.update across write protocol endpoints"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-25 T06 action matrix grants only order.voidOpen across write protocol endpoints"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-25 T06 action matrix grants only payment.take across write protocol endpoints"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-25 T06 action matrix grants only order.voidPaid across write protocol endpoints"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-27 T06 legacy financial overloads and direct DML remain closed with protocol positive controls"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-28 T06 a role disabled after session issuance returns the exact authority error"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-39 T06 revoke after register preserves create K until an authorized takeover"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-39 T06 revoke after register preserves update K until an authorized takeover"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-39 T06 revoke after register preserves void-open K until an authorized takeover"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-39 T06 revoke after register preserves pay K until an authorized takeover"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-39 T06 revoke after register preserves split K until an authorized takeover"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-39 T06 revoke after register preserves void-paid K until an authorized takeover"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-40 T06 owner revoke commits while execute waits on the order and is observed at the final checkpoint"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-40 T06 negative control detects removal of the post-business authority checkpoint"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-41 T06 execute reads a catalog action removal committed while waiting for catalog SHARE"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-28/41 T06 a session expiring while execute waits for catalog cannot create an effect or R1"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-41/44 T06 takeover prelocks its inactive initiator before catalog and writes executor separately"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-41 T06 negative control detects an initiator FK wait introduced after the catalog checkpoint"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-41 T06 takeover keeps initiator prelocked after its checkpoint while a catalog writer and admin queue"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-41 T06 an initiator row wait precedes catalog and the final checkpoint observes session expiry"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-41 T06 an initiator row wait independently observes K expiry with a still-valid session"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 pending TTL boundary minus at 2026-09-16T23:59:59.999Z through get preserves order lifetime"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 pending TTL boundary minus at 2026-09-16T23:59:59.999Z through execute preserves order lifetime"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 pending TTL boundary minus at 2026-09-16T23:59:59.999Z through cancel preserves order lifetime"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 pending TTL boundary minus at 2026-09-16T23:59:59.999Z through list preserves order lifetime"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 pending TTL boundary equal at 2026-09-17T00:00:00.000Z through get preserves order lifetime"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 pending TTL boundary equal at 2026-09-17T00:00:00.000Z through execute preserves order lifetime"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 pending TTL boundary equal at 2026-09-17T00:00:00.000Z through cancel preserves order lifetime"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 pending TTL boundary equal at 2026-09-17T00:00:00.000Z through list preserves order lifetime"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 pending TTL boundary plus at 2026-09-17T00:00:00.001Z through get preserves order lifetime"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 pending TTL boundary plus at 2026-09-17T00:00:00.001Z through execute preserves order lifetime"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 pending TTL boundary plus at 2026-09-17T00:00:00.001Z through cancel preserves order lifetime"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 pending TTL boundary plus at 2026-09-17T00:00:00.001Z through list preserves order lifetime"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 lost responses and later catalog edits never rewrite K payload, initiator, executor, or R1"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 a terminal operation created before activation replays its stored R1 without touching business rows"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancial.contract.test.ts",
+    "name": "TC-PERM-54 T06 missing and cross-store operation IDs are indistinguishable"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancialRegression.contract.test.ts",
+    "name": "PERM-T06 regression/protocol v1 create, retained-price update, and void-open keep one immutable result per K"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancialRegression.contract.test.ts",
+    "name": "PERM-T06 regression/protocol v1 full payment freezes receipt and terminal R1 across catalog changes"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancialRegression.contract.test.ts",
+    "name": "PERM-T06 regression/protocol v1 partial split preserves source, paid child, payment, and terminal R1"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancialRegression.contract.test.ts",
+    "name": "PERM-T06 regression/protocol v1 void-paid retains money and leaves a table occupied by another open order"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancialRegression.contract.test.ts",
+    "name": "PERM-T06 regression/a known price rejection rolls back business effects and remains the immutable terminal R1"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancialRegression.contract.test.ts",
+    "name": "PERM-T06 regression/cash underpayment rejects without a payment or partial order effects"
+  },
+  {
+    "stage": "database",
+    "file": "permissionFinancialRegression.contract.test.ts",
+    "name": "PERM-T06 regression/protocol RPC timestamps stay UTC without changing an Asia/Bangkok SQL caller"
+  }
+]

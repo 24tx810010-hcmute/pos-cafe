@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { createMockPorts, createSeededMockState } from "@/adapters/mock";
+import { createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import { mockMenuCatalog } from "@/adapters/mock/mockData";
 import type { Employee, OrderDetail, SubmitOrderDraftItem } from "@/domain";
+import type { LegacyAppPorts } from "@/ports";
 import {
   addDraftMenuItem,
   adjustDraftQuantity,
@@ -21,19 +22,19 @@ import {
   submitOrderAndPrint,
 } from "./orderFlow";
 
-const adminActor: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
+const adminActor: Employee = { id: "30000000-0000-4000-8000-000000000011", name: "Chủ cửa hàng", role: "admin", isActive: true };
+let legacyPorts: LegacyAppPorts;
 
 const pairedMockPorts = async () => {
-  const state = createSeededMockState();
-  state.session = { storeId: state.settings.storeId, storeNo: 1 };
-  const ports = createMockPorts(state);
-  await ports.employee.startSession(adminActor.id, "123456");
+  const fixture = await createCandidateRuntimeFixture();
+  legacyPorts = fixture.legacyPorts;
+  const { ports } = fixture;
   return ports;
 };
 
 const getMockOrder = async (): Promise<OrderDetail> => {
   const ports = await pairedMockPorts();
-  return ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
+  return legacyPorts.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
 };
 
 describe("orderFlow", () => {
@@ -157,8 +158,8 @@ describe("orderFlow", () => {
 
   it("blocks insufficient cash before calling payment port", async () => {
     const ports = await pairedMockPorts();
-    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
-    const paymentSpy = vi.spyOn(ports.payment, "payOrder");
+    const order = await legacyPorts.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
+    const paymentSpy = vi.spyOn(legacyPorts.payment, "payOrder");
 
     await expect(
       payOrderAndPrint(ports, {
@@ -173,7 +174,7 @@ describe("orderFlow", () => {
 
   it("registers and executes payment and returns its immutable receipt", async () => {
     const ports = await pairedMockPorts();
-    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
+    const order = await legacyPorts.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const printSpy = vi.spyOn(ports.print, "renderReceipt");
 
     const result = await payOrderAndPrint(ports, {
@@ -191,7 +192,7 @@ describe("orderFlow", () => {
 
   it("can complete payment without printing the receipt", async () => {
     const ports = await pairedMockPorts();
-    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
+    const order = await legacyPorts.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const printSpy = vi.spyOn(ports.print, "renderReceipt");
 
     const result = await payOrderAndPrint(ports, {
@@ -210,8 +211,8 @@ describe("orderFlow", () => {
 describe("orderFlow action permissions", () => {
   it("requires the permission for the exact new, update, and void-open branch", async () => {
     const ports = await pairedMockPorts();
-    const submitSpy = vi.spyOn(ports.order, "submitOrderChanges");
-    const existing = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
+    const submitSpy = vi.spyOn(legacyPorts.order, "submitOrderChanges");
+    const existing = await legacyPorts.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const cashierDeniedCreate: Employee = {
       id: "emp-cashier-create-denied",
       name: "Thu ngân",
@@ -269,7 +270,7 @@ describe("orderFlow action permissions", () => {
     expect(submitSpy).not.toHaveBeenCalled();
   });
 
-  it("allows a kitchen employee granted order.create without granting other order rights", async () => {
+  it("does not let a legacy employee override replace candidate authority", async () => {
     const ports = await pairedMockPorts();
     const kitchenWithCreate: Employee = {
       id: "b1885ef9-c9c0-4a02-8757-875a44e8c814-create",
@@ -279,9 +280,6 @@ describe("orderFlow action permissions", () => {
       permissionOverrides: { grants: ["order.create"], denies: [] },
     };
 
-    await ports.employee.createEmployee({ id: kitchenWithCreate.id, name: kitchenWithCreate.name, role: "kitchen", pin: "222222" });
-    await ports.employee.updateEmployee({ id: kitchenWithCreate.id, permissionOverrides: kitchenWithCreate.permissionOverrides });
-    await ports.employee.startSession(kitchenWithCreate.id, "222222");
     await expect(
       submitOrderAndPrint(ports, {
         context: { orderId: null, tableId: "7b035353-73d6-44bc-8ec4-1ab9951f7a58", orderType: "dine_in" },
@@ -290,14 +288,14 @@ describe("orderFlow action permissions", () => {
         menu: mockMenuCatalog,
         items: [{ id: "10000000-0000-4000-8000-000000000002", menuItemId: "d50ff72b-d0bc-4832-8888-183c19f5a158", quantity: 1, note: null, options: [] }],
       }),
-    ).resolves.toMatchObject({ status: "open" });
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("blocks both full and split payments before either payment port is called", async () => {
     const ports = await pairedMockPorts();
-    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
-    const paySpy = vi.spyOn(ports.payment, "payOrder");
-    const payItemsSpy = vi.spyOn(ports.payment, "payOrderItems");
+    const order = await legacyPorts.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
+    const paySpy = vi.spyOn(legacyPorts.payment, "payOrder");
+    const payItemsSpy = vi.spyOn(legacyPorts.payment, "payOrderItems");
     const cashierDeniedPayment: Employee = {
       id: "emp-cashier-payment-denied",
       name: "Thu ngân",
@@ -360,8 +358,8 @@ describe("instant pay selection", () => {
 
   it("routes a partial selection through payOrderItems: split order paid, source stays open", async () => {
     const ports = await pairedMockPorts();
-    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
-    const payOrderSpy = vi.spyOn(ports.payment, "payOrder");
+    const order = await legacyPorts.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
+    const payOrderSpy = vi.spyOn(legacyPorts.payment, "payOrder");
     const printSpy = vi.spyOn(ports.print, "renderReceipt");
 
     const result = await payOrderItemsAndPrint(ports, {
@@ -385,14 +383,14 @@ describe("instant pay selection", () => {
     expect(printSpy).not.toHaveBeenCalled();
     expect(result.initialSuccess).toBe(true);
 
-    const source = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
+    const source = await legacyPorts.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     expect(source.status).toBe("open");
   });
 
   it("routes a full selection through payOrder so the table is freed in one call", async () => {
     const ports = await pairedMockPorts();
-    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
-    const payItemsSpy = vi.spyOn(ports.payment, "payOrderItems");
+    const order = await legacyPorts.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
+    const payItemsSpy = vi.spyOn(legacyPorts.payment, "payOrderItems");
 
     const result = await payOrderItemsAndPrint(ports, {
       order,
@@ -408,8 +406,8 @@ describe("instant pay selection", () => {
 
   it("rejects empty selections and low cash before calling the payment port", async () => {
     const ports = await pairedMockPorts();
-    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
-    const payItemsSpy = vi.spyOn(ports.payment, "payOrderItems");
+    const order = await legacyPorts.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
+    const payItemsSpy = vi.spyOn(legacyPorts.payment, "payOrderItems");
 
     await expect(
       payOrderItemsAndPrint(ports, { order, actor: adminActor, receivedAmount: 99000, selection: {} }),
@@ -427,7 +425,7 @@ describe("instant pay selection", () => {
 
   it("keeps the source order draft-able like a normal order after a split", async () => {
     const ports = await pairedMockPorts();
-    const before = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
+    const before = await legacyPorts.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     await payOrderItemsAndPrint(ports, {
       order: before,
       actor: adminActor,
@@ -436,7 +434,7 @@ describe("instant pay selection", () => {
       printReceipt: false,
     });
 
-    const order = await ports.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
+    const order = await legacyPorts.order.getOrder("7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c");
     const draft = orderDetailToDraft(order);
 
     // Đơn gốc là đơn thường: draft = phần còn lại (1 Cà phê sữa + 1 Croissant).

@@ -1,6 +1,9 @@
 import { AppError } from "@/core/appError";
-import type { CreateStoreInput, CreateStoreResult, Employee, StoreSession } from "@/domain";
+import { writeError } from "@/core/writeErrors";
+import type { CreateStoreInput, CreateStoreResult, StoreSession } from "@/domain";
+import type { PermissionSession } from "@/domain/permissions";
 import type { AppPorts } from "@/ports";
+import { assertCompatibilityCurrent, isCompatibilityBlocked } from "@/features/shared/permissionSession";
 
 export type StoreSessionBootstrap =
   | {
@@ -26,6 +29,7 @@ const requirePairedSession = (session: StoreSession | null): StoreSession => {
 };
 
 export const loadStoreSession = async (ports: AppPorts): Promise<StoreSessionBootstrap> => {
+  assertCompatibilityCurrent();
   const session = await ports.auth.getStoreSession();
 
   if (!session) {
@@ -36,6 +40,7 @@ export const loadStoreSession = async (ports: AppPorts): Promise<StoreSessionBoo
 };
 
 export const pairStoreForSession = async (ports: AppPorts, storeKey: string): Promise<StoreSession> => {
+  assertCompatibilityCurrent();
   await ports.auth.pairStore(storeKey);
   return requirePairedSession(await ports.auth.getStoreSession());
 };
@@ -43,17 +48,22 @@ export const pairStoreForSession = async (ports: AppPorts, storeKey: string): Pr
 export const createStoreForSession = async (
   ports: AppPorts,
   input: CreateStoreInput,
+  onStoreCreated?: (store: CreateStoreResult) => void,
 ): Promise<CreateStoreFlowResult> => {
+  assertCompatibilityCurrent();
   const store = await ports.auth.createStore(input);
-  const session = (await ports.auth.getStoreSession()) ?? {
+  onStoreCreated?.(store);
+  const fallback = {
     storeId: store.storeId,
     storeNo: store.storeNo,
   };
+  const session = isCompatibilityBlocked() ? fallback : (await ports.auth.getStoreSession()) ?? fallback;
 
   return { store, session };
 };
 
 export const retrySeedForSession = async (ports: AppPorts, session: StoreSession): Promise<void> => {
+  assertCompatibilityCurrent();
   await ports.seed.retrySeedDemo(session.storeId);
 };
 
@@ -61,12 +71,14 @@ export const verifyEmployeeForSession = async (
   ports: AppPorts,
   employeeId: string,
   pin: string,
-): Promise<Employee> => {
-  if (!/^[0-9]{6}$/.test(pin)) throw new AppError("INVALID_PIN", "PIN không đúng hoặc nhân viên không còn hoạt động.");
-  const session = await ports.employee.startSession(employeeId, pin);
-  return session.employee;
+): Promise<PermissionSession> => {
+  assertCompatibilityCurrent();
+  if (!/^[0-9]{6}$/.test(pin)) throw new AppError("INVALID_PIN", "PIN không đúng. Vui lòng thử lại.");
+  if (!ports.permission) throw writeError("WRITE_PROTOCOL_UNSUPPORTED");
+  return ports.permission.session.startSession(employeeId, pin);
 };
 
 export const unpairStoreSession = async (ports: AppPorts): Promise<void> => {
+  assertCompatibilityCurrent();
   await ports.auth.unpairStore();
 };

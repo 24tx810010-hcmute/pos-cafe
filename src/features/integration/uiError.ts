@@ -1,4 +1,5 @@
 import { writeErrorMessages } from "@/core/writeErrors";
+import { permissionErrorMessages } from "@/core/permissionErrors";
 import type { AppErrorCode } from "@/core/appError";
 import { AppError, isAppError } from "@/core/appError";
 
@@ -84,7 +85,7 @@ const LEGACY_UI_ERROR_BY_CODE = {
   OPEN_ORDERS_BLOCK_CLEAR_DEMO: {
     code: "OPEN_ORDERS_BLOCK_CLEAR_DEMO",
     title: "Còn đơn đang mở",
-    message: "Cần thanh toán hoặc huỷ toàn bộ đơn đang mở trước khi xoá dữ liệu demo.",
+    message: "Còn đơn đang mở. Hãy hoàn tất các đơn trước khi xóa dữ liệu mẫu.",
     severity: "warning",
     blocking: true,
     action: "closeOpenOrders",
@@ -156,6 +157,9 @@ const UI_ERROR_BY_CODE: Record<AppErrorCode, UiError> = {
       : code === "PRICE_CHANGED" || code === "MENU_ITEM_UNAVAILABLE" || code === "OPTION_VALUE_UNAVAILABLE" ? "refreshMenu"
       : code === "ORDER_VERSION_CONFLICT" ? "reloadOrder" : code === "PAYMENT_AMOUNT_TOO_LOW" ? "collectMoreCash"
       : code === "FORBIDDEN" ? "requestAdmin" : code.startsWith("WRITE_") || code.startsWith("OPERATION_") || code === "IDEMPOTENCY_KEY_REUSED" ? "recoverWrite" : "retry",
+  }])),
+  ...Object.fromEntries(Object.entries(permissionErrorMessages).map(([code, message]) => [code, {
+    code, message, title: "Thông báo thao tác", severity: "warning", blocking: true, action: "retry",
   }])),
 } as Record<AppErrorCode, UiError>;
 

@@ -1,6 +1,6 @@
 import { AppError } from "@/core/appError";
 import { writeError } from "@/core/writeErrors";
-import { requirePermission } from "@/core/guards";
+import { requireCurrentPermission } from "@/features/shared/permissionSession";
 import type {
   Employee,
   EmployeePermission,
@@ -34,6 +34,8 @@ export type OrderFlowContext = {
   orderType: OrderType;
 };
 
+export type OrderFlowOrder = Pick<OrderDetail, "id" | "orderNo" | "orderType" | "tableId" | "status" | "total" | "lockVersion" | "items">;
+
 export type CartLine = {
   id: string;
   name: string;
@@ -46,15 +48,15 @@ export type OrderPrimaryAction = "submit" | "payment" | "closed";
 
 export type SubmitOrderFlowInput = {
   context: OrderFlowContext;
-  actor: Employee;
+  actor: Pick<Employee, "id" | "name">;
   expectedVersion: number | null;
   items: SubmitOrderDraftItem[];
   menu?: MenuCatalog;
 };
 
 export type PayOrderFlowInput = {
-  order: OrderDetail;
-  actor: Employee;
+  order: OrderFlowOrder;
+  actor: Pick<Employee, "id" | "name">;
   receivedAmount: number;
   paymentId?: string;
   printReceipt?: boolean;
@@ -88,17 +90,17 @@ export const snapshotToDraft = (item: OrderItemSnapshot): SubmitOrderDraftItem =
   })),
 });
 
-export const orderDetailToDraft = (order: OrderDetail): SubmitOrderDraftItem[] =>
+export const orderDetailToDraft = (order: OrderFlowOrder): SubmitOrderDraftItem[] =>
   order.items.map(snapshotToDraft);
 
-export const buildCartLines = (menu: MenuCatalog, draftItems: SubmitOrderDraftItem[]): CartLine[] =>
+export const buildCartLines = (menu: MenuCatalog | undefined, draftItems: SubmitOrderDraftItem[]): CartLine[] =>
   draftItems
     .filter((draft) => draft.quantity > 0)
     .map((draft) => {
-      const menuItem = menu.menuItems.find((item) => item.id === draft.menuItemId);
+      const menuItem = menu?.menuItems.find((item) => item.id === draft.menuItemId);
       const options = draft.options.map((option) => ({
         option,
-        value: menu.optionValues.find((candidate) => candidate.id === option.optionValueId),
+        value: menu?.optionValues.find((candidate) => candidate.id === option.optionValueId),
       }));
       const optionDelta = options.reduce(
         (sum, option) => sum + (option.option.quotedPriceDelta ?? option.value?.priceDelta ?? 0) * option.option.quantity,
@@ -131,7 +133,7 @@ export const calculateCartTotal = (cartLines: CartLine[]): number =>
  */
 export const diffAddedPrintLines = (
   menu: MenuCatalog,
-  order: OrderDetail | null,
+  order: OrderFlowOrder | null,
   draftItems: SubmitOrderDraftItem[],
 ): PrintLine[] => {
   const newItems = order ? draftItems.filter((item) => !item.sourceItemId) : draftItems;
@@ -210,7 +212,7 @@ const normalizedDraft = (items: SubmitOrderDraftItem[]): string[] => items.map((
 })).map((item) => JSON.stringify(item)).sort();
 
 export const isDraftChangedFromOrder = (
-  order: OrderDetail | null,
+  order: OrderFlowOrder | null,
   draftItems: SubmitOrderDraftItem[],
 ): boolean => {
   if (!order) {
@@ -221,7 +223,7 @@ export const isDraftChangedFromOrder = (
 };
 
 export const getOrderPrimaryAction = (
-  order: OrderDetail | null,
+  order: OrderFlowOrder | null,
   draftItems: SubmitOrderDraftItem[],
 ): OrderPrimaryAction => {
   if (order && order.status !== "open") {
@@ -248,7 +250,7 @@ export const receiptToPrint = (snapshot: ReceiptSnapshot, orderType: OrderType):
 export const submitOrderAndPrint = async (
   ports: AppPorts, input: SubmitOrderFlowInput,
 ): Promise<SubmitOrderChangesResult & { initialSuccess: boolean }> => {
-  requirePermission(input.actor, getSubmitOrderPermission(input.context, input.items));
+  await requireCurrentPermission(ports, input.actor, getSubmitOrderPermission(input.context, input.items));
   const orderId = input.context.orderId ?? createClientId();
   const base = { schemaVersion: 1 as const, kind: "submit_order_changes" as const, orderId };
   let payload: WritePayloadV1;
@@ -269,15 +271,16 @@ export const submitOrderAndPrint = async (
 
 export const payOrderAndPrint = async (
   ports: AppPorts, input: PayOrderFlowInput,
-): Promise<PayOrderResult & { initialSuccess: boolean }> => {
-  requirePermission(input.actor, "payment.take");
+): Promise<PayOrderResult & { initialSuccess: boolean; initialReceiptPrintGrant?: import("@/ports/permissionPrint").InitialReceiptPrintGrant }> => {
+  await requireCurrentPermission(ports, input.actor, "payment.take");
   if (input.order.total <= 0) throw new AppError("INVALID_ORDER_ITEMS", "Các món được chọn không hợp lệ. Vui lòng kiểm tra lại đơn.");
   if (input.receivedAmount < input.order.total) throw new AppError("PAYMENT_AMOUNT_TOO_LOW", "Tiền nhận chưa đủ để thanh toán phần đã chọn.");
-  const { operation, initial } = await getWriteCoordinator(ports.write).begin({ schemaVersion: 1, kind: "pay_order", orderId: input.order.id,
-    paymentId: input.paymentId ?? createClientId(), expectedVersion: input.order.lockVersion, method: "cash", receivedAmount: input.receivedAmount });
+  const { operation, initial, initialReceiptPrintGrant } = await getWriteCoordinator(ports.write).begin({ schemaVersion: 1, kind: "pay_order", orderId: input.order.id,
+    paymentId: input.paymentId ?? createClientId(), expectedVersion: input.order.lockVersion, method: "cash", receivedAmount: input.receivedAmount },
+    input.printReceipt ? { initialReceiptPrintGrantId: createClientId() } : undefined);
   const result = appliedResult(operation);
   if (result.kind !== "pay_order") throw new AppError("INVALID_WRITE_REQUEST", "Kết quả thao tác không hợp lệ.");
-  return { initialSuccess: initial, orderId: result.order.id, paymentId: result.payment.id, status: "paid", total: result.payment.amount,
+  return { initialSuccess: initial, initialReceiptPrintGrant, orderId: result.order.id, paymentId: result.payment.id, status: "paid", total: result.payment.amount,
     receivedAmount: result.payment.receivedAmount, changeAmount: result.payment.changeAmount, lockVersion: result.order.lockVersion,
     receipt: receiptToPrint(result.receipt, result.order.orderType) };
 };
@@ -297,7 +300,7 @@ export type PayableLine = {
 /** Lựa chọn thanh toán: orderItemId -> số lượng trả lần này. */
 export type PaymentSelection = Record<string, number>;
 
-export const buildPayableLines = (order: OrderDetail): PayableLine[] =>
+export const buildPayableLines = (order: OrderFlowOrder): PayableLine[] =>
   order.items.map((item) => ({
     orderItemId: item.id,
     name: item.itemName,
@@ -331,17 +334,17 @@ export const isFullSelection = (lines: PayableLine[], selection: PaymentSelectio
   lines.length > 0 && lines.every((line) => (selection[line.orderItemId] ?? 0) === line.quantity);
 
 export type PayOrderItemsFlowInput = {
-  order: OrderDetail;
-  actor: Employee;
+  order: OrderFlowOrder;
+  actor: Pick<Employee, "id" | "name">;
   receivedAmount: number;
   selection: PaymentSelection;
   paymentId?: string;
   printReceipt?: boolean;
 };
 
-export type PayOrderItemsFlowResult =
+export type PayOrderItemsFlowResult = { initialReceiptPrintGrant?: import("@/ports/permissionPrint").InitialReceiptPrintGrant } & (
   | ({ mode: "full"; initialSuccess: boolean } & PayOrderResult)
-  | ({ mode: "split"; initialSuccess: boolean } & PayOrderItemsResult);
+  | ({ mode: "split"; initialSuccess: boolean } & PayOrderItemsResult));
 
 /**
  * Thanh toán theo selection: đủ 100% -> payOrder (đơn đóng, bàn trống); một phần
@@ -352,7 +355,7 @@ export const payOrderItemsAndPrint = async (
   ports: AppPorts,
   input: PayOrderItemsFlowInput,
 ): Promise<PayOrderItemsFlowResult> => {
-  requirePermission(input.actor, "payment.take");
+  await requireCurrentPermission(ports, input.actor, "payment.take");
 
   const lines = buildPayableLines(input.order);
   const selection = input.selection;
@@ -385,12 +388,13 @@ export const payOrderItemsAndPrint = async (
     splitItemId: createClientId(),
   }));
 
-  const { operation, initial } = await getWriteCoordinator(ports.write).begin({ schemaVersion: 1, kind: "pay_order_items",
+  const { operation, initial, initialReceiptPrintGrant } = await getWriteCoordinator(ports.write).begin({ schemaVersion: 1, kind: "pay_order_items",
     paymentId: input.paymentId ?? createClientId(), orderId: input.order.id, newOrderId: createClientId(), method: "cash",
-    expectedVersion: input.order.lockVersion, receivedAmount: input.receivedAmount, lines: items });
+    expectedVersion: input.order.lockVersion, receivedAmount: input.receivedAmount, lines: items },
+    input.printReceipt ? { initialReceiptPrintGrantId: createClientId() } : undefined);
   const result = appliedResult(operation);
   if (result.kind !== "pay_order_items") throw new AppError("INVALID_WRITE_REQUEST", "Kết quả thao tác không hợp lệ.");
-  return { mode: "split", initialSuccess: initial, orderId: result.paidOrder.id, orderNo: result.paidOrder.orderNo, paymentId: result.payment.id,
+  return { mode: "split", initialSuccess: initial, initialReceiptPrintGrant, orderId: result.paidOrder.id, orderNo: result.paidOrder.orderNo, paymentId: result.payment.id,
     status: "paid", total: result.payment.amount, receivedAmount: result.payment.receivedAmount, changeAmount: result.payment.changeAmount,
     receipt: receiptToPrint(result.receipt, result.paidOrder.orderType), sourceOrderId: result.sourceOrder.id,
     sourceOrderNo: result.sourceOrder.orderNo, sourceTotal: result.sourceOrder.total, sourceLockVersion: result.sourceOrder.lockVersion };
@@ -399,7 +403,7 @@ export const payOrderItemsAndPrint = async (
 // ----- Hủy đơn đã thanh toán --------------------------------------------------
 
 export type VoidPaidOrderFlowInput = {
-  actor: Employee;
+  actor: Pick<Employee, "id" | "name">;
   order: Pick<OrderDetail, "id" | "lockVersion">;
   reasonCode: VoidReasonCode;
   reasonNote?: string | null;
@@ -413,7 +417,7 @@ export const voidPaidOrder = async (
   ports: AppPorts,
   input: VoidPaidOrderFlowInput,
 ): Promise<VoidOrderResult> => {
-  requirePermission(input.actor, "order.voidPaid");
+  await requireCurrentPermission(ports, input.actor, "order.voidPaid");
 
   if (input.reasonNote != null && typeof input.reasonNote !== "string") throw writeError("INVALID_WRITE_REQUEST");
   const note = (input.reasonNote ?? "").trim();

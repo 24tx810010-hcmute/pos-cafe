@@ -1,6 +1,6 @@
 import { AppError } from "@/core/appError";
 
-const storeKeyPattern = /^(\d{1,8})-([A-Za-z0-9]{4,64})$/;
+const storeKeyPattern = /^([0-9]{1,10})-([A-Za-z0-9]{4,64})$/;
 const secretAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 export type ParsedStoreKey = {
@@ -18,15 +18,18 @@ export const parseStoreKey = (storeKey: string): ParsedStoreKey => {
 
   const storeNo = Number.parseInt(match[1], 10);
 
-  if (!Number.isFinite(storeNo) || storeNo <= 0) {
+  if (!Number.isInteger(storeNo) || storeNo < 1 || storeNo > 2147483647) {
     throw new AppError("AUTH_REQUIRED", "Store Key không đúng định dạng.");
   }
 
   return { storeNo, secret: match[2] };
 };
 
-export const formatStoreKey = (storeNo: number, secret: string): string =>
-  `${storeNo.toString().padStart(4, "0")}-${secret.toUpperCase()}`;
+export const formatStoreKey = (storeNo: number, secret: string): string => {
+  if (!Number.isInteger(storeNo) || storeNo < 1 || storeNo > 2147483647)
+    throw new AppError("AUTH_REQUIRED", "Store Key không đúng định dạng.");
+  return `${storeNo.toString().padStart(4, "0")}-${secret.toUpperCase()}`;
+};
 
 export const storeEmailForNo = (storeNo: number): string => `store${storeNo}@store.pos.local`;
 

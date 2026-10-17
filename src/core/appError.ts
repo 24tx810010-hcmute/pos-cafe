@@ -1,6 +1,7 @@
 import type { WriteErrorCode } from "@/domain/writeOperations";
+import type { PermissionErrorCode } from "@/domain/permissions";
 
-export type AppErrorCode = WriteErrorCode
+export type AppErrorCode = WriteErrorCode | PermissionErrorCode
   | "AUTH_REQUIRED"
   | "FORBIDDEN"
   | "INVALID_PIN"

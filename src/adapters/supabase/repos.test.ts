@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { MenuChanges, FloorPlanChanges } from "@/domain";
-import { createSupabasePorts } from "./repos";
+import { createSupabaseLegacyPorts as createSupabasePorts, createSupabasePorts as createCandidateSupabasePorts } from "./repos";
 import { mapEmployee, mapOrderDetail } from "./mappers";
 
 const submitResult = {
@@ -42,6 +42,13 @@ const payResult = {
 
 const createRpcClient = (dataByRpc: Record<string, unknown> = {}) => ({
   rpc: vi.fn(async (name: string) => ({ data: dataByRpc[name] ?? null, error: null })),
+});
+
+describe("candidate Supabase composition", () => {
+  it("exposes no raw business or legacy realtime repository", () => {
+    const ports = createCandidateSupabasePorts(createRpcClient() as never);
+    expect(Object.keys(ports).sort()).toEqual(["auth", "permission", "print", "seed", "write"]);
+  });
 });
 
 type MutationCall = {

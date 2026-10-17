@@ -2,7 +2,9 @@ import { AlertTriangle, LayoutGrid, RefreshCw } from "lucide-react";
 import { Button } from "@mui/material";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import type { FloorTable, OrderSummary } from "@/domain";
+import type { FloorTable } from "@/domain";
+import type { OperationalOrderSummary } from "@/ports/permissions";
+import { usePermission } from "@/features/shared/permissionSession";
 import { formatCompactVnd } from "@/core/money";
 import { useFloorPlanQuery, useOpenOrdersQuery } from "@/features/pos";
 import { useAppStore } from "../useAppStore";
@@ -43,6 +45,9 @@ export function FloorWorkspace() {
   const activeAreaId = useAppStore((state) => state.activeAreaId);
   const setActiveAreaId = useAppStore((state) => state.setActiveAreaId);
   const openOrder = useAppStore((state) => state.openOrder);
+  const openPayment = useAppStore(state => state.openPayment);
+  const canCreate = usePermission("order.create"), canUpdate = usePermission("order.update");
+  const canPay = usePermission("payment.take"), canVoid = usePermission("order.voidOpen");
 
   const floorPlanQuery = useFloorPlanQuery();
   const openOrdersQuery = useOpenOrdersQuery();
@@ -64,8 +69,10 @@ export function FloorWorkspace() {
     allTables.find((t) => t.id === tableId)?.status === "occupied" ||
     orders.some((o) => o.tableId === tableId);
 
-  const openTableOrder = async (table: FloorTable, cachedOrder?: OrderSummary) => {
+  const openTableOrder = async (table: FloorTable, cachedOrder?: OperationalOrderSummary) => {
     if (cachedOrder) {
+      if (!canUpdate && canPay) { openPayment(cachedOrder.id); return; }
+      if (!canUpdate && !canVoid) return;
       openOrder({
         orderId: cachedOrder.id,
         tableId: table.id,
@@ -75,7 +82,9 @@ export function FloorWorkspace() {
     }
 
     const refreshed = await openOrdersQuery.refetch();
-    const freshOrder = refreshed.data?.find((order) => order.tableId === table.id);
+    const freshOrder = refreshed.data?.openOrders.find((order) => order.tableId === table.id);
+    if (freshOrder && !canUpdate && canPay) { openPayment(freshOrder.id); return; }
+    if (freshOrder ? !canUpdate && !canVoid : !canCreate) return;
     openOrder({
       orderId: freshOrder?.id ?? null,
       tableId: table.id,
@@ -268,7 +277,7 @@ export function FloorWorkspace() {
                       <span className="text-[11px] font-bold text-pos-muted">#{ord.orderNo}</span>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-bold text-[#ea580c]">Đang phục vụ</span>
+                      <span className="text-[11px] font-bold text-[#c2410c]">Đang phục vụ</span>
                       <span className="text-sm font-extrabold text-pos-primary">{formatCompactVnd(ord.total)}</span>
                     </div>
                   </button>

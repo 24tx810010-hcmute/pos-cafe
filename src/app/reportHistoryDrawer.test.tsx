@@ -2,13 +2,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMockPorts, createSeededMockState, type MockState } from "@/adapters/mock";
+import type { MockState } from "@/adapters/mock";
+import { activateCandidateUi, createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import type { Employee } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 
-const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "30000000-0000-4000-8000-000000000011", name: "Chủ cửa hàng", role: "admin", isActive: true };
 
 class ResizeObserverMock {
   observe() {}
@@ -59,19 +60,18 @@ const resetAppStoreForDrawer = (drawer: "orderHistory" | "report") => {
   });
 };
 
-const renderDrawer = (
+const renderDrawer = async (
   drawer: "orderHistory" | "report",
   configureState?: (state: MockState, businessDate: string) => void,
 ) => {
-  const state = createSeededMockState();
-  state.session = { storeId: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", storeNo: 1 };
+  const fixture = await createCandidateRuntimeFixture(); const state = fixture.business; const ports = fixture.ports;
   const businessDate = businessDateForTest();
   seedOrdersForToday(state, businessDate);
   configureState?.(state, businessDate);
-  const ports = createMockPorts(state);
-  const historySpy = vi.spyOn(ports.order, "listOrderHistory");
-  const detailSpy = vi.spyOn(ports.order, "getOrder");
-  const reportSpy = vi.spyOn(ports.report, "getCoreReport");
+  const historySpy = vi.spyOn(ports.permission!.read, "listOrderHistory");
+  const detailSpy = vi.spyOn(ports.permission!.read, "getOrderHistoryDetail");
+  const reportSpy = vi.spyOn(ports.permission!.read, "getSalesReport");
+  const reportOrdersSpy = vi.spyOn(ports.permission!.read, "listReportOrders");
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -79,6 +79,7 @@ const renderDrawer = (
     },
   });
 
+  activateCandidateUi(fixture);
   resetAppStoreForDrawer(drawer);
   render(
     <PortsContext.Provider value={ports}>
@@ -88,7 +89,7 @@ const renderDrawer = (
     </PortsContext.Provider>,
   );
 
-  return { businessDate, detailSpy, historySpy, reportSpy };
+  return { businessDate, detailSpy, historySpy, reportSpy, reportOrdersSpy };
 };
 
 afterEach(() => {
@@ -108,7 +109,7 @@ afterEach(() => {
 describe("Report and history drawers", () => {
   it("loads order history through the order history port and fetches selected order detail", async () => {
     const user = userEvent.setup();
-    const { detailSpy, historySpy } = renderDrawer("orderHistory");
+    const { detailSpy, historySpy } = await renderDrawer("orderHistory");
 
     await waitFor(() =>
       expect(historySpy).toHaveBeenCalledWith({
@@ -126,7 +127,7 @@ describe("Report and history drawers", () => {
 
   it("renders unique presentation numbers for repeated daily order numbers and keeps UUID selection", async () => {
     const user = userEvent.setup();
-    const { detailSpy } = renderDrawer("orderHistory", (state, businessDate) => {
+    const { detailSpy } = await renderDrawer("orderHistory", (state, businessDate) => {
       const baseOrder = state.orders.find((order) => order.id === "3f6c6266-12b8-4f8b-8564-44d00d9210f8")!;
       state.orders = [
         { ...structuredClone(baseOrder), id: "ord-history-new", orderNo: 2, status: "void" },
@@ -158,7 +159,7 @@ describe("Report and history drawers", () => {
 
   it("shows paid order payment snapshot in the receipt summary", async () => {
     const user = userEvent.setup();
-    renderDrawer("orderHistory");
+    await renderDrawer("orderHistory");
 
     await user.click(await screen.findByTestId("history-row-3f6c6266-12b8-4f8b-8564-44d00d9210f8"));
 
@@ -175,7 +176,7 @@ describe("Report and history drawers", () => {
   });
 
   it("keeps open orders out of the order history view", async () => {
-    renderDrawer("orderHistory");
+    await renderDrawer("orderHistory");
 
     expect(await screen.findByTestId("history-row-3f6c6266-12b8-4f8b-8564-44d00d9210f8")).toBeInTheDocument();
     expect(screen.queryByTestId("history-row-7e2f462b-e6ff-491a-85f8-9f4eb53d9c4c")).not.toBeInTheDocument();
@@ -186,7 +187,7 @@ describe("Report and history drawers", () => {
 
   it("applies custom order history date ranges to the query payload", async () => {
     const user = userEvent.setup();
-    const { businessDate, historySpy } = renderDrawer("orderHistory");
+    const { businessDate, historySpy } = await renderDrawer("orderHistory");
     const fromDate = shiftBusinessDate(businessDate, -2);
 
     await user.click(await screen.findByTestId("history-date-filter-button"));
@@ -207,24 +208,22 @@ describe("Report and history drawers", () => {
   });
 
   it("loads report metrics through daily core report queries", async () => {
-    const { businessDate, historySpy, reportSpy } = renderDrawer("report");
+    const { businessDate, reportOrdersSpy, reportSpy } = await renderDrawer("report");
 
     await waitFor(() => expect(reportSpy).toHaveBeenCalledWith({ businessDate }));
     await waitFor(() =>
-      expect(historySpy).toHaveBeenCalledWith({
+      expect(reportOrdersSpy).toHaveBeenCalledWith({
         fromDate: businessDate,
         toDate: businessDate,
-        page: 1,
-        pageSize: 20,
       }),
     );
     expect((await screen.findAllByText(/77\.000/)).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Latte").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("report-summary")).toBeInTheDocument();
   });
 
   it("expands 7-day report ranges into daily report calls without changing the port contract", async () => {
     const user = userEvent.setup();
-    const { businessDate, reportSpy } = renderDrawer("report");
+    const { businessDate, reportSpy } = await renderDrawer("report");
     const expectedDates = Array.from({ length: 7 }, (_, index) => shiftBusinessDate(businessDate, index - 6));
 
     await user.click(await screen.findByRole("button", { name: "7 ngày" }));

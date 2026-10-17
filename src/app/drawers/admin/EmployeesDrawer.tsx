@@ -1,241 +1,288 @@
-import { ShieldAlert } from "lucide-react";
 import { Button } from "@mui/material";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ShieldAlert } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import type { Employee, EmployeeRole } from "@/domain";
+import { AppError } from "@/core/appError";
+import type { EmployeeAdminView, EmployeePermissionPatch } from "@/domain/permissions";
 import {
-  canAccessModule,
-  enabledEmployeeRoles,
-  isEmployeeRoleEnabledInUi,
-} from "@/core/guards";
+  usePermission,
+  usePermissionSession,
+} from "@/features/shared/permissionSession";
 import {
-  useAdminEmployeesQuery,
-  useCreateEmployeeMutation,
-  useResetPinMutation,
-  useUpdateEmployeeMutation,
-} from "@/features/admin";
+  actorCoversTarget,
+  createRequestId,
+  emptyEmployeeForm,
+  formForEmployee,
+  defaultPermissionSelection,
+  overridesFromSelection,
+  validateEmployeeForm,
+  type PermissionEmployeeErrors,
+  type PermissionEmployeeForm,
+} from "@/features/admin/permissionEmployeeFlow";
 import {
-  EMPTY_EMPLOYEE_FORM,
-  effectivePermissions,
-  getEmployeeFormErrors,
-  isEmployeeFormDirty,
-  isLastActiveAdmin,
-  permissionsToOverrides,
-  type EmployeeDrawerForm,
-  type EmployeeFormErrors,
-} from "@/features/admin/employeeDrawerFlow";
+  useCurrentPermissionBundle,
+  usePermissionEmployeeMutations,
+  usePermissionEmployees,
+} from "@/features/admin/usePermissionEmployees";
 import { useAppStore } from "../../useAppStore";
 import { toToastError } from "../../appErrors";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { PortalPopup } from "../../components/PortalPopup";
+import { useViewLifetime } from "../../useViewLifetime";
 import { EmployeeDetailPane } from "./EmployeeDetailPane";
-import { EmployeeListPane, type EmployeeListFilter } from "./EmployeeListPane";
-
-type EmpFilter = EmployeeListFilter;
-
-const EMP_ROLE_LABEL: Record<EmployeeRole, string> = { admin: "Quản lý", cashier: "Thu ngân", kitchen: "Bếp" };
-
-let clientIdSeq = 0;
-const createClientId = (): string => {
-  const uuid = globalThis.crypto?.randomUUID?.();
-  if (uuid) return uuid;
-  const suffix = `${Date.now()}${clientIdSeq++}`.padStart(12, "0").slice(-12);
-  return `00000000-0000-4000-8000-${suffix}`;
-};
-const createEmployeeId = createClientId;
+import {
+  PermissionEmployeeListPane,
+  type PermissionEmployeeFilter,
+} from "./PermissionEmployeeListPane";
 
 function EmployeesDrawer() {
-  const closeDrawer = useAppStore((state) => state.closeDrawer);
-  const currentEmployee = useAppStore((state) => state.currentEmployee);
-  const allowed = canAccessModule(currentEmployee, "employees");
-
-  const employeesQuery = useAdminEmployeesQuery(allowed);
-  const createEmployeeMutation = useCreateEmployeeMutation(currentEmployee);
-  const updateEmployeeMutation = useUpdateEmployeeMutation(currentEmployee);
-  const resetPinMutation = useResetPinMutation(currentEmployee);
-  const [filter, setFilter] = useState<EmpFilter>("all");
-  const [selectedId, setSelectedId] = useState<string | "new" | null>(null);
-  const [form, setForm] = useState<EmployeeDrawerForm>(EMPTY_EMPLOYEE_FORM);
-  const [errors, setErrors] = useState<EmployeeFormErrors>({});
-  const [discardTarget, setDiscardTarget] = useState<{ target: string | "new" | null } | null>(null);
-  const nameInputRef = useRef<HTMLInputElement | null>(null);
-  const employees = useMemo(
-    () => (employeesQuery.data ?? [])
-      .filter((employee) => isEmployeeRoleEnabledInUi(employee.role)),
-    [employeesQuery.data],
-  );
-  const isSaving =
-    createEmployeeMutation.isPending ||
-    updateEmployeeMutation.isPending ||
-    resetPinMutation.isPending;
-
-  const selectedRecord =
-    typeof selectedId === "string" && selectedId !== "new"
-      ? employees.find((e) => e.id === selectedId) ?? null
-      : null;
-
-  const isDirty = isEmployeeFormDirty(form, selectedId, selectedRecord);
-
-  const applySelect = (target: string | "new" | null) => {
+  const closeDrawer = useAppStore((s) => s.closeDrawer),
+    setCurrentEmployee = useAppStore((s) => s.setCurrentEmployee);
+  const bundle = useCurrentPermissionBundle(),
+    status = usePermissionSession((s) => s.status),
+    clearPermission = usePermissionSession((s) => s.clear);
+  const canManage = usePermission("employee.manage"),
+    canEditPermissions = usePermission("employee.permission.edit"),
+    allowed =
+      status === "verified" && !!bundle && (canManage || canEditPermissions);
+  const query = usePermissionEmployees(allowed),
+    mutations = usePermissionEmployeeMutations(),
+    catalog = bundle?.catalog;
+  const [filter, setFilter] = useState<PermissionEmployeeFilter>("all"),
+    [selectedId, setSelectedId] = useState<string | "new" | null>(null),
+    [errors, setErrors] = useState<PermissionEmployeeErrors>({}),
+    [discard, setDiscard] = useState<string | "new" | null | undefined>(
+      undefined,
+    );
+  const [form, setForm] = useState<PermissionEmployeeForm | null>(null),
+    baseline = useRef<PermissionEmployeeForm | null>(null),
+    nameRef = useRef<HTMLInputElement | null>(null);
+  const employees = query.data ?? [],
+    selected =
+      typeof selectedId === "string" && selectedId !== "new"
+        ? (employees.find((e) => e.id === selectedId) ?? null)
+        : null;
+  const saving =
+    mutations.create.isPending ||
+    mutations.update.isPending ||
+    mutations.resetPin.isPending ||
+    mutations.changeOwnPin.isPending;
+  const actor = bundle?.snapshot,
+    dirty =
+      !!form &&
+      !!baseline.current &&
+      JSON.stringify(form) !== JSON.stringify(baseline.current);
+  const captureView = useViewLifetime(`${selectedId}:${actor?.employeeRevision}:${actor?.catalogRevision}`);
+  const setClean = (next: PermissionEmployeeForm) => {
+    setForm(next);
+    baseline.current = structuredClone(next);
     setErrors({});
+  };
+  const applySelect = (target: string | "new" | null) => {
     setSelectedId(target);
+    if (!catalog) {
+      setForm(null);
+      return;
+    }
     if (target === "new") {
-      setForm(EMPTY_EMPLOYEE_FORM);
-      setTimeout(() => nameInputRef.current?.focus(), 0);
-    } else if (target) {
-      const rec = employees.find((e) => e.id === target);
-      if (rec) {
-        setForm({
-          name: rec.name,
-          role: rec.role,
-          isActive: rec.isActive,
-          permissions: effectivePermissions(rec),
-          newPin: "",
-          confirmPin: "",
-        });
-      }
+      setClean(emptyEmployeeForm(catalog));
+      setTimeout(() => nameRef.current?.focus(), 0);
     } else {
-      setForm(EMPTY_EMPLOYEE_FORM);
+      const row = employees.find((e) => e.id === target);
+      setForm(row ? formForEmployee(catalog, row) : null);
+      baseline.current = row ? formForEmployee(catalog, row) : null;
+      setErrors({});
     }
   };
-
   const requestSelect = (target: string | "new" | null) => {
     if (target === selectedId) return;
-    if (isDirty) {
-      setDiscardTarget({ target });
+    if (dirty) {
+      setDiscard(target);
       return;
     }
     applySelect(target);
   };
-
   useEffect(() => {
-    if (selectedId !== null || employees.length === 0) return;
-    applySelect(employees[0].id);
-  }, [employees, selectedId]);
-
-  const filtered = employees.filter((e) => {
-    if (filter === "all") return true;
-    if (filter === "inactive") return !e.isActive;
-    return e.role === filter && e.isActive;
-  });
-
-  const countFor = (f: EmpFilter) =>
-    f === "all"
-      ? employees.length
-      : f === "inactive"
-      ? employees.filter((e) => !e.isActive).length
-      : employees.filter((e) => e.role === f && e.isActive).length;
-
-  const filterChips: Array<{ key: EmpFilter; label: string }> = [
-    { key: "all", label: "Tất cả" },
-    { key: "admin", label: "Quản lý" },
-    { key: "cashier", label: "Thu ngân" },
-    { key: "inactive", label: "Tạm khoá" },
-  ];
-  const employeeStatusText = employeesQuery.isLoading
-    ? "Đang tải nhân viên"
-    : employeesQuery.isError
-    ? "Lỗi tải nhân viên"
-    : `${employees.length} nhân viên · online`;
-  const activeAdminCount = employees.filter((e) => e.role === "admin" && e.isActive).length;
-  const isFinalActiveAdmin = (employee: Pick<Employee, "role" | "isActive">) =>
-    isLastActiveAdmin(employee, activeAdminCount);
-
-  const validate = (): boolean => {
-    const next = getEmployeeFormErrors(form, selectedId === "new");
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  };
-
-  const handleSave = async () => {
-    if (!validate()) return;
-    if (isSaving) return;
-    if (selectedRecord && currentEmployee?.id === selectedRecord.id && !form.isActive) {
-      toast.error("Không thể tạm khoá tài khoản đang đăng nhập.");
-      return;
+    if (selectedId === null && employees.length) applySelect(employees[0].id);
+  }, [employees.length, selectedId]);
+  useEffect(() => {
+    if (selected && catalog && !dirty)
+      setClean(formForEmployee(catalog, selected));
+  }, [selected?.permissionRevision]);
+  const previousRights = useRef(actor?.permissions);
+  useEffect(() => {
+    if (status !== "verified" || !actor || !catalog) return;
+    const previous = previousRights.current; previousRights.current = actor.permissions;
+    const lostManage = !!previous?.includes("employee.manage") && !canManage;
+    const lostPermissions = !!previous?.includes("employee.permission.edit") && !canEditPermissions;
+    if (!form || !baseline.current || !(lostManage || lostPermissions)) return;
+    const notifyDiscard = () => toast("Quyền của bạn đã thay đổi. Phần đang thao tác không còn được phép đã đóng; dữ liệu chưa lưu của phần đó đã được bỏ.");
+    if (selectedId === "new" && lostManage) { setSelectedId(null); setForm(null); baseline.current = null; notifyDiscard(); return; }
+    const base = baseline.current;
+    const next = { ...form };
+    if (lostManage) {
+      next.name = base.name; next.role = base.role; next.isActive = base.isActive;
+      next.newPin = ""; next.confirmPin = ""; next.currentPin = "";
+      if (!next.permissionsTouched) next.permissions = { ...base.permissions };
     }
+    if (lostPermissions) {
+      next.permissionsTouched = false;
+      next.permissions = next.role === base.role ? { ...base.permissions } : defaultPermissionSelection(catalog, next.role);
+    }
+    if (JSON.stringify(next) !== JSON.stringify(form)) notifyDiscard();
+    setForm(next); setErrors({}); setDiscard(undefined);
+  }, [actor, catalog, status, canManage, canEditPermissions]);
+  const fieldErrors = (error: unknown) => {
     if (
-      selectedRecord &&
-      isFinalActiveAdmin(selectedRecord) &&
-      (!form.isActive || form.role !== "admin")
-    ) {
-      toast.error("Cần giữ ít nhất một quản lý đang hoạt động.");
-      return;
-    }
-
+      error instanceof AppError &&
+      error.cause &&
+      typeof error.cause === "object" &&
+      "fieldErrors" in error.cause
+    )
+      setErrors(
+        (error.cause as { fieldErrors?: PermissionEmployeeErrors })
+          .fieldErrors ?? {},
+      );
+  };
+  const save = async () => {
+    if (!form || !catalog || saving || !actor) return;
+    const isCurrent = captureView();
+    const ownerSelf =
+      selected?.role === "owner" && selected.id === actor.employeeId;
+    const nextErrors = validateEmployeeForm(
+      form,
+      selectedId === "new",
+      ownerSelf,
+    );
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
     try {
       if (selectedId === "new") {
-        const created = await createEmployeeMutation.mutateAsync({
-          employee: {
-            id: createEmployeeId(),
-            name: form.name.trim(),
-            role: form.role,
-            pin: form.newPin,
-          },
+        if (!canManage) return;
+        const result = await mutations.create.mutateAsync({
+          requestId: createRequestId(),
+          id: createRequestId(),
+          name: form.name.trim(),
+          role: form.role,
+          pin: form.newPin,
+          expectedCatalogRevision: catalog.revision,
+          ...(form.permissionsTouched && canEditPermissions
+            ? {
+                overrides: overridesFromSelection(
+                  catalog,
+                  form.role,
+                  form.permissions,
+                ),
+              }
+            : {}),
         });
-        const finalEmployee = form.isActive
-          ? created
-          : await updateEmployeeMutation.mutateAsync({ employee: { id: created.id, isActive: false } });
-
-        setSelectedId(finalEmployee.id);
-        setForm({
-          name: finalEmployee.name,
-          role: finalEmployee.role,
-          isActive: finalEmployee.isActive,
-          permissions: effectivePermissions(finalEmployee),
-          newPin: "",
-          confirmPin: "",
-        });
-        toast.success("Đã tạo nhân viên");
-      } else if (selectedRecord) {
-        const shouldResetPin = form.newPin !== "";
-        const updated = await updateEmployeeMutation.mutateAsync({
-          employee: {
-            id: selectedRecord.id,
-            name: form.name.trim(),
-            role: form.role,
-            isActive: form.isActive,
-            permissionOverrides: permissionsToOverrides(form.role, form.permissions),
-          },
-        });
-        if (shouldResetPin) {
-          await resetPinMutation.mutateAsync({ employeeId: selectedRecord.id, newPin: form.newPin });
-        }
-        setForm({
-          name: updated.name,
-          role: updated.role,
-          isActive: updated.isActive,
-          permissions: effectivePermissions(updated),
-          newPin: "",
-          confirmPin: "",
-        });
-        toast.success(shouldResetPin ? "Đã lưu nhân viên và đặt lại PIN" : "Đã lưu nhân viên");
+        if (!isCurrent()) return;
+        setSelectedId(result.id);
+        setClean(formForEmployee(catalog, result));
+        toast.success("Đã tạo nhân viên.");
+        return;
       }
-      setErrors({});
+      if (!selected) return;
+      let revision = selected.permissionRevision;
+      const patch: EmployeePermissionPatch = {};
+      if (form.name.trim() !== selected.name) patch.name = form.name.trim();
+      if (
+        form.role !== selected.role &&
+        !(["owner", "kitchen"] as string[]).includes(selected.role)
+      )
+        patch.role = form.role;
+      if (form.isActive !== selected.isActive) patch.isActive = form.isActive;
+      if (form.permissionsTouched && canEditPermissions)
+        patch.overrides = overridesFromSelection(
+          catalog,
+          form.role,
+          form.permissions,
+        );
+      const keys = Object.keys(patch);
+      let latest: EmployeeAdminView = selected;
+      if (keys.length) {
+        latest = await mutations.update.mutateAsync({
+          requestId: createRequestId(),
+          targetId: selected.id,
+          expectedRevision: revision,
+          ...(patch.role !== undefined || patch.overrides !== undefined
+            ? { expectedCatalogRevision: catalog.revision }
+            : {}),
+          patch,
+        });
+        if (!isCurrent()) return;
+        revision = latest.permissionRevision;
+      }
+      if (form.newPin) {
+        if (ownerSelf) {
+          const changed = await mutations.changeOwnPin.mutateAsync({
+            requestId: createRequestId(),
+            expectedRevision: revision,
+            currentPin: form.currentPin,
+            newPin: form.newPin,
+          });
+          if (!isCurrent()) return;
+          if (changed.outcome === "noop") {
+            toast("PIN mới trùng PIN hiện tại; không có thay đổi.");
+            setClean({ ...form, currentPin: "", newPin: "", confirmPin: "" });
+            return;
+          }
+          toast.success("Đã đổi PIN. Vui lòng đăng nhập lại.");
+          setCurrentEmployee(null);
+          clearPermission();
+          closeDrawer();
+          return;
+        }
+        latest = await mutations.resetPin.mutateAsync({
+          requestId: createRequestId(),
+          targetId: selected.id,
+          expectedRevision: revision,
+          newPin: form.newPin,
+        });
+        if (!isCurrent()) return;
+        toast.success("Đã đặt lại PIN. Nhân viên cần đăng nhập lại.");
+      } else if (!keys.length) {
+        toast("Không có thay đổi để lưu.");
+        return;
+      } else if (patch.overrides !== undefined && keys.length === 1)
+        toast.success("Đã cập nhật quyền nhân viên.");
+      else if (patch.isActive !== undefined && keys.length === 1)
+        toast.success(
+          patch.isActive ? "Đã mở khóa nhân viên." : "Đã tạm khóa nhân viên.",
+        );
+      else toast.success("Đã lưu nhân viên.");
+      setClean(formForEmployee(catalog, latest));
     } catch (error) {
+      if (!isCurrent()) return;
+      fieldErrors(error);
       toast.error(toToastError(error));
     }
   };
-
-  if (!allowed) {
+  if (!allowed || !catalog || !actor)
     return (
       <PortalDrawer testId="employees-drawer" onOutsideClick={closeDrawer}>
-        <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-pos-line bg-white/95 px-[18px] py-3 max-[980px]:min-h-[50px] max-[980px]:gap-x-2.5 max-[980px]:gap-y-2 max-[980px]:px-2.5 max-[980px]:py-2">
-          <div className="min-w-0 flex-[1_1_240px] grid gap-1 [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-normal [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-normal [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-normal [&_p]:mb-0 [&_p]:mt-1 [&_p]:overflow-hidden [&_p]:text-ellipsis [&_p]:whitespace-nowrap [&_p]:text-xs [&_p]:text-pos-muted max-sm:[&_h1]:text-[17px] max-sm:[&_h2]:text-[15px] max-sm:[&_h3]:text-[15px] [&_h2]:overflow-hidden [&_h2]:text-ellipsis [&_h2]:whitespace-nowrap [&_h3]:overflow-hidden [&_h3]:text-ellipsis [&_h3]:whitespace-nowrap">
-            <h2>Quản lý nhân viên</h2>
-            <p>Chỉ dành cho quản lý</p>
-          </div>
-          <Button variant="outlined" onClick={closeDrawer}>Đóng</Button>
+        <header className="flex min-h-16 items-center justify-between border-b border-pos-line px-4">
+          <h2>Quản lý nhân viên</h2>
+          <Button variant="outlined" onClick={closeDrawer}>
+            Đóng
+          </Button>
         </header>
-        <div className="min-h-0 overflow-auto bg-pos-bg p-3 max-[980px]:p-2 grid h-full place-items-center content-center gap-2.5 text-center [&_h3]:m-0" data-testid="employees-forbidden">
-          <ShieldAlert size={42} color="#b45309" />
-          <h3>Không có quyền</h3>
-          <p className="text-pos-muted">Tài khoản hiện tại không thể quản lý nhân viên.</p>
+        <div
+          className="grid h-full place-items-center text-center"
+          data-testid="employees-forbidden"
+        >
+          <div>
+            <ShieldAlert className="mx-auto" size={42} />
+            <h3>Không có quyền</h3>
+            <p>Phần quản lý nhân viên không còn được phép.</p>
+          </div>
         </div>
       </PortalDrawer>
     );
-  }
-
+  const ceiling =
+    !selected ||
+    actor.role === "owner" ||
+    actorCoversTarget(actor.permissions, selected);
   return (
     <PortalDrawer
       testId="employees-drawer"
@@ -243,58 +290,64 @@ function EmployeesDrawer() {
       panelClassName="grid-rows-[minmax(0,1fr)]"
     >
       <div
-        className="grid min-h-0 grid-cols-[clamp(132px,26%,286px)_minmax(0,1fr)] overflow-hidden bg-pos-surface"
+        className="grid min-h-0 grid-cols-[clamp(132px,26%,286px)_minmax(0,1fr)] overflow-hidden"
         data-testid="employees-split-layout"
       >
-        <EmployeeListPane
-          employees={filtered}
-          totalCount={employees.length}
+        <PermissionEmployeeListPane
+          employees={employees}
           selectedId={selectedId}
-          isLoading={employeesQuery.isLoading}
-          isError={employeesQuery.isError}
-          error={employeesQuery.error}
-          isSaving={isSaving}
-          statusText={employeeStatusText}
           filter={filter}
-          filterOptions={filterChips}
-          countForFilter={countFor}
-          roleLabel={EMP_ROLE_LABEL}
-          onFilterChange={setFilter}
+          loading={query.isLoading}
+          error={query.error}
+          saving={saving}
+          canCreate={canManage}
+          onFilter={setFilter}
           onSelect={requestSelect}
-          onAdd={() => requestSelect("new")}
           onClose={closeDrawer}
         />
-
-        <EmployeeDetailPane
-          selectedId={selectedId}
-          selectedRecord={selectedRecord}
-          currentEmployeeId={currentEmployee?.id}
-          form={form}
-          setForm={setForm}
-          errors={errors}
-          setErrors={setErrors}
-          roleOptions={enabledEmployeeRoles.map((role) => ({ role, label: EMP_ROLE_LABEL[role] }))}
-          nameInputRef={nameInputRef}
-          isSaving={isSaving}
-          isLastActiveAdmin={isFinalActiveAdmin}
-          onSave={() => void handleSave()}
-        />
+        {form && (
+          <EmployeeDetailPane
+            selectedId={selectedId}
+            selectedRecord={selected}
+            actorId={actor.employeeId}
+            actorRole={actor.role}
+            actorPermissions={actor.permissions}
+            catalog={catalog}
+            form={form}
+            setForm={(value) =>
+              setForm((previous) =>
+                typeof value === "function" ? value(previous!) : value,
+              )
+            }
+            errors={errors}
+            setErrors={setErrors}
+            nameInputRef={nameRef}
+            saving={saving}
+            canManage={canManage}
+            canEditPermissions={canEditPermissions}
+            targetWithinCeiling={ceiling}
+            onSave={() => void save()}
+          />
+        )}
       </div>
-
-      {discardTarget && (
-        <PortalPopup placement="Centered" viewport="workspace" overlayClassName="bg-slate-900/50" onOutsideClick={() => setDiscardTarget(null)}>
-          <div className="grid w-[min(360px,90vw)] gap-3 rounded-pos bg-pos-surface p-6 shadow-[0_20px_60px_rgb(0_0_0_/_25%)] [&_h3]:m-0 [&_p]:m-0 [&_p]:text-sm [&_p]:text-pos-muted" onClick={(e) => e.stopPropagation()}>
+      {discard !== undefined && (
+        <PortalPopup
+          placement="Centered"
+          viewport="workspace"
+          onOutsideClick={() => setDiscard(undefined)}
+        >
+          <div className="grid w-[min(360px,90vw)] gap-3 rounded-pos bg-white p-6">
             <h3>Bỏ thay đổi chưa lưu?</h3>
             <p>Thông tin đang chỉnh sửa sẽ không được lưu.</p>
-            <div className="flex flex-wrap justify-end gap-2.5 [&_.MuiButton-root]:min-w-24">
-              <Button variant="outlined" onClick={() => setDiscardTarget(null)}>Ở lại</Button>
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => setDiscard(undefined)}>Ở lại</Button>
               <Button
-                variant="contained"
                 color="error"
+                variant="contained"
                 onClick={() => {
-                  const t = discardTarget.target;
-                  setDiscardTarget(null);
-                  applySelect(t);
+                  const target = discard;
+                  setDiscard(undefined);
+                  applySelect(target ?? null);
                 }}
               >
                 Bỏ thay đổi
@@ -303,11 +356,9 @@ function EmployeesDrawer() {
           </div>
         </PortalPopup>
       )}
-
     </PortalDrawer>
   );
 }
-
 export function EmployeesStubDrawer() {
   return <EmployeesDrawer />;
 }

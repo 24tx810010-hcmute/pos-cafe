@@ -8,7 +8,9 @@ import {
   useSaveMenuMutation,
   hasMenuChanges,
 } from "@/features/admin";
-import { usePorts } from "@/features/shared/portsContext";
+import { usePermissionPorts } from "@/features/shared/portsContext";
+import { useViewLifetime } from "../../useViewLifetime";
+import { sessionHasPermission } from "@/features/shared/permissionSession";
 import { useAppStore } from "../../useAppStore";
 import { toToastError } from "../../appErrors";
 import { nextDraftId, nextSort } from "@/features/admin/draftUtils";
@@ -18,7 +20,7 @@ import { useMenuModifierDrafts } from "@/features/admin/useMenuModifierDrafts";
 import { ModifierGroupEditor } from "./ModifierGroupEditor";
 import { swapMenuItemSortOrderInCategory } from "@/features/admin/menuItemOrderDraft";
 import { getMenuImageError, revokePendingItemPreviews } from "@/features/admin/menuImageDraft";
-import { deleteMenuImagesBestEffort, uploadPendingMenuItemImages } from "@/features/admin/menuImageSaveDraft";
+import { stageMenuDraftImages } from "@/features/admin/permissionMenuImageDraft";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { PortalPopup } from "../../components/PortalPopup";
 import { MenuCatalogPane } from "./MenuCatalogPane";
@@ -34,7 +36,8 @@ const nextNewItemName = (items: DraftItem[], categoryId: string) => {
 export function MenuEditorDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
-  const ports = usePorts();
+  const ports = usePermissionPorts();
+  const captureView = useViewLifetime("menuEditor");
   const menuQuery = useAdminMenuQuery();
   const saveMenuMutation = useSaveMenuMutation(currentEmployee);
 
@@ -229,10 +232,11 @@ export function MenuEditorDrawer() {
       return;
     }
 
-    let uploadedAssetKeys: string[] = [];
+    const isCurrent = captureView();
+    let staged: Awaited<ReturnType<typeof stageMenuDraftImages>> | undefined;
     try {
-      const uploadResult = await uploadPendingMenuItemImages(items, sourceMenu, ports.menuImages);
-      uploadedAssetKeys = uploadResult.uploadedAssetKeys;
+      const uploadResult = staged = await stageMenuDraftImages(items, sourceMenu, ports.menuImages);
+      if (!isCurrent() || !sessionHasPermission("menu.manage")) { await staged.discard(); return; }
       const changes = buildMenuChangesFromDrafts({
       base: sourceMenu,
       categories: cats,
@@ -242,6 +246,7 @@ export function MenuEditorDrawer() {
       links: mod.links,
       actorId: currentEmployee?.id,
     });
+    changes.imageChanges = uploadResult.imageChanges;
     if (!hasMenuChanges(changes)) {
       setItems(uploadResult.itemsForSave);
       setDirty(false);
@@ -250,8 +255,9 @@ export function MenuEditorDrawer() {
     }
 
       await saveMenuMutation.mutateAsync({ changes });
-      void deleteMenuImagesBestEffort(ports.menuImages, uploadResult.replacedAssetKeys);
+      if (!isCurrent()) return;
       const refreshed = await menuQuery.refetch();
+      if (!isCurrent()) return;
       if (refreshed.data) {
         seedDraftFromMenu(refreshed.data);
       } else {
@@ -260,8 +266,9 @@ export function MenuEditorDrawer() {
       }
       toast.success("Đã lưu menu.");
     } catch (error) {
-      void deleteMenuImagesBestEffort(ports.menuImages, uploadedAssetKeys);
-      toast.error(toToastError(error));
+      // Discard only private staging; the gateway refuses to remove a committed published asset.
+      void staged?.discard();
+      if (isCurrent()) toast.error(toToastError(error));
     }
   };
 

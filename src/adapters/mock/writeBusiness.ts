@@ -1,8 +1,10 @@
-import type { BusinessResult, Employee, ItemSnapshot, NewLine, OrderDetail, OrderItemSnapshot, OrderSnapshot, PaymentSnapshot, PriceChangedDetails, ReceiptSnapshot, WritePayloadV1 } from "@/domain";
+import type { BusinessResult, ItemSnapshot, NewLine, OrderDetail, OrderItemSnapshot, OrderSnapshot, PaymentSnapshot, PriceChangedDetails, ReceiptSnapshot, WritePayloadV1 } from "@/domain";
 import { checkedMoney, MAX_MONEY } from "@/core/writePayload";
 import { writeError } from "@/core/writeErrors";
 import { clone, getTodayBusinessDate, type MockState } from "./mockState";
 import type { MockWriteState } from "./writeState";
+
+type WriteActor = { id: string; name: string };
 
 const unit = (i: OrderItemSnapshot): number => checkedMoney(i.unitPrice + i.options.reduce((n, o) => n + checkedMoney(o.priceDelta * o.quantity), 0));
 const total = (items: OrderItemSnapshot[]): number => checkedMoney(items.reduce((n, i) => n + checkedMoney(unit(i) * i.quantity), 0));
@@ -76,7 +78,7 @@ const blankOrder = (id: string, now: string, employeeId: string): OrderDetail =>
   createdAt: now, updatedAt: now, createdByEmployeeId: employeeId, lastModifiedByEmployeeId: employeeId,
   paidAt: null, payment: null, voidedAt: null, voidedByEmployeeId: null, voidReasonCode: null, voidReasonNote: null,
 });
-const pay = (state: MockState, order: OrderDetail, paymentId: string, received: number, actor: Employee, now: string): { payment: PaymentSnapshot; receipt: ReceiptSnapshot } => {
+const pay = (state: MockState, order: OrderDetail, paymentId: string, received: number, actor: WriteActor, now: string): { payment: PaymentSnapshot; receipt: ReceiptSnapshot } => {
   if (order.total <= 0) throw writeError("INVALID_ORDER_ITEMS");
   if (received < order.total) throw writeError("PAYMENT_AMOUNT_TOO_LOW");
   order.status = "paid"; order.paidAt = now; order.updatedAt = now;
@@ -96,7 +98,7 @@ const pay = (state: MockState, order: OrderDetail, paymentId: string, received: 
 
 // Executes only against a cloned transaction workspace. The coordinator commits it
 // after validation, expiry/session checkpoint, and both fault seams succeed.
-export const applyMockWrite = (state: MockState, writes: MockWriteState, p: WritePayloadV1, actor: Employee, now: string): BusinessResult => {
+export const applyMockWrite = (state: MockState, writes: MockWriteState, p: WritePayloadV1, actor: WriteActor, now: string): BusinessResult => {
   const create = p.kind === "submit_order_changes" && p.action === "create";
   let order = state.orders.find(o => o.id === p.orderId);
   if (create && order) throw writeError("ENTITY_ID_CONFLICT");

@@ -4,7 +4,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import toast from "react-hot-toast";
 import { AppError } from "@/core/appError";
 import type { OperationView } from "@/domain";
-import { createMockPorts, createSeededMockState } from "@/adapters/mock";
+import { activateCandidateUi, createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import { PortsContext } from "@/features/shared/portsContext";
 import { WriteRecoveryDrawer } from "./drawers/pos/WriteRecoveryDrawer";
 import { WriteLifecycle } from "./WriteLifecycle";
@@ -23,14 +23,10 @@ function Surface() {
   return employee && drawer === "writeRecovery" ? <WriteRecoveryDrawer /> : null;
 }
 async function fixture() {
-  const state = createSeededMockState();
-  state.session = { storeId: state.settings.storeId, storeNo: 1 };
+  const candidate=await createCandidateRuntimeFixture({demoCredentials:true}),state=candidate.business,ports=candidate.ports,admin=candidate.actor;activateCandidateUi(candidate);
   const order = state.orders.find(row => row.status === "open")!;
   order.id = id(1); order.lockVersion = 5;
-  const ports = createMockPorts(state);
-  const admin = state.employees.find(employee => employee.role === "admin")!;
-  const cashier = state.employees.find(employee => employee.role === "cashier")!;
-  await ports.employee.startSession(admin.id, state.pins[admin.id]);
+  const cashier = candidate.state.employees.find(employee => employee.role === "cashier")!;
   await ports.write.register(id(4), { schemaVersion: 1, kind: "pay_order", orderId: order.id,
     paymentId: id(3), expectedVersion: 5, method: "cash", receivedAmount: 200000 });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 30000 } } }); clients.push(client);
@@ -60,7 +56,7 @@ for (const action of ["resume", "cancel"] as const) {
       await waitFor(() => expect(endpoint).toHaveBeenCalledTimes(1));
       if (scenario.transition === "employee_change") {
         act(() => useAppStore.getState().setCurrentEmployee(null));
-        await ports.employee.startSession(cashier.id, state.pins[cashier.id]);
+        await ports.permission!.session.startSession(cashier.id, "111111");
         act(() => {
           useAppStore.getState().setCurrentEmployee(cashier);
           useAppStore.getState().openOrder({ orderId: null, tableId: null, orderType: "takeaway" });
@@ -78,7 +74,7 @@ for (const action of ["resume", "cancel"] as const) {
       }
       const current = useAppStore.getState();
       const error = vi.spyOn(toast, "error");
-      const revoke = vi.spyOn(ports.employee, "revokeSession");
+      const revoke = vi.spyOn(ports.permission!.session, "revokeSession");
       await act(async () => { reject(new AppError(scenario.code, "Lỗi phiên cũ")); });
       await waitFor(() => expect(client.getMutationCache().getAll().map(mutation => mutation.state.status)).toEqual(["error"]));
       expect(useAppStore.getState().currentEmployee).toBe(current.currentEmployee);
@@ -96,7 +92,7 @@ for (const action of ["resume", "cancel"] as const) {
       const { ports } = await fixture();
       vi.spyOn(ports.write, action === "resume" ? "execute" : "cancel").mockRejectedValueOnce(new AppError(code, "Phiên hiện tại hết hạn"));
       const error = vi.spyOn(toast, "error");
-      const revoke = vi.spyOn(ports.employee, "revokeSession");
+      const revoke = vi.spyOn(ports.permission!.session, "revokeSession");
       fireEvent.click(screen.getByTestId(`write-recovery-${action}`));
       await waitFor(() => expect(useAppStore.getState().currentEmployee).toBeNull());
       expect(useAppStore.getState().screen).toBe(code === "AUTH_REQUIRED" ? "landing" : "passcode");

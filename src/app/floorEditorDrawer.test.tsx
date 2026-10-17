@@ -2,13 +2,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMockPorts, createSeededMockState } from "@/adapters/mock";
+import { activateCandidateUi, createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import type { Employee } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
 import { App } from "./App";
 import { useAppStore } from "./useAppStore";
 
-const admin: Employee = { id: "6b7bd350-7db2-4160-8471-cca2668c070d", name: "Quản lý", role: "admin", isActive: true };
+const admin: Employee = { id: "30000000-0000-4000-8000-000000000011", name: "Chủ cửa hàng", role: "admin", isActive: true };
 
 const resetAppStoreForFloorEditor = () => {
   useAppStore.setState({
@@ -24,11 +24,8 @@ const resetAppStoreForFloorEditor = () => {
 };
 
 const renderFloorEditor = async () => {
-  const state = createSeededMockState();
-  state.session = { storeId: "e572ea5f-9adf-493c-8d84-dca3cd86e1eb", storeNo: 1 };
-  const ports = createMockPorts(state);
-  await ports.employee.startSession("6b7bd350-7db2-4160-8471-cca2668c070d", state.pins["6b7bd350-7db2-4160-8471-cca2668c070d"]);
-  const saveSpy = vi.spyOn(ports.floorPlan, "saveFloorPlan");
+  const fixture = await createCandidateRuntimeFixture(); const state = fixture.business; const ports = fixture.ports;
+  const saveSpy = vi.spyOn(ports.permission!.changes, "saveFloorPlan");
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -36,6 +33,7 @@ const renderFloorEditor = async () => {
     },
   });
 
+  activateCandidateUi(fixture);
   resetAppStoreForFloorEditor();
   render(
     <PortsContext.Provider value={ports}>

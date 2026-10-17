@@ -2,24 +2,17 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePorts } from "@/features/shared/portsContext";
 import {
   clearDemoDataForAdmin,
-  createEmployeeForAdmin,
-  resetPinForAdmin,
   saveFloorPlanForAdmin,
   saveMenuForAdmin,
   seedDemoDataForAdmin,
-  updateEmployeeForAdmin,
   updateSettingsForAdmin,
   type AdminActor,
-  type CreateEmployeeForAdminInput,
-  type ResetPinForAdminInput,
   type SaveFloorPlanForAdminInput,
   type SaveMenuForAdminInput,
-  type UpdateEmployeeForAdminInput,
   type UpdateSettingsForAdminInput,
 } from "./adminFlow";
 import {
   invalidateAfterClearDemoData,
-  invalidateAfterEmployeeMutation,
   invalidateAfterFloorPlanMutation,
   invalidateAfterMenuMutation,
   invalidateAfterSettingsMutation,
@@ -51,45 +44,6 @@ export const useSaveFloorPlanMutation = (actor: AdminActor) => {
   });
 };
 
-export const useCreateEmployeeMutation = (actor: AdminActor) => {
-  const ports = usePorts();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (input: Omit<CreateEmployeeForAdminInput, "actor">) =>
-      createEmployeeForAdmin(ports, { ...input, actor }),
-    onSuccess: async () => {
-      await invalidateAfterEmployeeMutation(queryClient);
-    },
-  });
-};
-
-export const useUpdateEmployeeMutation = (actor: AdminActor) => {
-  const ports = usePorts();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (input: Omit<UpdateEmployeeForAdminInput, "actor">) =>
-      updateEmployeeForAdmin(ports, { ...input, actor }),
-    onSuccess: async () => {
-      await invalidateAfterEmployeeMutation(queryClient);
-    },
-  });
-};
-
-export const useResetPinMutation = (actor: AdminActor) => {
-  const ports = usePorts();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (input: Omit<ResetPinForAdminInput, "actor">) =>
-      resetPinForAdmin(ports, { ...input, actor }),
-    onSuccess: async () => {
-      await invalidateAfterEmployeeMutation(queryClient);
-    },
-  });
-};
-
 export const useUpdateSettingsMutation = (actor: AdminActor) => {
   const ports = usePorts();
   const queryClient = useQueryClient();
@@ -108,7 +62,7 @@ export const useClearDemoDataMutation = (actor: AdminActor) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => clearDemoDataForAdmin(ports, { actor }),
+    mutationFn: (input: { requestId: string; confirmation: true }) => clearDemoDataForAdmin(ports, { actor, ...input }),
     onSuccess: async () => {
       await invalidateAfterClearDemoData(queryClient);
     },

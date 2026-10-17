@@ -4,16 +4,13 @@ import { Button, TextField, Tooltip } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
 import type { CoreReport } from "@/domain";
-import { canAccessModule } from "@/core/guards";
+import { usePermission } from "@/features/shared/permissionSession";
 import { formatCompactVnd, formatVnd } from "@/core/money";
 import {
-  useFloorPlanQuery,
   useCoreReportsQuery,
-  useOrderHistoryQuery,
+  useReportOrdersQuery,
+  useStoreDisplayQuery,
 } from "@/features/pos";
-import {
-  useStoreSettingsQuery,
-} from "@/features/admin";
 import { useAppStore } from "../../useAppStore";
 import { toToastError } from "../../appErrors";
 import {
@@ -22,7 +19,6 @@ import {
   businessDateInTimezone,
   businessRangeFor,
   enumerateBusinessDates,
-  tableNameMap,
 } from "@/features/pos/historyHelpers";
 import {
   buildReportDatasetFromReports,
@@ -34,10 +30,8 @@ import { PortalDrawer } from "../../components/PortalDrawer";
 
 export function ReportDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
-  const currentEmployee = useAppStore((state) => state.currentEmployee);
-  const allowed = canAccessModule(currentEmployee, "report");
-  const settingsQuery = useStoreSettingsQuery();
-  const floorQuery = useFloorPlanQuery();
+  const allowed = usePermission("report.view");
+  const settingsQuery = useStoreDisplayQuery();
 
   const [range, setRange] = useState<ReportRange>("today");
   const [section, setSection] = useState<ReportSection>("overview");
@@ -53,8 +47,7 @@ export function ReportDrawer() {
   const reportDates = useMemo(() => enumerateBusinessDates(selectedRange), [selectedRange]);
   const reportFilters = useMemo(() => reportDates.map((businessDate) => ({ businessDate })), [reportDates]);
   const reportQueries = useCoreReportsQuery(reportFilters);
-  const reportHistoryQuery = useOrderHistoryQuery({ ...selectedRange, page: 1, pageSize: 20 });
-  const tables = useMemo(() => tableNameMap(floorQuery.data), [floorQuery.data]);
+  const reportHistoryQuery = useReportOrdersQuery(selectedRange);
   const reports = reportQueries
     .map((query) => query.data)
     .filter((report): report is CoreReport => Boolean(report));
@@ -62,8 +55,8 @@ export function ReportDrawer() {
   const reportError = reportQueries.find((query) => query.isError)?.error ?? (reportHistoryQuery.isError ? reportHistoryQuery.error : null);
 
   const dataset = useMemo(
-    () => buildReportDatasetFromReports(reports, reportDates, reportHistoryQuery.data?.items ?? [], tables),
-    [reportDates, reportHistoryQuery.data?.items, reports, tables],
+    () => buildReportDatasetFromReports(reports, reportDates, reportHistoryQuery.data ?? []),
+    [reportDates, reportHistoryQuery.data, reports],
   );
 
   useEffect(() => {
@@ -187,7 +180,7 @@ export function ReportDrawer() {
 
   // Cột trái (master): điều hướng mục báo cáo + tóm tắt nhanh.
   const reportNav = (
-    <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] rounded-pos border border-pos-line bg-pos-surface p-2">
+    <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] rounded-pos border border-pos-line bg-pos-surface p-2 max-[980px]:min-h-max max-[980px]:grid-rows-[auto_auto_auto]">
       <div className="px-2 pb-1 pt-2 text-[10.5px] font-bold uppercase tracking-[0.08em] text-pos-muted">Mục báo cáo</div>
       <div className="grid content-start gap-1">
         {sections.map((s) => (
@@ -321,8 +314,8 @@ export function ReportDrawer() {
         </div>
       </header>
 
-      <div className="min-h-0 overflow-hidden bg-pos-bg p-3 max-[980px]:p-2 grid grid-cols-[260px_minmax(0,1fr)] gap-3 max-[980px]:grid-cols-1 max-[980px]:overflow-auto">
-        <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3 max-[980px]:grid-rows-none">
+      <div className="min-h-0 overflow-hidden bg-pos-bg p-3 max-[980px]:p-2 grid grid-cols-[260px_minmax(0,1fr)] gap-3 max-[980px]:grid-cols-1 max-[980px]:auto-rows-max max-[980px]:overflow-auto">
+        <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3 max-[980px]:min-h-max max-[980px]:grid-rows-[auto_auto]">
           {revenueSummary}
           {reportNav}
         </aside>

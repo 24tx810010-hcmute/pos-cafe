@@ -4,7 +4,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import toast from "react-hot-toast";
 import { AppError } from "@/core/appError";
 import type { OperationView } from "@/domain";
-import { createMockPorts, createSeededMockState } from "@/adapters/mock";
+import { activateCandidateUi, createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import { PortsContext } from "@/features/shared/portsContext";
 import { OrderHistoryDrawer } from "./drawers/admin/OrderHistoryDrawer";
 import { WriteLifecycle } from "./WriteLifecycle";
@@ -17,11 +17,10 @@ afterEach(() => {
 });
 function Surface() { return useAppStore(state => state.drawer) === "orderHistory" ? <OrderHistoryDrawer /> : null; }
 async function fixture() {
-  const state = createSeededMockState(); state.session = { storeId: state.settings.storeId, storeNo: 1 };
+  const candidate=await createCandidateRuntimeFixture({demoCredentials:true}),state=candidate.business,ports=candidate.ports,actor=candidate.actor;activateCandidateUi(candidate);
   const paid = state.orders.find(order => order.status === "paid")!; state.orders = [paid];
-  const ports = createMockPorts(state); const actor = state.employees.find(employee => employee.role === "admin")!;
-  const cashier = state.employees.find(employee => employee.role === "cashier")!;
-  await ports.employee.startSession(actor.id, state.pins[actor.id]);
+  paid.receiptSnapshot={schemaVersion:1,orderId:paid.id,paymentId:paid.payment!.id,orderNo:paid.orderNo,businessDate:paid.businessDate,storeName:state.settings.displayName,address:state.settings.address,footer:state.settings.billFooter,tableName:null,paidAt:paid.paidAt!,employeeName:actor.name,lines:[],total:paid.total,receivedAmount:paid.payment!.receivedAmount,changeAmount:paid.payment!.changeAmount};
+  const cashier = candidate.state.employees.find(employee => employee.role === "cashier")!;
   useAppStore.setState({ currentEmployee: actor, drawer: "orderHistory", orderContext: null, paymentOrderId: null, draftItems: [], receiptPreview: null });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnReconnect: false }, mutations: { retry: false } } }); clients.push(client);
   vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
@@ -35,12 +34,14 @@ type Fixture = Awaited<ReturnType<typeof fixture>>;
 async function transition(f: Fixture, kind: "employee_change" | "same_employee" | "offline_online") {
   if (kind === "offline_online") {
     act(() => { vi.spyOn(navigator, "onLine", "get").mockReturnValue(false); window.dispatchEvent(new Event("offline")); vi.spyOn(navigator, "onLine", "get").mockReturnValue(true); window.dispatchEvent(new Event("online")); });
+  } else if(kind==="same_employee") {
+    act(()=>useAppStore.getState().setCurrentEmployee(f.actor));
   } else {
     const actor = kind === "employee_change" ? f.cashier : f.actor;
     if (kind === "employee_change") act(() => useAppStore.getState().setCurrentEmployee(null));
-    await f.ports.employee.startSession(actor.id, f.state.pins[actor.id]);
+    const next=await f.ports.permission!.session.startSession(actor.id, actor.id===f.cashier.id?"111111":"123456");
     act(() => {
-      useAppStore.getState().setCurrentEmployee(actor);
+      useAppStore.getState().startEmployeeSession({id:actor.id,name:actor.name},next);
       if (kind === "employee_change") {
         useAppStore.getState().openOrder({ orderId: null, tableId: null, orderType: "takeaway" });
         useAppStore.getState().setDraftItems([{ id: crypto.randomUUID(), menuItemId: crypto.randomUUID(), quantity: 1, quotedBasePrice: 20000, options: [] }]);
@@ -51,11 +52,12 @@ async function transition(f: Fixture, kind: "employee_change" | "same_employee" 
 for (const stage of ["order", "receipt"] as const) for (const change of ["employee_change", "offline_online"] as const) for (const code of ["EMPLOYEE_SESSION_REQUIRED", "AUTH_REQUIRED"] as const) {
   test(`TC-IDEM-051/core/history=reprint/stage=${stage}/transition=${change}/error=${code} ignores a delayed failed read`, async () => {
     const f = await fixture(); let reject!: (reason: unknown) => void;
-    const endpoint = vi.spyOn(f.ports.order, stage === "order" ? "getOrder" : "getReceipt")
+    const endpoint = vi.spyOn(f.ports.permission!.print,"prepareReceiptReprint");
+    endpoint
       .mockImplementationOnce(() => new Promise<never>((_, fail) => { reject = fail; }));
     fireEvent.click(screen.getByTestId("history-reprint-button")); await waitFor(() => expect(reject).toBeDefined());
     await transition(f, change);
-    const before = useAppStore.getState(); const error = vi.spyOn(toast, "error"); const revoke = vi.spyOn(f.ports.employee, "revokeSession");
+    const before = useAppStore.getState(); const error = vi.spyOn(toast, "error"); const revoke = vi.spyOn(f.ports.permission!.session, "revokeSession");
     await act(async () => reject(new AppError(code, "Old history read error")));
     expect.soft(useAppStore.getState().currentEmployee).toBe(before.currentEmployee);
     expect.soft(useAppStore.getState().draftItems).toEqual(before.draftItems);
@@ -68,8 +70,8 @@ for (const stage of ["order", "receipt"] as const) for (const change of ["employ
 }
 for (const code of ["EMPLOYEE_SESSION_REQUIRED", "AUTH_REQUIRED"] as const) {
   test(`TC-IDEM-006/core/history=reprint/error=${code} handles a current read failure`, async () => {
-    const f = await fixture(); vi.spyOn(f.ports.order, "getReceipt").mockRejectedValueOnce(new AppError(code, "Current history read error"));
-    const error = vi.spyOn(toast, "error"); const revoke = vi.spyOn(f.ports.employee, "revokeSession");
+    const f = await fixture(); vi.spyOn(f.ports.permission!.print, "prepareReceiptReprint").mockRejectedValueOnce(new AppError(code, "Current history read error"));
+    const error = vi.spyOn(toast, "error"); const revoke = vi.spyOn(f.ports.permission!.session, "revokeSession");
     fireEvent.click(screen.getByTestId("history-reprint-button"));
     await waitFor(() => expect(useAppStore.getState().currentEmployee).toBeNull());
     expect(useAppStore.getState().screen).toBe(code === "AUTH_REQUIRED" ? "landing" : "passcode");
@@ -77,7 +79,7 @@ for (const code of ["EMPLOYEE_SESSION_REQUIRED", "AUTH_REQUIRED"] as const) {
   });
 }
 test("TC-IDEM-051/core/history=reprint/result=applied opens a preview after a current successful read", async () => {
-  const f = await fixture(); const receipt = vi.spyOn(f.ports.order, "getReceipt");
+  const f = await fixture(); const receipt = vi.spyOn(f.ports.permission!.print, "prepareReceiptReprint");
   fireEvent.click(screen.getByTestId("history-reprint-button"));
   await waitFor(() => expect(useAppStore.getState().receiptPreview?.variant).toBe("receipt"));
   expect(receipt).toHaveBeenCalledTimes(1); expect(useAppStore.getState().currentEmployee).toBe(f.actor);
@@ -97,7 +99,7 @@ for (const change of ["same_employee", "offline_online"] as const) for (const ou
     fireEvent.click(screen.getByTestId("history-void-confirm")); await waitFor(() => expect(settle).toBeDefined());
     await transition(f, change);
     const before = useAppStore.getState(); const error = vi.spyOn(toast, "error"); const success = vi.spyOn(toast, "success");
-    const read = vi.spyOn(f.ports.order, "getOrder");
+    const read = vi.spyOn(f.ports.permission!.read, "getOrderHistoryDetail");
     await act(async () => settle());
     await waitFor(() => expect(f.client.getMutationCache().getAll().every(mutation => mutation.state.status !== "pending")).toBe(true));
     expect.soft(error).not.toHaveBeenCalled(); expect.soft(success).not.toHaveBeenCalled(); expect.soft(read).not.toHaveBeenCalled();
@@ -109,7 +111,7 @@ for (const change of ["same_employee", "offline_online"] as const) for (const ou
 for (const code of ["EMPLOYEE_SESSION_REQUIRED", "AUTH_REQUIRED"] as const) {
   test(`TC-IDEM-006/core/history=void/error=${code} keeps current error feedback and refetch`, async () => {
     const f = await openVoid(); vi.spyOn(f.ports.write, "execute").mockRejectedValueOnce(new AppError(code, "Current history void error"));
-    const error = vi.spyOn(toast, "error"); const read = vi.spyOn(f.ports.order, "getOrder");
+    const error = vi.spyOn(toast, "error"); const read = vi.spyOn(f.ports.permission!.read, "getOrderHistoryDetail");
     fireEvent.click(screen.getByTestId("history-void-confirm"));
     await waitFor(() => expect(error).toHaveBeenCalledTimes(1));
     expect(read).toHaveBeenCalledTimes(1); expect(f.state.orders[0].status).toBe("paid");
@@ -128,7 +130,7 @@ test("TC-IDEM-053/core/history=void/transition=reopen_confirmation/result=late_e
   fireEvent.click(within(screen.getByTestId("history-void-popup")).getByRole("button", { name: "Đóng" }));
   await transition(f, "same_employee");
   const releases: Array<() => void> = [];
-  const read = vi.spyOn(f.ports.order, "getOrder").mockImplementation(() => new Promise(resolve => { releases.push(() => resolve(structuredClone(f.paid))); }));
+  const read = vi.spyOn(f.ports.permission!.read, "getOrderHistoryDetail").mockImplementation(() => new Promise(resolve => { releases.push(() => resolve({...structuredClone(f.paid),cashierName:null,voidedByName:null})); }));
   fireEvent.click(screen.getByTestId("history-void-order")); await waitFor(() => expect(read).toHaveBeenCalledTimes(1));
   await act(async () => reject(new AppError("EMPLOYEE_SESSION_REQUIRED", "Old void after reopening")));
   await waitFor(() => expect(f.client.getMutationCache().getAll().every(mutation => mutation.state.status !== "pending")).toBe(true));

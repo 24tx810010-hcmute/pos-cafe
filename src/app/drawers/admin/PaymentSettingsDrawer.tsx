@@ -3,7 +3,7 @@ import { CreditCard, QrCode, Save, ShieldAlert } from "lucide-react";
 import { Button, TextField } from "@mui/material";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { canAccessModule } from "@/core/guards";
+import { usePermission } from "@/features/shared/permissionSession";
 import { useAppStore } from "../../useAppStore";
 import { PortalDrawer } from "../../components/PortalDrawer";
 import { PortalPopup } from "../../components/PortalPopup";
@@ -32,7 +32,7 @@ const INITIAL_PAYMENT: PaymentForm = {
 export function PaymentSettingsDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const currentEmployee = useAppStore((state) => state.currentEmployee);
-  const allowed = canAccessModule(currentEmployee, "settings");
+  const allowed = usePermission("settings.manage");
 
   const [base, setBase] = useState<PaymentForm>(INITIAL_PAYMENT);
   const [form, setForm] = useState<PaymentForm>(INITIAL_PAYMENT);

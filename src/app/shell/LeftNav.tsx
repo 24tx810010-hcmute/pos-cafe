@@ -1,6 +1,9 @@
 import { BarChart3, ClipboardList, Coffee, LayoutDashboard, LayoutGrid, Lock, QrCode, ReceiptText, Settings, Users } from "lucide-react";
 import toast from "react-hot-toast";
-import { canAccessModule, type AppModule } from "@/core/guards";
+import { usePermissionSession } from "@/features/shared/permissionSession";
+import { canAccessPermissionModule } from "@/core/permissionAuthority";
+import type { PermissionNavigationModule } from "@/domain/permissions";
+import { drawerAllowed } from "../permissionUi";
 import type { DrawerModule } from "../useAppStore";
 import { useAppStore } from "../useAppStore";
 import { RailButton } from "./RailButton";
@@ -13,9 +16,11 @@ export function LeftNav() {
   const setCurrentEmployee = useAppStore((state) => state.setCurrentEmployee);
   const setScreen = useAppStore((state) => state.setScreen);
 
-  const canAccess = (guard: AppModule) => canAccessModule(currentEmployee, guard);
+  const authority = usePermissionSession();
+  const canAccess = (guard: PermissionNavigationModule) => authority.status === "verified" && !!authority.bundle
+    && canAccessPermissionModule(authority.bundle.catalog, { status: "verified", snapshot: authority.bundle.snapshot }, guard);
 
-  const guardedOpen = (module: Exclude<DrawerModule, null>, guard: AppModule) => {
+  const guardedOpen = (module: Exclude<DrawerModule, null>, guard: PermissionNavigationModule) => {
     if (!canAccess(guard)) {
       toast.error("Nhân viên không có quyền dùng chức năng này.");
       return;
@@ -23,8 +28,8 @@ export function LeftNav() {
     openDrawer(module);
   };
 
-  const roleLabel: Record<string, string> = { admin: "Quản lý", cashier: "Thu ngân", kitchen: "Bếp" };
-  const currentRoleLabel = currentEmployee ? roleLabel[currentEmployee.role] ?? currentEmployee.role : "";
+  const currentRole = authority.bundle?.snapshot.role;
+  const currentRoleLabel = authority.bundle?.catalog.roles.find(role => role.code === currentRole)?.labelVi ?? "";
   const signedInLabel = currentEmployee ? `Đang đăng nhập: ${currentEmployee.name} · ${currentRoleLabel}` : "";
   const employeeInitial = currentEmployee?.name.trim().charAt(0).toUpperCase() || "?";
 
@@ -37,12 +42,12 @@ export function LeftNav() {
             className="flex min-w-0 items-center gap-2 rounded-[10px] border border-[#dbe4ef] bg-white px-2.5 py-2 shadow-[0_8px_18px_rgb(15_23_42_/_5%)] max-[980px]:justify-center max-[980px]:px-0 max-[980px]:py-1.5"
             data-testid="left-nav-session"
             data-employee-id={currentEmployee.id}
-            data-role={currentEmployee.role}
+            data-role={currentRole}
             title={signedInLabel}
           >
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-pos-primarySoft text-xs font-black text-pos-primary">{employeeInitial}</span>
             <div className="grid min-w-0 gap-0.5 max-[980px]:sr-only">
-              <span className="text-[9px] font-black uppercase tracking-[0.05em] text-[#64748b]">Đang đăng nhập</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.05em] text-[#64748b]">Đang đăng nhập</span>
               <strong className="overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-[1.15] text-[#172033]">{currentEmployee.name}</strong>
               <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[10px] font-black uppercase tracking-[0.04em] text-pos-primary">{currentRoleLabel}</span>
             </div>
@@ -54,7 +59,7 @@ export function LeftNav() {
         <div className="grid gap-1.5">
           <span className="px-3 text-[10px] font-black uppercase tracking-[0.05em] text-[#64748b] max-[980px]:sr-only">Vận hành</span>
           <RailButton active={!drawer} icon={<LayoutDashboard size={18} />} label="Bàn" onClick={closeDrawer} testId="nav-floor" />
-          <RailButton active={drawer === "writeRecovery"} icon={<ClipboardList size={18} />} label="Tra cứu thao tác" onClick={() => openDrawer("writeRecovery")} testId="nav-write-recovery" />
+          {drawerAllowed(authority.bundle, "writeRecovery") && <RailButton active={drawer === "writeRecovery"} icon={<ClipboardList size={18} />} label="Tra cứu thao tác" onClick={() => openDrawer("writeRecovery")} testId="nav-write-recovery" />}
           <RailButton
             active={drawer === "takeaway"}
             icon={<ClipboardList size={18} />}
@@ -67,7 +72,7 @@ export function LeftNav() {
             icon={<ReceiptText size={18} />}
             label="Lịch sử"
             onClick={() => guardedOpen("orderHistory", "orderHistory")}
-            disabled={!canAccess("orderHistory")}
+            hidden={!canAccess("orderHistory")}
             testId="nav-order-history"
           />
         </div>
@@ -79,7 +84,7 @@ export function LeftNav() {
             icon={<Users size={18} />}
             label="Nhân viên"
             onClick={() => guardedOpen("employees", "employees")}
-            disabled={!canAccess("employees")}
+            hidden={!canAccess("employees")}
             testId="nav-employees"
           />
           <RailButton
@@ -87,7 +92,7 @@ export function LeftNav() {
             icon={<Coffee size={18} />}
             label="Menu"
             onClick={() => guardedOpen("menuEditor", "menuEditor")}
-            disabled={!canAccess("menuEditor")}
+            hidden={!canAccess("menuEditor")}
             testId="nav-menu-editor"
           />
           <RailButton
@@ -95,7 +100,7 @@ export function LeftNav() {
             icon={<LayoutGrid size={18} />}
             label="Sơ đồ"
             onClick={() => guardedOpen("floorEditor", "floorEditor")}
-            disabled={!canAccess("floorEditor")}
+            hidden={!canAccess("floorEditor")}
             testId="nav-floor-editor"
           />
           <RailButton
@@ -103,7 +108,7 @@ export function LeftNav() {
             icon={<BarChart3 size={18} />}
             label="Báo cáo"
             onClick={() => guardedOpen("report", "report")}
-            disabled={!canAccess("report")}
+            hidden={!canAccess("report")}
             testId="nav-report"
           />
           <RailButton
@@ -111,7 +116,7 @@ export function LeftNav() {
             icon={<QrCode size={18} />}
             label="Thanh toán"
             onClick={() => guardedOpen("paymentSettings", "settings")}
-            disabled={!canAccess("settings")}
+            hidden={!canAccess("settings")}
             testId="nav-payment-settings"
           />
           <RailButton
@@ -119,7 +124,7 @@ export function LeftNav() {
             icon={<Settings size={18} />}
             label="Cài đặt"
             onClick={() => guardedOpen("settings", "settings")}
-            disabled={!canAccess("settings")}
+            hidden={!canAccess("settings")}
             testId="nav-settings"
           />
         </div>

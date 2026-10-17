@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "permission-ci1-tools-v1",
+  "platform": "linux/x64",
+  "nodeVersion": "24.16.0",
+  "npmVersion": "11.13.0",
+  "cliVersion": "2.117.0",
+  "tools": [
+    {
+      "id": "node",
+      "url": "https://nodejs.org/dist/v24.16.0/node-v24.16.0-linux-x64.tar.gz",
+      "sha256": "2faf6a387e9b62b888e21c54f01249fb27537ffecf1842f29f4c919d0a59a0ff",
+      "bytes": 57023429
+    },
+    {
+      "id": "supabase",
+      "url": "https://github.com/supabase/cli/releases/download/v2.117.0/supabase_2.117.0_linux_amd64.tar.gz",
+      "sha256": "69c05f85b9e47ee706d30f1a6ca8a526b4e337bfd12c7ef1ef522d24e7280d24",
+      "bytes": 55598482
+    }
+  ]
+}

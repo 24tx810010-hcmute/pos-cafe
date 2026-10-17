@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>POS Cafe — required PIN change audit</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      // Measurement-only fixture: render the production screen and its real
+      // proof-check lifecycle against a deterministic, credential-free port.
+      if (import.meta.env.VITE_DATA_MODE !== "mock") throw new Error("UI_AUDIT_REQUIRES_MOCK");
+      await import("/src/tailwind.css");
+      const React = await import("react");
+      const { createRoot } = await import("react-dom/client");
+      const { AppProviders } = await import("/src/app/AppProviders.tsx");
+      const { RequiredPinChangeScreen } = await import("/src/app/screens/RequiredPinChangeScreen.tsx");
+      const { PortsContext } = await import("/src/features/shared/portsContext.tsx");
+      const { usePermissionSession } = await import("/src/features/shared/permissionSession.ts");
+      const { useAppStore } = await import("/src/app/useAppStore.ts");
+
+      const restricted = {
+        kind: "required_pin_change", storeId: "10000000-0000-4000-8000-000000000001",
+        employeeId: "20000000-0000-4000-8000-000000000001", name: "Chủ quán Cà phê Mây",
+        employeeRevision: 1, issuedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 300000).toISOString(),
+      };
+      const ports = {
+        permission: { session: {
+          checkRequiredPinSession: async () => ({ valid: true, purpose: "required_pin_change", employeeRevision: 1, expiresAt: restricted.expiresAt }),
+          completeRequiredPinChange: async () => { throw new Error("UI audit fixture must not submit"); },
+          revokeSession: async () => undefined,
+        } },
+        auth: { unpairStore: async () => undefined },
+      };
+      usePermissionSession.getState().beginRequiredPinChange(restricted);
+      useAppStore.setState({ currentEmployee: null, screen: "passcode", sessionNotice: null });
+
+      createRoot(document.getElementById("root")).render(
+        React.createElement(AppProviders, null,
+          React.createElement(PortsContext.Provider, { value: ports },
+            React.createElement(RequiredPinChangeScreen))),
+      );
+    </script>
+  </body>
+</html>

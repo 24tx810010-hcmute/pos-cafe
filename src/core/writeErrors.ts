@@ -24,7 +24,7 @@ export const writeErrorMessages: Record<WriteErrorCode, string> = {
   PRICE_CHANGED: "Giá phần gọi thêm đã thay đổi. Hãy kiểm tra giá mới trước khi xác nhận lại.",
   WRITE_RESULT_UNKNOWN: "Chưa xác định kết quả trên server. Hãy tra cứu thao tác trước khi tiếp tục.",
   WRITE_TEMPORARILY_UNAVAILABLE: "Chưa thể hoàn tất yêu cầu. Hãy tra cứu và chỉ thử lại cùng thao tác.",
-  WRITE_PROTOCOL_UNSUPPORTED: "Phiên bản ứng dụng và server chưa tương thích. Tạm dừng ghi và tải lại ứng dụng.",
+  WRITE_PROTOCOL_UNSUPPORTED: "Phiên bản ứng dụng chưa tương thích. Vui lòng tải phiên bản mới trước khi tiếp tục.",
   RECEIPT_UNAVAILABLE: "Đơn chưa thanh toán hoặc đã hủy nên không thể in hóa đơn.",
 };
 export const businessError = (code: WriteErrorCode, details: Record<string, unknown> | null = null): BusinessError => ({ code, message: writeErrorMessages[code], details });

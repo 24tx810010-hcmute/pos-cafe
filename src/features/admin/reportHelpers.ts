@@ -1,5 +1,6 @@
-import type { CoreReport, OrderSummary } from "@/domain";
-import { formatBusinessDate, shortBusinessDate, tableLabelForOrder } from "@/features/pos/historyHelpers";
+import type { CoreReport } from "@/domain";
+import type { ReportOrderSummary } from "@/ports/permissions";
+import { formatBusinessDate, shortBusinessDate } from "@/features/pos/historyHelpers";
 
 export type ReportRange = "today" | "7days" | "month" | "custom";
 export type ReportSection = "overview" | "hourly" | "top" | "orders";
@@ -22,8 +23,7 @@ export interface RpDataset {
 export function buildReportDatasetFromReports(
   reports: CoreReport[],
   reportDates: string[],
-  orders: OrderSummary[],
-  tables: Map<string, string>,
+  orders: ReportOrderSummary[],
 ): RpDataset {
   const revenue = reports.reduce((sum, report) => sum + report.revenue, 0);
   const paidOrders = reports.reduce((sum, report) => sum + report.paidOrders, 0);
@@ -67,13 +67,12 @@ export function buildReportDatasetFromReports(
     hourly,
     topItems,
     orders: orders
-      .filter((order) => order.status === "paid")
       .slice(0, 20)
       .map((order) => ({
         id: order.id,
         orderNo: order.orderNo,
         time: formatBusinessDate(order.businessDate),
-        table: tableLabelForOrder(order, tables),
+        table: order.orderType === "takeaway" ? "Mang đi" : order.tableName ?? "Tại bàn",
         total: order.total,
         method: "paid",
       })),

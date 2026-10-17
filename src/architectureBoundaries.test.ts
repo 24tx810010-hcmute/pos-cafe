@@ -182,6 +182,19 @@ describe("architecture boundaries", () => {
     expect(violations).toEqual([]);
   });
 
+  it("TC-PERM-57/T03 keeps candidate core/DTO/ports independent of legacy guards and SDKs", () => {
+    const candidate = productionImports().filter(record =>
+      /src\/(core|domain)\/permission/.test(record.sourceFile.relativePath)
+      || record.sourceFile.relativePath === "src/ports/permissions.ts");
+    expect(candidate.length).toBeGreaterThan(0);
+    const violations = candidate.filter(record =>
+      /(?:supabase|react)(?:\/|$)/.test(record.specifier)
+      || /(?:^|\/)guards$/.test(record.specifier)
+      || record.targetLayer === "seed"
+      || /^(?:@\/)?(?:app|features|adapters)\//.test(record.specifier));
+    expect(violations.map(record => formatViolation(record, "candidate permission boundary"))).toEqual([]);
+  });
+
   it("keeps retired helper and adapter boundaries from regressing", () => {
     const appHelpers = sourceFiles()
       .map((file) => file.relativePath)

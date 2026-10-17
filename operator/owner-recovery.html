@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Khôi phục PIN chủ quán · Công cụ operator</title>
+  <style>
+    :root { color-scheme: light; --ink:#173137; --muted:#567178; --line:#C5D5D7; --paper:#F4F8F8;
+      --surface:#FFFFFF; --accent:#08756E; --accent-strong:#075B56; --warn:#8A580D; --danger:#A43D38;
+      --good:#176B50; --focus:#E5A43A; }
+    @media (prefers-color-scheme: dark) { :root { color-scheme: dark; --ink:#E7F3F2; --muted:#A6C5C3;
+      --line:#40616A; --paper:#10282E; --surface:#18353B; --accent:#65C8B6; --accent-strong:#85DACC;
+      --warn:#F4BF69; --danger:#FF9B91; --good:#83D6AE; --focus:#F4BF69; } }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.48 Arial,"Segoe UI",sans-serif; }
+    button,input { font:inherit; }
+    button { cursor:pointer; }
+    button:disabled { cursor:not-allowed; opacity:.5; }
+    :focus-visible { outline:3px solid var(--focus); outline-offset:3px; }
+    .wrap { width:min(1100px,calc(100% - 32px)); margin:0 auto; }
+    header { border-bottom:1px solid var(--line); background:var(--surface); }
+    .head { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:22px 0; }
+    .eyebrow { color:var(--accent-strong); font:700 12px/1.2 Consolas,"Courier New",monospace; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { font:700 clamp(24px,3vw,36px)/1.14 "Segoe UI",Arial,sans-serif; letter-spacing:-.035em; margin:8px 0 0; text-wrap:balance; }
+    h2 { font:700 21px/1.25 "Segoe UI",Arial,sans-serif; margin:0 0 9px; }
+    p { margin:0; max-width:65ch; }
+    .badge { border:1px solid var(--line); padding:8px 12px; border-radius:4px; color:var(--muted);
+      font:700 12px/1.2 Consolas,"Courier New",monospace; white-space:nowrap; }
+    .badge.ready { color:var(--good); border-color:var(--good); }
+    main { padding:30px 0 60px; }
+    .lead { color:var(--muted); margin-bottom:26px; }
+    .layout { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(280px,.8fr); gap:22px; align-items:start; }
+    .card { background:var(--surface); border:1px solid var(--line); border-radius:7px; padding:26px; box-shadow:0 4px 18px #12343A0D; }
+    .stack { display:grid; gap:17px; }
+    .section-head { display:flex; align-items:baseline; gap:10px; padding-bottom:14px; border-bottom:1px solid var(--line); }
+    .section-head span { font:700 13px Consolas,"Courier New",monospace; color:var(--accent-strong); }
+    .group { display:grid; gap:6px; }
+    .pair { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    label { font-weight:700; font-size:14px; }
+    input[type="text"],input[type="password"] { width:100%; min-height:44px; padding:10px 12px; background:var(--paper);
+      color:var(--ink); border:1px solid var(--line); border-radius:4px; }
+    input[readonly] { color:var(--muted); }
+    .hint { color:var(--muted); font-size:13px; }
+    .mono { font-family:Consolas,"Courier New",monospace; font-size:13px; font-variant-numeric:tabular-nums; }
+    .check { display:flex; align-items:flex-start; gap:10px; padding:14px; border:1px solid var(--line); border-radius:4px; }
+    .check input { width:19px; height:19px; margin:1px 0 0; flex:none; accent-color:var(--accent); }
+    .check label { font-weight:400; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; padding-top:5px; }
+    .primary,.secondary,.quiet { border-radius:4px; min-height:44px; padding:10px 17px; font-weight:700; }
+    .primary { background:var(--accent); color:#fff; border:1px solid var(--accent); }
+    .secondary { background:var(--surface); color:var(--accent-strong); border:1px solid var(--accent); }
+    .quiet { background:transparent; color:var(--muted); border:1px solid var(--line); }
+    .status { display:none; padding:14px 16px; border-left:4px solid var(--accent); background:var(--paper);
+      overflow-wrap:anywhere; }
+    .status.show { display:block; }
+    .status.error { border-left-color:var(--danger); }
+    .status.warn { border-left-color:var(--warn); }
+    .status.good { border-left-color:var(--good); }
+    aside ul { margin:12px 0 0; padding-left:20px; display:grid; gap:10px; color:var(--muted); }
+    .rule { height:1px; background:var(--line); margin:22px 0; }
+    .code { font:13px/1.4 Consolas,"Courier New",monospace; overflow-wrap:anywhere; }
+    [hidden] { display:none !important; }
+    @media (max-width:760px) { .layout,.pair { grid-template-columns:1fr; } .head { align-items:flex-start; flex-direction:column; }
+      .card { padding:20px; } .actions button { flex:1 1 170px; } }
+  </style>
+</head>
+<body>
+  <header><div class="wrap head"><div><div class="eyebrow">POS Cafe · Vận hành hạ tầng</div>
+    <h1>Khôi phục PIN chủ quán</h1></div><div id="session-badge" class="badge">CHƯA MỞ PHIÊN</div></div></header>
+  <main class="wrap"><p class="lead">Công cụ chỉ chạy trên máy operator. Xác minh hồ sơ và kênh bàn giao ngoài hệ thống trước khi phát hành PIN tạm.</p>
+    <div class="layout"><div class="stack">
+      <section id="unlock-panel" class="card stack" aria-labelledby="unlock-title">
+        <div class="section-head"><span>01</span><h2 id="unlock-title">Mở phiên operator</h2></div>
+        <p class="hint">Nhập mã mở phiên đã được cấu hình khi khởi động công cụ. Mã không được đưa vào URL hoặc lưu trong trình duyệt.</p>
+        <form id="unlock-form" class="stack" autocomplete="off">
+          <div class="group"><label for="launch-code">Mã mở phiên</label><input id="launch-code" type="password" autocomplete="off" required minlength="20"></div>
+          <div class="actions"><button class="primary" type="submit">Mở phiên 10 phút</button></div>
+        </form><div id="unlock-status" class="status" role="status" aria-live="polite"></div>
+      </section>
+      <section id="recovery-panel" class="card stack" aria-labelledby="recovery-title" hidden>
+        <div class="section-head"><span>02</span><h2 id="recovery-title">Yêu cầu khôi phục</h2></div>
+        <form id="recovery-form" class="stack" autocomplete="off">
+          <div class="group"><label for="request-id">Mã yêu cầu</label><input class="mono" id="request-id" name="requestId" type="text" required spellcheck="false">
+            <p class="hint">Giữ nguyên mã này nếu mất phản hồi và cần thử lại cùng yêu cầu.</p></div>
+          <div class="pair"><div class="group"><label for="store-id">Store ID đã xác minh</label><input class="mono" id="store-id" name="storeId" type="text" required spellcheck="false"></div>
+            <div class="group"><label for="target-id">Owner ID đã xác minh</label><input class="mono" id="target-id" name="targetId" type="text" required spellcheck="false"></div></div>
+          <div class="pair"><div class="group"><label for="operator-ref">Mã operator</label><input id="operator-ref" name="operatorRef" type="text" required maxlength="200"></div>
+            <div class="group"><label for="case-ref">Mã hồ sơ hỗ trợ</label><input id="case-ref" name="caseRef" type="text" required maxlength="200"></div></div>
+          <div class="group"><label for="proof-ref">Mã bằng chứng xác minh</label><input id="proof-ref" name="proofRef" type="text" required maxlength="200"></div>
+          <div class="group"><label for="new-pin">PIN tạm mới · đúng 6 chữ số</label><input class="mono" id="new-pin" name="newPin" type="password" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="off" required>
+            <p class="hint">PIN chỉ giữ trên trang này đến khi bạn xác nhận đã bàn giao. Không tự sao chép vào clipboard.</p></div>
+          <div class="check"><input id="acknowledged" name="acknowledged" type="checkbox" required>
+            <label for="acknowledged">Tôi đã đối chiếu hồ sơ, Store ID, owner đang hoạt động và kênh nhận PIN ở ngoài công cụ.</label></div>
+          <div class="actions"><button id="submit-recovery" class="primary" type="submit">Phát hành PIN tạm</button>
+            <button id="retry-recovery" class="secondary" type="button" hidden>Thử lại cùng yêu cầu</button>
+            <button id="new-request" class="quiet" type="button" hidden>Tạo yêu cầu mới</button>
+            <button id="lock-session" class="quiet" type="button">Khóa phiên</button></div>
+        </form><div id="recovery-status" class="status" role="status" aria-live="polite"></div>
+        <button id="delivered" class="secondary" type="button" hidden>Đã bàn giao PIN · xóa khỏi trang</button>
+      </section></div>
+      <aside class="card"><div class="eyebrow">Trước khi gửi</div><h2>Kiểm đúng đối tượng</h2>
+        <ul><li>Đối chiếu mã quán và owner với hồ sơ hỗ trợ đã xác minh.</li>
+          <li>Chỉ bàn giao PIN qua kênh đã xác minh. Công cụ không gửi email hoặc tin nhắn.</li>
+          <li>Mất phản hồi: giữ nguyên mã yêu cầu và PIN để thử lại; nếu tải lại trang, tra hồ sơ/audit trước khi tạo yêu cầu khác.</li>
+          <li>Kết quả “đã phát hành trước đó” là receipt lịch sử, không khẳng định trạng thái owner hiện tại.</li></ul>
+        <div class="rule"></div><p class="hint">Backend giữ credential PostgreSQL; trình duyệt chỉ nhận kết quả đã rút gọn. POS không có quyền gọi recovery.</p>
+      </aside></div>
+  </main>
+  <script>
+    (() => {
+      const $ = id => document.getElementById(id);
+      let csrf = null;
+      let pending = null;
+      let locked = false;
+      const fields = ['request-id','store-id','target-id','operator-ref','case-ref','proof-ref','new-pin','acknowledged'];
+      const status = (id, text, tone = '') => { const node = $(id); node.textContent = text; node.className = `status show ${tone}`; };
+      const clearStatus = id => { $(id).textContent = ''; $(id).className = 'status'; };
+      const setFieldsLocked = value => { fields.forEach(id => { $(id).disabled = value; }); locked = value; };
+      const newId = () => { $('request-id').value = crypto.randomUUID(); };
+      newId();
+      const post = async (path, body, protectedRequest = false) => {
+        const response = await fetch(path, { method:'POST', credentials:'same-origin', cache:'no-store',
+          headers:{ 'Content-Type':'application/json', ...(protectedRequest ? { 'X-CSRF-Token':csrf } : {}) },
+          body:JSON.stringify(body) });
+        return { status:response.status, body:await response.json() };
+      };
+      $('unlock-form').addEventListener('submit', async event => {
+        event.preventDefault(); clearStatus('unlock-status');
+        const code = $('launch-code').value;
+        try {
+          const result = await post('/api/unlock', { code });
+          $('launch-code').value = '';
+          if (!result.body.ok) { status('unlock-status', result.status === 429 ? 'Tạm dừng mở phiên. Vui lòng thử lại sau.' : 'Mã mở phiên không hợp lệ.', 'error'); return; }
+          csrf = result.body.csrf;
+          $('unlock-panel').hidden = true; $('recovery-panel').hidden = false;
+          $('session-badge').textContent = 'PHIÊN OPERATOR · 10 PHÚT'; $('session-badge').classList.add('ready');
+          $('store-id').focus();
+        } catch { $('launch-code').value = ''; status('unlock-status', 'Chưa mở được phiên. Kiểm tra kết nối cục bộ.', 'error'); }
+      });
+      async function submit(payload) {
+        setFieldsLocked(true); $('submit-recovery').hidden = true; $('retry-recovery').hidden = true;
+        status('recovery-status', 'Đang xác nhận yêu cầu với máy chủ…');
+        try {
+          const result = await post('/api/recover', payload, true);
+          if (result.status === 403) { csrf = null; $('new-pin').value = ''; pending = null;
+            status('recovery-status', 'Phiên operator đã hết hạn. Khóa và mở lại công cụ.', 'error'); return; }
+          if (result.status === 429) { status('recovery-status', 'Tạm dừng gửi yêu cầu. Kiểm tra hồ sơ trước khi thử lại.', 'warn'); $('retry-recovery').hidden = false; return; }
+          if (!result.body.ok) {
+            const unknown = result.body.error?.code === 'PERMISSION_UPDATE_UNAVAILABLE';
+            if (!unknown) pending = null;
+            status('recovery-status', result.body.error?.message || 'Chưa xác nhận được việc khôi phục PIN. Kiểm tra hồ sơ trước khi thử lại cùng yêu cầu.', unknown ? 'warn' : 'error');
+            if (unknown) $('retry-recovery').hidden = false;
+            else $('new-request').hidden = false;
+            return;
+          }
+          pending = null;
+          const replay = result.body.outcome === 'replayed';
+          status('recovery-status', replay
+            ? 'Đã tìm thấy receipt của yêu cầu này. Đây là kết quả lịch sử; kiểm tra trạng thái owner hiện tại trước khi bàn giao.'
+            : 'Đã phát hành PIN tạm. Bàn giao qua kênh đã xác minh, rồi xác nhận xóa PIN khỏi trang.', 'good');
+          $('delivered').textContent = replay ? 'Xóa PIN khỏi trang' : 'Đã bàn giao PIN · xóa khỏi trang';
+          $('delivered').hidden = false;
+        } catch {
+          status('recovery-status', 'Chưa xác nhận được việc khôi phục PIN. Kiểm tra hồ sơ trước khi thử lại cùng yêu cầu.', 'warn');
+          $('retry-recovery').hidden = false;
+        }
+      }
+      $('recovery-form').addEventListener('submit', event => {
+        event.preventDefault(); if (locked || !csrf) return;
+        pending = { requestId:$('request-id').value, storeId:$('store-id').value, targetId:$('target-id').value,
+          operatorRef:$('operator-ref').value, caseRef:$('case-ref').value, proofRef:$('proof-ref').value,
+          newPin:$('new-pin').value, acknowledged:$('acknowledged').checked };
+        void submit(pending);
+      });
+      $('retry-recovery').addEventListener('click', () => { if (pending && csrf) void submit(pending); });
+      $('new-request').addEventListener('click', () => {
+        pending = null; setFieldsLocked(false); $('new-pin').value = ''; $('acknowledged').checked = false; newId();
+        $('submit-recovery').hidden = false; $('new-request').hidden = true; $('retry-recovery').hidden = true;
+        $('delivered').hidden = true; clearStatus('recovery-status'); $('new-pin').focus();
+      });
+      $('delivered').addEventListener('click', () => {
+        $('new-pin').value = ''; pending = null; $('delivered').hidden = true;
+        status('recovery-status', 'PIN đã được xóa khỏi trang. Bạn có thể khóa phiên hoặc tạo yêu cầu mới.', 'good');
+        $('new-request').hidden = false;
+      });
+      $('lock-session').addEventListener('click', async () => {
+        try { await post('/api/lock', {}, true); } catch { /* Local-only close still clears page memory. */ }
+        csrf = null; pending = null; $('new-pin').value = ''; $('launch-code').value = '';
+        location.replace('/');
+      });
+      addEventListener('pagehide', () => { pending = null; $('new-pin').value = ''; $('launch-code').value = ''; });
+    })();
+  </script>
+</body>
+</html>

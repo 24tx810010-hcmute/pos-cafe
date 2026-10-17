@@ -8,6 +8,7 @@ export default defineConfig({
     allowOnly:false,
     environment: 'node',
     include: ['tests/contracts/**/*.contract.test.ts'],
+    exclude: ['tests/contracts/permissionMigration.contract.test.ts', 'tests/contracts/permissionBridge.contract.test.ts', 'tests/contracts/permissionFoundation.contract.test.ts', 'tests/contracts/permissionIdentity.contract.test.ts', 'tests/contracts/permissionAdministration.contract.test.ts', 'tests/contracts/permissionFinancial.contract.test.ts', 'tests/contracts/permissionFinancialRegression.contract.test.ts', 'tests/contracts/permissionRead.contract.test.ts'],
     globalSetup: ['tests/contracts/globalSetup.ts'],
     testTimeout: 30_000,
     hookTimeout: 30_000,

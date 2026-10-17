@@ -1,0 +1,942 @@
+[
+  {
+    "stage": "tools",
+    "file": "permissionBridgeOracle.tool.test.ts",
+    "name": "TC-PERM-50/tool expected oracle only > enumerates exactly 6144 distinct configurations over the five legacy codes"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionBridgeOracle.tool.test.ts",
+    "name": "TC-PERM-50/tool expected oracle only > keeps the literal legacy defaults and module maps without activating the new catalog"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionBridgeOracle.tool.test.ts",
+    "name": "TC-PERM-50/tool expected oracle only > deny beats both default and grant while a cashier can gain voidPaid"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionBridgeOracle.tool.test.ts",
+    "name": "TC-PERM-50/tool expected oracle only > retains configured rights when inactive and keeps UI role availability independent"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionBridgeOracle.tool.test.ts",
+    "name": "TC-PERM-50/tool expected oracle only > matches independently counted truth-table totals across every configuration"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionBridgeOracle.tool.test.ts",
+    "name": "TC-PERM-50/tool expected oracle only > returns reproducible isolated JSON data and never labels expected generation as candidate PASS"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionInventory.tool.test.ts",
+    "name": "permission inventory tooling: catalog evidence only > separates table/column grants, denied grants and absent roles without claiming RLS authorization"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionInventory.tool.test.ts",
+    "name": "permission inventory tooling: catalog evidence only > preserves every overload and effective PUBLIC execute even without schema usage"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionInventory.tool.test.ts",
+    "name": "permission inventory tooling: catalog evidence only > returns bucket metadata and publication column filters, without reading Storage objects"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionInventory.tool.test.ts",
+    "name": "permission inventory tooling: catalog evidence only > does not query unavailable bucket metadata or treat its absence as a security pass"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionInventory.tool.test.ts",
+    "name": "permission inventory tooling: catalog evidence only > fingerprint is independent of catalog result order and changes on protected schema drift"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionInventory.tool.test.ts",
+    "name": "permission inventory tooling: catalog evidence only > queries metadata only, hashes definitions in PostgreSQL and sanitizes driver failures"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionInventory.tool.test.ts",
+    "name": "permission inventory static consumers > discovers known direct reads/DML, wrapped RPC, Realtime and Storage without claiming deployment"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "T01 observer configuration has no REST dependency > accepts explicit observer-only config without API keys, JWT or URL"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "T01 observer configuration has no REST dependency > fails closed for 'EXPLICIT_ENV_FILE_REQUIRED'"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "T01 observer configuration has no REST dependency > fails closed for 'APPLICATION_ENV_REFUSED'"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "T01 observer configuration has no REST dependency > fails closed for 'LEGACY_OBSERVER_PROFILE_REQUIRED'"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "T01 observer configuration has no REST dependency > fails closed for 'NONLOCAL_OBSERVER_REFUSED'"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "T01 observer configuration has no REST dependency > fails closed for 'DATABASE_NAME_IS_NOT_ISOLATED'"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "T01 observer configuration has no REST dependency > fails closed for 'INVALID_TEST_MARKER'"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "T01 observer configuration has no REST dependency > fails closed for 'INVALID_FIXTURE_STORE_IDS'"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "T01 observer configuration has no REST dependency > fails closed for 'CATALOG_PROOF_REQUIRED'"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "T01 observer configuration has no REST dependency > fails closed for 'BACKEND_REFERENCE_REQUIRED'"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "extracted phase-27 observer guards > valid fixture checks are all reads and do not call fetch"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "extracted phase-27 observer guards > rejects database before allowing caller reads"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "extracted phase-27 observer guards > rejects missing before allowing caller reads"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "extracted phase-27 observer guards > rejects marker before allowing caller reads"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "extracted phase-27 observer guards > rejects checksums before allowing caller reads"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "extracted phase-27 observer guards > rejects fixtures before allowing caller reads"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "extracted phase-27 observer guards > rejects extra-store before allowing caller reads"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "extracted phase-27 observer guards > rejects exposed before allowing caller reads"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > accepts the original phase-27 fixture namespace and requires full REST credentials"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 1 ('VITE_DATA_MODE_MUST_BE_SUPABASE')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 2 ('MISSING_VITE_SUPABASE_URL')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 3 ('NONLOCAL_VITE_SUPABASE_URL_REFUSED')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 4 ('NONLOCAL_IDEM_OBSERVER_DSN_REFUSED')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 5 ('DATABASE_NAME_IS_NOT_ISOLATED_TEST_DA…')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 6 ('MISSING_VITE_SUPABASE_ANON_KEY')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 7 ('ANON_KEY_ROLE_REQUIRED')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 8 ('STORE_JWT_MUST_BE_AUTHENTICATED_FIXTU…')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 9 ('STORE_JWT_MUST_BE_AUTHENTICATED_FIXTU…')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 10 ('STORE_JWT_EXPIRED')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 11 ('INVALID_FIXTURE_STORE_IDS')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 12 ('INVALID_TEST_MARKER')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "phase-27 parser retains its original identity and service requirements > rejects incompatible phase-27 configuration 13 ('INVALID_TEST_ENGINE')"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > preserves start → DB token binding → capabilities → revoke → DB revoked proof in order"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > still invokes extracted observer guards before any HTTP: observer-database"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > still invokes extracted observer guards before any HTTP: observer-engine"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects start-http instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects token-missing instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects token-invalid instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects binding-missing instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects binding-duplicate instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects capabilities-http instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects protocol instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects payload-size instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects ttl instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects revoke-http instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects revoke-rejected instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects revoke-empty instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects revoke-invisible instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects revoke-duplicate instead of certifying the full preflight"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > requires GoTrue and an actual successful health response for the browser profile"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > does not let a PostgREST-only engine masquerade as the browser Auth stack"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > rejects unhealthy Auth after the same session revoke verification"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > sanitizes driver-error without leaking driver/request details"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionPreflight.tool.test.ts",
+    "name": "full phase-27 preflight after observer extraction (all I/O mocked) > sanitizes fetch-error without leaking driver/request details"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-48/tool preflight owner discovery and rights proposals only > discovers the legacy UUID literally but requires evidence for an active primary"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-48/tool preflight owner discovery and rights proposals only > selects a unique earliest active admin when primary is absent or has changed role"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-48/tool preflight owner discovery and rights proposals only > compares 15-code capabilities while reporting legacy modules and inactive configured rights separately"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-48/tool preflight owner discovery and rights proposals only > keeps deny over overlapping grants and shows new reprint capability without erasing legacy deny"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-48/tool preflight owner discovery and rights proposals only > does not erase configured legacy kitchen grants but gates candidate operational rights"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-48/tool preflight owner discovery and rights proposals only > normalizes redundant target grants and the array 100/101 boundary without changing legacy rights"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > inactive primary blocks discovery and can be resolved by a valid supplied mapping"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > inactive changed-role primary blocks discovery and can be resolved by a valid supplied mapping"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > missing timestamp blocks discovery and can be resolved by a valid supplied mapping"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > invalid timestamp blocks discovery and can be resolved by a valid supplied mapping"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > tied timestamps blocks discovery and can be resolved by a valid supplied mapping"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > compares instants at microsecond precision and detects equal timestamps with different offsets"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > no active admin stays blocked and a supplied mapping cannot reactivate an employee"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > rejects malformed mapping instead of falling back: {\"schemaVersion\":2}"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > rejects malformed mapping instead of falling back: {\"verifiedByRef\":\"operator:real\"}"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > rejects malformed mapping instead of falling back: {\"verifiedByRef\":\"synthetic:\"}"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > rejects malformed mapping instead of falling back: {\"evidenceRefs\":[]}"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > rejects malformed mapping instead of falling back: {\"evidenceRefs\":[\"synthetic:\"]}"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > rejects malformed mapping instead of falling back: {\"evidenceRefs\":[\"https://example.invalid/proof\"]}"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > rejects malformed mapping instead of falling back: {\"sourceSnapshotHash\":\"invalid\"}"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > rejects malformed mapping instead of falling back: {\"ownerId\":\"invalid\"}"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > rejects malformed mapping instead of falling back: {\"pin\":\"synthetic-secret-must-not-echo\"}"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > rejects stale, duplicate and conflicting mapping records without silently picking one"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > requires a same-store existing active admin and does not ignore mappings for unknown stores"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > owner denies, unknown roles and bad overrides remain blockers even with a verified mapping"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > blocks invalid employee name (empty) without cutting or repairing it"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > blocks invalid employee name (whitespace) without cutting or repairing it"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > blocks invalid employee name (121-codepoints) without cutting or repairing it"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > blocks invalid store name (empty) without cutting or repairing it"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > blocks invalid store name (121-codepoints) without cutting or repairing it"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > accepts 120 Unicode code points for both names, including 240 UTF-16 code units"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > one blocked store blocks the full plan while retaining the other store READY proposal"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > blocks invalid or duplicate identities, unknown employee scope and non-boolean activity"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionMigrationPlan.tool.test.ts",
+    "name": "TC-PERM-49/tool blocked fixtures and supplied mapping recovery > does not mutate inputs or serialize undeclared employee/mapping secrets"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Manifest contains 93 distinct approved oracles and each parameterized requirement"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > moving the required test outside discovery cannot pass"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > complete discovered names are not behavior passes"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > skipped is never a required pass"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > pending is never a required pass"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > todo is never a required pass"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > failed is never a required pass"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > timedOut is never a required pass"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > unexecuted is never a required pass"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > mock results cannot satisfy DB requirements"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > duplicate executions do not silently replace a failure"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > a unit test cannot claim DB provenance by putting /db in its title"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > literal matching excludes a testcase with only a common prefix"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > a valid single pass satisfies only the requested execution"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Discovery and execution gates reject incomplete evidence > a Playwright expected failure cannot be represented as a passing requirement"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > missing VITE_SUPABASE_URL fails without printing values"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > missing VITE_SUPABASE_ANON_KEY fails without printing values"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > missing IDEM_OBSERVER_DSN fails without printing values"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > missing IDEM_STORE_JWT fails without printing values"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > missing IDEM_TEST_MARKER fails without printing values"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > missing IDEM_FIXTURE_STORE_IDS fails without printing values"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > mock mode is rejected"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > remote URL fails without printing a credential embedded in it"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > remote observer and a local non-test database are rejected"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > service-role cannot act as the business caller"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > expired store JWT cannot reach the suite"
+  },
+  {
+    "stage": "tools",
+    "file": "harness.tool.test.ts",
+    "name": "Configuration gate rejects remote and ambiguous fixtures before connecting > local complete config passes syntax validation, which is not a DB preflight pass"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 evidence verifier > matches actual discovery, results and every test option"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 evidence verifier > rejects result skipped"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 evidence verifier > rejects result todo"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 evidence verifier > rejects result failed"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 evidence verifier > rejects nonstandard pass option fails"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 evidence verifier > rejects nonstandard pass option retry"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 evidence verifier > rejects nonstandard pass option repeats"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 evidence verifier > rejects nonstandard pass option mode"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 evidence verifier > rejects missing files, missing execution and duplicate evidence"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 evidence verifier > isolates the T01 fixture suite from the phase-27 suite without conditional skipping"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 evidence verifier > rejects a deleted required variant even when another passing test remains in the same file"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 evidence verifier > never serializes failure exception, diff, PIN, credential hash or MAC"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 profile evidence binding > requires every case and event to belong to the same source and fixture"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 profile evidence binding > rejects source mismatch"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 profile evidence binding > rejects run mismatch"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 profile evidence binding > rejects backend mismatch"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 profile evidence binding > rejects marker mismatch"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 profile evidence binding > rejects catalog mismatch"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 profile evidence binding > rejects fixture mismatch"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 profile evidence binding > rejects missing case mismatch"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 profile evidence binding > rejects missing event mismatch"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 profile evidence binding > rejects event source mismatch"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 profile evidence binding > rejects event backend mismatch"
+  },
+  {
+    "stage": "tools",
+    "file": "permissionVerify.tool.test.ts",
+    "name": "T01 profile evidence binding > a missing event cannot exempt itself by claiming to be a direct control"
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-48 preflight only on real legacy PostgreSQL > verified primary and unique earliest admin; no session or business mutation",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > primary UUID without provenance blocks whole run including otherwise-ready store",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > tie blocks eligibility and preserves DB",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > no active admin blocks eligibility and preserves DB",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > invalid name blocks eligibility and preserves DB",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > unknown override blocks eligibility and preserves DB",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > missing timestamp blocks instead of UUID tie-break",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > inactive primary cannot be silently reactivated",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > owner deny is not silently discarded",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > 120 Unicode code points remain valid",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > microsecond timestamps remain distinct",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > supplied mapping resolves tied fixture with matching snapshot",
+    "expectedEventCount": 2
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > wrong environment fails before employee reads: marker",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > wrong environment fails before employee reads: database",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > wrong environment fails before employee reads: storeIds",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > wrong environment fails before employee reads: catalog",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > missing marker row fails closed",
+    "expectedEventCount": 0
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > a fixture ID in both marker and config must exist in the database",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > an observer subject to tenant RLS cannot report an empty fixture as safe",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > live catalog drift is rejected even when the migration marker checksum is unchanged",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > a stale migration marker checksum blocks the observer",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > marker table exposure blocks the observer",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > anonymous marker table exposure blocks the observer",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > private schema through PUBLIC exposure blocks the observer",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > anonymous private schema exposure blocks the observer",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > anonymous private helper exposure blocks the observer",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > private helper through PUBLIC exposure blocks the observer",
+    "expectedEventCount": 1
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > serialized snapshot omits session credential hash but internal equality detects its change",
+    "expectedEventCount": 0
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > serialized snapshot omits ledger replay counter but internal equality detects its change",
+    "expectedEventCount": 0
+  },
+  {
+    "stage": "database",
+    "file": "permissionMigration.contract.test.ts",
+    "name": "TC-PERM-49 read-only ambiguity and environment controls > database enforces observer read-only writes",
+    "expectedEventCount": 0
+  }
+]

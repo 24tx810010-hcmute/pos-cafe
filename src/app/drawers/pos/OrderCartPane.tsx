@@ -12,6 +12,8 @@ type OrderCartPaneProps = {
   total: number;
   showPaymentHint: boolean;
   primaryDisabled: boolean;
+  primaryVisible?: boolean;
+  canEdit?: boolean;
   primaryActionLabel: string;
   primaryActionTitle?: string;
   onAdjustQuantity: (lineId: string, delta: number) => void;
@@ -27,6 +29,8 @@ export function OrderCartPane({
   total,
   showPaymentHint,
   primaryDisabled,
+  primaryVisible = true,
+  canEdit = true,
   primaryActionLabel,
   primaryActionTitle,
   onAdjustQuantity,
@@ -63,11 +67,12 @@ export function OrderCartPane({
                   <span>{line.optionText}</span>
                 </div>
               )}
-              <div className="flex items-center justify-between gap-2">
+              {canEdit && <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5">
                   <button
                     className="grid h-7 w-7 place-items-center rounded-[7px] border border-pos-line bg-pos-surface"
                     data-testid="order-cart-decrease"
+                    aria-label={`Giảm số lượng ${line.name}`}
                     onClick={() => onAdjustQuantity(line.id, -1)}
                   >
                     <Minus size={14} />
@@ -78,6 +83,7 @@ export function OrderCartPane({
                   <button
                     className="grid h-7 w-7 place-items-center rounded-[7px] border border-pos-line bg-pos-surface"
                     data-testid="order-cart-increase"
+                    aria-label={`Tăng số lượng ${line.name}`}
                     onClick={() => onAdjustQuantity(line.id, 1)}
                   >
                     <Plus size={14} />
@@ -85,7 +91,7 @@ export function OrderCartPane({
                 </span>
                 <button
                   className={clsx(
-                    "cursor-pointer rounded-[6px] border bg-transparent px-2 py-0.5 text-[11px] font-semibold",
+                    "min-h-6 cursor-pointer rounded-[6px] border bg-transparent px-2 py-0.5 text-[11px] font-semibold",
                     noteOpenId === line.id
                       ? "border-pos-primary text-pos-primary"
                       : "border-pos-line text-pos-muted",
@@ -94,7 +100,7 @@ export function OrderCartPane({
                 >
                   Ghi chú
                 </button>
-              </div>
+              </div>}
               {noteOpenId === line.id && (
                 <TextField
                   size="small"
@@ -126,7 +132,7 @@ export function OrderCartPane({
           <span>Tổng</span>
           <strong>{formatVnd(total)}</strong>
         </div>
-        <Button
+        {primaryVisible && <Button
           variant="contained"
           fullWidth
           data-testid="submit-order-button-footer"
@@ -135,7 +141,7 @@ export function OrderCartPane({
           onClick={onPrimaryAction}
         >
           {primaryActionLabel}
-        </Button>
+        </Button>}
       </footer>
     </aside>
   );

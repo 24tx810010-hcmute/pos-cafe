@@ -1,12 +1,8 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
 import pg from 'pg';
-
-export class PreflightError extends Error {
-  readonly reason: string;
-  constructor(reason: string) { super(`BLOCKED_DB_TESTS: ${reason}`); this.reason = reason; }
-}
+import { observerPreflight, PreflightError, type ObserverEnvironment } from './observerPreflight.ts';
+export { PreflightError, migrationChecksums } from './observerPreflight.ts';
 export type TestEnvironment = {
   apiUrl: string; anonKey: string; observerDsn: string; storeJwt: string;
   marker: string; database: string; storeIds: string[]; engine: 'supabase' | 'postgres-postgrest' | 'postgres-postgrest-gotrue';
@@ -74,14 +70,7 @@ export function parseTestEnvironment(env: NodeJS.ProcessEnv = process.env): Test
   return { apiUrl: apiUrl.origin, anonKey, observerDsn, storeJwt, marker, database, storeIds, engine };
 }
 
-export function migrationChecksums(root = process.cwd()): Record<string, string> {
-  const dir = resolve(root, 'supabase/migrations');
-  return Object.fromEntries(readdirSync(dir).filter((name) => name.endsWith('.sql')).sort().map((name) =>
-    [name, createHash('sha256').update(readFileSync(resolve(dir, name))).digest('hex')],
-  ));
-}
-
-export async function withObserver<T>(env: TestEnvironment, run: (client: pg.Client) => Promise<T>): Promise<T> {
+export async function withObserver<T>(env: ObserverEnvironment, run: (client: pg.Client) => Promise<T>): Promise<T> {
   const client = new pg.Client({ connectionString: env.observerDsn, connectionTimeoutMillis: 5000, statement_timeout: 30000, application_name: 'pos-cafe-idem-observer' });
   await client.connect();
   try { return await run(client); } finally { await client.end(); }
@@ -91,20 +80,7 @@ export async function preflight(options: { requireBrowserStack?: boolean } = {})
   loadTestEnvironmentFile();
   const env = parseTestEnvironment();
   try {
-    await withObserver(env, async (db) => {
-      const identity = await db.query('select current_database() as database, pg_backend_pid() as pid');
-      if (identity.rows[0].database !== env.database) throw new PreflightError('OBSERVER_DATABASE_MISMATCH');
-      const marker = await db.query('select marker, engine, migration_checksums, store_ids from private.idempotency_test_environment where singleton = true');
-      if (marker.rowCount !== 1 || marker.rows[0].marker !== env.marker || marker.rows[0].engine !== env.engine) throw new PreflightError('DATABASE_MARKER_MISMATCH');
-      if (JSON.stringify([...marker.rows[0].store_ids].sort()) !== JSON.stringify([...env.storeIds].sort())) throw new PreflightError('FIXTURE_MARKER_MISMATCH');
-      const expected = migrationChecksums();
-      const actual = marker.rows[0].migration_checksums as Record<string, string>;
-      if (Object.keys(expected).length !== Object.keys(actual).length || Object.entries(expected).some(([file, hash]) => actual[file] !== hash)) throw new PreflightError('MIGRATION_CHECKSUM_MISMATCH');
-      const otherStores = await db.query('select count(*)::int as count from public.stores where not(id = any($1::uuid[]))', [env.storeIds]);
-      if (otherStores.rows[0].count !== 0) throw new PreflightError('DATABASE_CONTAINS_NONFIXTURE_STORES');
-      const markerPrivilege = await db.query("select has_table_privilege('authenticated','private.idempotency_test_environment','SELECT') or has_function_privilege('authenticated','private.write_clock()','EXECUTE') as exposed");
-      if (markerPrivilege.rows[0].exposed) throw new PreflightError('PRIVATE_TEST_SCHEMA_EXPOSED');
-    });
+    await withObserver(env, db => observerPreflight(db, env));
     const sessionResponse = await fetch(`${env.apiUrl}/rest/v1/rpc/start_employee_session`, {
       method: 'POST', headers: { apikey: env.anonKey, Authorization: `Bearer ${env.storeJwt}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_employee_id: '00000000-0000-4000-8000-00000000000b', p_pin: '123456' }), signal: AbortSignal.timeout(5000),

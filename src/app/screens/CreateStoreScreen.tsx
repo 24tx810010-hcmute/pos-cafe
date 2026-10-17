@@ -1,39 +1,72 @@
-import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, Info, Store } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Copy, Info, Store } from "lucide-react";
 import { Button, Checkbox, FormControlLabel, TextField } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useCreateStoreMutation } from "@/features/session";
 import { useAppStore } from "../useAppStore";
 import { toToastError } from "../appErrors";
+import { usePorts } from "@/features/shared/portsContext";
+import { isAppError } from "@/core/appError";
+
+const createStoreErrorMessage = (error: unknown): string => {
+  if (!isAppError(error)) return toToastError(error);
+  switch (error.code) {
+    case "AUTH_REQUIRED": return "Chưa xác nhận được tài khoản cửa hàng. Giữ trang này và thử lại.";
+    case "INVALID_WRITE_REQUEST": return "Tên quán phải có 1–120 ký tự, địa chỉ tối đa 500 ký tự và lựa chọn dữ liệu mẫu phải hợp lệ.";
+    case "BOOTSTRAP_CONFLICT": return "Thông tin tạo quán không khớp yêu cầu ban đầu. Đã dừng để tránh tạo trùng quán.";
+    case "PERMISSION_UPDATE_UNAVAILABLE": return "Chưa xác nhận được việc tạo quán. Giữ trang này và thử lại để tiếp tục cùng yêu cầu.";
+    default: return toToastError(error);
+  }
+};
 
 export function CreateStoreScreen() {
   const setScreen = useAppStore((state) => state.setScreen);
-  const [storeName, setStoreName] = useState("");
-  const [address, setAddress] = useState("");
-  const [seedDemo, setSeedDemo] = useState(false);
+  const createdStoreResult = useAppStore((state) => state.createdStoreResult);
+  const setCreatedStoreResult = useAppStore((state) => state.setCreatedStoreResult);
+  const pendingStoreCreationInput = useAppStore(state => state.pendingStoreCreationInput);
+  const setPendingStoreCreationInput = useAppStore(state => state.setPendingStoreCreationInput);
+  const ports = usePorts();
+  const [storeName, setStoreName] = useState(pendingStoreCreationInput?.displayName ?? "");
+  const [address, setAddress] = useState(pendingStoreCreationInput?.address ?? "");
+  const [seedDemo, setSeedDemo] = useState(pendingStoreCreationInput?.seedDemo ?? false);
   const [nameError, setNameError] = useState("");
-  const createStoreMutation = useCreateStoreMutation();
-  const [result, setResult] = useState<{ storeKey: string; adminPin: string; seedStatus: string; canRetrySeed: boolean } | null>(null);
+  const [keyLossAcknowledged, setKeyLossAcknowledged] = useState(!!pendingStoreCreationInput);
+  const submitLatched = useRef(false);
+  const createStoreMutation = useCreateStoreMutation((store) => setCreatedStoreResult({
+    storeKey: store.storeKey, adminPin: store.adminPin, seedStatus: store.seedStatus, canRetrySeed: store.canRetrySeed,
+  }));
+  const result = createdStoreResult;
 
   const handleCreate = () => {
-    if (!storeName.trim()) {
-      setNameError("Tên quán không được để trống.");
+    const canonicalName = pendingStoreCreationInput?.displayName ?? storeName.trim();
+    const canonicalAddress = pendingStoreCreationInput?.address ?? address.trim();
+    if (!canonicalName || Array.from(canonicalName).length > 120 || Array.from(canonicalAddress).length > 500) {
+      setNameError("Tên quán phải có 1–120 ký tự, địa chỉ tối đa 500 ký tự và lựa chọn dữ liệu mẫu phải hợp lệ.");
       return;
     }
+    if (!keyLossAcknowledged) {
+      setNameError("Hãy xác nhận bạn đã hiểu cách lưu Store Key trước khi tạo quán.");
+      return;
+    }
+    if (submitLatched.current || createStoreMutation.isPending) return;
+    submitLatched.current = true;
     setNameError("");
+    const input = pendingStoreCreationInput ?? { displayName: canonicalName, address: canonicalAddress || undefined, seedDemo };
+    if (!pendingStoreCreationInput) {
+      // Freeze the same canonical values that the long-lived runtime context uses.
+      // Keeping the disabled form canonical also makes a same-mount retry and a
+      // remount retry visibly identical after an uncertain network result.
+      setStoreName(canonicalName);
+      setAddress(canonicalAddress);
+      setPendingStoreCreationInput(input);
+    }
     createStoreMutation.mutate(
-      { displayName: storeName.trim(), address: address.trim() || undefined, seedDemo },
+      input,
       {
-        onSuccess: ({ store }) => {
-          setResult({
-            storeKey: store.storeKey,
-            adminPin: store.adminPin,
-            seedStatus: store.seedStatus,
-            canRetrySeed: store.canRetrySeed,
-          });
-        },
+        onSuccess: () => { submitLatched.current = false; },
         onError: (error) => {
-          const message = toToastError(error);
+          submitLatched.current = false;
+          const message = createStoreErrorMessage(error);
           setNameError(message);
           toast.error(message);
         },
@@ -42,6 +75,19 @@ export function CreateStoreScreen() {
   };
 
   const loading = createStoreMutation.isPending;
+  const acknowledgeStoreKey = () => {
+    ports.auth.acknowledgeCreatedStore();
+    setCreatedStoreResult(null);
+    setPendingStoreCreationInput(null);
+    setScreen("passcode");
+  };
+
+  useEffect(() => {
+    if (!loading && !result && !pendingStoreCreationInput) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [loading, pendingStoreCreationInput, result]);
 
   const copyText = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(
@@ -54,7 +100,7 @@ export function CreateStoreScreen() {
     <main className="box-border grid min-h-[100dvh] w-full place-items-center overflow-y-auto overflow-x-hidden bg-pos-bg p-4" data-testid="create-store-screen">
       <div className="w-[min(960px,100%)] overflow-hidden rounded-pos border border-pos-line bg-pos-surface">
         <header className="flex items-center justify-between border-b border-pos-line bg-pos-surface px-5 py-3.5">
-          <button className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent px-0 py-1 text-sm font-semibold text-pos-primary hover:underline" onClick={() => setScreen("landing")}>
+          <button className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent px-0 py-1 text-sm font-semibold text-pos-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50" onClick={() => setScreen("landing")} disabled={!!result || loading || !!pendingStoreCreationInput}>
             <ArrowLeft size={16} />
             Quay lại
           </button>
@@ -81,9 +127,9 @@ export function CreateStoreScreen() {
                 </button>
               </div>
               <div className="grid flex-[1_1_180px] gap-1.5 rounded-pos border border-pos-line bg-pos-surface2 px-4 py-3.5">
-                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-pos-muted">Admin PIN</span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-pos-muted">PIN tạm thời</span>
                 <span className="text-[clamp(18px,3vw,24px)] font-extrabold tracking-[0.04em] text-pos-primary" data-testid="result-admin-pin">{result.adminPin}</span>
-                <button className="inline-flex w-fit cursor-pointer items-center gap-1 rounded-md border border-pos-line bg-transparent px-2.5 py-1 text-xs font-semibold text-pos-muted hover:border-pos-primary hover:text-pos-primary" onClick={() => copyText(result.adminPin, "Admin PIN")}>
+                <button className="inline-flex w-fit cursor-pointer items-center gap-1 rounded-md border border-pos-line bg-transparent px-2.5 py-1 text-xs font-semibold text-pos-muted hover:border-pos-primary hover:text-pos-primary" onClick={() => copyText(result.adminPin, "PIN tạm thời")}>
                   <Copy size={14} /> Copy
                 </button>
               </div>
@@ -91,28 +137,11 @@ export function CreateStoreScreen() {
 
             <p className="box-border m-0 flex w-full items-start gap-2 rounded-md border border-pos-primaryLine bg-pos-primarySoft px-3 py-2.5 text-[13px] leading-[1.5] text-pos-ink">
               <Info size={15} className="shrink-0 text-pos-primary mt-0.5" />
-              Lưu lại Store Key và Admin PIN. Bạn sẽ cần chúng để đăng nhập trên thiết bị khác.
+              PIN tạm thời: 123456. Bạn phải đổi PIN trước khi sử dụng quán.
             </p>
 
-            {result.canRetrySeed && (
-              <div className="box-border m-0 grid w-full gap-2 rounded-md border border-[#fde68a] bg-[#fffbeb] px-3 py-2.5 text-[13px] leading-[1.5] text-pos-ink" data-testid="seed-failed-warning">
-                <span className="flex items-start gap-2">
-                  <AlertTriangle size={15} className="shrink-0 text-[#b45309] mt-0.5" />
-                  Khởi tạo dữ liệu mẫu chưa thành công. Hãy lưu Store Key, nhập PIN quản lý rồi mở Cài đặt → Khởi tạo dữ liệu mẫu để thử lại.
-                </span>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  className="justify-self-start"
-                  onClick={() => setScreen("passcode")}
-                >
-                  Nhập PIN để tiếp tục
-                </Button>
-              </div>
-            )}
-
-            <Button variant="contained" data-testid="go-passcode" onClick={() => setScreen("passcode")}>
-              Vào màn hình PIN
+            <Button variant="contained" data-testid="acknowledge-store-key" onClick={acknowledgeStoreKey}>
+              Tôi đã lưu Store Key.
             </Button>
           </div>
         ) : (
@@ -134,6 +163,7 @@ export function CreateStoreScreen() {
                   helperText={nameError}
                   fullWidth
                   size="small"
+                  disabled={!!pendingStoreCreationInput}
                   inputProps={{ "data-testid": "store-name-input" }}
                 />
               </div>
@@ -146,6 +176,7 @@ export function CreateStoreScreen() {
                   onChange={(e) => setAddress(e.target.value)}
                   fullWidth
                   size="small"
+                  disabled={!!pendingStoreCreationInput}
                 />
               </div>
 
@@ -156,6 +187,7 @@ export function CreateStoreScreen() {
                     size="small"
                     checked={seedDemo}
                     onChange={(e) => setSeedDemo(e.target.checked)}
+                    disabled={!!pendingStoreCreationInput}
                     inputProps={{ "data-testid": "seed-demo-checkbox" } as Record<string, string>}
                   />
                 }
@@ -167,17 +199,29 @@ export function CreateStoreScreen() {
                 }
               />
 
+              <FormControlLabel
+                className="m-0 items-start"
+                control={<Checkbox size="small" checked={keyLossAcknowledged}
+                  onChange={event => { setKeyLossAcknowledged(event.target.checked); setNameError(""); }}
+                  disabled={!!pendingStoreCreationInput}
+                  inputProps={{ "data-testid": "key-loss-acknowledgement" } as Record<string, string>} />}
+                label={<span className="text-[13px] leading-[1.5] text-pos-ink">
+                  Tôi hiểu và sẽ lưu Store Key trước khi rời trang.
+                  <span className="block text-xs text-pos-muted">Store Key chỉ hiển thị trong lần tạo quán này. Nếu tải lại hoặc đóng trang trước khi lưu mã, bạn có thể mất quyền truy cập quán.</span>
+                </span>}
+              />
+
               <Button
                 variant="contained"
                 fullWidth
                 data-testid="create-store-button"
-                disabled={loading}
+                disabled={loading || !keyLossAcknowledged}
                 onClick={handleCreate}
               >
-                {loading ? "Đang tạo quán..." : "Tạo quán"}
+                {loading ? "Đang tạo quán..." : pendingStoreCreationInput ? "Thử lại tạo quán" : "Tạo quán"}
               </Button>
 
-              <button className="cursor-pointer border-0 bg-transparent p-0 text-left text-[13px] font-semibold text-pos-primary hover:underline" onClick={() => setScreen("storePairing")}>
+              <button className="cursor-pointer border-0 bg-transparent p-0 text-left text-[13px] font-semibold text-pos-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50" disabled={!!pendingStoreCreationInput || loading} onClick={() => setScreen("storePairing")}>
                 Đã có quán? Ghép thiết bị
               </button>
             </div>
@@ -189,7 +233,7 @@ export function CreateStoreScreen() {
               </div>
               <div className="flex items-start gap-2.5 [&_p]:m-0 [&_p]:text-[13px] [&_p]:leading-[1.5] [&_p]:text-pos-muted">
                 <CheckCircle2 size={16} className="shrink-0 text-pos-primary mt-0.5" />
-                <p>Admin PIN mặc định <strong>123456</strong>. Đổi PIN sau khi vào hệ thống.</p>
+                <p>PIN tạm thời <strong>123456</strong>. Bạn phải đổi PIN trước khi sử dụng quán.</p>
               </div>
             </aside>
           </div>

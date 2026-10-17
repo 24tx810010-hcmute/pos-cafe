@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.pin-onboard.tsbuildinfo",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "playwright.pin-onboard-closeout.config.ts",
+    "tests/supabase/ownerPinOnboardingCloseout.spec.ts",
+    "tests/supabase/permissionPinOnboardEnvironment.ts"
+  ]
+}

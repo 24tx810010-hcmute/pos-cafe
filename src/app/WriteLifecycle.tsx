@@ -11,7 +11,12 @@ export function WriteLifecycle() {
   const queryClient = useQueryClient();
   useEffect(() => {
     const coordinator = getWriteCoordinator(ports.write);
+    if (useAppStore.getState().updateRequired) coordinator.inhibit();
     const stop = useAppStore.subscribe((state, previous) => {
+      if (state.updateRequired && !previous.updateRequired) {
+        coordinator.inhibit();
+        void queryClient.cancelQueries();
+      }
       if (state.currentEmployee !== previous.currentEmployee || state.employeeSessionVersion !== previous.employeeSessionVersion) {
         // Removing queries also cancels their results: an old request cannot refill the cache.
         queryClient.removeQueries({ queryKey: ["write-recovery"] });
@@ -19,11 +24,13 @@ export function WriteLifecycle() {
       if (state.currentEmployee !== previous.currentEmployee || state.employeeSessionVersion !== previous.employeeSessionVersion || state.drawer !== previous.drawer
         || state.orderContext !== previous.orderContext || state.paymentOrderId !== previous.paymentOrderId) {
         const pending = coordinator.snapshot();
-        coordinator.leave();
+        const identityChanged = state.currentEmployee !== previous.currentEmployee || state.employeeSessionVersion !== previous.employeeSessionVersion;
+        if (!identityChanged && pending && pending.status !== "settled") coordinator.suspend();
+        else coordinator.leave();
         if (pending && pending.status !== "settled" && state.currentEmployee) toast("Thao tác có thể vẫn được server ghi nhận. Mở Tra cứu thao tác để kiểm tra.");
       }
       if (previous.currentEmployee && !state.currentEmployee) {
-        void ports.employee.revokeSession().catch(() => {});
+        void ports.permission?.session.revokeSession().catch(() => {});
         useAppStore.setState({ receiptPreview: null, draftItems: [], drawer: null, orderContext: null, paymentOrderId: null });
       }
     });

@@ -1,14 +1,18 @@
 import type { OperationView, WriteCapabilities, WriteOperationFilter, WriteOperationPage, WritePayloadV1 } from "@/domain";
-import type { IWriteOperationRepo } from "@/ports";
+import type { InitialReceiptExecutionResult, IWriteOperationRepo } from "@/ports";
 import { isAppError } from "@/core/appError";
 import { hasPermission } from "@/core/guards";
 import { isWriteUuid, jsonbText, sameWritePayload, validateWritePayload, writePermission } from "@/core/writePayload";
 import { businessError, writeError } from "@/core/writeErrors";
 import { clone, type MockState } from "./mockState";
 import { applyMockWrite } from "./writeBusiness";
-import { mockActor, mockWriteState, type MockEmployeeCredential } from "./writeState";
+import { mockActor, mockWriteState, type MockEmployeeCredential, type MockWriteActor, type MockWriteAuthorization } from "./writeState";
+import type { MockPermissionPrintRegistry } from "./permissionPrintRepo";
 
 const queues = new WeakMap<MockState, Promise<void>>();
+const initialPrintIntents = new WeakMap<MockState, Set<string>>();
+const initialPrintFinalized = new WeakMap<MockState, Set<string>>();
+const intentSet=(map:WeakMap<MockState,Set<string>>,state:MockState)=>{let set=map.get(state);if(!set){set=new Set();map.set(state,set);}return set;};
 const serialized = async <T>(state: MockState, fn: () => T | Promise<T>): Promise<T> => {
   const previous = queues.get(state) ?? Promise.resolve();
   let release!: () => void;
@@ -18,18 +22,25 @@ const serialized = async <T>(state: MockState, fn: () => T | Promise<T>): Promis
 };
 
 export class MockWriteOperationRepo implements IWriteOperationRepo {
-  constructor(private readonly state: MockState, private readonly credential: MockEmployeeCredential) {}
+  constructor(private readonly state: MockState, private readonly credential: MockEmployeeCredential, private readonly authorization?: MockWriteAuthorization,
+    private readonly initialPrint?: { registry: MockPermissionPrintRegistry; storeId(): string; session(): object }) {}
+  private actor(payload?: WritePayloadV1): MockWriteActor {
+    return this.authorization ? this.authorization.actor(payload) : mockActor(this.state, this.credential, payload);
+  }
+  private has(permission: ReturnType<typeof writePermission>, actor?: ReturnType<typeof mockActor>): boolean {
+    return this.authorization ? this.authorization.has(permission) : hasPermission(actor ?? mockActor(this.state, this.credential), permission);
+  }
   async capabilities(): Promise<WriteCapabilities> {
-    mockActor(this.state, this.credential);
+    this.actor();
     return { writeProtocolVersion: 1, maxPayloadBytes: 262144, pendingTtlSeconds: 86400 };
   }
   private key(id: string): string { return `${this.state.session!.storeId}:${id}`; }
   private lookup(id: string): OperationView {
-    mockActor(this.state, this.credential);
+    this.actor();
     if (!isWriteUuid(id)) throw writeError("INVALID_WRITE_REQUEST");
     const op = mockWriteState(this.state).operations[this.key(id)];
     if (!op) throw writeError("OPERATION_NOT_FOUND");
-    mockActor(this.state, this.credential, op.payload);
+    this.actor(op.payload);
     return op;
   }
   private expire(op: OperationView): void {
@@ -40,18 +51,18 @@ export class MockWriteOperationRepo implements IWriteOperationRepo {
   }
   async register(id: string, payload: WritePayloadV1): Promise<OperationView> {
     return serialized(this.state, () => {
-      const actor = mockActor(this.state, this.credential);
+      const actor = this.actor();
       if (!isWriteUuid(id)) throw writeError("INVALID_WRITE_REQUEST");
       validateWritePayload(payload);
       const writes = mockWriteState(this.state);
       const existing = writes.operations[this.key(id)];
       if (existing) {
-        mockActor(this.state, this.credential, existing.payload);
+        this.actor(existing.payload);
         if (!sameWritePayload(existing.payload, payload)) throw writeError("IDEMPOTENCY_KEY_REUSED");
         this.expire(existing);
         return clone(existing);
       }
-      mockActor(this.state, this.credential, payload);
+      this.actor(payload);
       const now = writes.now();
       const op: OperationView = {
         operationId: id, schemaVersion: 1, kind: payload.kind, action: payload.kind === "submit_order_changes" ? payload.action : null,
@@ -64,7 +75,7 @@ export class MockWriteOperationRepo implements IWriteOperationRepo {
   }
   async execute(id: string, payload: WritePayloadV1): Promise<OperationView> {
     return serialized(this.state, () => {
-      mockActor(this.state, this.credential);
+      this.actor();
       validateWritePayload(payload);
       const op = this.lookup(id);
       if (!sameWritePayload(op.payload, payload)) throw writeError("IDEMPOTENCY_KEY_REUSED");
@@ -73,7 +84,7 @@ export class MockWriteOperationRepo implements IWriteOperationRepo {
         return clone(op);
       }
       const writes = mockWriteState(this.state);
-      const actor = mockActor(this.state, this.credential, op.payload);
+      const actor = this.actor(op.payload);
       const transaction = clone(this.state);
       const txWrites = { ...writes, removedItems: clone(writes.removedItems) };
       const beforeVersion = transaction.orders.find(o => o.id === payload.orderId)?.lockVersion ?? null;
@@ -87,7 +98,7 @@ export class MockWriteOperationRepo implements IWriteOperationRepo {
       }
       // Check real clock again after all validation and before touching shared state.
       writes.beforeCheckpoint?.();
-      mockActor(this.state, this.credential, op.payload);
+      this.actor(op.payload);
       this.expire(op);
       if (op.status !== "pending") return clone(op);
       if (rejection) {
@@ -102,8 +113,25 @@ export class MockWriteOperationRepo implements IWriteOperationRepo {
       this.state.orders = transaction.orders; this.state.floorPlan = transaction.floorPlan;
       writes.removedItems = txWrites.removedItems; writes.events.push(event);
       op.result = clone(r); op.status = "applied"; op.executedByEmployeeId = actor.id; op.decidedAt = event.occurredAt;
+      if(!intentSet(initialPrintIntents,this.state).has(this.key(id)))intentSet(initialPrintFinalized,this.state).add(this.key(id));
       return clone(op);
     });
+  }
+  async executeForInitialReceipt(id:string,payload:WritePayloadV1,input:{grantId:string}):Promise<InitialReceiptExecutionResult>{
+    this.actor();
+    if(!isWriteUuid(input.grantId)||(payload.kind!=="pay_order"&&payload.kind!=="pay_order_items"))throw writeError("INVALID_WRITE_REQUEST");
+    const key=this.key(id),operation=mockWriteState(this.state).operations[key],wasPending=operation?.status==="pending";
+    const grantActor=this.actor(payload),grantSession=this.initialPrint?.session(),grantStore=this.initialPrint?.storeId();
+    const intents=intentSet(initialPrintIntents,this.state);intents.add(key);
+    try{
+      const result=await this.execute(id,payload),finalized=intentSet(initialPrintFinalized,this.state);
+      if(result.status==="applied"&&wasPending&&!finalized.has(key)){
+        finalized.add(key);const orderId=payload.kind==="pay_order_items"?payload.newOrderId:payload.orderId;
+        if(this.initialPrint&&grantSession&&grantStore)this.initialPrint.registry.record({grantId:input.grantId.toLowerCase(),storeId:grantStore,operationId:id,orderId,employeeId:grantActor.id,session:grantSession});
+        return{operation:result,initialReceiptPrintGrant:{grantId:input.grantId.toLowerCase(),orderId}};
+      }
+      return{operation:result};
+    }finally{intents.delete(key);}
   }
   async get(id: string): Promise<OperationView> {
     return serialized(this.state, () => { const op = this.lookup(id); this.expire(op); return clone(op); });
@@ -111,13 +139,13 @@ export class MockWriteOperationRepo implements IWriteOperationRepo {
   async cancel(id: string): Promise<OperationView> {
     return serialized(this.state, () => {
       const op = this.lookup(id); this.expire(op);
-      if (op.status === "pending") { op.status = "cancelled"; op.cancelledByEmployeeId = mockActor(this.state, this.credential, op.payload).id; op.decidedAt = new Date(mockWriteState(this.state).now()).toISOString(); op.error = businessError("OPERATION_CANCELLED"); }
+      if (op.status === "pending") { op.status = "cancelled"; op.cancelledByEmployeeId = this.actor(op.payload).id; op.decidedAt = new Date(mockWriteState(this.state).now()).toISOString(); op.error = businessError("OPERATION_CANCELLED"); }
       return clone(op);
     });
   }
   async list(filter: WriteOperationFilter = {}): Promise<WriteOperationPage> {
     return serialized(this.state, async () => {
-      const actor = mockActor(this.state, this.credential);
+      const actor = this.actor();
       const writes = mockWriteState(this.state);
       const limit = filter.limit ?? 50;
       if (!Number.isInteger(limit) || limit < 1 || limit > 100 || filter.orderId !== undefined && !isWriteUuid(filter.orderId) || (filter.cursor?.length ?? 0) > 512) throw writeError("INVALID_WRITE_REQUEST");
@@ -126,13 +154,13 @@ export class MockWriteOperationRepo implements IWriteOperationRepo {
       const { cursor: _cursor, limit: _limit, ...criteria } = filter;
       const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(jsonbText({ storeId: this.state.session!.storeId, ...criteria })));
       const binding = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2,"0")).join("");
-      mockActor(this.state, this.credential);
+      this.actor();
       let cursor: { binding: string; at: string; id: string } | null = null;
       if (filter.cursor) {
         try { cursor = JSON.parse(atob(filter.cursor)); } catch { throw writeError("INVALID_WRITE_REQUEST"); }
         if (!cursor || cursor.binding !== binding || !isWriteUuid(cursor.id) || !Number.isFinite(Date.parse(cursor.at))) throw writeError("INVALID_WRITE_REQUEST");
       }
-      const items = Object.entries(writes.operations).filter(([key]) => key.startsWith(`${this.state.session!.storeId}:`)).map(([,op]) => op).filter(op => hasPermission(actor, writePermission(op.payload)));
+      const items = Object.entries(writes.operations).filter(([key]) => key.startsWith(`${this.state.session!.storeId}:`)).map(([,op]) => op).filter(op => this.has(writePermission(op.payload), this.authorization ? undefined : actor as ReturnType<typeof mockActor>));
       for (const op of items) this.expire(op);
       const sorted = items.filter(op => (!filter.orderId || op.payload.orderId === filter.orderId) && (!filter.kinds || filter.kinds.includes(op.kind)) && (!filter.statuses || filter.statuses.includes(op.status)) && (!filter.registeredFrom || Date.parse(op.registeredAt) >= Date.parse(filter.registeredFrom)) && (!filter.registeredTo || Date.parse(op.registeredAt) <= Date.parse(filter.registeredTo)) && (!cursor || op.registeredAt < cursor.at || op.registeredAt === cursor.at && op.operationId < cursor.id)).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt) || b.operationId.localeCompare(a.operationId));
       const page = sorted.slice(0, limit); const last = page[page.length - 1];

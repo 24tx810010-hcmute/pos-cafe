@@ -33,7 +33,7 @@ export type PaymentMethodOption = {
   active: boolean;
 };
 
-export const getOrderTypeLabel = (order?: OrderDetail | null) =>
+export const getOrderTypeLabel = (order?: Pick<OrderDetail, "orderType"> | null) =>
   order?.orderType === "takeaway" ? "Mang đi" : "Tại bàn";
 
 export const formatAmountInputValue = (rawDigits: string) => {

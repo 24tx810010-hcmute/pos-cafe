@@ -1,20 +1,20 @@
 import { Button } from "@mui/material";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { isEmployeeRoleEnabledInUi } from "@/core/guards";
 import { useActiveEmployeesQuery, useStoreSessionQuery, useUnpairStoreMutation, useVerifyEmployeeMutation } from "@/features/session";
 import { useAppStore } from "../useAppStore";
 import { toToastError } from "../appErrors";
 import clsx from "clsx";
+import { isAppError } from "@/core/appError";
 export function PasscodeScreen() {
   const setScreen = useAppStore((state) => state.setScreen);
   const setCurrentEmployee = useAppStore((state) => state.setCurrentEmployee);
+  const startEmployeeSession = useAppStore((state) => state.startEmployeeSession);
+  const sessionNotice = useAppStore((state) => state.sessionNotice);
+  const setSessionNotice = useAppStore((state) => state.setSessionNotice);
   const storeSessionQuery = useStoreSessionQuery();
   const employeesQuery = useActiveEmployeesQuery();
-  const visibleEmployees = useMemo(
-    () => (employeesQuery.data ?? []).filter((employee) => isEmployeeRoleEnabledInUi(employee.role)),
-    [employeesQuery.data],
-  );
+  const visibleEmployees = employeesQuery.data ?? [];
   const verifyMutation = useVerifyEmployeeMutation();
   const unpairMutation = useUnpairStoreMutation();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
@@ -24,7 +24,6 @@ export function PasscodeScreen() {
   const loginGeneration = useRef(0);
   useEffect(() => () => { loginGeneration.current += 1; }, []);
 
-  const roleLabel: Record<string, string> = { admin: "Quản lý", cashier: "Thu ngân", kitchen: "Bếp" };
 
   const now = new Date();
   const dateStr = now.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
@@ -43,15 +42,26 @@ export function PasscodeScreen() {
     verifyMutation.mutate(
       { employeeId: selectedEmployeeId, pin },
       {
-        onSuccess: (employee) => {
+        onSuccess: (session) => {
           if (generation !== loginGeneration.current) return;
+          const employee = visibleEmployees.find(employee => employee.id === selectedEmployeeId);
+          if (!employee) return;
           setPin("");
-          setCurrentEmployee(employee);
-          toast.success(`Xin chào ${employee.name}`);
+          setSessionNotice(null);
+          startEmployeeSession(employee, session);
+          if (session.kind === "required_pin_change") {
+            toast("Bạn cần đổi PIN tạm trước khi sử dụng quán.");
+          } else {
+            toast.success(`Xin chào ${employee.name}`);
+          }
         },
         onError: (error) => {
           if (generation !== loginGeneration.current) return;
-          const msg = toToastError(error);
+          const msg = isAppError(error) && error.code === "INVALID_PIN"
+            ? "PIN không đúng. Vui lòng thử lại."
+            : isAppError(error) && error.code === "AUTH_REQUIRED"
+              ? "Phiên cửa hàng không còn hợp lệ. Vui lòng ghép quán lại."
+              : toToastError(error);
           setPinError(msg);
           setPin("");
           setShaking(true);
@@ -119,6 +129,12 @@ export function PasscodeScreen() {
         </span>
       </header>
 
+      {sessionNotice && (
+        <p className="m-3 rounded-pos border border-[#fde68a] bg-[#fffbeb] px-4 py-3 text-center text-sm font-semibold text-[#92400e]" role="alert" data-testid="session-notice">
+          {sessionNotice}
+        </p>
+      )}
+
       {/* Body — split in two halves with a small gap */}
       <div className="grid min-h-0 flex-1 grid-cols-2 gap-[clamp(10px,1.5vw,24px)] p-[clamp(12px,2vw,40px)] max-[700px]:flex max-[700px]:flex-col max-[700px]:gap-3 max-[700px]:p-3">
         {/* Left — employee picker, only this column scrolls */}
@@ -149,10 +165,6 @@ export function PasscodeScreen() {
                     onClick={() => { setSelectedEmployeeId(employee.id); setPinError(""); setPin(""); }}
                   >
                     <strong className="truncate text-[clamp(15px,1.1vw,24px)] font-extrabold leading-[1.2] text-pos-ink">{employee.name}</strong>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="inline-flex min-h-[22px] w-fit items-center rounded-full border border-pos-line bg-pos-surface2 px-2 py-0.5 text-[clamp(11px,0.7vw,14px)] font-bold text-pos-muted">{roleLabel[employee.role] ?? employee.role}</span>
-                      {!employee.isActive && <span className="inline-flex min-h-[22px] w-fit items-center rounded-full border border-[#fed7aa] bg-[#fff7ed] px-2 py-0.5 text-[clamp(11px,0.7vw,14px)] font-bold text-[#c2410c]">Tạm nghỉ</span>}
-                    </div>
                   </button>
                 ))}
               </div>

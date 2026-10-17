@@ -11,37 +11,41 @@ export class MockMenuRepo implements IMenuRepo {
   }
 
   async saveMenuChanges(changes: MenuChanges): Promise<void> {
-    this.state.menu.categories.push(...changes.categories.created);
-    this.state.menu.menuItems.push(
+    applyMockMenuChanges(this.state, changes);
+  }
+}
+
+export function applyMockMenuChanges(state: MockState, changes: MenuChanges): void {
+  state.menu.categories.push(...changes.categories.created);
+  state.menu.menuItems.push(
       ...changes.menuItems.created.map((item) => ({
         ...item,
         imageAssetKey: item.imageAssetKey ?? null,
       })),
     );
-    this.state.menu.optionGroups.push(...changes.optionGroups.created);
-    this.state.menu.optionValues.push(...changes.optionValues.created);
-    this.state.menu.menuItemOptionGroups.push(...changes.menuItemOptionGroups.created);
+  state.menu.optionGroups.push(...changes.optionGroups.created);
+  state.menu.optionValues.push(...changes.optionValues.created);
+  state.menu.menuItemOptionGroups.push(...changes.menuItemOptionGroups.created);
 
-    for (const category of changes.categories.updated) {
-      this.state.menu.categories = updateById(this.state.menu.categories, category);
-    }
-    for (const item of changes.menuItems.updated) {
-      this.state.menu.menuItems = updateById(this.state.menu.menuItems, item);
-    }
-    for (const group of changes.optionGroups.updated) {
-      this.state.menu.optionGroups = updateById(this.state.menu.optionGroups, group);
-    }
-    for (const value of changes.optionValues.updated) {
-      this.state.menu.optionValues = updateById(this.state.menu.optionValues, value);
-    }
-    for (const link of changes.menuItemOptionGroups.updated) {
-      this.state.menu.menuItemOptionGroups = updateById(this.state.menu.menuItemOptionGroups, link);
-    }
-
-    this.state.menu.menuItemOptionGroups = removeByIds(this.state.menu.menuItemOptionGroups, changes.menuItemOptionGroups.deleted);
-    this.state.menu.optionValues = removeByIds(this.state.menu.optionValues, changes.optionValues.deleted);
-    this.state.menu.optionGroups = removeByIds(this.state.menu.optionGroups, changes.optionGroups.deleted);
-    this.state.menu.menuItems = removeByIds(this.state.menu.menuItems, changes.menuItems.deleted);
-    this.state.menu.categories = removeByIds(this.state.menu.categories, changes.categories.deleted);
+  for (const category of changes.categories.updated) {
+    state.menu.categories = updateById(state.menu.categories, category);
   }
+  for (const item of changes.menuItems.updated) {
+    state.menu.menuItems = updateById(state.menu.menuItems, item);
+  }
+  for (const group of changes.optionGroups.updated) {
+    state.menu.optionGroups = updateById(state.menu.optionGroups, group);
+  }
+  for (const value of changes.optionValues.updated) {
+    state.menu.optionValues = updateById(state.menu.optionValues, value);
+  }
+  for (const link of changes.menuItemOptionGroups.updated) {
+    state.menu.menuItemOptionGroups = updateById(state.menu.menuItemOptionGroups, link);
+  }
+
+  state.menu.menuItemOptionGroups = removeByIds(state.menu.menuItemOptionGroups, changes.menuItemOptionGroups.deleted);
+  state.menu.optionValues = removeByIds(state.menu.optionValues, changes.optionValues.deleted);
+  state.menu.optionGroups = removeByIds(state.menu.optionGroups, changes.optionGroups.deleted);
+  state.menu.menuItems = removeByIds(state.menu.menuItems, changes.menuItems.deleted);
+  state.menu.categories = removeByIds(state.menu.categories, changes.categories.deleted);
 }

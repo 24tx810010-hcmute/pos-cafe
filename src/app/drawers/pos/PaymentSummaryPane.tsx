@@ -12,7 +12,7 @@ import {
 } from "./paymentShared";
 
 interface PaymentSummaryPaneProps {
-  order?: OrderDetail | null;
+  order?: Pick<OrderDetail, "id" | "orderNo" | "orderType" | "tableId" | "status" | "total" | "lockVersion" | "items"> | null;
   payableLines: PayableLine[];
   selection: PaymentSelection;
   selectAllChecked: boolean;
@@ -67,7 +67,7 @@ export function PaymentSummaryPane({
       <section className="border-b border-pos-line bg-[#eef4ff] px-4 py-3 max-[900px]:px-3 max-[900px]:py-2">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className={clsx("m-0 font-black uppercase tracking-[0.06em] text-pos-muted", paymentText.secondary)}>
+            <p className={clsx("m-0 font-black uppercase tracking-[0.06em] text-[#586477]", paymentText.secondary)}>
               Khách hàng
             </p>
             <strong className={clsx("mt-0.5 block truncate leading-tight text-pos-primary", paymentText.strong)}>
@@ -89,7 +89,7 @@ export function PaymentSummaryPane({
               checked={selectAllChecked}
               disabled={orderClosed || payableLines.length === 0}
               onChange={(event) => onToggleSelectAll(event.target.checked)}
-              className="size-4 accent-pos-primary"
+              className="size-6 accent-pos-primary"
             />
             <span className={clsx("font-black leading-tight text-pos-ink", paymentText.strong)}>Chọn tất cả</span>
           </label>
@@ -115,14 +115,17 @@ export function PaymentSummaryPane({
                     )}
                   >
                     <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
-                      <input
-                        type="checkbox"
-                        data-testid="pay-item-checkbox"
-                        checked={selected > 0}
-                        disabled={orderClosed}
-                        onChange={() => onToggleLine(line.orderItemId)}
-                        className="size-4 accent-pos-primary"
-                      />
+                      <label className="grid size-6 cursor-pointer place-items-center">
+                        <input
+                          type="checkbox"
+                          data-testid="pay-item-checkbox"
+                          aria-label={`Chọn thanh toán ${line.name}`}
+                          checked={selected > 0}
+                          disabled={orderClosed}
+                          onChange={() => onToggleLine(line.orderItemId)}
+                          className="size-4 accent-pos-primary"
+                        />
+                      </label>
                       <div className="min-w-0">
                         <h4 className={clsx("m-0 truncate font-black leading-tight text-pos-ink", paymentText.strong)}>
                           {line.name}

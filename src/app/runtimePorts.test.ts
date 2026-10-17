@@ -1,15 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { resolveAppDataMode } from "./runtimePorts";
+import { createAppPorts } from "./runtimePorts";
 
-describe("resolveAppDataMode", () => {
-  it("uses explicit mode when provided", () => {
-    expect(resolveAppDataMode({ mode: "mock", supabaseUrl: "url", supabaseAnonKey: "key" })).toBe("mock");
-    expect(resolveAppDataMode({ mode: "supabase" })).toBe("supabase");
-  });
-
-  it("defaults to supabase only when both env values exist", () => {
-    expect(resolveAppDataMode({ supabaseUrl: "url", supabaseAnonKey: "key" })).toBe("supabase");
-    expect(resolveAppDataMode({ supabaseUrl: "url" })).toBe("mock");
-    expect(resolveAppDataMode({})).toBe("mock");
+describe("production runtime ports", () => {
+  it("always exposes the complete candidate permission bundle in mock mode", async () => {
+    const ports = createAppPorts({ mode: "mock" });
+    expect(Object.keys(ports).sort()).toEqual(["auth", "permission", "print", "seed", "write"]);
+    expect(ports.permission).toMatchObject({
+      authority: expect.any(Object), employeeAdmin: expect.any(Object), read: expect.any(Object),
+      session: expect.any(Object), changes: expect.any(Object), signals: expect.any(Object),
+      menuImages: expect.any(Object), print: expect.any(Object),
+    });
+    await ports.auth.pairStore("0001-X8F3QA");
+    const roster = await ports.permission!.authority.listRoster();
+    const owner = roster[0];
+    const cashier = roster[2];
+    await expect(ports.permission!.session.startSession(owner.id, "123456")).resolves.toBeTruthy();
+    await ports.permission!.session.revokeSession();
+    await expect(ports.permission!.session.startSession(cashier.id, "111111")).resolves.toBeTruthy();
   });
 });

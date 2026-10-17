@@ -1,0 +1,462 @@
+[
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps foundation layers pure and dependency-light"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps feature, adapter, and app layers pointed in the right direction"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps seed fixtures imported only by adapter seed paths"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > TC-PERM-57/T03 keeps candidate core/DTO/ports independent of legacy guards and SDKs"
+  },
+  {
+    "stage": "unit",
+    "file": "architectureBoundaries.test.ts",
+    "name": "architecture boundaries > keeps retired helper and adapter boundaries from regressing"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > composes the full employee admin contract in the permission foundation factory"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC05 creates once, stores a sanitized null-before audit, and protects request identity"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC05/TC14 allows only selectable roles and audits a same-store ID collision without changing it"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC22 returns scoped not-found for a foreign target and writes no foreign audit snapshot"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC09/TC22 audits a verified invalid PIN once, but never audits malformed identity or unknown targets"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > audits and terminally replays strict-shape denial after a valid same-store target is identified"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC06/TC18 resets old overrides on a real role change, then applies explicit new overrides atomically"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC18 enforces field permissions and never partially applies a mixed patch"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > applies action authority before semantic field errors once request and target identity are valid"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC15-TC17 applies both configured ceilings even when the target is inactive"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC14 protects owner and self while allowing owner to rename itself"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC08 deactivation revokes target sessions, unlock creates none, and active noops have no effects"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC08/TC09 reset revokes all old target sessions, while noop and replay preserve fresh sessions"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC20 checks catalog staleness before override semantics and preserves same-role overrides"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > matches SQL precedence for invalid fields paired with owner/self and stale OCC"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC21 leaves employee and request registry untouched when the shared audit sink fails"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC23 shares request reservations with self-PIN and rechecks current authority before replay"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC24 paginates an opaque store/filter-bound audit cursor and grants audit read without a ceiling"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionAdminRepo.test.ts",
+    "name": "PERM-T05 mock employee administration > TC24 uses one code-unit ordering for tied timestamps and cursor continuation"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionIdentityRepo.test.ts",
+    "name": "T04 mock issues minimal twelve hour authority and logout accepts expired session"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionIdentityRepo.test.ts",
+    "name": "T04 mock same PIN does not revoke while real change revokes every old session and replay preserves new"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionIdentityRepo.test.ts",
+    "name": "T04 mock denies wrong PIN and stale revision with no mutation"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionIdentityRepo.test.ts",
+    "name": "T04 mock refuses nonowner self PIN and inactive or reserved login"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionIdentityRepo.test.ts",
+    "name": "T04 mock authority sees role override changes without logging in again"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/mock/permissionIdentityRepo.test.ts",
+    "name": "T05 shared audit records self PIN denial without secret and preserves atomic failure"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionAdminRepo.test.ts",
+    "name": "SupabasePermissionAdminRepo > preserves accepted Unicode names and legacy names without applying write bounds on reads"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionAdminRepo.test.ts",
+    "name": "SupabasePermissionAdminRepo > routes every admin RPC with the current credential and leaves typed requests untouched"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionAdminRepo.test.ts",
+    "name": "SupabasePermissionAdminRepo > returns a sanitized business-denial envelope and preserves validated field and ceiling details"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionAdminRepo.test.ts",
+    "name": "SupabasePermissionAdminRepo > maps read denials to AppError with only whitelisted details and exact Vietnamese text"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionAdminRepo.test.ts",
+    "name": "SupabasePermissionAdminRepo > never retains raw transport errors, requests, PINs, tokens, or MACs in UI AppError"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionAdminRepo.test.ts",
+    "name": "SupabasePermissionAdminRepo > rejects a stale successful response before exposing data from the previous employee session"
+  },
+  {
+    "stage": "unit",
+    "file": "adapters/supabase/permissionAdminRepo.test.ts",
+    "name": "SupabasePermissionAdminRepo > rejects a stale failed response as a session error instead of surfacing the previous request error"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-05/18/24 T05 admin reads use manage-or-permission-edit and raw administration surfaces stay closed"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-05 T05 create commits one revision-zero employee/audit and exact replay is inert"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-05/14/19 T05 create rejects role variant owner"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-05/14/19 T05 create rejects role variant kitchen"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-05/14/19 T05 create rejects role variant accountant"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-05/14/19 T05 create rejects role variant custom"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-05/22 T05 create collisions hide foreign targets and audit same-store existing state"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-06 T05 a real role change resets old overrides and may apply an explicit new override atomically"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-08 T05 disable/re-enable revokes old sessions, preserves configuration, and OCC denial is audited"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-09 T05 reset changes credentials once, revokes old sessions, and same-credential reset is noop"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-14 T05 owner and self guards cover every administration mutation while self-name remains allowed"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-15/17 T05 before ceiling includes inactive configured rights for role"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-15/17 T05 before ceiling includes inactive configured rights for reset"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-15/17 T05 before ceiling includes inactive configured rights for unlock"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-16 T05 after ceiling blocks privilege growth through override while owner remains exempt"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-16 T05 after ceiling blocks privilege growth through role while owner remains exempt"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-16 T05 after ceiling blocks privilege growth through create while owner remains exempt"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-18 T05 field authority rejects mixed requests atomically and distinguishes implicit from explicit override reset"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-19 T05 update validates bypass input variant empty name"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-19 T05 update validates bypass input variant long name"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-19 T05 update validates bypass input variant unsupported role"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-19 T05 update validates bypass input variant null role"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-19 T05 Unicode name boundary counts code points"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-09/19 T05 reset rejects malformed credential variant short"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-09/19 T05 reset rejects malformed credential variant long"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-09/19 T05 reset rejects malformed credential variant non-ASCII"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-20 T05 OCC, empty patch, same-role and explicit reset have distinct outcomes"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-20/23 T05 catalog-stale requests do not normalize, while a terminal replay returns its historical result"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-08/09/21 T05 fault in public.employee_admin_audit rolls back all effects"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-08/09/21 T05 fault in public.store_change_signals rolls back all effects"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-08/09/21 T05 fault in private.employee_admin_requests rolls back all effects"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-22 T05 verified business denial is durable but invalid sessions and hidden targets leave no audit"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-14/18/20/22 T05 denied forbidden records a valid proposed snapshot"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-14/18/20/22 T05 denied owner records a valid proposed snapshot"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-14/18/20/22 T05 denied self records a valid proposed snapshot"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-14/18/20/22 T05 denied occ records a valid proposed snapshot"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-20/22 T05 catalog-stale denial never audits an unnormalized patch"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-20/22 T05 baseline-deny denial never audits an unnormalized patch"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-20/22 T05 owner-only denial never audits an unnormalized patch"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-20/22 T05 unknown-code denial never audits an unnormalized patch"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-23 T05 canonical JSON is key-order independent and explicit null differs from missing"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-23 T05 replay rechecks current authority and private registry contains only a MAC"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-23 T05 one actor cannot reuse a request ID across self-PIN and administration kinds"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-23 T05 create/update/reset share one request-ID namespace per actor"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-23 T05 replay uses its immutable historical MAC key after append-only rotation"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-24 T05 audit read includes T04 actor kinds, filters, and keyset pages without duplicates"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-24 T05 an audit cursor is store-bound and a revoked session cannot continue paging"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-23/24 T05 audit paging rechecks permission rights without revoking the actor session"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-24 T05 keyset pagination is total when audit timestamps tie at microsecond precision"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-24 T05 audit adapter maps a backend read failure to the exact refresh-unavailable code"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-24 T05 app roles cannot mutate retained audit rows"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-42 T05 an actor expiring while queued at the catalog checkpoint cannot mutate or audit"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-42 T05 an administration action lost while queued becomes a durable denial with no target effect"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-42 T05 two opposite manager updates and a catalog writer serialize without stale authority"
+  },
+  {
+    "stage": "database",
+    "file": "permissionAdministration.contract.test.ts",
+    "name": "TC-PERM-43 T05 session start and administrative reset linearize in both orders"
+  }
+]

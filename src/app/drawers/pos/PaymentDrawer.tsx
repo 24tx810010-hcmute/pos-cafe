@@ -3,10 +3,10 @@ import clsx from "clsx";
 import { Button } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { hasPermission } from "@/core/guards";
+import { usePermission } from "@/features/shared/permissionSession";
 import { formatVnd } from "@/core/money";
 import type { PaymentSelection } from "@/features/pos";
-import type { OrderDetail } from "@/domain";
+import type { OpenOrderOperationalView } from "@/ports/permissions";
 import {
   buildPayableLines,
   clampSelection,
@@ -44,7 +44,7 @@ export function PaymentDrawer() {
   const orderQuery = useOrderDetailQuery(paymentOrderId);
   const payMutation = usePayOrderItemsMutation();
   const { blocked, attempt } = useWriteAttempt();
-  const confirmedOrder = useRef<OrderDetail | null>(null);
+  const confirmedOrder = useRef<OpenOrderOperationalView | null>(null);
   const order = attempt && attempt.status !== "settled" && confirmedOrder.current ? confirmedOrder.current : orderQuery.data;
   const [receivedAmountInput, setReceivedAmountInput] = useState("0");
   const [printReceipt, setPrintReceipt] = useState(true);
@@ -81,7 +81,7 @@ export function PaymentDrawer() {
   const orderClosed = !!order && order.status !== "open";
   const orderItemCount = order?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
   const nothingSelected = !!order && !orderClosed && amountDue <= 0;
-  const paymentPermissionDenied = !hasPermission(currentEmployee, "payment.take");
+  const paymentPermissionDenied = !usePermission("payment.take");
   const paymentPermissionTitle = paymentPermissionDenied ? "Không có quyền thanh toán" : undefined;
   const paymentDisabled =
     !order ||
@@ -142,7 +142,7 @@ export function PaymentDrawer() {
 
   const printProvisional = () => {
     if (!order) return;
-    openReceiptPreview({ variant: "ticket", doc: ticketFromOrderDetail(order, table?.name ?? null) });
+    openReceiptPreview({ variant: "ticket", doc: ticketFromOrderDetail(order, table?.name ?? null), requiredPermission: "payment.take" });
   };
 
   const reloadOrder = () => {
@@ -197,8 +197,8 @@ export function PaymentDrawer() {
         onSuccess: (result) => {
           if (!isCurrent()) return;
           // In bill từ payload trả về ngay trong mutation (không chờ refetch).
-          if (printReceipt && result.initialSuccess) {
-            openReceiptPreview({ variant: "receipt", doc: result.receipt });
+          if (printReceipt && result.initialSuccess && result.initialReceiptPrintGrant) {
+            openReceiptPreview({ variant: "receipt", doc: result.receipt, source: { kind: "initial", grant: result.initialReceiptPrintGrant } });
           }
           if (result.mode === "full") {
             toast.success("Đã thanh toán. Bàn đã trống.");
@@ -275,7 +275,7 @@ export function PaymentDrawer() {
             </Button>
           </PaymentState>
         ) : (
-          <div className="grid h-full min-h-0 min-w-[720px] grid-cols-[minmax(420px,1fr)_minmax(272px,330px)] gap-3 max-[900px]:grid-cols-[minmax(414px,1fr)_minmax(268px,300px)] max-[900px]:gap-1.5">
+          <div className="grid h-full min-h-0 min-w-[720px] grid-cols-[minmax(420px,1fr)_minmax(272px,330px)] gap-3 max-[900px]:grid-cols-[minmax(414px,1fr)_minmax(268px,300px)] max-[900px]:gap-1.5 [@media(max-height:600px)]:min-h-[560px]">
             <PaymentCashierPane
               cashierName={currentEmployee?.name ?? "Thu ngân"}
               paymentMethods={paymentMethods}

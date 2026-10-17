@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMockPorts, createSeededMockState } from "@/adapters/mock";
+import { createMockPermissionRuntime } from "@/adapters/mock";
+import { activateCandidateUi, createCandidateRuntimeFixture } from "@/test/candidateRuntimeFixture";
 import { mockWriteState } from "@/adapters/mock/writeState";
 import type { OrderDetail, SplitWritePayload, SubmitOrderDraftItem } from "@/domain";
 import { PortsContext } from "@/features/shared/portsContext";
@@ -17,21 +18,17 @@ import { getWriteCoordinator, orderDetailToDraft, payOrderAndPrint, payOrderItem
 const id = (n: number) => `20000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 afterEach(() => { cleanup(); useAppStore.setState({ currentEmployee: null, drawer: null, orderContext: null, paymentOrderId: null, receiptPreview: null, draftItems: [] }); });
 const fixture = async () => {
-  const state = createSeededMockState();
-  state.session = { storeId: state.settings.storeId, storeNo: 1 };
+  const candidate=await createCandidateRuntimeFixture({demoCredentials:true}),state=candidate.business,ports=candidate.ports,admin=candidate.actor;activateCandidateUi(candidate);
   const source = state.orders.find((order) => order.status === "open")!;
   source.id = id(1); source.orderNo = 7; source.lockVersion = 5; source.total = 150_000;
   source.items = [{ ...source.items[0], id: id(2), itemName: "A", quantity: 5, unitPrice: 30_000, options: [] }];
   state.orders = [source];
-  const ports = createMockPorts(state);
-  const admin = state.employees.find((employee) => employee.role === "admin")!;
-  await ports.employee.startSession(admin.id, state.pins[admin.id]);
-  return { ports, state, source, admin };
+  return { ports, state, source, admin, candidateState:candidate.state };
 };
 
 describe("server operation recovery UI (memory adapter only)", () => {
   it("TC-IDEM-055/ui-memory-adapter independently lists stored K1/K2 and keeps historical source 120k separate from current 90k", async () => {
-    const { ports: origin, state, source, admin } = await fixture();
+    const { ports: origin, state, source, admin, candidateState } = await fixture();
     const body = (offset: number, version: number): SplitWritePayload => ({ schemaVersion: 1, kind: "pay_order_items", orderId: source.id,
       paymentId: id(10 + offset), newOrderId: id(20 + offset), expectedVersion: version, method: "cash", receivedAmount: 30_000,
       lines: [{ orderItemId: id(2), quantity: 1, splitItemId: id(30 + offset) }] });
@@ -39,14 +36,14 @@ describe("server operation recovery UI (memory adapter only)", () => {
     await origin.write.register(id(40), first); await origin.write.execute(id(40), first);
     await origin.write.register(id(41), second);
     // A fresh adapter gets no attempt pointer or credentials from the first adapter.
-    const recovery = createMockPorts(state);
-    const cashier = state.employees.find((employee) => employee.role === "cashier")!;
-    await recovery.employee.startSession(cashier.id, state.pins[cashier.id]);
+    const next=createMockPermissionRuntime(candidateState),cashier=candidateState.employees.find(employee=>employee.role==="cashier")!;
+    const recovery={...origin,write:next.write,permission:{...origin.permission!,session:next.session,print:next.print}};
+    const nextSession=await next.session.startSession(cashier.id,"111111");
     const execute = vi.spyOn(recovery.write, "execute");
     const register = vi.spyOn(recovery.write, "register");
     const print = vi.spyOn(recovery.print, "renderReceipt");
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    useAppStore.setState({ currentEmployee: cashier, drawer: "writeRecovery", receiptPreview: null });
+    useAppStore.getState().startEmployeeSession({id:cashier.id,name:cashier.name},nextSession);useAppStore.setState({ drawer: "writeRecovery", receiptPreview: null });
     render(<PortsContext.Provider value={recovery}><QueryClientProvider client={queryClient}><WriteRecoveryDrawer /></QueryClientProvider></PortsContext.Provider>);
     fireEvent.click(await screen.findByTestId(`operation-${id(41)}`));
     expect(await screen.findByText("Chưa ghi giao dịch. Các số tiền bên dưới là nội dung dự kiến của lệnh.")).toBeInTheDocument();
@@ -102,7 +99,7 @@ describe("reviewing changed drafts", () => {
     expect(register).not.toHaveBeenCalled();
     view.unmount(); client.clear();
     await payOrderAndPrint(ports, { actor: admin, order: source, receivedAmount: 150_000 });
-    const paid = await ports.order.getOrder(source.id);
+    const paid = await ports.permission!.read.getOrderHistoryDetail(source.id);
     expect(paid.lockVersion).toBe(6);
     await voidPaidOrder(ports, { actor: admin, order: paid, reasonCode: "duplicate", reasonNote: null });
     const [key, body] = register.mock.calls[1];
@@ -146,7 +143,7 @@ describe("reviewing changed drafts", () => {
     const originalRegister = ports.write.register.bind(ports.write);
     let stored!: Awaited<ReturnType<typeof ports.write.register>>;
     vi.spyOn(ports.write, "register").mockImplementation(async (key, body) => { stored = await originalRegister(key, body); return new Promise((done) => { release = done; }); });
-    const execute = vi.spyOn(ports.write, "execute"); const revoke = vi.spyOn(ports.employee, "revokeSession");
+    const execute = vi.spyOn(ports.write, "execute"); const revoke = vi.spyOn(ports.permission!.session, "revokeSession");
     useAppStore.setState({ currentEmployee: admin, drawer: "payment", paymentOrderId: source.id });
     render(<PortsContext.Provider value={ports}><QueryClientProvider client={new QueryClient()}><WriteLifecycle /></QueryClientProvider></PortsContext.Provider>);
     const coordinator = getWriteCoordinator(ports.write);
