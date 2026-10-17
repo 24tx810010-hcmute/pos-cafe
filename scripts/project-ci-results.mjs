@@ -15,6 +15,8 @@ const SMOKE_STEP_FILES = Object.freeze(['tests/smoke/pos-cafe.spec.ts', 'tests/s
   'tests/smoke/permission-ui-closeout.spec.ts', 'tests/smoke/demo-runbook.spec.ts']);
 const SMOKE_STEP_LOCATORS = Object.freeze(['landing-screen', 'store-pairing-screen', 'passcode-screen',
   'floor-page', 'order-drawer', 'submit-order-button']);
+const TRACE_SCREENS = Object.freeze(['landing-screen', 'store-pairing-screen', 'passcode-screen', 'floor-view',
+  'compatibility-update-gate', 'required-pin-change-screen', 'rotate-guidance', 'create-store-screen']);
 const SMOKE_STEP_CATEGORIES = Object.freeze(['pw:api', 'expect', 'fixture', 'hook', 'test.step', 'test.error']);
 const SMOKE_STEP_APIS = Object.freeze([/browserType\.launch|^Launch browser/i, /browser\.newContext|^Create context/i,
   /browserContext\.newPage|^Create page/i, /page\.goto|^Navigate to/i, /locator\.click|^Click /i,
@@ -134,7 +136,7 @@ export function smokeTraceEvents(text, expectedFiles, facts = {}) {
   if (!events.some(event => event?.type === 'context-options' && event.version === 8
     && event.playwrightVersion === '1.60.0' && event.browserName === 'chromium')) reject();
   const codes = new Set(), metrics = { traceReadable: 1, tracePageErrors: 0, traceConsoleErrors: 0,
-    traceConsoleWarnings: 0, traceHttp4xx: 0, traceHttp5xx: 0 }, failedFiles = [];
+    traceConsoleWarnings: 0, traceHttp4xx: 0, traceHttp5xx: 0, traceHttp2xx: 0 }, failedFiles = [];
   const classify = value => {
     if (typeof value !== 'string') return;
     for (const [code, pattern] of Object.entries({ JS_TYPE_ERROR: /\bTypeError\b/, JS_REFERENCE_ERROR: /\bReferenceError\b/,
@@ -166,12 +168,73 @@ export function smokeTraceEvents(text, expectedFiles, facts = {}) {
       classify(error?.name); classify(error?.message); classify(error?.stack);
     } else if (event.type === 'resource-snapshot') {
       const status = event.snapshot?.response?.status;
+      if (Number.isInteger(status) && status >= 200 && status <= 299) metrics.traceHttp2xx++;
       if (Number.isInteger(status) && status >= 400 && status <= 499) metrics.traceHttp4xx++;
       if (Number.isInteger(status) && status >= 500 && status <= 599) metrics.traceHttp5xx++;
     }
   }
+  Object.assign(metrics, smokeTraceSnapshotFacts(events));
   delete facts.traceRefusalOrdinal;
   return { codes: [...codes], metrics, failedFiles };
+}
+
+// Resolve only fixed element counts, never HTML/text/attributes. Trace references
+// index non-reference nodes in post-order, including text nodes (Playwright v8).
+export function smokeTraceSnapshotFacts(events) {
+  const frames = new Map(), facts = { traceMainFrameSnapshots: 0, traceSnapshotComplete: 0 };
+  const invalidate = () => {
+    facts.traceSnapshotComplete = 0;
+    for (const name of ['traceScreenMask', 'traceLandingNodes', 'traceAppRootNodes']) delete facts[name];
+  };
+  let visited = 0;
+  for (const event of events) {
+    const snapshot = event?.type === 'frame-snapshot' ? event.snapshot : null;
+    if (snapshot?.isMainFrame !== true) continue;
+    if (typeof snapshot.frameId !== 'string' || typeof snapshot.pageId !== 'string') { frames.clear(); invalidate(); continue; }
+    const key = JSON.stringify([snapshot.pageId, snapshot.frameId]);
+    let url; try { url = new URL(snapshot.frameUrl); } catch { frames.delete(key); invalidate(); continue; }
+    // Skipped snapshots still occupy reference ordinals. Drop this frame's
+    // history so a later reference cannot accidentally target an older page.
+    if (url.origin !== 'http://127.0.0.1:5175' || url.pathname !== '/') { frames.delete(key); invalidate(); continue; }
+    facts.traceMainFrameSnapshots++;
+    const history = frames.get(key) ?? [], nodes = [];
+    let complete = true;
+    const empty = () => Array(9).fill(0);
+    const visit = (node, depth = 0) => {
+      if (++visited > 100000 || depth > 256) { complete = false; return empty(); }
+      if (Array.isArray(node) && node.length === 1 && Array.isArray(node[0])) {
+        const [ago, index] = node[0];
+        const prior = node[0].length === 2 && Number.isSafeInteger(ago) && ago >= 0 && Number.isSafeInteger(index) && index >= 0
+          ? (ago === 0 ? nodes : history[history.length - ago])?.[index] : null;
+        if (!prior) { complete = false; return empty(); }
+        if (!prior.complete) complete = false;
+        return prior.counts;
+      }
+      const counts = empty();
+      if (typeof node === 'string') { nodes.push({ counts, complete }); return counts; }
+      if (!Array.isArray(node) || typeof node[0] !== 'string' || (node.length > 1
+        && (!node[1] || typeof node[1] !== 'object' || Array.isArray(node[1])
+          || Object.values(node[1]).some(value => typeof value !== 'string')))) { complete = false; return counts; }
+      const attrs = node[1] ?? {}, screen = TRACE_SCREENS.indexOf(attrs['data-testid']);
+      if (screen >= 0) counts[screen]++;
+      if (node[0].toUpperCase() === 'DIV' && attrs.id === 'root') counts[8]++;
+      for (const child of node.slice(2)) {
+        const childCounts = visit(child, depth + 1);
+        for (let n = 0; n < counts.length; n++) counts[n] += childCounts[n];
+        if (visited > 100000 || counts.some(n => n > 1000000)) { complete = false; break; }
+      }
+      nodes.push({ counts, complete }); return counts;
+    };
+    const counts = visit(snapshot.html); history.push(nodes); frames.set(key, history);
+    facts.traceSnapshotComplete = complete ? 1 : 0;
+    for (const name of ['traceScreenMask', 'traceLandingNodes', 'traceAppRootNodes']) delete facts[name];
+    if (complete) {
+      facts.traceScreenMask = counts.slice(0, 8).reduce((mask, count, index) => mask + (count > 0 ? 2 ** index : 0), 0);
+      facts.traceLandingNodes = counts[0]; facts.traceAppRootNodes = counts[8];
+    }
+    if (visited > 100000) break;
+  }
+  return facts;
 }
 const DIAGNOSTIC_CODES = Object.freeze(['COMMAND_FAILED', 'VITEST_ASSERTION', 'VITEST_RUNTIME', 'REPORT_MISSING',
   'TEST_TIMEOUT', 'ASSERTION_ERROR', 'TYPE_ERROR', 'REFERENCE_ERROR', 'MODULE_NOT_FOUND', 'OUT_OF_MEMORY', 'COVERAGE_LINES',
@@ -181,7 +244,8 @@ const DIAGNOSTIC_CODES = Object.freeze(['COMMAND_FAILED', 'VITEST_ASSERTION', 'V
   'BROWSER_LAUNCH', 'BROWSER_DEPENDENCIES', 'BROWSER_SANDBOX', 'BROWSER_CRASHPAD', 'BROWSER_EXECUTION',
   'BROWSER_CONTEXT', 'BROWSER_PAGE', 'PAGE_NAVIGATION', 'LOCATOR_ACTION', 'ASSERTION_VISIBLE', 'FIXTURE_SETUP', 'FIXTURE_TEARDOWN',
   'TRACE_UNAVAILABLE', 'JS_TYPE_ERROR', 'JS_REFERENCE_ERROR', 'JS_SYNTAX_ERROR', 'JS_RANGE_ERROR',
-  'REACT_UPDATE_DEPTH', 'REACT_UNSTABLE_SNAPSHOT', 'JS_STACK_OVERFLOW', 'MODULE_EXPORT_MISSING', 'LOCATOR_NOT_FOUND', 'LOCATOR_HIDDEN']);
+  'REACT_UPDATE_DEPTH', 'REACT_UNSTABLE_SNAPSHOT', 'JS_STACK_OVERFLOW', 'MODULE_EXPORT_MISSING', 'LOCATOR_NOT_FOUND', 'LOCATOR_HIDDEN',
+  'SELECTOR_STRICT', 'SELECTOR_INVALID', 'EXPECT_LOCATOR_REQUIRED', 'BROWSER_CLOSED', 'CONTEXT_DESTROYED', 'PROTOCOL_ERROR']);
 export function guardFailureCode(error) {
   if (['RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'RESOURCE_CORE_LIMIT', 'RESOURCE_CORE_PATTERN', 'RESOURCE_HOST_GROWTH', 'SOURCE_DRIFT'].includes(error?.code)) return error.code;
   if (['ENOENT', 'ENOTDIR', 'EACCES'].includes(error?.code)) return `GUARD_IO_${error.code}`;
@@ -274,6 +338,12 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
     ASSERTION_VISIBLE: /expect\([^\r\n]*\)\.(?:toBeVisible|toBeHidden)/,
     LOCATOR_NOT_FOUND: /element\(s\) not found|locator resolved to 0 elements/i,
     LOCATOR_HIDDEN: /Received:\s*hidden|locator resolved to hidden/i,
+    SELECTOR_STRICT: /strict mode violation|resolved to [2-9][0-9]* elements/i,
+    SELECTOR_INVALID: /Invalid selector|is not a valid selector|Unexpected token[^\r\n]{0,80}(?:selector|parsing)/i,
+    EXPECT_LOCATOR_REQUIRED: /can be only used with Locator object|expected[^\r\n]{0,80}Locator|Property ['"]toBeVisible['"] not found/i,
+    BROWSER_CLOSED: /Target page, context or browser has been closed|Target closed|Browser closed|Connection closed/i,
+    CONTEXT_DESTROYED: /Execution context was destroyed|Cannot find context with specified id/i,
+    PROTOCOL_ERROR: /Protocol error|Target crashed/i,
     FIXTURE_SETUP: /while setting up \"[^\r\n\"]{1,100}\"/i,
     FIXTURE_TEARDOWN: /while tearing down \"[^\r\n\"]{1,100}\"/i })) {
     if (pattern.test(privateText)) codes.push(code);
@@ -444,6 +514,7 @@ export function publicSummary(binding, rows, fingerprints) {
           'traceContextCount', 'traceContextVersion', 'traceVersionMajor', 'traceVersionMinor', 'traceVersionPatch', 'traceBrowserOrdinal',
           'traceToolExitCode', 'traceToolTimedOut', 'traceToolOverflow',
           'traceIOOrdinal',
+          'traceHttp2xx', 'traceMainFrameSnapshots', 'traceSnapshotComplete', 'traceScreenMask', 'traceLandingNodes', 'traceAppRootNodes',
           'smokeExpected', 'smokeUnexpected', 'smokeSkipped', 'smokeFlaky', 'smokeProgressIndex', 'smokeProgressTotal',
           'memoryCurrentBytes', 'peakMemoryBytes', 'pidsCurrent', 'peakPids', 'oomEvents', 'oomKills', 'pidsLimitEvents'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));

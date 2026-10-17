@@ -5,7 +5,7 @@ import { crc32 } from 'node:zlib';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import SmokeFailureReporter, { smokeStepDiagnostic, smokeTraceDiagnostics, smokeTraceEvents, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
+import SmokeFailureReporter, { smokeStepDiagnostic, smokeTraceDiagnostics, smokeTraceEvents, smokeTraceSnapshotFacts, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
 import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit, allocatedBytes, coreLimitDisabled } from './project-ci.mjs';
 import { lightService, withLightCorePattern, stopLightUnit, coreDumpDisabled, linuxCorePatternAdapter } from './project-ci-launch.mjs';
 import { backendInvocation } from './project-backend.mjs';
@@ -51,7 +51,8 @@ test('trace observes browser JS errors without exporting messages, URLs, secrets
   assert.deepEqual(result.codes,['JS_TYPE_ERROR','REACT_UPDATE_DEPTH','REACT_UNSTABLE_SNAPSHOT']);
   assert.deepEqual(result.failedFiles,[file]);
   assert.deepEqual(result.metrics,{traceReadable:1,tracePageErrors:1,traceConsoleErrors:1,traceConsoleWarnings:1,
-    traceHttp4xx:1,traceHttp5xx:1,traceModuleLine:89,traceModuleColumn:7});
+    traceHttp4xx:1,traceHttp5xx:1,traceHttp2xx:0,traceModuleLine:89,traceModuleColumn:7,
+    traceMainFrameSnapshots:0,traceSnapshotComplete:0});
   const row = {id:'install',status:'FAIL',exitCode:1,elapsedMs:1,invocationSHA:digest,reportSHA:digest,diagnostic:result};
   const safe=publicSummary(binding,[row],{source:digest,lock:digest});
   assert.equal(safe.overallStatus,'FAIL');assert.deepEqual(safe.phases[0].diagnostic,result);
@@ -59,6 +60,56 @@ test('trace observes browser JS errors without exporting messages, URLs, secrets
   assert.equal(JSON.stringify(result).includes('http'),false);
   assert.equal(smokeTraceEvents(traceLines([{type:'event',class:'BrowserContext',method:'pageError',params:{error:{error:{stack:
     'at http://127.0.0.1:5175/src/unknown.ts:1:1\n at http://127.0.0.1:5175/src/../private.ts:1:1'}}}}]),[file]).failedFiles.length,0);
+});
+
+test('trace snapshot counts resolve post-order references and expose only fixed screen observations', () => {
+  const event=html=>({type:'frame-snapshot',snapshot:{isMainFrame:true,pageId:'FAKE_PRIVATE_PAGE',frameId:'FAKE_PRIVATE_FRAME',
+    frameUrl:'http://127.0.0.1:5175/',html}});
+  const first=event(['HTML',{},['BODY',{},['DIV',{id:'root'},['MAIN',{'data-testid':'landing-screen'},'FAKE_TRACE_PRIVATE_TOKEN']]]]);
+  const second=event([[1,4]]); // text0, main1, div2, body3, html4
+  assert.deepEqual(smokeTraceSnapshotFacts([first,second]),{traceMainFrameSnapshots:2,traceSnapshotComplete:1,
+    traceScreenMask:1,traceLandingNodes:1,traceAppRootNodes:1});
+  const paired=event(['HTML',{},['DIV',{id:'root'},['MAIN',{'data-testid':'passcode-screen'}],['P',{},'private']]]);
+  const result=smokeTraceEvents(traceLines([first,second,paired]),[]);
+  assert.equal(result.metrics.traceScreenMask,4);assert.equal(result.metrics.traceLandingNodes,0);
+  assert.equal(JSON.stringify(result).includes('PRIVATE'),false);assert.equal(JSON.stringify(result).includes('http'),false);
+  const duplicate=event(['DIV',{id:'root'},['MAIN',{'data-testid':'landing-screen'}],['MAIN',{'data-testid':'landing-screen'}]]);
+  assert.equal(smokeTraceSnapshotFacts([duplicate]).traceLandingNodes,2);
+  const incomplete=smokeTraceSnapshotFacts([first,event([[4,999]])]);
+  assert.equal(incomplete.traceSnapshotComplete,0);assert.equal(incomplete.traceScreenMask,undefined);
+  const external=event(['MAIN',{'data-testid':'landing-screen'}]);external.snapshot.frameUrl='http://private/FAKE_TRACE_PRIVATE_TOKEN';
+  assert.equal(smokeTraceSnapshotFacts([external]).traceMainFrameSnapshots,0);
+  for(const frameUrl of ['http://private/FAKE_TRACE_PRIVATE_TOKEN','not a URL','http://127.0.0.1:5175/other']) {
+    const outside=event(['MAIN',{'data-testid':'landing-screen'}]);outside.snapshot.frameUrl=frameUrl;
+    const last=smokeTraceSnapshotFacts([first,outside]);
+    assert.equal(last.traceSnapshotComplete,0);assert.equal(last.traceScreenMask,undefined);assert.equal(last.traceLandingNodes,undefined);
+  }
+  assert.equal(smokeTraceSnapshotFacts([first,external,second]).traceSnapshotComplete,0);
+  assert.equal(smokeTraceSnapshotFacts([first,event([[1,4,99]])]).traceSnapshotComplete,0);
+  for(const attrs of [{id:'root','data-testid':123},{id:{}},{title:{private:'FAKE_TRACE_PRIVATE_TOKEN'}},
+    {id:'root','data-testid':'landing-screen',class:42}]) {
+    const malformed=smokeTraceSnapshotFacts([event(['DIV',attrs])]);
+    assert.equal(malformed.traceSnapshotComplete,0);assert.equal(malformed.traceScreenMask,undefined);
+  }
+  const deep=event(Array.from({length:260}).reduce(node=>['DIV',{},node],['MAIN',{'data-testid':'landing-screen'}]));
+  assert.equal(smokeTraceSnapshotFacts([deep]).traceSnapshotComplete,0);
+  const wide=event(['DIV',{id:'root'},...Array(100001).fill('private')]);
+  assert.equal(smokeTraceSnapshotFacts([wide]).traceSnapshotComplete,0);
+  const safe=publicSummary(binding,[{id:'install',status:'FAIL',exitCode:1,elapsedMs:1,invocationSHA:digest,reportSHA:digest,diagnostic:result}],{source:digest,lock:digest});
+  assert.equal(safe.phases[0].diagnostic.metrics.traceScreenMask,4);assert.equal(safe.overallStatus,'FAIL');
+});
+
+test('fixed selector and browser protocol errors never reflect error text', () => {
+  for(const [message,code] of [
+    ['strict mode violation: FAKE_TRACE_PRIVATE_TOKEN resolved to 2 elements','SELECTOR_STRICT'],
+    ['Invalid selector FAKE_TRACE_PRIVATE_TOKEN','SELECTOR_INVALID'],
+    ['toBeVisible can be only used with Locator object FAKE_TRACE_PRIVATE_TOKEN','EXPECT_LOCATOR_REQUIRED'],
+    ['Target page, context or browser has been closed FAKE_TRACE_PRIVATE_TOKEN','BROWSER_CLOSED'],
+    ['Execution context was destroyed FAKE_TRACE_PRIVATE_TOKEN','CONTEXT_DESTROYED'],
+    ['Protocol error FAKE_TRACE_PRIVATE_TOKEN','PROTOCOL_ERROR']]) {
+    const result=privateDiagnostics(message,null);
+    assert.ok(result.codes.includes(code));assert.equal(JSON.stringify(result).includes('FAKE_TRACE_PRIVATE_TOKEN'),false);
+  }
 });
 
 test('real unzip streams only owned failed trace JSONL and never extracts resource files', () => {
