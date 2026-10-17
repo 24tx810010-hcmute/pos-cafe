@@ -6,6 +6,29 @@ export const PROJECTS = Object.freeze(['desktop', 'tablet-landscape', 'phone-lan
 export const hash = value => createHash('sha256').update(value).digest('hex');
 const reject = () => { throw new Error('PROJECT_CI_RESULT_INVALID'); };
 const integer = n => Number.isSafeInteger(n) && n >= 0;
+const DIAGNOSTIC_CODES = Object.freeze(['COMMAND_FAILED', 'VITEST_ASSERTION', 'VITEST_RUNTIME', 'REPORT_MISSING',
+  'TEST_TIMEOUT', 'ASSERTION_ERROR', 'TYPE_ERROR', 'REFERENCE_ERROR', 'MODULE_NOT_FOUND', 'OUT_OF_MEMORY', 'COVERAGE_LINES']);
+
+export function privateDiagnostics(output, report, expectedFiles = [], root = '') {
+  const codes = ['COMMAND_FAILED'];
+  const metrics = {};
+  for (const [key, value] of Object.entries(report ?? {})) if (['numTotalTests', 'numPassedTests', 'numFailedTests', 'numPendingTests', 'numRuntimeErrorTestSuites'].includes(key) && integer(value)) metrics[key] = value;
+  if (!report) codes.push('REPORT_MISSING');
+  if (metrics.numFailedTests > 0) codes.push('VITEST_ASSERTION');
+  if (metrics.numRuntimeErrorTestSuites > 0) codes.push('VITEST_RUNTIME');
+  const privateText = output + '\n' + JSON.stringify(report ?? {});
+  for (const [code, pattern] of Object.entries({ TEST_TIMEOUT: /timed?\s*out|test timeout|timeout of/i,
+    ASSERTION_ERROR: /AssertionError|expected .{0,100} to /i, TYPE_ERROR: /TypeError/, REFERENCE_ERROR: /ReferenceError/,
+    MODULE_NOT_FOUND: /ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|cannot find (?:module|package)/i,
+    OUT_OF_MEMORY: /heap out of memory|allocation failed|SIGKILL/i, COVERAGE_LINES: /ERROR: Coverage for lines/i })) {
+    if (pattern.test(privateText)) codes.push(code);
+  }
+  const failedFiles = (report?.testResults ?? []).filter(file => file.status === 'failed').map(file => {
+    const path = typeof file.name === 'string' ? file.name.replaceAll('\\', '/').replace(root.replaceAll('\\', '/') + '/', '') : '';
+    return expectedFiles.includes(path) && /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path) ? path : null;
+  }).filter(Boolean).slice(0, 32);
+  return { codes, metrics, failedFiles };
+}
 const sameSet = (a, b) => a.length === b.length && new Set(a).size === a.length
   && [...a].sort().every((value, index) => value === [...b].sort()[index]);
 
@@ -124,9 +147,13 @@ export function publicSummary(binding, rows, fingerprints) {
     || !(row.exitCode === null || integer(row.exitCode)) || !/^[a-f0-9]{64}$/.test(row.invocationSHA)
     || !(row.reportSHA === null || /^[a-f0-9]{64}$/.test(row.reportSHA)))) reject();
   if (!/^[a-f0-9]{64}$/.test(fingerprints.source) || !/^[a-f0-9]{64}$/.test(fingerprints.lock)) reject();
-  const phases = rows.map(({ id, status, elapsedMs, exitCode, counts, invocationSHA, reportSHA }) => ({ id, status, elapsedMs, exitCode, invocationSHA, reportSHA,
+  const phases = rows.map(({ id, status, elapsedMs, exitCode, counts, invocationSHA, reportSHA, diagnostic }) => ({ id, status, elapsedMs, exitCode, invocationSHA, reportSHA,
     counts: counts ? Object.fromEntries(Object.entries(counts).filter(([key, value]) =>
-      ['run', 'pass', 'fail', 'skip', 'acceptedFindings', 'detectedFindings'].includes(key) && integer(value))) : null }));
+      ['run', 'pass', 'fail', 'skip', 'acceptedFindings', 'detectedFindings'].includes(key) && integer(value))) : null,
+    diagnostic: diagnostic ? { codes: diagnostic.codes.filter(code => DIAGNOSTIC_CODES.includes(code)),
+      metrics: Object.fromEntries(Object.entries(diagnostic.metrics).filter(([key, value]) =>
+        ['numTotalTests', 'numPassedTests', 'numFailedTests', 'numPendingTests', 'numRuntimeErrorTestSuites'].includes(key) && integer(value))),
+      failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));
   return { schemaVersion: 'pos-cafe-light-ci-v1', verificationScope: 'LIGHT_MOCK_ONLY', repository: PROJECT_REPOSITORY,
     event: binding.event, sourceSHA: binding.sourceSHA, prHeadSHA: binding.prHeadSHA, workflowSHA: binding.workflowSHA,
     runId: binding.runId, attempt: binding.attempt,

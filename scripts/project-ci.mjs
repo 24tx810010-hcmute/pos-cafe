@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, appendFileSync, mkdirSync, mkdtempSync, ls
 import { resolve, join } from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { hash, sourceBinding, vitestCounts, nodeCounts, smokeCounts, uiCounts, publicSummary } from './project-ci-results.mjs';
+import { hash, sourceBinding, vitestCounts, nodeCounts, smokeCounts, uiCounts, publicSummary, privateDiagnostics } from './project-ci-results.mjs';
 
 const GiB = 1024 ** 3;
 const refuse = () => { throw new Error('PROJECT_CI_GUARD'); };
@@ -106,7 +106,7 @@ export async function main() {
     for (const [name, value] of Object.entries(limits)) if (readFileSync(join(cgroup, name), 'utf8').trim() !== value) refuse();
   };
   const rows = [];
-  const phase = async (id, command, args, readCounts) => {
+  const phase = async (id, command, args, readCounts, diagnosticReport) => {
     const started = Date.now(), output = join(task, `${id}.log`);
     const invocationSHA = hash(JSON.stringify({ runId: binding.runId, attempt: binding.attempt, id, command, args,
       sourceFingerprint: fingerprints.source, lockSHA: fingerprints.lock }));
@@ -119,7 +119,12 @@ export async function main() {
     } catch { valid = false; }
     const info = lstatSync(output, { throwIfNoEntry: false });
     const reportSHA = info?.isFile() ? hash(readFileSync(output)) : null;
-    rows.push({ id, status: valid ? 'PASS' : 'FAIL', exitCode: result.exitCode, elapsedMs: Date.now() - started, counts, invocationSHA, reportSHA });
+    let diagnostic = null;
+    if (!valid && info?.isFile()) {
+      let report = null; try { report = diagnosticReport ? json(diagnosticReport) : null; } catch { /* missing report stays unknown */ }
+      diagnostic = privateDiagnostics(readFileSync(output, 'utf8'), report, paths, root);
+    }
+    rows.push({ id, status: valid ? 'PASS' : 'FAIL', exitCode: result.exitCode, elapsedMs: Date.now() - started, counts, invocationSHA, reportSHA, diagnostic });
     console.log(`PROJECT_CI_PHASE ${id} ${valid ? 'PASS' : 'FAIL'}`);
     if (!valid) refuse();
   };
@@ -132,9 +137,9 @@ export async function main() {
     await phase('install', 'npm', ['ci', '--no-fund']);
     await phase('build', 'npm', ['run', 'build']);
     await phase('unit', process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--coverage', '--maxWorkers=2', '--retry=0',
-      '--reporter=json', `--outputFile=${join(task, 'unit.json')}`], () => vitestCounts(json('unit'), paths.filter(path => /^src\/.*\.(?:test|spec)\.tsx?$/.test(path)), root));
+      '--reporter=json', `--outputFile=${join(task, 'unit.json')}`], () => vitestCounts(json('unit'), paths.filter(path => /^src\/.*\.(?:test|spec)\.tsx?$/.test(path)), root), 'unit');
     await phase('tooling', process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--config=vitest.project-tooling.config.ts',
-      '--reporter=json', `--outputFile=${join(task, 'tooling.json')}`], () => vitestCounts(json('tooling'), paths.filter(path => /^tests\/.*\.tool\.test\.(?:ts|mjs)$/.test(path)), root));
+      '--reporter=json', `--outputFile=${join(task, 'tooling.json')}`], () => vitestCounts(json('tooling'), paths.filter(path => /^tests\/.*\.tool\.test\.(?:ts|mjs)$/.test(path)), root), 'tooling');
     await phase('node-tools', process.execPath, ['--test', '--test-concurrency=2', '--test-reporter=tap', ...paths.filter(path => /^scripts\/.*\.test\.mjs$/.test(path))], nodeCounts);
     await phase('browser', process.execPath, ['node_modules/playwright/cli.js', 'install', 'chromium', '--only-shell']);
     // JSON reporter uses its explicit file rather than public stdout.

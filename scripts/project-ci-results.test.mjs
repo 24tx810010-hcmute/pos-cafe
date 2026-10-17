@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { sourceBinding, vitestCounts, nodeCounts, smokeCounts, uiCounts, publicSummary, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
+import { sourceBinding, vitestCounts, nodeCounts, smokeCounts, uiCounts, publicSummary, privateDiagnostics, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
 import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit } from './project-ci.mjs';
 import { lightService } from './project-ci-launch.mjs';
 import { backendInvocation } from './project-backend.mjs';
@@ -67,6 +67,21 @@ test('public evidence excludes arbitrary binding/count/raw fields and incomplete
   assert.equal(result.overallStatus, 'PASS');
   assert.equal(JSON.stringify(result).includes('FAKE_PRIVATE_TOKEN'), false);
   assert.equal(publicSummary(binding, rows.slice(0, -1), { source: digest, lock: digest }).overallStatus, 'FAIL');
+});
+
+test('failed Vitest diagnostics retain known counters and source paths without raw messages or credentials', () => {
+  const report = { numTotalTests: 2, numPassedTests: 1, numFailedTests: 1, numPendingTests: 0, success: false,
+    secret: 'FAKE_PRIVATE_TOKEN', testResults: [{ name: '/source/src/a.test.ts', status: 'failed',
+      failureMessage: 'AssertionError: FAKE_PRIVATE_TOKEN test timed out' }, { name: '/private/FAKE_PRIVATE_TOKEN', status: 'failed' }] };
+  const diagnostic = privateDiagnostics('FAKE_PRIVATE_TOKEN', report, ['src/a.test.ts'], '/source');
+  assert.equal(diagnostic.metrics.numFailedTests, 1);
+  assert.deepEqual(diagnostic.failedFiles, ['src/a.test.ts']);
+  assert.ok(diagnostic.codes.includes('TEST_TIMEOUT'));
+  assert.equal(JSON.stringify(diagnostic).includes('FAKE_PRIVATE_TOKEN'), false);
+  const row = { id: 'install', status: 'FAIL', exitCode: 1, elapsedMs: 1, invocationSHA: digest, reportSHA: digest,
+    diagnostic: { ...diagnostic, codes: [...diagnostic.codes, 'FAKE_PRIVATE_TOKEN'], metrics: { ...diagnostic.metrics, raw: 'FAKE_PRIVATE_TOKEN' } } };
+  assert.equal(JSON.stringify(publicSummary(binding, [row], {source:digest,lock:digest})).includes('FAKE_PRIVATE_TOKEN'), false);
+  assert.ok(privateDiagnostics('ERROR: Coverage for lines (89%) does not meet global threshold (90%)', null).codes.includes('COVERAGE_LINES'));
 });
 
 test('fresh capture retains output privately; guard refusal stops dependent process and never echoes output', async () => {
