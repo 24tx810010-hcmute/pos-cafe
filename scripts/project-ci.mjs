@@ -11,19 +11,24 @@ const refuse = () => { throw new Error('PROJECT_CI_GUARD'); };
 // contributes a PASS to any required phase. No app code or network is loaded.
 export const BROWSER_PROBE_SOURCE = String.raw`
 let browser, stage = 1, crashed = 0, complete = 0, cleanup = 0;
+const step = value => { stage = value; console.log('PROJECT_BROWSER_RUNTIME_STAGE ' + value); };
+step(1);
 try {
   const { chromium, expect } = await import('@playwright/test');
-  stage = 2; browser = await chromium.launch({ timeout: 5000 });
-  stage = 3; const context = await browser.newContext();
-  stage = 4; const page = await context.newPage();
-  page.on('crash', () => { crashed = 1; });
-  stage = 5; await page.setContent('<!doctype html><main data-testid="ci-runtime-control">runtime control</main>', { timeout: 5000 });
+  step(2); browser = await chromium.launch({ timeout: 5000 });
+  step(3); const context = await browser.newContext();
+  step(4); const page = await context.newPage();
+  page.on('crash', () => { if (!crashed) console.log('PROJECT_BROWSER_RUNTIME_CRASH 1'); crashed = 1; });
+  step(5); await page.setContent('<!doctype html><main data-testid="ci-runtime-control">runtime control</main>', { timeout: 5000 });
   const locator = page.getByTestId('ci-runtime-control');
-  stage = 6; if (await locator.count() !== 1) throw new Error();
-  stage = 7; if (!await locator.isVisible()) throw new Error();
-  stage = 8; await expect(locator).toBeVisible({ timeout: 1000 });
-  stage = 9; complete = 1;
-} catch { /* Runtime control exports no arbitrary error text. */ }
+  step(6); if (await locator.count() !== 1) throw new Error();
+  step(7); if (!await locator.isVisible()) throw new Error();
+  step(8); await expect(locator).toBeVisible({ timeout: 1000 });
+  step(9); complete = 1;
+} catch (error) {
+  const ordinal = ['Error','TimeoutError','TypeError','ReferenceError'].indexOf(error?.name) + 1;
+  if (ordinal) console.log('PROJECT_BROWSER_RUNTIME_FAILURE ' + ordinal);
+}
 finally { try { if (browser) await browser.close(); cleanup = 1; } catch {} }
 console.log('PROJECT_BROWSER_RUNTIME_CONTROL ' + JSON.stringify({schemaVersion:'pos-browser-runtime-control-v1',stage,crashed,complete,cleanup}));
 `;
@@ -208,11 +213,15 @@ export async function main() {
               { cwd: root, env: { ...env, DEBUG: 'pw:browser' }, output: probeOutput, guard, timeoutMs: 15000, maxBytes: 32768 });
             const probeInfo = lstatSync(probeOutput, { throwIfNoEntry: false });
             diagnostic.metrics.browserProbeCommandCompleted = !probe.blocked && probe.exitCode === 0 ? 1 : 0;
+            if (probe.blockCode === 'COMMAND_TIMEOUT') diagnostic.metrics.browserProbeTimedOut = 1;
             if (probeInfo?.isFile()) {
               const control = privateDiagnostics(readFileSync(probeOutput, 'utf8'), null);
               Object.assign(diagnostic.metrics, Object.fromEntries(Object.entries(control.metrics).filter(([key]) => key.startsWith('browserProbe'))));
               if (control.metrics.browserCrashSignal) diagnostic.metrics.browserProbeCrashSignal = control.metrics.browserCrashSignal;
             }
+            guard();
+            diagnostic.metrics.browserProbeDescendantsRemaining = browserRuntimeControlCanStart(
+              readFileSync(join(cgroup, 'cgroup.procs'), 'utf8'), readFileSync(join(cgroup, 'cgroup.stat'), 'utf8'), process.pid) ? 0 : 1;
           }
         } catch (error) {
           diagnostic.metrics.browserProbeCommandCompleted = 0;

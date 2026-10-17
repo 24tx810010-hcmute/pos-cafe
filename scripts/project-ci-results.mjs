@@ -326,16 +326,19 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
   // CDP payloads contain injected source code and arbitrary page data. Their
   // strings are not evidence of TypeError, timeout or assertion failures.
   const protocolLine = /^[^\r\n{]*\bpw:protocol\b[^\r\n{]{0,64}\b(?:SEND|RECV)\b/;
-  const privateText = rawPrivateText.split('\n').filter(line => !protocolLine.test(line)).join('\n');
+  const rawLines = rawPrivateText.split(/\r\n|\r|\n/);
+  const privateText = rawLines.filter(line => !protocolLine.test(line)).join('\n');
   Object.assign(metrics, browserRuntimeControlFacts(rawPrivateText));
-  const rawLines = rawPrivateText.split('\n');
   const failedStepIndex = rawLines.findIndex(line => line.trimStart().startsWith('PROJECT_SMOKE_FAILED_STEP '));
   let firstCrashIndex = -1;
   for (const [lineIndex,line] of rawLines.entries()) {
     const signal = /^[^\r\n{]*\bpw:browser\b[^\r\n]{0,160}Received signal (4|5|6|11)\b/.exec(line);
     if (signal) { metrics.browserCrashSignal = Number(signal[1]); if (firstCrashIndex < 0) firstCrashIndex = lineIndex; }
     if (line.length > 4096 || !/^[^\r\n{]*\bpw:protocol\b[^\r\n{]{0,64}\bRECV[^\r\n{]{0,16}\{/.test(line)) continue;
-    let event; try { event = JSON.parse(line.slice(line.indexOf('{'))); } catch { continue; }
+    // debug's colored formatter appends a finite duration after JSON. This is
+    // outside the protocol object; do not accept any other trailing text.
+    const payload = line.slice(line.indexOf('{')).replace(/\s+\+[0-9]+(?:\.[0-9]+)?(?:ms|s|m|h)\s*$/, '');
+    let event; try { event = JSON.parse(payload); } catch { continue; }
     if (event?.method === 'Inspector.targetCrashed') { metrics.browserInspectorCrashObserved = 1; if (firstCrashIndex < 0) firstCrashIndex = lineIndex; }
     if (event?.method === 'Target.targetCrashed') {
       metrics.browserTargetCrashObserved = 1;
@@ -424,14 +427,26 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
 }
 export function browserRuntimeControlFacts(text) {
   const prefix = 'PROJECT_BROWSER_RUNTIME_CONTROL ';
-  const lines = text.split('\n').filter(line => line.startsWith(prefix));
+  const all = text.split(/\r\n|\r|\n/);
+  const progress = all.filter(line => line.startsWith('PROJECT_BROWSER_RUNTIME_STAGE '));
+  if (progress.length > 9 || progress.some((line,index) => line !== 'PROJECT_BROWSER_RUNTIME_STAGE '+(index+1))) return {};
+  const crash = all.filter(line => line.startsWith('PROJECT_BROWSER_RUNTIME_CRASH '));
+  if (crash.length > 1 || crash.some(line => line !== 'PROJECT_BROWSER_RUNTIME_CRASH 1')) return {};
+  const failure = all.filter(line => line.startsWith('PROJECT_BROWSER_RUNTIME_FAILURE '));
+  if (failure.length > 1 || failure.some(line => !/^PROJECT_BROWSER_RUNTIME_FAILURE [1-4]$/.test(line))) return {};
+  const partial = progress.length ? {browserProbeStageOrdinal:progress.length} : {};
+  if (crash.length) partial.browserProbeCrashed = 1;
+  if (failure.length) partial.browserProbeFailureNameOrdinal = Number(failure[0].at(-1));
+  const lines = all.filter(line => line.startsWith(prefix));
+  if (!lines.length) return partial;
   if (lines.length !== 1 || lines[0].length > 512) return {};
   let value; try { value = JSON.parse(lines[0].slice(prefix.length)); } catch { return {}; }
   if (!value || Object.keys(value).sort().join(',') !== 'cleanup,complete,crashed,schemaVersion,stage'
     || value.schemaVersion !== 'pos-browser-runtime-control-v1' || !Number.isInteger(value.stage) || value.stage < 1 || value.stage > 9
     || [value.complete,value.crashed,value.cleanup].some(n => n !== 0 && n !== 1)
-    || (value.complete === 1 && (value.stage !== 9 || value.crashed !== 0)) || (value.stage === 9 && value.complete !== 1)) return {};
-  return {browserProbeStageOrdinal:value.stage,browserProbeCrashed:value.crashed,browserProbeComplete:value.complete,browserProbeCleanup:value.cleanup};
+    || (value.complete === 1 && (value.stage !== 9 || value.crashed !== 0 || failure.length)) || (value.stage === 9 && value.complete !== 1)
+    || (progress.length && progress.length !== value.stage) || (crash.length && value.crashed !== 1)) return {};
+  return {...partial,browserProbeStageOrdinal:value.stage,browserProbeCrashed:value.crashed,browserProbeComplete:value.complete,browserProbeCleanup:value.cleanup};
 }
 const sameSet = (a, b) => a.length === b.length && new Set(a).size === a.length
   && [...a].sort().every((value, index) => value === [...b].sort()[index]);
@@ -592,6 +607,7 @@ export function publicSummary(binding, rows, fingerprints) {
           'smokeConfiguredTimeoutMs', 'smokeResultDurationMs', 'smokeResultStatusOrdinal',
           'browserCrashSignal', 'browserInspectorCrashObserved', 'browserTargetCrashObserved', 'browserTargetCrashStatusOrdinal', 'browserTargetCrashErrorCode', 'browserCrashBeforeFailedStep',
           'browserProbeCommandCompleted', 'browserProbeStageOrdinal', 'browserProbeCrashed', 'browserProbeComplete', 'browserProbeCleanup', 'browserProbeSkippedOrdinal', 'browserProbeCrashSignal',
+          'browserProbeFailureNameOrdinal', 'browserProbeTimedOut', 'browserProbeDescendantsRemaining',
           'smokeExpected', 'smokeUnexpected', 'smokeSkipped', 'smokeFlaky', 'smokeProgressIndex', 'smokeProgressTotal',
           'memoryCurrentBytes', 'peakMemoryBytes', 'pidsCurrent', 'peakPids', 'oomEvents', 'oomKills', 'pidsLimitEvents'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));

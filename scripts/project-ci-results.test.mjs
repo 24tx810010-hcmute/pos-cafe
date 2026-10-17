@@ -194,6 +194,32 @@ test('static browser control refuses attribution while previous cgroup processes
     assert.equal(browserRuntimeControlCanStart(procs,stat,123),false);
 });
 
+test('actual debug formatter CR prefixes and colored duration suffixes preserve crash facts without source-string errors', () => {
+  for (const colored of [false,true]) {
+    const prefix=colored?'\u001b[32m  pw:protocol\u001b[0m ':'2026-10-17T00:00:00.000Z pw:protocol ';
+    const suffix=colored?' \u001b[32m+0ms\u001b[0m':'';
+    const send=prefix+'SEND ► '+JSON.stringify({method:'Runtime.callFunctionOn',params:{functionDeclaration:'TypeError ReferenceError Timed out FAKE_PRIVATE'}})+suffix;
+    const receive=prefix+'◀ RECV '+JSON.stringify({method:'Inspector.targetCrashed',params:{}})+suffix;
+    const observed=privateDiagnostics('\r'+send+'\r\n'+receive+'\rPROJECT_SMOKE_FAILED_STEP {}',null);
+    for(const code of ['TYPE_ERROR','REFERENCE_ERROR','TEST_TIMEOUT']) assert.equal(observed.codes.includes(code),false);
+    assert.equal(observed.metrics.browserInspectorCrashObserved,1); assert.equal(observed.metrics.browserCrashBeforeFailedStep,1);
+    assert.equal(privateDiagnostics(receive+' FAKE_PRIVATE',null).metrics.browserInspectorCrashObserved,undefined);
+  }
+});
+
+test('partial browser control progress survives forced timeout without inventing completion or cleanup', () => {
+  const stages=n=>Array.from({length:n},(_,i)=>'PROJECT_BROWSER_RUNTIME_STAGE '+(i+1)).join('\n');
+  const partial=privateDiagnostics(stages(8)+'\nPROJECT_BROWSER_RUNTIME_FAILURE 1\nPROJECT_BROWSER_RUNTIME_CRASH 1\n',null).metrics;
+  assert.equal(partial.browserProbeStageOrdinal,8); assert.equal(partial.browserProbeFailureNameOrdinal,1); assert.equal(partial.browserProbeCrashed,1);
+  assert.equal(partial.browserProbeComplete,undefined); assert.equal(partial.browserProbeCleanup,undefined);
+  for(const raw of ['PROJECT_BROWSER_RUNTIME_STAGE 2',stages(2)+'\nPROJECT_BROWSER_RUNTIME_STAGE 2',stages(9)+'\nPROJECT_BROWSER_RUNTIME_STAGE 10',
+    stages(2)+'\nPROJECT_BROWSER_RUNTIME_FAILURE 9',stages(2)+'\nPROJECT_BROWSER_RUNTIME_CRASH FAKE_PRIVATE'])
+    assert.equal(privateDiagnostics(raw,null).metrics.browserProbeStageOrdinal,undefined);
+  const final={schemaVersion:'pos-browser-runtime-control-v1',stage:9,crashed:0,complete:1,cleanup:1};
+  assert.equal(privateDiagnostics(stages(9)+'\nPROJECT_BROWSER_RUNTIME_CONTROL '+JSON.stringify(final),null).metrics.browserProbeComplete,1);
+  assert.equal(privateDiagnostics(stages(8)+'\nPROJECT_BROWSER_RUNTIME_CONTROL '+JSON.stringify(final),null).metrics.browserProbeComplete,undefined);
+});
+
 test('real unzip streams only owned failed trace JSONL and never extracts resource files', () => {
   const root=mkdtempSync(join(tmpdir(),'pos-trace-')), folder=join(root,'test-results','case');mkdirSync(folder,{recursive:true});
   const file=join(folder,'trace.zip'), source='src/app/App.tsx';
