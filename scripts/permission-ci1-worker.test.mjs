@@ -4,7 +4,8 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { ci1Identity } from './permission-ci1-policy.mjs';
 import { ci1WorkerPlan, runCi1Worker, ci1EdgeCacheProof, ci1PublicExport, ci1EdgeBundleArguments,
-  ci1AcquireDaemons, ci1CloseDaemons, ci1TerminateDaemon, ci1FailureExport, ci1DockerFailureCode } from './permission-ci1-worker.mjs';
+  ci1AcquireDaemons, ci1CloseDaemons, ci1TerminateDaemon, ci1FailureExport, ci1DockerFailureCode,
+  ci1OwnedMountCount, ci1UnmountFailureCode } from './permission-ci1-worker.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
 import { backendEvidence } from './project-backend.mjs';
 
@@ -38,6 +39,21 @@ test('worker plan applies caps before writes and separates network cache warm fr
   assert.ok(plan.launchPrefix.includes('--property=DelegateSubgroup=supervisor'));
   assert.ok(plan.stages.indexOf('stop-prefetch') < plan.stages.indexOf('offline-edge'));
   assert.ok(plan.stages.indexOf('offline-edge') < plan.stages.indexOf('harness'));
+});
+
+test('recursive teardown accepts only the exact owned loop tree and emits finite unmount reasons', () => {
+  const tree = { target: '/task/volume', source: '/dev/loop7', children: [{ target: '/task/volume/docker/overlay2/x/merged', source: 'overlay' }] };
+  assert.equal(ci1OwnedMountCount(tree, '/task/volume', '/dev/loop7'), 1);
+  for (const target of ['/task/volume-other', '/task/volume/../outside', '/outside', '/task/volume/bad\n']) {
+    const invalid = structuredClone(tree); invalid.children[0].target = target;
+    assert.throws(() => ci1OwnedMountCount(invalid, '/task/volume', '/dev/loop7'));
+  }
+  assert.throws(() => ci1OwnedMountCount(tree, '/task/volume', '/dev/loop8'));
+  assert.throws(() => ci1OwnedMountCount(tree, '/', '/dev/loop7'));
+  assert.equal(ci1UnmountFailureCode('FAKE_UNIT_SECRET: target is busy'), 'UNMOUNT_BUSY');
+  assert.equal(ci1UnmountFailureCode('FAKE_UNIT_SECRET: not mounted'), 'UNMOUNT_NOT_MOUNTED');
+  assert.equal(ci1UnmountFailureCode('FAKE_UNIT_SECRET: permission denied'), 'UNMOUNT_PERMISSION');
+  assert.equal(ci1UnmountFailureCode('FAKE_UNIT_SECRET'), null);
 });
 
 test('fake worker completes fixed order but never invents business counts', async () => {
@@ -159,6 +175,31 @@ test('Edge cache and cleanup failures retain independent finite reasons without 
     {edgeVersionMajor:2,edgeVersionMinor:45,edgeVersionPatch:0,edgeVersionCopy:0});
   assert.deepEqual(result.cleanupFailure,{stage:'cleanup',operation:'CLEANUP_UNMOUNT',code:'COMMAND_FAILED',command:'umount',exitCode:32});
   assert.equal(result.cleanup,false);assert.equal(result.status,'ERROR');assert.equal(JSON.stringify(result).includes('FAKE_UNIT_SECRET'),false);
+});
+
+test('only explicitly reviewed optional metadata may lack installed package files and every byte remains hashed', () => {
+  const pin = JSON.parse(readFileSync('tests/permissions/runtime/ci1-edge.json')).packages.find(item => item.name === 'bufferutil');
+  const optional = () => {
+    const f = cacheFixture(); f.expected.packages.push(pin); f.expected.metadataOnlyAllowed = ['bufferutil@4.1.0'];
+    f.entries.set('/cache/npm/registry.npmjs.org', ['@supabase', 'bufferutil']);
+    const folder = '/cache/npm/registry.npmjs.org/bufferutil'; f.entries.set(folder, ['registry.json']);
+    f.entries.set(folder + '/registry.json', JSON.stringify({ name: pin.name, versions: { [pin.version]: {
+      version: pin.version, dist: { integrity: pin.integrity, tarball: pin.tarball }, dependencies: pin.dependencies } } }));
+    return { ...f, optionalFolder: folder };
+  };
+  const f = optional(), proof = ci1EdgeCacheProof('/cache', f.expected, f.read);
+  assert.deepEqual(proof.metadataOnly, ['bufferutil@4.1.0']);
+  assert.equal(proof.observed.includes('bufferutil@4.1.0'), false);
+  assert.ok(proof.files.some(item => item.path === 'bufferutil/registry.json' && item.bytes > 0));
+  f.entries.set(f.optionalFolder + '/registry.json', f.entries.get(f.optionalFolder + '/registry.json') + ' ');
+  assert.notEqual(ci1EdgeCacheProof('/cache', f.expected, f.read).sha256, proof.sha256);
+  for (const change of [x => { delete x.expected.metadataOnlyAllowed; }, x => { x.entries.set(x.optionalFolder, ['registry.json', 'unknown']); },
+    x => { x.entries.set(x.folder, ['registry.json']); }, x => { x.entries.set(x.folder + '/2.45.0', []); }, x => {
+      const value = JSON.parse(x.entries.get(x.optionalFolder + '/registry.json')); value.versions[pin.version].dist.integrity = 'FAKE_UNIT_SECRET';
+      x.entries.set(x.optionalFolder + '/registry.json', JSON.stringify(value));
+    }, x => { const stat = x.read.stat; x.read.stat = path => ({ ...stat(path), isSymbolicLink: () => path === x.optionalFolder + '/registry.json' }); }]) {
+    const invalid = optional(); change(invalid); assert.throws(() => ci1EdgeCacheProof('/cache', invalid.expected, invalid.read));
+  }
 });
 
 test('fresh Edge cache proof requires pinned resolved version/SRI and detects file drift or incomplete extraction', () => {

@@ -194,10 +194,10 @@ export async function main() {
     await phase('smoke-discovery', process.execPath, ['node_modules/playwright/cli.js', 'test', '--list', '--reporter=json']);
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke-preflight.json');
     await phase('smoke-preflight', process.execPath, ['node_modules/playwright/cli.js', 'test', 'tests/smoke/pos-cafe.spec.ts:119',
-      '--project=desktop', '--workers=1', '--retries=0', '--forbid-only', '--reporter=line,json'],
+      '--project=desktop', '--workers=1', '--retries=0', '--forbid-only', '--reporter=line,json,./scripts/project-ci-results.mjs'],
       () => smokePreflightCounts(json('smoke-preflight'), json('smoke-discovery')), 'smoke-preflight');
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke.json');
-    await phase('smoke', process.execPath, ['node_modules/playwright/cli.js', 'test', '--workers=2', '--retries=0', '--forbid-only', '--reporter=line,json'],
+    await phase('smoke', process.execPath, ['node_modules/playwright/cli.js', 'test', '--workers=2', '--retries=0', '--forbid-only', '--reporter=line,json,./scripts/project-ci-results.mjs'],
       () => smokeCounts(json('smoke'), json('smoke-discovery'), JSON.parse(readFileSync(join(root, 'ci/smoke-applicability.json'), 'utf8'))), 'smoke');
     delete env.PLAYWRIGHT_JSON_OUTPUT_NAME;
     await phase('ui-selftest', process.execPath, ['ui-audit/run.mjs', '--selftest'], output => {

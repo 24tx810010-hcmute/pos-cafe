@@ -8,6 +8,48 @@ export const PROJECTS = Object.freeze(['desktop', 'tablet-landscape', 'phone-lan
 export const hash = value => createHash('sha256').update(value).digest('hex');
 const reject = () => { throw new Error('PROJECT_CI_RESULT_INVALID'); };
 const integer = n => Number.isSafeInteger(n) && n >= 0;
+const SMOKE_STEP_FILES = Object.freeze(['tests/smoke/pos-cafe.spec.ts', 'tests/smoke/helpers.ts',
+  'tests/smoke/permission-ui-closeout.spec.ts', 'tests/smoke/demo-runbook.spec.ts']);
+const SMOKE_STEP_LOCATORS = Object.freeze(['landing-screen', 'store-pairing-screen', 'passcode-screen',
+  'floor-page', 'order-drawer', 'submit-order-button']);
+const SMOKE_STEP_CATEGORIES = Object.freeze(['pw:api', 'expect', 'fixture', 'hook', 'test.step', 'test.error']);
+const SMOKE_STEP_APIS = Object.freeze([/browserType\.launch|^Launch browser/i, /browser\.newContext|^Create context/i,
+  /browserContext\.newPage|^Create page/i, /page\.goto|^Navigate to/i, /locator\.click|^Click /i,
+  /locator\.fill|^Fill /i, /toBeVisible/, /toBeHidden/, /browserContext\.close/, /browser\.close/,
+  /page\.waitForLoadState/, /page\.waitForURL/]);
+export function smokeStepDiagnostic(step, root) {
+  if (!step?.error) return null;
+  const message = typeof step.error.message === 'string' ? stripVTControlCharacters(step.error.message.slice(0, 1024 ** 2)) : '';
+  const title = typeof step.title === 'string' ? step.title.slice(0, 4096) : '';
+  const locatorText = title + '\n' + (/^\s*Locator:\s*([^\r\n]*)/m.exec(message)?.[1] ?? '');
+  const locator = SMOKE_STEP_LOCATORS.findIndex(id => locatorText.includes(`getByTestId('${id}')`) || locatorText.includes(`getByTestId("${id}")`)) + 1;
+  const location = step.location ?? step.error.location;
+  const path = typeof location?.file === 'string' ? location.file.replaceAll('\\', '/') : '';
+  const prefix = root.replaceAll('\\', '/').replace(/\/$/, '') + '/';
+  const file = path.startsWith(prefix) ? path.slice(prefix.length) : path;
+  const known = SMOKE_STEP_FILES.includes(file) && integer(location?.line) && location.line > 0 && location.line <= 1000000
+    && integer(location?.column) && location.column > 0 && location.column <= 1000000;
+  return { schemaVersion: 'pos-smoke-step-v1', categoryOrdinal: SMOKE_STEP_CATEGORIES.indexOf(step.category) + 1,
+    apiOrdinal: SMOKE_STEP_APIS.findIndex(pattern => pattern.test(title)) + 1,
+    locatorOrdinal: locator, file: known ? file : null, line: known ? location.line : null, column: known ? location.column : null,
+    durationMs: integer(step.duration) && step.duration <= 480000 ? step.duration : null };
+}
+
+// Optional Playwright reporter, loaded from this already pinned checker module.
+// It only observes failures; it has no onEnd/status override or test mutation.
+export default class SmokeFailureReporter {
+  constructor() { this.emitted = 0; }
+  emit(step) {
+    if (this.emitted >= 32) return;
+    const record = smokeStepDiagnostic(step, process.cwd());
+    if (record) { this.emitted++; console.log('PROJECT_SMOKE_FAILED_STEP ' + JSON.stringify(record)); }
+  }
+  onStepEnd(_test, _result, step) { this.emit(step); }
+  onTestEnd(_test, result) {
+    for (const error of Array.isArray(result.errors) ? result.errors : [])
+      this.emit({ error, location: error.location, category: 'test.error', duration: result.duration });
+  }
+}
 const DIAGNOSTIC_CODES = Object.freeze(['COMMAND_FAILED', 'VITEST_ASSERTION', 'VITEST_RUNTIME', 'REPORT_MISSING',
   'TEST_TIMEOUT', 'ASSERTION_ERROR', 'TYPE_ERROR', 'REFERENCE_ERROR', 'MODULE_NOT_FOUND', 'OUT_OF_MEMORY', 'COVERAGE_LINES',
   'RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'RESOURCE_CORE_LIMIT', 'GUARD_IO_ENOENT', 'GUARD_IO_ENOTDIR',
@@ -71,6 +113,26 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
   }
   const progress = [...privateText.matchAll(/\[(\d+)\/(\d+)\]/g)].filter(m => Number(m[1]) <= Number(m[2]) && Number(m[2]) <= 10000).at(-1);
   if (progress) { metrics.smokeProgressIndex = Number(progress[1]); metrics.smokeProgressTotal = Number(progress[2]); }
+  let stepLocation = false;
+  for (const line of privateText.split('\n')) {
+    const marker = line.indexOf('PROJECT_SMOKE_FAILED_STEP ');
+    if (marker < 0 || line.length - marker > 4096) continue;
+    let step; try { step = JSON.parse(line.slice(marker + 'PROJECT_SMOKE_FAILED_STEP '.length)); } catch { continue; }
+    if (step?.schemaVersion !== 'pos-smoke-step-v1') continue;
+    if (integer(step.locatorOrdinal) && step.locatorOrdinal > 0 && step.locatorOrdinal <= SMOKE_STEP_LOCATORS.length)
+      metrics.smokeStepLocatorOrdinal ??= step.locatorOrdinal;
+    if (integer(step.categoryOrdinal) && step.categoryOrdinal > 0 && step.categoryOrdinal <= SMOKE_STEP_CATEGORIES.length)
+      metrics.smokeStepCategoryOrdinal ??= step.categoryOrdinal;
+    if (integer(step.apiOrdinal) && step.apiOrdinal > 0 && step.apiOrdinal <= SMOKE_STEP_APIS.length)
+      metrics.smokeStepApiOrdinal ??= step.apiOrdinal;
+    if (integer(step.durationMs) && step.durationMs <= 480000) metrics.smokeStepDurationMs ??= step.durationMs;
+    if (!stepLocation && SMOKE_STEP_FILES.includes(step.file) && expectedFiles.includes(step.file)
+      && integer(step.line) && step.line > 0 && step.line <= 1000000 && integer(step.column) && step.column > 0 && step.column <= 1000000) {
+      stepLocation = true; metrics.smokeStepSourceOrdinal = SMOKE_STEP_FILES.indexOf(step.file) + 1;
+      metrics.smokeFailureLine = step.line; metrics.smokeFailureColumn = step.column;
+      if (step.file === 'tests/smoke/helpers.ts') metrics.smokeHelperLine = step.line;
+    }
+  }
   for (const [code, pattern] of Object.entries({ TEST_TIMEOUT: /timed?\s*out|test timeout|timeout of/i,
     ASSERTION_ERROR: /AssertionError|expected .{0,100} to /i, TYPE_ERROR: /TypeError/, REFERENCE_ERROR: /ReferenceError/,
     MODULE_NOT_FOUND: /ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|cannot find (?:module|package)/i,
@@ -248,7 +310,9 @@ export function publicSummary(binding, rows, fingerprints) {
       metrics: Object.fromEntries(Object.entries(diagnostic.metrics).filter(([key, value]) =>
         ['numTotalTests', 'numPassedTests', 'numFailedTests', 'numPendingTests', 'numRuntimeErrorTestSuites', 'architectureAssertion',
           'minimumObservedFreeBytes', 'initialFreeBytes', 'freeSpaceDecreaseBytes', 'ownedBytesAtCheckpoint', 'coreFileCount', 'coreAllocatedBytes', 'largestOwnedFileBytes', 'kernelCorePipe',
-          'smokeTestLine', 'smokeFailureProjectOrdinal', 'smokeHelperLine', 'smokeFailureLine', 'smokeFailureColumn', 'smokeExpected', 'smokeUnexpected', 'smokeSkipped', 'smokeFlaky', 'smokeProgressIndex', 'smokeProgressTotal',
+          'smokeTestLine', 'smokeFailureProjectOrdinal', 'smokeHelperLine', 'smokeFailureLine', 'smokeFailureColumn',
+          'smokeStepLocatorOrdinal', 'smokeStepCategoryOrdinal', 'smokeStepApiOrdinal', 'smokeStepSourceOrdinal', 'smokeStepDurationMs',
+          'smokeExpected', 'smokeUnexpected', 'smokeSkipped', 'smokeFlaky', 'smokeProgressIndex', 'smokeProgressTotal',
           'memoryCurrentBytes', 'peakMemoryBytes', 'pidsCurrent', 'peakPids', 'oomEvents', 'oomKills', 'pidsLimitEvents'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));
   return { schemaVersion: 'pos-cafe-light-ci-v1', verificationScope: 'LIGHT_MOCK_ONLY', repository: PROJECT_REPOSITORY, repositoryID: PROJECT_REPOSITORY_ID,

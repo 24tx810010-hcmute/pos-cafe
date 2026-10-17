@@ -108,6 +108,9 @@ export function ci1EdgeIntake(manifest) {
     if (Object.values(item.dependencies).some(value => typeof value !== 'string' || /[\r\n\0]/.test(value))) refuse();
   }
   if (!keys.has(manifest.root)) refuse();
+  if (manifest.metadataOnlyAllowed !== undefined && (!Array.isArray(manifest.metadataOnlyAllowed)
+    || new Set(manifest.metadataOnlyAllowed).size !== manifest.metadataOnlyAllowed.length
+    || manifest.metadataOnlyAllowed.some(key => !['bufferutil@4.1.0', 'utf-8-validate@6.0.6', 'node-gyp-build@4.8.4'].includes(key) || !keys.has(key)))) refuse();
   return manifest.packages;
 }
 

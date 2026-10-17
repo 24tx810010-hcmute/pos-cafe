@@ -109,4 +109,6 @@ test('Edge metadata pins are a separate closure from application npm lock and re
   assert.throws(() => ci1EdgeIntake(duplicate));
   const wrong = structuredClone(edge); wrong.packages[0].integrity = 'FAKE_UNIT_SECRET';
   assert.throws(() => ci1EdgeIntake(wrong), { message: 'CI1_INTAKE_REFUSED' });
+  for (const list of [['@supabase/supabase-js@2.45.0'], ['bufferutil@4.1.0', 'bufferutil@4.1.0'], ['bufferutil@4.2.0']])
+    assert.throws(() => ci1EdgeIntake({ ...edge, metadataOnlyAllowed: list }));
 });

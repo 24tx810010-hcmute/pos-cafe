@@ -2,7 +2,7 @@
 // execution authorization on a public standard GitHub Linux runner.
 import { readFileSync, writeFileSync, mkdirSync, existsSync, realpathSync, lstatSync, statSync, statfsSync,
   readdirSync, readlinkSync, chmodSync, symlinkSync, unlinkSync, openSync, closeSync, writeSync } from 'node:fs';
-import { resolve, join, dirname, basename } from 'node:path';
+import { resolve, join, dirname, basename, posix } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -42,11 +42,32 @@ const failureCodes = ['GUARD_REFUSED', 'INTAKE_REFUSED', 'COMMAND_FAILED', 'COMM
   'DOCKER_REGISTRY_NOT_FOUND', 'DOCKER_REGISTRY_RATE_LIMIT', 'DOCKER_NETWORK', 'DOCKER_API_VERSION', 'DOCKER_UNPACK',
   'EDGE_CACHE_ENTRY', 'EDGE_CACHE_TYPE', 'EDGE_CACHE_PACKAGE', 'EDGE_CACHE_VERSION', 'EDGE_CACHE_PIN',
   'EDGE_CACHE_METADATA', 'EDGE_CACHE_NAME', 'EDGE_CACHE_SRI', 'EDGE_CACHE_TARBALL', 'EDGE_CACHE_DEPENDENCIES',
-  'EDGE_CACHE_BOUND', 'EDGE_CACHE_INCOMPLETE', 'UNKNOWN'];
+  'EDGE_CACHE_BOUND', 'EDGE_CACHE_INCOMPLETE', 'UNMOUNT_BUSY', 'UNMOUNT_PERMISSION', 'UNMOUNT_NOT_MOUNTED', 'UNKNOWN'];
 const failureMetrics = ['hostFreeBytes', 'memoryBytes', 'oom', 'pidsEvents', 'memoryCurrentBytes', 'pidsCurrent',
   'cpuMatches', 'memoryLimitMatches', 'swapLimitMatches', 'pidsLimitMatches', 'cgroupMatches', 'runtimeMatches', 'loggingMatches',
   'loopImageBytes', 'loopAllocatedBytes', 'loopFilesystemBytes', 'loopFreeBytes', 'loopOffset', 'loopSizeLimit', 'mountMatches', 'ownerMatches', 'imageOrdinal', 'edgePackageOrdinal',
-  'edgeVersionMajor', 'edgeVersionMinor', 'edgeVersionPatch', 'edgeVersionCopy'];
+  'edgeVersionMajor', 'edgeVersionMinor', 'edgeVersionPatch', 'edgeVersionCopy', 'edgeCacheEntryCount', 'edgeRegistryMetadataPresent', 'loopNestedMounts'];
+export function ci1UnmountFailureCode(stderr) {
+  if (typeof stderr !== 'string' || Buffer.byteLength(stderr) > 1024 ** 2) return null;
+  for (const [code, pattern] of Object.entries({ UNMOUNT_BUSY: /target is busy|device or resource busy/i,
+    UNMOUNT_PERMISSION: /must be superuser|not superuser|permission denied|operation not permitted/i,
+    UNMOUNT_NOT_MOUNTED: /not mounted|no mount point specified/i })) if (pattern.test(stderr)) return code;
+  return null;
+}
+
+export function ci1OwnedMountCount(tree, root, loop) {
+  if (typeof root !== 'string' || /[\r\n\0]/.test(root) || posix.resolve(root) !== root || root === '/'
+    || !/^\/dev\/loop[0-9]+$/.test(loop) || tree?.target !== root || tree.source !== loop) refused();
+  const queue = [tree]; let count = 0;
+  while (queue.length) {
+    const item = queue.shift();
+    if (++count > 4096 || typeof item?.target !== 'string' || /[\r\n\0]/.test(item.target)
+      || posix.resolve(item.target) !== item.target || (item.target !== root && !item.target.startsWith(root + '/'))
+      || (item.children !== undefined && !Array.isArray(item.children))) refused();
+    if (item.children) queue.push(...item.children);
+  }
+  return count - 1;
+}
 export function ci1DockerFailureCode(stderr) {
   if (typeof stderr !== 'string' || Buffer.byteLength(stderr) > 1024 ** 2) return null;
   for (const [code, pattern] of Object.entries({
@@ -172,6 +193,7 @@ function commandRunner(env, guard = () => {}) {
     catch (error) {
       error.ci1Command = failureCommands.includes(basename(command)) ? basename(command) : null;
       if (basename(command) === 'docker') error.ci1FailureCode = ci1DockerFailureCode(error.stderr);
+      if (basename(command) === 'umount') error.ci1FailureCode = ci1UnmountFailureCode(error.stderr);
       throw error;
     }
   };
@@ -373,7 +395,18 @@ export function ci1EdgeCacheProof(cacheRoot, expected, read = { list: readdirSyn
   const cacheRefuse = code => { throw Object.assign(new Error('CI1_WORKER_REFUSED'), {
     ci1FailureCode: code, ci1Facts: { edgePackageOrdinal: packageOrdinal, ...versionFacts },
   }); };
-  const observed = [], files = []; let bytes = 0;
+  const observed = [], metadataOnly = [], files = []; let bytes = 0, rootFiles = 0;
+  const metadata = (folder, name, version, pin) => {
+    const path = `${folder}/registry.json`, info = read.stat(path);
+    if (!info.isFile() || info.isSymbolicLink() || info.size > 32 * 1024 ** 2) cacheRefuse('EDGE_CACHE_METADATA');
+    const raw = read.read(path), packument = JSON.parse(raw), item = packument.versions?.[version];
+    if (packument.name !== name) cacheRefuse('EDGE_CACHE_NAME');
+    if (item?.version !== version) cacheRefuse('EDGE_CACHE_VERSION');
+    if (item.dist?.integrity !== pin.integrity) cacheRefuse('EDGE_CACHE_SRI');
+    if (item.dist?.tarball !== pin.tarball) cacheRefuse('EDGE_CACHE_TARBALL');
+    if (JSON.stringify(Object.entries(item.dependencies ?? {}).sort()) !== JSON.stringify(Object.entries(pin.dependencies).sort())) cacheRefuse('EDGE_CACHE_DEPENDENCIES');
+    return raw;
+  };
   const registry = `${cacheRoot}/npm/registry.npmjs.org`;
   const packages = [];
   for (const name of read.list(registry)) {
@@ -394,6 +427,17 @@ export function ci1EdgeCacheProof(cacheRoot, expected, read = { list: readdirSyn
     if (!allowedNames.has(name)) cacheRefuse('EDGE_CACHE_PACKAGE');
     if (!folderInfo.isDirectory() || folderInfo.isSymbolicLink()) cacheRefuse('EDGE_CACHE_TYPE');
     const entries = read.list(folder);
+    versionFacts = { edgeCacheEntryCount: entries.length, edgeRegistryMetadataPresent: entries.includes('registry.json') ? 1 : 0 };
+    if (entries.length === 1 && entries[0] === 'registry.json') {
+      const candidates = [...allowed.values()].filter(pin => pin.name === name);
+      if (candidates.length !== 1 || !expected.metadataOnlyAllowed?.includes(`${name}@${candidates[0].version}`)) cacheRefuse('EDGE_CACHE_METADATA');
+      const pin = candidates[0], raw = metadata(folder, name, pin.version, pin), size = Buffer.byteLength(raw);
+      bytes += size;
+      if (bytes > CI1_SETUP.edgeBytes || files.length >= 100000) cacheRefuse('EDGE_CACHE_BOUND');
+      files.push({ path: `${name}/registry.json`, sha256: ci1BytesHash(raw), bytes: size });
+      metadataOnly.push(`${name}@${pin.version}`);
+      continue; // Accounted optional metadata is never an installed package.
+    }
     if (!entries.includes('registry.json') || entries.length < 2) cacheRefuse('EDGE_CACHE_METADATA');
     for (const version of entries) {
       if (version === 'registry.json') continue;
@@ -407,16 +451,7 @@ export function ci1EdgeCacheProof(cacheRoot, expected, read = { list: readdirSyn
       // refuse it (and every other unknown entry), rather than skip its bytes.
       if (typeof version !== 'string' || /[\r\n\0/\\]/.test(version) || !/^\d+\.\d+\.\d+$/.test(version)) cacheRefuse('EDGE_CACHE_VERSION');
       const pin = allowed.get(`${name}@${version}`); if (!pin) cacheRefuse('EDGE_CACHE_PIN');
-      const metadataPath = `${folder}/registry.json`;
-      const metadataInfo = read.stat(metadataPath);
-      if (!metadataInfo.isFile() || metadataInfo.isSymbolicLink() || metadataInfo.size > 32 * 1024 ** 2) cacheRefuse('EDGE_CACHE_METADATA');
-      const packument = JSON.parse(read.read(metadataPath, 'utf8')), metadata = packument.versions?.[version];
-      // deno_npm0.26 serializes name at packument level, not in version info.
-      if (packument.name !== name) cacheRefuse('EDGE_CACHE_NAME');
-      if (metadata?.version !== version) cacheRefuse('EDGE_CACHE_VERSION');
-      if (metadata.dist?.integrity !== pin.integrity) cacheRefuse('EDGE_CACHE_SRI');
-      if (metadata.dist?.tarball !== pin.tarball) cacheRefuse('EDGE_CACHE_TARBALL');
-      if (JSON.stringify(Object.entries(metadata.dependencies ?? {}).sort()) !== JSON.stringify(Object.entries(pin.dependencies).sort())) cacheRefuse('EDGE_CACHE_DEPENDENCIES');
+      metadata(folder, name, version, pin);
       const packageRoot = `${folder}/${version}`;
       const packageInfo = read.stat(packageRoot);
       if (!packageInfo.isDirectory() || packageInfo.isSymbolicLink()) cacheRefuse('EDGE_CACHE_TYPE');
@@ -428,6 +463,7 @@ export function ci1EdgeCacheProof(cacheRoot, expected, read = { list: readdirSyn
           if (info.isDirectory()) visit(path, prefix + entry + '/');
           else if (info.isFile()) { bytes += info.size;
             if (bytes > CI1_SETUP.edgeBytes || files.length >= 100000) cacheRefuse('EDGE_CACHE_BOUND');
+            if (`${name}@${version}` === expected.root) rootFiles++;
             files.push({ path: `${name}/${version}/${prefix}${entry}`, sha256: ci1BytesHash(read.read(path)), bytes: info.size });
           } else cacheRefuse('EDGE_CACHE_TYPE');
         }
@@ -435,8 +471,9 @@ export function ci1EdgeCacheProof(cacheRoot, expected, read = { list: readdirSyn
       observed.push(`${name}@${version}`);
     }
   }
-  if (!observed.includes(expected.root) || !files.length) cacheRefuse('EDGE_CACHE_INCOMPLETE');
-  return { observed: observed.sort(), files, bytes, sha256: ci1BytesHash(JSON.stringify(files.sort((a, b) => a.path.localeCompare(b.path)))) };
+  if (!observed.includes(expected.root) || rootFiles < 1) cacheRefuse('EDGE_CACHE_INCOMPLETE');
+  return { observed: observed.sort(), metadataOnly: metadataOnly.sort(), files, bytes,
+    sha256: ci1BytesHash(JSON.stringify(files.sort((a, b) => a.path.localeCompare(b.path)))) };
 }
 
 export function ci1PublicExport(evidence) {
@@ -541,7 +578,7 @@ async function setup(layout, input, parentEnv) {
   const root = layout.volume, baseEnv = { ...fixedEnv(root, parentEnv), ...githubEnv(parentEnv) };
   const guard = () => supervisor(layout, baseEnv);
   const run = commandRunner(baseEnv, guard);
-  let loop, mounted = false, pair, source, operation = null, imageOrdinal = 0, cleanupFailure = null;
+  let loop, mounted = false, pair, source, operation = null, imageOrdinal = 0, cleanupFailure = null, cleanupMountFacts = {};
   const pinPath = suffix => `${source}/tests/permissions/runtime/${suffix}`;
   const adapter = {
     supervisor: guard,
@@ -680,12 +717,19 @@ async function setup(layout, input, parentEnv) {
       // A quota refusal must not itself prevent ownership-checked shutdown.
       const control = commandRunner(baseEnv);
       let valid = true;
-      const failed = (error, op) => { valid = false; cleanupFailure ??= failureDetails(error, 'cleanup', op); };
+      const failed = (error, op) => { valid = false; cleanupFailure ??= failureDetails(error, 'cleanup', op, op === 'CLEANUP_UNMOUNT' ? cleanupMountFacts : {}); };
       try { if (mounted) exportProof(layout, baseEnv); } catch (error) { failed(error, 'CLEANUP_EXPORT'); }
       try { await stopDaemons(layout, pair); } catch (error) { failed(error, 'CLEANUP_DAEMONS'); }
       try {
-        if (mounted) { const mount = JSON.parse(control('findmnt', ['--json', '--target', root, '--output', 'TARGET,SOURCE'])).filesystems[0];
-          if (mount.target !== root || mount.source !== loop) refused(); control('umount', [root]); mounted = false; }
+        if (mounted) {
+          const mount = JSON.parse(control('findmnt', ['--json', '--submounts', '--target', root, '--output', 'TARGET,SOURCE'])).filesystems[0];
+          cleanupMountFacts = { loopNestedMounts: ci1OwnedMountCount(mount, root, loop) };
+          const attached = JSON.parse(control('losetup', ['--json', '--list', '--output', 'BACK-FILE', loop])).loopdevices[0];
+          if (realpathSync(attached['back-file']) !== layout.image) refused();
+          // All current targets must belong to this exact owned loop tree.
+          // Regular recursive unmount still refuses busy mounts; never lazy/force.
+          control('umount', ['--recursive', root]); mounted = false;
+        }
       } catch (error) { failed(error, 'CLEANUP_UNMOUNT'); }
       try {
         if (loop && !mounted) { const attached = JSON.parse(control('losetup', ['--json', '--list', '--output', 'BACK-FILE', loop])).loopdevices[0];

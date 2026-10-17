@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, mkdtempSync, existsSync, linkSync } from '
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
+import SmokeFailureReporter, { smokeStepDiagnostic, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
 import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit, allocatedBytes, coreLimitDisabled } from './project-ci.mjs';
 import { lightService, withLightCorePattern, stopLightUnit, coreDumpDisabled, linuxCorePatternAdapter } from './project-ci-launch.mjs';
 import { backendInvocation } from './project-backend.mjs';
@@ -71,6 +71,36 @@ test('shared core adapter rejects arbitrary units and requires zero limits plus 
   assert.equal(coreDumpDisabled(limits.replace(/0/g,'unlimited'),'core\n'),false);
   for(const unit of ['pos-cafe-light-r123-a1.service','pos-cafe-ci1-r123-a1.service']) assert.equal(typeof linuxCorePatternAdapter(unit).beforeRestore,'function');
   for(const unit of ['ssh.service','pos-cafe-ci1-r123-a1.service\n','../arbitrary']) assert.throws(()=>linuxCorePatternAdapter(unit));
+});
+
+test('failure reporter retains the actual failed step location and finite locator while removing raw data', t => {
+  const step = { title: 'expect.toBeVisible', category: 'expect', duration: 5000,
+    location: { file: process.cwd() + '/tests/smoke/pos-cafe.spec.ts', line: 122, column: 49 },
+    error: { message: "FAKE_PRIVATE_TOKEN\nLocator: getByTestId('landing-screen')\nhttps://private.example" }, raw: 'FAKE_PRIVATE_TOKEN' };
+  const lines = []; t.mock.method(console, 'log', line => lines.push(line));
+  const reporter = new SmokeFailureReporter();
+  reporter.onStepEnd({}, {}, { ...step, error: undefined }); assert.equal(lines.length, 0);
+  reporter.onStepEnd({}, {}, step);
+  reporter.onTestEnd({}, { duration: 60000, errors: [{ ...step.error, location: step.location }] });
+  assert.equal(reporter.onEnd, undefined);
+  const info = privateDiagnostics('tests/smoke/pos-cafe.spec.ts:119:1\n' + lines.join('\n'), null, ['tests/smoke/pos-cafe.spec.ts']);
+  assert.equal(info.metrics.smokeFailureLine, 122); assert.equal(info.metrics.smokeStepSourceOrdinal, 1);
+  assert.equal(info.metrics.smokeStepLocatorOrdinal, 1); assert.equal(info.metrics.smokeStepCategoryOrdinal, 2);
+  assert.equal(info.metrics.smokeStepApiOrdinal, 7);
+  assert.equal(info.metrics.smokeStepDurationMs, 5000);
+  const safe = publicSummary(binding, [{ id: 'install', status: 'FAIL', elapsedMs: 1, exitCode: 1,
+    invocationSHA: digest, reportSHA: digest, diagnostic: info }], { source: digest, lock: digest });
+  assert.equal(safe.overallStatus, 'FAIL'); assert.equal(safe.phases[0].diagnostic.metrics.smokeStepLocatorOrdinal, 1);
+  for (let i = 0; i < 40; i++) reporter.onStepEnd({}, {}, step);
+  assert.equal(lines.length, 32);
+  for (const value of ['FAKE_PRIVATE_TOKEN', 'private.example', process.cwd()]) assert.equal(lines.join('\n').includes(value), false);
+  const unknown = smokeStepDiagnostic({ ...step, title: 'FAKE_PRIVATE_TOKEN', category: 'FAKE_PRIVATE_TOKEN', duration: Infinity,
+    location: { file: '/private/unknown.ts', line: 1, column: 1 }, error: { message: "Locator: getByTestId('FAKE_PRIVATE_TOKEN')" } }, process.cwd());
+  assert.equal(unknown.file, null); assert.equal(unknown.categoryOrdinal, 0); assert.equal(unknown.locatorOrdinal, 0); assert.equal(unknown.durationMs, null);
+  const hostile = privateDiagnostics('PROJECT_SMOKE_FAILED_STEP ' + JSON.stringify({ ...unknown, categoryOrdinal: 999, apiOrdinal: 999,
+    locatorOrdinal: 999, file: '/private/unknown.ts', line: 1, column: 1, raw: 'FAKE_PRIVATE_TOKEN' }), null, []);
+  assert.equal(hostile.metrics.smokeStepLocatorOrdinal, undefined); assert.equal(hostile.metrics.smokeStepSourceOrdinal, undefined);
+  assert.equal(JSON.stringify(hostile).includes('FAKE_PRIVATE_TOKEN'), false);
 });
 
 test('core restore requires stopped unit plus recursively empty or confirmed absent cgroup', () => {

@@ -178,6 +178,11 @@
       "dependencies": {}
     }
   ],
-  "provenance": "Exact npm metadata candidate16/10, actual Edge resolution still must match. Optional peers may be unused. No package bytes downloaded. Additional exact @types/node22.5.4 observed in run39008709126 and its undici-types6.19.8 dependency pinned from official registry metadata; both archive SRI verified by stream. Existing pins retained; actual full Edge cache proof still required.",
-  "sourceReceiptSHA256": "2f0c842a4641461fb3c38d21e035157b324400b8c30b0b2e87aad062b0f97e9b"
+  "provenance": "Exact npm metadata candidate16/10, actual Edge resolution still must match. Optional peers may be unused. No package bytes downloaded. Additional exact @types/node22.5.4 observed in run39008709126 and its undici-types6.19.8 dependency pinned from official registry metadata; both archive SRI verified by stream. Existing pins retained; actual full Edge cache proof still required. Exact optional-peer metadata-only shape may be retained and hashed for these three reviewed pins; never counts as installed. ws8.22.0 official peer metadata receipt19e46c25aee0f363b5ee023af66ac3800482c18741cc95f236ba1fe15f1db039.",
+  "sourceReceiptSHA256": "2f0c842a4641461fb3c38d21e035157b324400b8c30b0b2e87aad062b0f97e9b",
+  "metadataOnlyAllowed": [
+    "bufferutil@4.1.0",
+    "utf-8-validate@6.0.6",
+    "node-gyp-build@4.8.4"
+  ]
 }
