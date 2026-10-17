@@ -71,9 +71,39 @@ test('real unzip streams only owned failed trace JSONL and never extracts resour
     assert.equal(command,'unzip');calls.push(args);return execFileSync(unzip,args,options);
   });
   assert.equal(result.metrics.traceReadable,1);assert.equal(result.metrics.traceConsoleErrors,1);assert.equal(result.metrics.traceHttp5xx,1);
-  assert.deepEqual(result.codes,['JS_REFERENCE_ERROR']);assert.equal(calls.length,2);
-  assert.deepEqual(calls[1],['-p',file,'0-trace.trace','0-trace.network']);
+  assert.deepEqual(result.codes,['JS_REFERENCE_ERROR']);assert.equal(calls.length,3);
+  assert.deepEqual(calls.slice(1),[['-p',file,'0-trace.trace'],['-p',file,'0-trace.network']]);
   assert.equal(existsSync(join(folder,'resources')),false);assert.equal(JSON.stringify(result).includes('FAKE_TRACE_PRIVATE_TOKEN'),false);
+});
+
+test('real unzip preserves JSONL boundaries after Playwright test.trace without a final newline', () => {
+  const root=mkdtempSync(join(tmpdir(),'pos-trace-boundary-')), folder=join(root,'test-results','case');mkdirSync(folder,{recursive:true});
+  const file=join(folder,'trace.zip'), secret='FAKE_TRACE_PRIVATE_TOKEN';
+  const runner=JSON.stringify({type:'context-options',origin:'testRunner',version:8,playwrightVersion:'1.60.0',browserName:''});
+  const library=traceLines([{type:'console',messageType:'error',text:`ReferenceError ${secret}`}]).trimEnd();
+  const network=JSON.stringify({type:'resource-snapshot',snapshot:{response:{status:503}}});
+  writeFileSync(file,storedTraceZip({'test.trace':runner,'0-trace.trace':library,'0-trace.network':network}));
+  const unzip=process.platform==='win32'?'D:/Git/usr/bin/unzip.exe':'unzip';
+  assert.throws(()=>smokeTraceEvents(execFileSync(unzip,['-p',file,'test.trace','0-trace.trace','0-trace.network'],{encoding:'utf8'}),[]));
+  const result=smokeTraceDiagnostics(traceReport(file),root,[],(_command,args,options)=>execFileSync(unzip,args,options));
+  assert.equal(result.metrics.traceReadable,1);assert.equal(result.metrics.traceContextCount,2);
+  assert.equal(result.metrics.traceConsoleErrors,1);assert.equal(result.metrics.traceHttp5xx,1);
+  assert.deepEqual(result.codes,['JS_REFERENCE_ERROR']);assert.equal(JSON.stringify(result).includes(secret),false);
+});
+
+test('separate trace members retain aggregate decoded bounds and reject malformed member JSON', () => {
+  const root=mkdtempSync(join(tmpdir(),'pos-trace-total-')), folder=join(root,'test-results');mkdirSync(folder);
+  const file=join(folder,'trace.zip');writeFileSync(file,'fake owned zip');
+  const big=' '.repeat(8*1024**2), optionsSeen=[];
+  const over=smokeTraceDiagnostics(traceReport(file),root,[],(_command,args,options)=>{
+    if(args[0]==='-Z1')return 'test.trace\n0-trace.trace\n';optionsSeen.push(options);return big;
+  });
+  assert.deepEqual(over.codes,['TRACE_UNAVAILABLE']);assert.equal(over.metrics.traceRefusalOrdinal,8);
+  assert.ok(optionsSeen.every(options=>options.timeout>0&&options.timeout<=10000));
+  assert.ok(optionsSeen[1].maxBuffer<optionsSeen[0].maxBuffer);
+  const bad=smokeTraceDiagnostics(traceReport(file),root,[],(_command,args)=>
+    args[0]==='-Z1'?'test.trace\n0-trace.trace\n':args[2]==='test.trace'?'not JSON':traceLines([]));
+  assert.deepEqual(bad.codes,['TRACE_UNAVAILABLE']);assert.equal(bad.metrics.traceRefusalOrdinal,8);
 });
 
 test('missing, outside, duplicate, corrupt or oversized trace data remains unavailable and cannot change failure', () => {

@@ -12,7 +12,7 @@
     ".github/workflows/ci.yml": "14fc00e62e1ca40e6cc71b004085ba7d411e6ad9bd0a3aed4c1185d644498705",
     "scripts/project-ci-launch.mjs": "52b56328e7d6719e10498dbf792204308e27ce7cc06f43887d03f5ccf2410490",
     "scripts/project-ci.mjs": "c21c868d10e09fcc716941e5a523ab2cc8a6e1b5a24c99f5649f4d743cbfc5ea",
-    "scripts/project-ci-results.mjs": "a3e687e9ba3f68c0fb70fc350d9c50f2ab8c99546a6c138d53333206683de7cd",
+    "scripts/project-ci-results.mjs": "c5e49fe96ad65c05127cfa8e6895da52305927c371289faeb06eee688612d129",
     "vitest.config.ts": "1cb32e60581f3bc8c6f2a6e487e2c337a89d40f3ae966b82896792ce5b077042",
     "vitest.project-tooling.config.ts": "a85416abe41bd3bdb8b70262c82b102be5c48d1e1b5edfdad0eaf7ad9e2b9c31",
     "playwright.config.ts": "ab6f474cd4094ede9c33ff2f6fc376f97e28587413fc5c69fbf0d97c5a17d838",

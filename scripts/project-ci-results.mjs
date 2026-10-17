@@ -87,7 +87,20 @@ export function smokeTraceDiagnostics(report, root, expectedFiles, run = execFil
     facts.traceSelectedCount = Math.min(33, selected.length);
     if (!selected.some(name => name.endsWith('.trace')) || selected.length > 32) return unavailable();
     facts.traceRefusalOrdinal = 7;
-    const text = run('unzip', ['-p', file, ...selected], { ...options, maxBuffer: 16 * 1024 ** 2 });
+    // Playwright's test.trace has no final newline. Read members separately so
+    // its last event cannot be concatenated with the next member's first event.
+    const chunks = [], deadline = Date.now() + 10000;
+    let decodedBytes = 0;
+    for (const name of selected) {
+      const timeout = deadline - Date.now();
+      if (timeout <= 0) throw Object.assign(new Error('TRACE_READ_TIMEOUT'), { code: 'ETIMEDOUT' });
+      const chunk = run('unzip', ['-p', file, name], { ...options, timeout, maxBuffer: Math.max(1, 16 * 1024 ** 2 - decodedBytes) });
+      if (typeof chunk !== 'string') reject();
+      decodedBytes += Buffer.byteLength(chunk) + (chunks.length ? 1 : 0);
+      if (decodedBytes > 16 * 1024 ** 2) { facts.traceRefusalOrdinal = 8; reject(); }
+      chunks.push(chunk);
+    }
+    const text = chunks.join('\n');
     const result = smokeTraceEvents(text, expectedFiles, facts);
     delete facts.traceRefusalOrdinal;
     return { ...result, metrics: { ...facts, ...result.metrics } };
