@@ -2,13 +2,35 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { resolve } from 'node:path';
 import { CI1_LIMITS, CI1_PROJECT, CI1_RUNTIME, CI1_SUITES, assertCi1Envelope, assertCi1WriteBoundary, ci1ProcessEnvironment, ci1Identity, ci1Invocation, ci1SuiteResult } from './permission-ci1-policy.mjs';
-import { runCi1Pilot, ci1LinuxRecipe, ci1ContainersCoreDisabled } from './permission-ci1-harness.mjs';
+import { runCi1Pilot, ci1LinuxRecipe, ci1ContainersCoreDisabled, ci1SystemdProperty } from './permission-ci1-harness.mjs';
 import { summarizeCi1Modules } from './permission-ci1-vitest-reporter.mjs';
 import { assertCi1Supervisor } from './permission-ci1-intake.mjs';
 import { runCi1Worker } from './permission-ci1-worker.mjs';
 
 // All adapters/proofs below are fake unit data. No Linux/DB/CI operation is run.
 const identity = ci1Identity('12345', 1);
+
+test('live systemd reads use only five exact properties on the owned unit over the ordinary system bus', () => {
+  const values={RuntimeMaxUSec:['t 1800000000','30min'],TimeoutStopUSec:['t 30000000','30s'],
+    KillMode:['s "control-group"','control-group'],StandardOutput:['s "null"','null'],StandardError:['s "null"','null']};
+  for(const [property,[raw,value]] of Object.entries(values)) {
+    assert.equal(ci1SystemdProperty(identity,property,(command,args,options)=>{
+      assert.equal(command,'busctl');assert.equal(args[0],'--address=unix:path=/run/dbus/system_bus_socket');
+      assert.deepEqual(args.slice(3),['get-property','org.freedesktop.systemd1',
+        '/org/freedesktop/systemd1/unit/pos_2dcafe_2dci1_2dr12345_2da1_2eservice','org.freedesktop.systemd1.Service',property]);
+      assert.equal(options.maxBuffer,4096);assert.equal(options.timeout,10000);assert.equal(options.env.SYSTEMD_BUS_ADDRESS,undefined);
+      return raw+'\n';
+    }),value);
+    for(const invalid of ['t 1800000001','s "FAKE_UNIT_SECRET"','t 0','s "null"\nFAKE_UNIT_SECRET'])
+      if(invalid!==raw) assert.throws(()=>ci1SystemdProperty(identity,property,()=>invalid),error=>
+        error.ci1Command==='busctl'&&error.ci1Facts.systemdPropertyOrdinal>0&&!JSON.stringify(error).includes('FAKE_UNIT_SECRET'));
+  }
+  const never=()=>{throw new Error('must not execute');};
+  assert.throws(()=>ci1SystemdProperty({...identity,unit:'other.service'},'RuntimeMaxUSec',never));
+  assert.throws(()=>ci1SystemdProperty(identity,'ExecStart',never));
+  assert.throws(()=>ci1SystemdProperty(identity,'KillMode',()=>{throw Object.assign(new Error('FAKE_UNIT_SECRET'),{status:1});}),
+    error=>error.status===1&&error.ci1FailureCode==='SUPERVISOR_REFUSED'&&!JSON.stringify(error).includes('FAKE_UNIT_SECRET'));
+});
 const metadata = () => ({ repository: 'nguyentronglinh045/pos-cafe-ci-preflight', runId: '12345', attempt: 1,
   workflowSHA: '1'.repeat(40), sourceSHA: '2'.repeat(40), sourceFingerprint: '3'.repeat(64), lockSHA: '4'.repeat(64),
   versions: { node: '24.16.0', npm: '11.13.0', supabase: '2.117.0' } });

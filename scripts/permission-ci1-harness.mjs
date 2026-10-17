@@ -16,6 +16,32 @@ const readJSON = path => {
 const child = (command, args, options = {}) => execFileSync(command, args,
   { encoding: 'utf8', maxBuffer: CI1_LIMITS.outputBytes, timeout: 30000, stdio: ['ignore', 'pipe', 'pipe'], ...options });
 
+// systemctl's root shortcut checks the peer PID of the host manager, which is
+// not visible inside our private PID namespace. Query the ordinary filesystem
+// system bus instead; these are live read-only properties of the exact unit.
+export function ci1SystemdProperty(identity, property, run = execFileSync) {
+  const expected = ci1Identity(identity.runId, identity.attempt);
+  const properties = ['RuntimeMaxUSec','TimeoutStopUSec','KillMode','StandardOutput','StandardError'];
+  const ordinal = properties.indexOf(property) + 1;
+  if (identity.unit !== expected.unit || !ordinal) refused();
+  const object = '/org/freedesktop/systemd1/unit/' + expected.unit.replace(/[^A-Za-z0-9]/g,
+    value => '_' + value.charCodeAt(0).toString(16).padStart(2, '0'));
+  try {
+    const raw = run('busctl', ['--address=unix:path=/run/dbus/system_bus_socket', '--no-pager', '--timeout=5s',
+      'get-property', 'org.freedesktop.systemd1', object, 'org.freedesktop.systemd1.Service', property],
+    { encoding:'utf8', maxBuffer:4096, timeout:10000, stdio:['ignore','pipe','pipe'],
+      env:{PATH:process.env.PATH,LANG:'C',LC_ALL:'C'} }).trim();
+    const values = { RuntimeMaxUSec: ['t 1800000000','30min'], TimeoutStopUSec: ['t 30000000','30s'],
+      KillMode: ['s "control-group"','control-group'], StandardOutput: ['s "null"','null'], StandardError: ['s "null"','null'] };
+    if (raw !== values[property][0]) refused();
+    return values[property][1];
+  } catch (error) {
+    throw Object.assign(new Error('CI1_HARNESS_REFUSED'), { ci1FailureCode:'SUPERVISOR_REFUSED', ci1Command:'busctl',
+      status:Number.isInteger(error?.status)&&error.status>=0&&error.status<=255?error.status:null,
+      ci1Facts:{systemdPropertyOrdinal:ordinal} });
+  }
+}
+
 // The adapter boundary permits in-memory unit checks without starting any stack.
 export async function runCi1Pilot(adapter, metadata) {
   const identity = ci1Identity(metadata.runId, metadata.attempt);
@@ -108,11 +134,11 @@ export function readCi1LinuxEnvelope(root, identity, env = process.env) {
   const cg = '/sys/fs/cgroup' + cgroup;
   const scalar = name => readFileSync(`${cg}/${name}`, 'utf8').trim();
   const events = name => Object.fromEntries(scalar(name).split('\n').map(value => value.split(/\s+/)));
-  const runtime = child('systemctl', ['show', identity.unit, '--property=RuntimeMaxUSec', '--value']).trim();
-  const stop = child('systemctl', ['show', identity.unit, '--property=TimeoutStopUSec', '--value']).trim();
-  const killMode = child('systemctl', ['show', identity.unit, '--property=KillMode', '--value']).trim();
-  const standardOutput = child('systemctl', ['show', identity.unit, '--property=StandardOutput', '--value']).trim();
-  const standardError = child('systemctl', ['show', identity.unit, '--property=StandardError', '--value']).trim();
+  const runtime = ci1SystemdProperty(identity, 'RuntimeMaxUSec');
+  const stop = ci1SystemdProperty(identity, 'TimeoutStopUSec');
+  const killMode = ci1SystemdProperty(identity, 'KillMode');
+  const standardOutput = ci1SystemdProperty(identity, 'StandardOutput');
+  const standardError = ci1SystemdProperty(identity, 'StandardError');
   const mount = JSON.parse(child('findmnt', ['--json', '--target', root, '--output', 'TARGET,SOURCE,FSTYPE'])).filesystems[0];
   if (realpathSync(mount.target) !== root || !/^\/dev\/loop[0-9]+$/.test(mount.source)) refused();
   const loop = JSON.parse(child('losetup', ['--json', '--list', '--output', 'NAME,BACK-FILE,OFFSET,SIZELIMIT', mount.source])).loopdevices[0];

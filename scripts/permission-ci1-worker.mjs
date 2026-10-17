@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { cpus, totalmem } from 'node:os';
 import { coreDumpDisabled } from './project-ci-launch.mjs';
 import { CI1_LIMITS, CI1_PROJECT, CI1_RUNTIME, ci1ProcessEnvironment, assertCi1Envelope, ci1TrustedRepository } from './permission-ci1-policy.mjs';
-import { ci1LinuxRecipe, readCi1LinuxEnvelope } from './permission-ci1-harness.mjs';
+import { ci1LinuxRecipe, readCi1LinuxEnvelope, ci1SystemdProperty } from './permission-ci1-harness.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
 import { CI1_SETUP, ci1BytesHash, ci1NpmIntake, ci1ToolsIntake, ci1CheckTarListing, ci1EdgeIntake,
   assertCi1Supervisor, ci1WorkerLayout, ci1ImagesIntake } from './permission-ci1-intake.mjs';
@@ -39,7 +39,7 @@ const failureOperations = ['SOURCE_INTAKE', 'SOURCE_CLONE', 'SOURCE_REF', 'SOURC
   'OFFLINE_CACHE_AFTER', 'OFFLINE_PROOF_WRITE', 'STACK_START', 'STACK_ENVELOPE', 'STACK_STATUS',
   'EDGE_HEALTH_PUBLIC', 'EDGE_HEALTH_GATEWAY', 'OFFLINE_CACHE_FINAL', 'PILOT_HARNESS', 'ISOLATED_STOP_DAEMONS'];
 const failureCommands = ['git', 'tar', 'node', 'npm', 'supabase', 'fallocate', 'losetup', 'mkfs.ext4', 'mount', 'umount',
-  'cp', 'mv', 'docker', 'unshare', 'systemd-run', 'systemctl', 'findmnt', 'containerd', 'dockerd', 'ip'];
+  'cp', 'mv', 'docker', 'unshare', 'systemd-run', 'systemctl', 'findmnt', 'containerd', 'dockerd', 'ip', 'busctl'];
 const failureCodes = ['GUARD_REFUSED', 'INTAKE_REFUSED', 'COMMAND_FAILED', 'COMMAND_TIMEOUT', 'OUTPUT_LIMIT',
   'IO_MISSING', 'IO_NOTDIR', 'IO_DENIED', 'JS_TYPE_ERROR', 'SUPERVISOR_REFUSED', 'LOOP_REFUSED', 'CONTROL_REFUSED',
   'DOCKER_DAEMON_UNAVAILABLE', 'DOCKER_NO_SPACE', 'DOCKER_PERMISSION', 'DOCKER_TLS', 'DOCKER_REGISTRY_AUTH',
@@ -51,7 +51,7 @@ const failureMetrics = ['hostFreeBytes', 'memoryBytes', 'oom', 'pidsEvents', 'me
   'cpuMatches', 'memoryLimitMatches', 'swapLimitMatches', 'pidsLimitMatches', 'cgroupMatches', 'runtimeMatches', 'loggingMatches',
   'loopImageBytes', 'loopAllocatedBytes', 'loopFilesystemBytes', 'loopFreeBytes', 'loopOffset', 'loopSizeLimit', 'mountMatches', 'ownerMatches', 'imageOrdinal', 'edgePackageOrdinal',
   'edgeVersionMajor', 'edgeVersionMinor', 'edgeVersionPatch', 'edgeVersionCopy', 'edgeCacheEntryCount', 'edgeRegistryMetadataPresent', 'loopNestedMounts',
-  'isolatedFailureSeen', 'isolatedCleanupFailed'];
+  'isolatedFailureSeen', 'isolatedCleanupFailed', 'systemdPropertyOrdinal'];
 export function ci1UnmountFailureCode(stderr) {
   if (typeof stderr !== 'string' || Buffer.byteLength(stderr) > 1024 ** 2) return null;
   for (const [code, pattern] of Object.entries({ UNMOUNT_BUSY: /target is busy|device or resource busy/i,
@@ -228,8 +228,7 @@ function supervisor(layout, env) {
   const cgroup = `/system.slice/${layout.identity.unit}`, cg = '/sys/fs/cgroup' + cgroup;
   const scalar = name => readFileSync(`${cg}/${name}`, 'utf8').trim();
   const metric = (file, name) => Number(scalar(file).split('\n').find(line => line.startsWith(name + ' '))?.split(' ')[1] ?? -1);
-  const show = name => execFileSync('systemctl', ['show', layout.identity.unit, '--property=' + name, '--value'],
-    { encoding: 'utf8', maxBuffer: 4096, timeout: 10000, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  const show = name => ci1SystemdProperty(layout.identity, name);
   const host = statfsSync(layout.task);
   const proof = { platform: process.platform, arch: process.arch, root: process.getuid() === 0, wsl: false, authorized: true,
     githubHosted: true, publicRepository: true, manual: true, repository: env.GITHUB_REPOSITORY, cpus: cpus().length,

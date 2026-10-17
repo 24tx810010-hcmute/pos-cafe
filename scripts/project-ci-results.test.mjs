@@ -79,19 +79,39 @@ test('real unzip streams only owned failed trace JSONL and never extracts resour
 test('missing, outside, duplicate, corrupt or oversized trace data remains unavailable and cannot change failure', () => {
   const root=mkdtempSync(join(tmpdir(),'pos-trace-refuse-')), folder=join(root,'test-results');mkdirSync(folder);
   const file=join(folder,'trace.zip');writeFileSync(file,'not a zip');
-  const unavailable={codes:['TRACE_UNAVAILABLE'],metrics:{},failedFiles:[]};
+  const unavailable=(actual,ordinal)=>{
+    assert.deepEqual(actual.codes,['TRACE_UNAVAILABLE']);assert.deepEqual(actual.failedFiles,[]);
+    assert.equal(actual.metrics.traceRefusalOrdinal,ordinal);assert.equal(JSON.stringify(actual).includes('FAKE_TRACE_PRIVATE_TOKEN'),false);
+  };
   const never=()=>{throw new Error('FAKE_TRACE_PRIVATE_TOKEN');};
-  assert.deepEqual(smokeTraceDiagnostics(null,root,[],never),unavailable);
-  assert.deepEqual(smokeTraceDiagnostics(traceReport(join(root,'outside.zip')),root,[],never),unavailable);
+  unavailable(smokeTraceDiagnostics(null,root,[],never),2);
+  unavailable(smokeTraceDiagnostics(traceReport(join(root,'outside.zip')),root,[],never),3);
   const duplicate=traceReport(file);duplicate.suites[0].specs[0].tests[0].results[0].attachments.push({name:'trace',contentType:'application/zip',path:file});
-  assert.deepEqual(smokeTraceDiagnostics(duplicate,root,[],never),unavailable);
+  unavailable(smokeTraceDiagnostics(duplicate,root,[],never),2);
   const unzip=process.platform==='win32'?'D:/Git/usr/bin/unzip.exe':'unzip';
-  assert.deepEqual(smokeTraceDiagnostics(traceReport(file),root,[],(_command,args,options)=>execFileSync(unzip,args,options)),unavailable);
+  unavailable(smokeTraceDiagnostics(traceReport(file),root,[],(_command,args,options)=>execFileSync(unzip,args,options)),5);
   for(const data of ['not json\n','{}\n'.repeat(10001),'x'.repeat(16*1024**2+1)])
-    assert.deepEqual(smokeTraceDiagnostics(traceReport(file),root,[],(_command,args)=>args[0]==='-Z1'?'0-trace.trace\n':data),unavailable);
+    unavailable(smokeTraceDiagnostics(traceReport(file),root,[],(_command,args)=>args[0]==='-Z1'?'0-trace.trace\n':data),8);
   for(const delta of [{version:7},{playwrightVersion:'1.59.0'},{browserName:'firefox'}])
     assert.throws(()=>smokeTraceEvents(JSON.stringify({type:'context-options',version:8,playwrightVersion:'1.60.0',browserName:'chromium',...delta}),[]));
-  assert.deepEqual(smokeTraceDiagnostics(traceReport(file),root,[],()=> '../private.trace\n'),unavailable);
+  unavailable(smokeTraceDiagnostics(traceReport(file),root,[],()=> '../private.trace\n'),6);
+});
+
+test('trace refusal stages and known locator outcomes stay finite in public diagnostics', () => {
+  const root=mkdtempSync(join(tmpdir(),'pos-trace-stages-')), folder=join(root,'test-results');mkdirSync(folder);
+  const file=join(folder,'trace.zip');writeFileSync(file,'fake owned zip');
+  const wrong=JSON.stringify({type:'context-options',origin:'library',version:7,playwrightVersion:'1.59.2',browserName:'chromium'})+'\n';
+  const diagnostic=smokeTraceDiagnostics(traceReport(file),root,[],(_command,args)=>args[0]==='-Z1'?'0-trace.trace\n':wrong);
+  assert.equal(diagnostic.metrics.traceRefusalOrdinal,9);assert.equal(diagnostic.metrics.traceContextVersion,7);
+  assert.equal(diagnostic.metrics.traceVersionMinor,59);assert.equal(diagnostic.metrics.traceBrowserOrdinal,1);
+  const timed=smokeTraceDiagnostics(traceReport(file),root,[],()=>{throw Object.assign(new Error('FAKE_TRACE_PRIVATE_TOKEN'),{code:'ETIMEDOUT',raw:'FAKE_TRACE_PRIVATE_TOKEN'});});
+  assert.equal(timed.metrics.traceRefusalOrdinal,5);assert.equal(timed.metrics.traceToolTimedOut,1);
+  const safe=publicSummary(binding,[{id:'install',status:'FAIL',exitCode:1,elapsedMs:1,invocationSHA:digest,reportSHA:digest,
+    diagnostic:{...timed,metrics:{...timed.metrics,raw:'FAKE_TRACE_PRIVATE_TOKEN'}}}],{source:digest,lock:digest});
+  assert.equal(safe.overallStatus,'FAIL');assert.equal(safe.phases[0].diagnostic.metrics.traceToolTimedOut,1);
+  assert.equal(JSON.stringify(safe).includes('FAKE_TRACE_PRIVATE_TOKEN'),false);
+  assert.ok(privateDiagnostics('Received: <element(s) not found>',null).codes.includes('LOCATOR_NOT_FOUND'));
+  assert.ok(privateDiagnostics('Received: hidden',null).codes.includes('LOCATOR_HIDDEN'));
 });
 
 test('temporary core handler is restored after success, action failure and failed setup; unsafe cleanup keeps it disabled', () => {

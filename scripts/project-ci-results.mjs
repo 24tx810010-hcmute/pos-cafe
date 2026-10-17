@@ -57,7 +57,8 @@ export default class SmokeFailureReporter {
 // Read only the failed preflight's own trace. unzip streams selected JSONL to
 // RAM; it never extracts files. Every subprocess and decoded payload is bounded.
 export function smokeTraceDiagnostics(report, root, expectedFiles, run = execFileSync) {
-  const unavailable = { codes: ['TRACE_UNAVAILABLE'], metrics: {}, failedFiles: [] };
+  const facts = { traceRefusalOrdinal: 1 };
+  const unavailable = () => ({ codes: ['TRACE_UNAVAILABLE'], metrics: facts, failedFiles: [] });
   try {
     const attachments = [], queue = [...(report?.suites ?? [])];
     for (let n = 0; queue.length && n < 10000; n++) {
@@ -67,27 +68,56 @@ export function smokeTraceDiagnostics(report, root, expectedFiles, run = execFil
         for (const result of test.results ?? []) if (['failed', 'timedOut', 'interrupted'].includes(result.status))
           attachments.push(...(result.attachments ?? []).filter(a => a.name === 'trace' && a.contentType === 'application/zip'));
     }
-    if (queue.length || attachments.length !== 1 || typeof attachments[0].path !== 'string') return unavailable;
+    facts.traceRefusalOrdinal = 2; facts.traceAttachmentCount = Math.min(10000, attachments.length);
+    if (queue.length || attachments.length !== 1 || typeof attachments[0].path !== 'string') return unavailable();
+    facts.traceRefusalOrdinal = 3;
     const file = resolve(attachments[0].path), directory = resolve(root, 'test-results') + sep;
-    if (!file.startsWith(directory) || realpathSync(file) !== file) return unavailable;
+    if (!file.startsWith(directory) || realpathSync(file) !== file) return unavailable();
+    facts.traceRefusalOrdinal = 4;
     const info = lstatSync(file);
-    if (!info.isFile() || info.isSymbolicLink() || info.size < 1 || info.size > 32 * 1024 ** 2) return unavailable;
+    facts.traceCompressedBytes = Math.min(32 * 1024 ** 2 + 1, info.size);
+    if (!info.isFile() || info.isSymbolicLink() || info.size < 1 || info.size > 32 * 1024 ** 2) return unavailable();
     const options = { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 10000, maxBuffer: 1024 ** 2,
       env: { PATH: process.env.PATH, LANG: 'C', ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}) } };
+    facts.traceRefusalOrdinal = 5;
     const names = run('unzip', ['-Z1', file], options).trim().split(/\r?\n/);
-    if (names.length > 4096 || new Set(names).size !== names.length) return unavailable;
+    facts.traceRefusalOrdinal = 6; facts.traceEntryCount = Math.min(4097, names.length);
+    if (names.length > 4096 || new Set(names).size !== names.length) return unavailable();
     const selected = names.filter(name => /^[A-Za-z0-9_-]+\.(?:trace|network)$/.test(name));
-    if (!selected.some(name => name.endsWith('.trace')) || selected.length > 32) return unavailable;
+    facts.traceSelectedCount = Math.min(33, selected.length);
+    if (!selected.some(name => name.endsWith('.trace')) || selected.length > 32) return unavailable();
+    facts.traceRefusalOrdinal = 7;
     const text = run('unzip', ['-p', file, ...selected], { ...options, maxBuffer: 16 * 1024 ** 2 });
-    return smokeTraceEvents(text, expectedFiles);
-  } catch { return unavailable; }
+    const result = smokeTraceEvents(text, expectedFiles, facts);
+    delete facts.traceRefusalOrdinal;
+    return { ...result, metrics: { ...facts, ...result.metrics } };
+  } catch (error) {
+    const ioOrdinal = ['ENOENT','ENOTDIR','EACCES','EPERM','ELOOP','EINVAL'].indexOf(error?.code) + 1;
+    if (ioOrdinal) facts.traceIOOrdinal = ioOrdinal;
+    if (Number.isInteger(error?.status) && error.status >= 0 && error.status <= 255) facts.traceToolExitCode = error.status;
+    if (error?.code === 'ETIMEDOUT') facts.traceToolTimedOut = 1;
+    if (['ENOBUFS', 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER'].includes(error?.code)) facts.traceToolOverflow = 1;
+    return unavailable();
+  }
 }
 
-export function smokeTraceEvents(text, expectedFiles) {
+export function smokeTraceEvents(text, expectedFiles, facts = {}) {
+  facts.traceRefusalOrdinal = 8;
   if (typeof text !== 'string' || Buffer.byteLength(text) > 16 * 1024 ** 2) reject();
+  facts.traceDecodedBytes = Buffer.byteLength(text);
   const lines = text.split('\n').filter(Boolean);
   if (lines.length > 10000) reject();
-  const events = lines.map(line => JSON.parse(line));
+  const events = lines.map((line, index) => { facts.traceParseLine = index + 1; return JSON.parse(line); });
+  delete facts.traceParseLine;
+  facts.traceRefusalOrdinal = 9;
+  const contexts = events.filter(event => event?.type === 'context-options');
+  facts.traceContextCount = contexts.length;
+  const context = contexts.find(event => event.origin === 'library') ?? contexts[0];
+  if (integer(context?.version) && context.version <= 1000000) facts.traceContextVersion = context.version;
+  const version = /^(\d+)\.(\d+)\.(\d+)$/.exec(context?.playwrightVersion ?? '');
+  if (version && version.slice(1).every(n => Number(n) <= 1000000))
+    [facts.traceVersionMajor, facts.traceVersionMinor, facts.traceVersionPatch] = version.slice(1).map(Number);
+  if (['chromium','firefox','webkit'].includes(context?.browserName)) facts.traceBrowserOrdinal = ['chromium','firefox','webkit'].indexOf(context.browserName) + 1;
   if (!events.some(event => event?.type === 'context-options' && event.version === 8
     && event.playwrightVersion === '1.60.0' && event.browserName === 'chromium')) reject();
   const codes = new Set(), metrics = { traceReadable: 1, tracePageErrors: 0, traceConsoleErrors: 0,
@@ -111,6 +141,7 @@ export function smokeTraceEvents(text, expectedFiles) {
       }
     }
   };
+  facts.traceRefusalOrdinal = 10;
   for (const event of events) {
     if (!event || typeof event !== 'object') reject();
     if (event.type === 'console' && ['error', 'warning', 'warn'].includes(event.messageType)) {
@@ -126,6 +157,7 @@ export function smokeTraceEvents(text, expectedFiles) {
       if (Number.isInteger(status) && status >= 500 && status <= 599) metrics.traceHttp5xx++;
     }
   }
+  delete facts.traceRefusalOrdinal;
   return { codes: [...codes], metrics, failedFiles };
 }
 const DIAGNOSTIC_CODES = Object.freeze(['COMMAND_FAILED', 'VITEST_ASSERTION', 'VITEST_RUNTIME', 'REPORT_MISSING',
@@ -136,7 +168,7 @@ const DIAGNOSTIC_CODES = Object.freeze(['COMMAND_FAILED', 'VITEST_ASSERTION', 'V
   'BROWSER_LAUNCH', 'BROWSER_DEPENDENCIES', 'BROWSER_SANDBOX', 'BROWSER_CRASHPAD', 'BROWSER_EXECUTION',
   'BROWSER_CONTEXT', 'BROWSER_PAGE', 'PAGE_NAVIGATION', 'LOCATOR_ACTION', 'ASSERTION_VISIBLE', 'FIXTURE_SETUP', 'FIXTURE_TEARDOWN',
   'TRACE_UNAVAILABLE', 'JS_TYPE_ERROR', 'JS_REFERENCE_ERROR', 'JS_SYNTAX_ERROR', 'JS_RANGE_ERROR',
-  'REACT_UPDATE_DEPTH', 'REACT_UNSTABLE_SNAPSHOT', 'JS_STACK_OVERFLOW', 'MODULE_EXPORT_MISSING']);
+  'REACT_UPDATE_DEPTH', 'REACT_UNSTABLE_SNAPSHOT', 'JS_STACK_OVERFLOW', 'MODULE_EXPORT_MISSING', 'LOCATOR_NOT_FOUND', 'LOCATOR_HIDDEN']);
 export function guardFailureCode(error) {
   if (['RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'RESOURCE_CORE_LIMIT', 'RESOURCE_CORE_PATTERN', 'RESOURCE_HOST_GROWTH', 'SOURCE_DRIFT'].includes(error?.code)) return error.code;
   if (['ENOENT', 'ENOTDIR', 'EACCES'].includes(error?.code)) return `GUARD_IO_${error.code}`;
@@ -227,6 +259,8 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
     PAGE_NAVIGATION: /\bpage\.(?:goto|reload|waitForURL):/,
     LOCATOR_ACTION: /\blocator\.(?:click|fill|press|check|waitFor):/,
     ASSERTION_VISIBLE: /expect\([^\r\n]*\)\.(?:toBeVisible|toBeHidden)/,
+    LOCATOR_NOT_FOUND: /element\(s\) not found|locator resolved to 0 elements/i,
+    LOCATOR_HIDDEN: /Received:\s*hidden|locator resolved to hidden/i,
     FIXTURE_SETUP: /while setting up \"[^\r\n\"]{1,100}\"/i,
     FIXTURE_TEARDOWN: /while tearing down \"[^\r\n\"]{1,100}\"/i })) {
     if (pattern.test(privateText)) codes.push(code);
@@ -393,6 +427,10 @@ export function publicSummary(binding, rows, fingerprints) {
           'smokeTestLine', 'smokeFailureProjectOrdinal', 'smokeHelperLine', 'smokeFailureLine', 'smokeFailureColumn',
           'smokeStepLocatorOrdinal', 'smokeStepCategoryOrdinal', 'smokeStepApiOrdinal', 'smokeStepSourceOrdinal', 'smokeStepDurationMs',
           'traceReadable', 'tracePageErrors', 'traceConsoleErrors', 'traceConsoleWarnings', 'traceHttp4xx', 'traceHttp5xx', 'traceModuleLine', 'traceModuleColumn',
+          'traceRefusalOrdinal', 'traceAttachmentCount', 'traceCompressedBytes', 'traceEntryCount', 'traceSelectedCount', 'traceDecodedBytes', 'traceParseLine',
+          'traceContextCount', 'traceContextVersion', 'traceVersionMajor', 'traceVersionMinor', 'traceVersionPatch', 'traceBrowserOrdinal',
+          'traceToolExitCode', 'traceToolTimedOut', 'traceToolOverflow',
+          'traceIOOrdinal',
           'smokeExpected', 'smokeUnexpected', 'smokeSkipped', 'smokeFlaky', 'smokeProgressIndex', 'smokeProgressTotal',
           'memoryCurrentBytes', 'peakMemoryBytes', 'pidsCurrent', 'peakPids', 'oomEvents', 'oomKills', 'pidsLimitEvents'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));
