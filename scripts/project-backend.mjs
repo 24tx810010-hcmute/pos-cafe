@@ -6,11 +6,11 @@ import { ci1WorkerLayout } from './permission-ci1-intake.mjs';
 import { ci1WorkerPlan, ci1PublicExport } from './permission-ci1-worker.mjs';
 
 export function backendInvocation(env, node, root) {
-  if (env.GITHUB_REPOSITORY !== '24tx810010-hcmute/pos-cafe' || env.GITHUB_EVENT_NAME !== 'workflow_dispatch'
+  if (env.GITHUB_REPOSITORY !== 'nguyentronglinh045/pos-cafe' || env.GITHUB_REPOSITORY_ID !== '1263057386' || env.GITHUB_EVENT_NAME !== 'workflow_dispatch'
     || env.CI1_CONFIRMATION !== 'RUN_SYNTHETIC_PILOT' || !/^[a-f0-9]{40}$/.test(env.GITHUB_SHA ?? '')
     || env.GITHUB_WORKFLOW_SHA !== env.GITHUB_SHA || !node.startsWith('/') || !root.startsWith('/')) throw new Error('BACKEND_DISPATCH_REFUSED');
   const layout = ci1WorkerLayout(env.GITHUB_RUN_ID, Number(env.GITHUB_RUN_ATTEMPT));
-  const keys = ['PATH', 'GITHUB_ACTIONS', 'RUNNER_ENVIRONMENT', 'GITHUB_REPOSITORY', 'GITHUB_EVENT_NAME', 'GITHUB_EVENT_PATH',
+  const keys = ['PATH', 'GITHUB_ACTIONS', 'RUNNER_ENVIRONMENT', 'GITHUB_REPOSITORY', 'GITHUB_REPOSITORY_ID', 'GITHUB_EVENT_NAME', 'GITHUB_EVENT_PATH',
     'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_WORKFLOW_SHA', 'GITHUB_SHA'];
   const argv = ['--', 'env', ...keys.filter(key => env[key]).map(key => `${key}=${env[key]}`),
     'CI1_EXECUTION_AUTHORIZED=yes', node, resolve(root, 'scripts/permission-ci1-worker.mjs'), 'launch', root];

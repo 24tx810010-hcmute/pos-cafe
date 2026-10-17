@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 
-export const PROJECT_REPOSITORY = '24tx810010-hcmute/pos-cafe';
+export const PROJECT_REPOSITORY = 'nguyentronglinh045/pos-cafe';
+export const PROJECT_REPOSITORY_ID = 1263057386;
 export const PROJECT_PHASES = Object.freeze(['install', 'build', 'unit', 'tooling', 'node-tools', 'browser', 'smoke-discovery', 'smoke', 'ui-selftest', 'ui-audit']);
 export const PROJECTS = Object.freeze(['desktop', 'tablet-landscape', 'phone-landscape', 'small-landscape', 'portrait', 'demo-runbook']);
 export const hash = value => createHash('sha256').update(value).digest('hex');
@@ -39,7 +40,8 @@ const sameSet = (a, b) => a.length === b.length && new Set(a).size === a.length
 
 export function sourceBinding(env, event, actualSHA) {
   const hex = value => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value);
-  if (env.GITHUB_REPOSITORY !== PROJECT_REPOSITORY || !hex(actualSHA) || actualSHA !== env.GITHUB_SHA
+  if (env.GITHUB_REPOSITORY !== PROJECT_REPOSITORY || env.GITHUB_REPOSITORY_ID !== String(PROJECT_REPOSITORY_ID)
+    || event.repository?.id !== PROJECT_REPOSITORY_ID || !hex(actualSHA) || actualSHA !== env.GITHUB_SHA
     || !hex(env.GITHUB_WORKFLOW_SHA) || !/^[1-9][0-9]*$/.test(env.GITHUB_RUN_ID ?? '')
     || !/^[1-9][0-9]*$/.test(env.GITHUB_RUN_ATTEMPT ?? '')) reject();
   let prHeadSHA = null;
@@ -50,7 +52,7 @@ export function sourceBinding(env, event, actualSHA) {
     if (!hex(prHeadSHA) || event.pull_request?.merge_commit_sha !== actualSHA
       || event.repository?.full_name !== PROJECT_REPOSITORY) reject();
   } else reject();
-  return { repository: PROJECT_REPOSITORY, event: env.GITHUB_EVENT_NAME,
+  return { repository: PROJECT_REPOSITORY, repositoryID: PROJECT_REPOSITORY_ID, event: env.GITHUB_EVENT_NAME,
     sourceSHA: actualSHA, prHeadSHA, workflowSHA: env.GITHUB_WORKFLOW_SHA,
     runId: env.GITHUB_RUN_ID, attempt: Number(env.GITHUB_RUN_ATTEMPT) };
 }
@@ -143,7 +145,7 @@ export function uiCounts(output, findings, config) {
 }
 
 export function publicSummary(binding, rows, fingerprints) {
-  if (binding.repository !== PROJECT_REPOSITORY || !['push', 'pull_request'].includes(binding.event)
+  if (binding.repository !== PROJECT_REPOSITORY || binding.repositoryID !== PROJECT_REPOSITORY_ID || !['push', 'pull_request'].includes(binding.event)
     || !/^[a-f0-9]{40}$/.test(binding.sourceSHA) || !/^[a-f0-9]{40}$/.test(binding.workflowSHA)
     || !(binding.prHeadSHA === null || /^[a-f0-9]{40}$/.test(binding.prHeadSHA))
     || !/^[1-9][0-9]*$/.test(binding.runId) || !Number.isSafeInteger(binding.attempt) || binding.attempt < 1) reject();
@@ -159,7 +161,7 @@ export function publicSummary(binding, rows, fingerprints) {
       metrics: Object.fromEntries(Object.entries(diagnostic.metrics).filter(([key, value]) =>
         ['numTotalTests', 'numPassedTests', 'numFailedTests', 'numPendingTests', 'numRuntimeErrorTestSuites', 'architectureAssertion'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));
-  return { schemaVersion: 'pos-cafe-light-ci-v1', verificationScope: 'LIGHT_MOCK_ONLY', repository: PROJECT_REPOSITORY,
+  return { schemaVersion: 'pos-cafe-light-ci-v1', verificationScope: 'LIGHT_MOCK_ONLY', repository: PROJECT_REPOSITORY, repositoryID: PROJECT_REPOSITORY_ID,
     event: binding.event, sourceSHA: binding.sourceSHA, prHeadSHA: binding.prHeadSHA, workflowSHA: binding.workflowSHA,
     runId: binding.runId, attempt: binding.attempt,
     sourceFingerprint: fingerprints.source, lockSHA: fingerprints.lock,

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
 const GiB = 1024 ** 3;
-export const CI1_REPOSITORIES = Object.freeze(['nguyentronglinh045/pos-cafe-ci-preflight', '24tx810010-hcmute/pos-cafe']);
+export const CI1_REPOSITORIES = Object.freeze(['nguyentronglinh045/pos-cafe-ci-preflight', 'nguyentronglinh045/pos-cafe']);
 export const ci1TrustedRepository = value => CI1_REPOSITORIES.includes(value);
 export const CI1_LIMITS = Object.freeze({
   cpuQuota: 300000, cpuPeriod: 100000, memoryBytes: 10 * GiB, swapBytes: 0,

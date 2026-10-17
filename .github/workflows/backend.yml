@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   pilot:
-    if: github.repository == '24tx810010-hcmute/pos-cafe'
+    if: github.repository == 'nguyentronglinh045/pos-cafe' && github.repository_id == '1263057386'
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:

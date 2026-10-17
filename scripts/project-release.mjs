@@ -2,14 +2,15 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { hash, PROJECT_REPOSITORY } from './project-ci-results.mjs';
+import { hash, PROJECT_REPOSITORY, PROJECT_REPOSITORY_ID } from './project-ci-results.mjs';
 
 export const PRODUCTION_ENABLED = false;
 const refuse = () => { throw new Error('FRONTEND_RELEASE_BLOCKED'); };
 export function verifyReleaseRun(run, input, policy) {
   if (!/^[a-f0-9]{40}$/.test(input.sourceSHA ?? '') || !/^[1-9][0-9]*$/.test(String(input.runId ?? ''))
     || !Number.isSafeInteger(input.attempt) || input.attempt < 1
-    || run.repository?.full_name !== PROJECT_REPOSITORY || run.head_repository?.full_name !== PROJECT_REPOSITORY
+    || run.repository?.full_name !== PROJECT_REPOSITORY || run.repository?.id !== PROJECT_REPOSITORY_ID
+    || run.head_repository?.full_name !== PROJECT_REPOSITORY || run.head_repository?.id !== PROJECT_REPOSITORY_ID
     || String(run.id) !== String(input.runId) || run.run_attempt !== input.attempt || run.head_sha !== input.sourceSHA
     || run.event !== 'push' || run.status !== 'completed' || run.conclusion !== 'success'
     || run.path !== '.github/workflows/ci.yml' || !policy.allowedSourceBranches.includes(run.head_branch)) refuse();
@@ -47,6 +48,7 @@ async function main() {
     console.log('FRONTEND_RELEASE_HELD_NO_DEPLOY'); return;
   }
   if (process.argv[2] !== 'verify' || process.env.GITHUB_REPOSITORY !== PROJECT_REPOSITORY
+    || process.env.GITHUB_REPOSITORY_ID !== String(PROJECT_REPOSITORY_ID)
     || process.env.GITHUB_EVENT_NAME !== 'workflow_dispatch' || process.env.GITHUB_REF !== 'refs/heads/main') refuse();
   const policy = JSON.parse(readFileSync(resolve('ci/release-policy.json'), 'utf8'));
   // Read dispatch fields privately; putting free-text inputs in a step env would

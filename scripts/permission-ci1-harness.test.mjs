@@ -49,7 +49,7 @@ function fakeAdapter() {
 }
 
 test('both exact trusted repositories pass the full supervisor, envelope, worker and evidence chain; unknown repo is refused', async () => {
-  for (const repository of ['nguyentronglinh045/pos-cafe-ci-preflight', '24tx810010-hcmute/pos-cafe', 'attacker/pos-cafe']) {
+  for (const repository of ['nguyentronglinh045/pos-cafe-ci-preflight', 'nguyentronglinh045/pos-cafe', 'attacker/pos-cafe', '24tx810010-hcmute/pos-cafe']) {
     const supervisor = { platform: 'linux', arch: 'x64', root: true, wsl: false, authorized: true, githubHosted: true,
       publicRepository: true, manual: true, repository, cpus: 4, memoryBytes: 16 * 1024 ** 3,
       cgroup: `/system.slice/${identity.unit}/supervisor`, cpuMax: '300000 100000', memoryMax: String(CI1_LIMITS.memoryBytes),
@@ -57,7 +57,7 @@ test('both exact trusted repositories pass the full supervisor, envelope, worker
       oom: 0, pidsEvents: 0, hostFreeBytes: 60 * 1024 ** 3 };
     const worker = { supervisor: () => supervisor, stage: async () => true, close: async () => true };
     const fake = fakeAdapter(); fake.envelope = async () => ({ ...envelope(), repository });
-    if (repository.startsWith('attacker/')) {
+    if (repository.startsWith('attacker/') || repository === '24tx810010-hcmute/pos-cafe') {
       assert.throws(() => assertCi1Supervisor(supervisor, identity));
       assert.throws(() => assertCi1Envelope({ ...envelope(), repository }, identity));
       assert.equal((await runCi1Worker(worker, identity)).status, 'ERROR');

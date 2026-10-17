@@ -13,16 +13,18 @@ import { ci1TrustedRepository } from './permission-ci1-policy.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
 
 const sha = '1'.repeat(40), other = '2'.repeat(40), digest = '3'.repeat(64);
-const env = { GITHUB_REPOSITORY: '24tx810010-hcmute/pos-cafe', GITHUB_ACTIONS: 'true', RUNNER_ENVIRONMENT: 'github-hosted',
+const env = { GITHUB_REPOSITORY: 'nguyentronglinh045/pos-cafe', GITHUB_REPOSITORY_ID: '1263057386', GITHUB_ACTIONS: 'true', RUNNER_ENVIRONMENT: 'github-hosted',
   GITHUB_EVENT_NAME: 'push', GITHUB_SHA: sha, GITHUB_WORKFLOW_SHA: sha, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '1' };
-const binding = sourceBinding(env, { after: sha, repository: { full_name: env.GITHUB_REPOSITORY } }, sha);
+const binding = sourceBinding(env, { after: sha, repository: { full_name: env.GITHUB_REPOSITORY, id: 1263057386 } }, sha);
 
 test('source binding distinguishes tested PR merge from head and refuses mismatched SHA/event/repo', () => {
-  const event = { repository: { full_name: env.GITHUB_REPOSITORY }, pull_request: { head: { sha: other }, merge_commit_sha: sha } };
+  const event = { repository: { full_name: env.GITHUB_REPOSITORY, id: 1263057386 }, pull_request: { head: { sha: other }, merge_commit_sha: sha } };
   assert.equal(sourceBinding({ ...env, GITHUB_EVENT_NAME: 'pull_request' }, event, sha).prHeadSHA, other);
   assert.throws(() => sourceBinding({ ...env, GITHUB_EVENT_NAME: 'pull_request' }, event, other));
   assert.throws(() => sourceBinding({ ...env, GITHUB_EVENT_NAME: 'pull_request_target' }, event, sha));
   assert.throws(() => sourceBinding(env, { after: other }, sha));
+  assert.throws(() => sourceBinding({ ...env, GITHUB_REPOSITORY_ID: '1' }, event, sha));
+  assert.throws(() => sourceBinding(env, { ...event, repository: {...event.repository, id:1} }, sha));
 });
 
 test('Vitest requires exact discovered file set, totals and zero pending/fail/hook errors', () => {
@@ -147,10 +149,10 @@ test('backend manual guard requires confirmation, immutable workflow/source and 
 test('CD rejects PR/fork/failing/wrong-attempt runs and checker changes even with the same source SHA', () => {
   const input = { sourceSHA: sha, runId: '123', attempt: 1 };
   const policy = { allowedSourceBranches: ['main'], trustedFiles: { 'ci.yml': hash('trusted') } };
-  const run = { repository: { full_name: env.GITHUB_REPOSITORY }, head_repository: { full_name: env.GITHUB_REPOSITORY },
+  const run = { repository: { full_name: env.GITHUB_REPOSITORY, id:1263057386 }, head_repository: { full_name: env.GITHUB_REPOSITORY, id:1263057386 },
     id: 123, run_attempt: 1, head_sha: sha, event: 'push', status: 'completed', conclusion: 'success', path: '.github/workflows/ci.yml', head_branch: 'main' };
   assert.equal(verifyReleaseRun(run, input, policy), true);
-  for (const delta of [{ event: 'pull_request' }, { conclusion: 'failure' }, { run_attempt: 2 }, { head_repository: { full_name: 'attacker/fork' } }]) {
+  for (const delta of [{ event: 'pull_request' }, { conclusion: 'failure' }, { run_attempt: 2 }, { head_repository: { full_name: 'attacker/fork' } }, { repository: {full_name:env.GITHUB_REPOSITORY,id:1} }]) {
     assert.throws(() => verifyReleaseRun({ ...run, ...delta }, input, policy));
   }
   assert.throws(() => verifyReleaseFiles({ 'ci.yml': Buffer.from('changed') }, policy));

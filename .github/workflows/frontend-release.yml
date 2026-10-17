@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   preflight:
-    if: github.repository == '24tx810010-hcmute/pos-cafe' && github.ref == 'refs/heads/main'
+    if: github.repository == 'nguyentronglinh045/pos-cafe' && github.repository_id == '1263057386' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
