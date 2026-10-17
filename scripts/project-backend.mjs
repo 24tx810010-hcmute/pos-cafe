@@ -32,6 +32,23 @@ export function backendEvidence(worker, evidence, env) {
   return rendered;
 }
 
+// Diagnostics only: a failed harness may have written valid finite D12 counts.
+// This path never satisfies backendEvidence or changes the failed job's exit.
+export function backendFailureEvidence(worker, evidence, env) {
+  const rendered = ci1PublicExport(evidence), safe = JSON.parse(rendered.json);
+  const completed = ci1WorkerPlan(env.GITHUB_RUN_ID, Number(env.GITHUB_RUN_ATTEMPT)).stages.slice(1, 7);
+  if (worker.schemaVersion !== 'permission-ci1-worker-status-v1' || worker.status !== 'ERROR'
+    || worker.businessCounts !== null || worker.cleanup !== true || worker.cleanupFailure !== null
+    || JSON.stringify(worker.completed) !== JSON.stringify(completed)
+    || worker.failure?.stage !== 'offline-edge' || worker.failure?.operation !== 'PILOT_HARNESS'
+    || worker.failure?.code !== 'COMMAND_FAILED' || worker.failure?.command !== 'node' || worker.failure?.exitCode !== 1
+    || !['FAIL', 'ERROR', 'NOT_RUN'].includes(safe.overallStatus)
+    || safe.repository !== env.GITHUB_REPOSITORY || safe.runId !== env.GITHUB_RUN_ID
+    || safe.attempt !== Number(env.GITHUB_RUN_ATTEMPT) || safe.sourceSHA !== env.GITHUB_SHA
+    || safe.workflowSHA !== env.GITHUB_WORKFLOW_SHA) throw new Error('BACKEND_FAILURE_PROOF_REFUSED');
+  return rendered;
+}
+
 function main() {
   if (process.platform !== 'linux' || process.env.GITHUB_ACTIONS !== 'true' || process.env.RUNNER_ENVIRONMENT !== 'github-hosted') throw new Error();
   const { argv, layout } = backendInvocation(process.env, process.execPath, process.cwd());
@@ -50,6 +67,11 @@ function main() {
       status: 'FAIL', completed: Array.isArray(worker.completed) ? worker.completed.filter(value => permitted.includes(value)) : [],
       failure: ci1FailureExport(worker.failure), cleanup: worker.cleanup === true,
       cleanupFailure: ci1FailureExport(worker.cleanupFailure) }));
+    try {
+      const diagnostic = backendFailureEvidence(worker, read(`${layout.task}/export/public-evidence.json`), process.env);
+      console.log(diagnostic.json);
+      if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, diagnostic.markdown);
+    } catch { console.log('BACKEND_FAILURE_EVIDENCE_UNAVAILABLE'); }
     throw new Error();
   }
   const evidence = backendEvidence(worker, read(`${layout.task}/export/public-evidence.json`), process.env);

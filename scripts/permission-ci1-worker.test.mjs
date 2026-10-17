@@ -7,7 +7,7 @@ import { ci1WorkerPlan, runCi1Worker, ci1EdgeCacheProof, ci1PublicExport, ci1Edg
   ci1AcquireDaemons, ci1CloseDaemons, ci1TerminateDaemon, ci1FailureExport, ci1DockerFailureCode,
   ci1OwnedMountCount, ci1UnmountFailureCode, ci1IsolatedFailure, ci1IsolatedError } from './permission-ci1-worker.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
-import { backendEvidence } from './project-backend.mjs';
+import { backendEvidence, backendFailureEvidence } from './project-backend.mjs';
 
 // Every Linux fact, adapter and cache below is fake unit data. No Linux/DB/CI is started.
 const identity = ci1Identity('12345', 1);
@@ -289,4 +289,29 @@ test('CLI plan is side-effect free; effectful entry refuses Windows before any l
     const run = spawnSync(process.execPath, ['scripts/permission-ci1-worker.mjs', 'launch', 'D:/Workspace/pos-cafe'], { encoding: 'utf8' });
     assert.equal(run.status, 78); assert.equal(run.stderr.trim(), 'CI1_WORKER_BLOCKED'); assert.equal(run.stdout, '');
   }
+});
+
+test('failed backend can expose bound D12 failure counts but cannot satisfy the success gate', () => {
+  const env={GITHUB_REPOSITORY:'nguyentronglinh045/pos-cafe',GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',GITHUB_SHA:'1'.repeat(40),GITHUB_WORKFLOW_SHA:'1'.repeat(40)};
+  const input={repository:env.GITHUB_REPOSITORY,runId:'12345',attempt:1,workflowSHA:env.GITHUB_SHA,sourceSHA:env.GITHUB_SHA,
+    sourceFingerprint:'2'.repeat(64),lockSHA:'3'.repeat(64),versions:{node:'24.16.0',npm:'11.13.0',supabase:'2.117.0'},
+    startedAt:'2026-10-17T00:00:00.000Z',finishedAt:'2026-10-17T00:00:01.000Z',
+    checks:Object.fromEntries(['bootstrap','auth','apiBinding','sourcePreservation','cleanup'].map(k=>[k,'PASS'])),
+    suites:[{id:'T09',status:'FAIL',exitCode:1,counts:{required:1,run:1,pass:0,fail:1,skip:0}},
+      {id:'T10',status:'NOT_RUN',exitCode:null,counts:null}]};
+  const evidence=JSON.parse(renderCi1Evidence(input).json),worker={schemaVersion:'permission-ci1-worker-status-v1',status:'ERROR',
+    completed:ci1WorkerPlan('12345',1).stages.slice(1,7),businessCounts:null,cleanup:true,cleanupFailure:null,
+    failure:{stage:'offline-edge',operation:'PILOT_HARNESS',code:'COMMAND_FAILED',command:'node',exitCode:1}};
+  const safe=JSON.parse(backendFailureEvidence(worker,evidence,env).json);
+  assert.equal(safe.overallStatus,'FAIL');assert.equal(safe.suites[0].counts.fail,1);assert.equal(safe.suites[1].counts,null);
+  assert.equal(safe.totals.run,null);assert.throws(()=>backendEvidence(worker,evidence,env));
+  for(const delta of [{repository:'nguyentronglinh045/pos-cafe-ci-preflight'},{runId:'999'},{attempt:2},
+    {sourceSHA:'2'.repeat(40)},{workflowSHA:'2'.repeat(40)},{raw:'FAKE_UNIT_SECRET'},{overallStatus:'PASS'}])
+    assert.throws(()=>backendFailureEvidence(worker,{...evidence,...delta},env));
+  for(const delta of [{status:'COMPLETE'},{completed:worker.completed.slice(1)},{businessCounts:{}},{cleanup:false},
+    {cleanupFailure:{stage:'cleanup'}},{failure:{...worker.failure,operation:'STACK_START'}}])
+    assert.throws(()=>backendFailureEvidence({...worker,...delta},evidence,env));
+  const passed=structuredClone(input);passed.suites=[['T09',1],['T10',3]].map(([id,n])=>
+    ({id,status:'PASS',exitCode:0,counts:{required:n,run:n,pass:n,fail:0,skip:0}}));
+  assert.throws(()=>backendFailureEvidence(worker,JSON.parse(renderCi1Evidence(passed).json),env));
 });
