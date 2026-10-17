@@ -30,14 +30,33 @@ const failureStages = ['supervisor', 'loop', 'source-tools', 'npm-images', 'edge
 const failureOperations = ['SOURCE_INTAKE', 'SOURCE_CLONE', 'SOURCE_REF', 'SOURCE_CONFIG', 'TOOL_MANIFEST',
   'DOWNLOAD_NODE', 'INSPECT_NODE', 'EXTRACT_NODE', 'DOWNLOAD_SUPABASE', 'INSPECT_SUPABASE', 'EXTRACT_SUPABASE',
   'PLACE_TOOLS', 'TOOL_VERSIONS', 'STACK_TEMPLATE', 'FORMAT_VOLUME', 'RESERVE_VOLUME',
-  'NPM_DOWNLOAD', 'NPM_INSPECT', 'NPM_CACHE'];
+  'NPM_DOWNLOAD', 'NPM_INSPECT', 'NPM_CACHE', 'PREFETCH_DAEMONS', 'PREFETCH_READY',
+  'IMAGE_PULL', 'IMAGE_TAG', 'IMAGE_INSPECT'];
 const failureCommands = ['git', 'tar', 'node', 'npm', 'supabase', 'fallocate', 'losetup', 'mkfs.ext4', 'mount', 'umount',
   'cp', 'mv', 'docker', 'unshare', 'systemd-run', 'systemctl', 'findmnt', 'containerd', 'dockerd'];
 const failureCodes = ['GUARD_REFUSED', 'INTAKE_REFUSED', 'COMMAND_FAILED', 'COMMAND_TIMEOUT', 'OUTPUT_LIMIT',
-  'IO_MISSING', 'IO_NOTDIR', 'IO_DENIED', 'JS_TYPE_ERROR', 'SUPERVISOR_REFUSED', 'LOOP_REFUSED', 'CONTROL_REFUSED', 'UNKNOWN'];
+  'IO_MISSING', 'IO_NOTDIR', 'IO_DENIED', 'JS_TYPE_ERROR', 'SUPERVISOR_REFUSED', 'LOOP_REFUSED', 'CONTROL_REFUSED',
+  'DOCKER_DAEMON_UNAVAILABLE', 'DOCKER_NO_SPACE', 'DOCKER_PERMISSION', 'DOCKER_TLS', 'DOCKER_REGISTRY_AUTH',
+  'DOCKER_REGISTRY_NOT_FOUND', 'DOCKER_REGISTRY_RATE_LIMIT', 'DOCKER_NETWORK', 'DOCKER_API_VERSION', 'DOCKER_UNPACK', 'UNKNOWN'];
 const failureMetrics = ['hostFreeBytes', 'memoryBytes', 'oom', 'pidsEvents', 'memoryCurrentBytes', 'pidsCurrent',
   'cpuMatches', 'memoryLimitMatches', 'swapLimitMatches', 'pidsLimitMatches', 'cgroupMatches', 'runtimeMatches', 'loggingMatches',
-  'loopImageBytes', 'loopAllocatedBytes', 'loopFilesystemBytes', 'loopFreeBytes', 'loopOffset', 'loopSizeLimit', 'mountMatches', 'ownerMatches'];
+  'loopImageBytes', 'loopAllocatedBytes', 'loopFilesystemBytes', 'loopFreeBytes', 'loopOffset', 'loopSizeLimit', 'mountMatches', 'ownerMatches', 'imageOrdinal'];
+export function ci1DockerFailureCode(stderr) {
+  if (typeof stderr !== 'string' || Buffer.byteLength(stderr) > 1024 ** 2) return null;
+  for (const [code, pattern] of Object.entries({
+    DOCKER_NO_SPACE: /no space left on device|disk quota exceeded/i,
+    DOCKER_API_VERSION: /client version .*too (?:old|new)|minimum supported API version|maximum supported API version/i,
+    DOCKER_REGISTRY_RATE_LIMIT: /toomanyrequests|too many requests|status(?: code)?[: ]+429/i,
+    DOCKER_REGISTRY_AUTH: /unauthorized|authentication required|authorization token.*invalid|access denied/i,
+    DOCKER_REGISTRY_NOT_FOUND: /manifest unknown|manifest.*not found|name unknown/i,
+    DOCKER_TLS: /x509:|certificate.*(?:expired|unknown|invalid)|TLS handshake/i,
+    DOCKER_DAEMON_UNAVAILABLE: /cannot connect to the docker daemon|is the docker daemon running/i,
+    DOCKER_PERMISSION: /operation not permitted|permission denied/i,
+    DOCKER_NETWORK: /i\/o timeout|context deadline exceeded|connection refused|no such host|network is unreachable/i,
+    DOCKER_UNPACK: /failed to register layer|failed to extract layer|failed to unpack/i,
+  })) if (pattern.test(stderr)) return code;
+  return null;
+}
 export function ci1FailureExport(value) {
   if (!value || typeof value !== 'object') return null;
   const output = {
@@ -52,13 +71,13 @@ export function ci1FailureExport(value) {
   if (Object.keys(facts).length) output.facts = facts;
   return output;
 }
-const failureDetails = (error, stage, operation) => ci1FailureExport({stage, operation,
-  code: ['SUPERVISOR_REFUSED','LOOP_REFUSED','CONTROL_REFUSED'].includes(error?.ci1FailureCode) ? error.ci1FailureCode
+const failureDetails = (error, stage, operation, facts = {}) => ci1FailureExport({stage, operation,
+  code: failureCodes.includes(error?.ci1FailureCode) ? error.ci1FailureCode
     : ({ENOENT:'IO_MISSING',ENOTDIR:'IO_NOTDIR',EACCES:'IO_DENIED',ETIMEDOUT:'COMMAND_TIMEOUT',
     ENOBUFS:'OUTPUT_LIMIT',ERR_CHILD_PROCESS_STDIO_MAXBUFFER:'OUTPUT_LIMIT'})[error?.code]
     ?? (error?.message === 'CI1_WORKER_REFUSED' ? 'GUARD_REFUSED' : error?.message === 'CI1_INTAKE_REFUSED'
       ? 'INTAKE_REFUSED' : error?.name === 'TypeError' ? 'JS_TYPE_ERROR' : Number.isInteger(error?.status) ? 'COMMAND_FAILED' : 'UNKNOWN'),
-  command:error?.ci1Command,exitCode:error?.status,facts:error?.ci1Facts});
+  command:error?.ci1Command,exitCode:error?.status,facts:{...facts,...error?.ci1Facts}});
 
 function taskControl(layout, env) {
   const directory = lstatSync(layout.task), path = `${layout.task}/run-control.json`, info = lstatSync(path);
@@ -119,7 +138,7 @@ export async function runCi1Worker(adapter, identity) {
       completed.push(stage);
     }
     status = 'COMPLETE';
-  } catch (error) { failure = failureDetails(error, activeStage, entered ? adapter.operation?.() : null); }
+  } catch (error) { failure = failureDetails(error, activeStage, entered ? adapter.operation?.() : null, adapter.failureFacts?.()); }
   finally { try { cleanup = await adapter.close() === true; if (!cleanup) status = 'ERROR'; }
     catch (error) { status = 'ERROR'; failure ??= failureDetails(error, 'cleanup', null); } }
   return { schemaVersion: 'permission-ci1-worker-status-v1', status, completed,
@@ -141,7 +160,11 @@ function commandRunner(env, guard = () => {}) {
     guard();
     try { return execFileSync(command, args, { env, encoding: 'utf8', timeout: CI1_SETUP.commandTimeoutMs,
       maxBuffer: 1024 ** 2, stdio: ['ignore', 'pipe', 'pipe'], ...options }); }
-    catch (error) { error.ci1Command = failureCommands.includes(basename(command)) ? basename(command) : null; throw error; }
+    catch (error) {
+      error.ci1Command = failureCommands.includes(basename(command)) ? basename(command) : null;
+      if (basename(command) === 'docker') error.ci1FailureCode = ci1DockerFailureCode(error.stderr);
+      throw error;
+    }
   };
 }
 
@@ -492,11 +515,12 @@ async function setup(layout, input, parentEnv) {
   const root = layout.volume, baseEnv = { ...fixedEnv(root, parentEnv), ...githubEnv(parentEnv) };
   const guard = () => supervisor(layout, baseEnv);
   const run = commandRunner(baseEnv, guard);
-  let loop, mounted = false, pair, source, operation = null;
+  let loop, mounted = false, pair, source, operation = null, imageOrdinal = 0;
   const pinPath = suffix => `${source}/tests/permissions/runtime/${suffix}`;
   const adapter = {
     supervisor: guard,
     operation: () => operation,
+    failureFacts: () => ({ imageOrdinal }),
     stage: async stage => {
       operation = null;
       if (stage === 'loop') {
@@ -579,13 +603,18 @@ async function setup(layout, input, parentEnv) {
           operation = 'NPM_CACHE';
           run(`${root}/runtime/node/bin/npm`, ['cache', 'add', file, '--cache', `${root}/npm-cache`, '--loglevel=error']); unlinkSync(file);
         }
-        operation = null;
+        operation = 'PREFETCH_DAEMONS';
         pair = await daemonPair(layout, baseEnv, run, true);
+        operation = 'PREFETCH_READY';
         await ready(() => ownedDaemonReady(layout, pair, run), guard);
         for (const image of ci1ImagesIntake(parse(pinPath('ci1-images.json')))) {
+          imageOrdinal++;
           const repository = image.ref.slice(0, image.ref.lastIndexOf(':'));
+          operation = 'IMAGE_PULL';
           run('docker', ['pull', '--quiet', '--platform', 'linux/amd64', `${repository}@${image.manifestDigest}`]);
+          operation = 'IMAGE_TAG';
           run('docker', ['tag', `${repository}@${image.manifestDigest}`, image.ref]);
+          operation = 'IMAGE_INSPECT';
           const actual = JSON.parse(run('docker', ['image', 'inspect', image.ref]))[0];
           if (actual.Id !== image.configDigest || actual.Os !== 'linux' || actual.Architecture !== 'amd64') refused();
         }

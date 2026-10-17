@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { ci1Identity } from './permission-ci1-policy.mjs';
 import { ci1WorkerPlan, runCi1Worker, ci1EdgeCacheProof, ci1PublicExport, ci1EdgeBundleArguments,
-  ci1AcquireDaemons, ci1CloseDaemons, ci1TerminateDaemon, ci1FailureExport } from './permission-ci1-worker.mjs';
+  ci1AcquireDaemons, ci1CloseDaemons, ci1TerminateDaemon, ci1FailureExport, ci1DockerFailureCode } from './permission-ci1-worker.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
 
 // Every Linux fact, adapter and cache below is fake unit data. No Linux/DB/CI is started.
@@ -16,6 +16,19 @@ const proof = () => ({ platform: 'linux', arch: 'x64', root: true, wsl: false, a
   stdout: 'null', stderr: 'null', oom: 0, pidsEvents: 0, hostFreeBytes: 60 * 1024 ** 3 });
 const adapter = () => { const calls = []; return { calls, supervisor: () => proof(), stage: async name => { calls.push(name); return true; },
   close: async () => { calls.push('close'); return true; } }; };
+
+test('Docker failures expose bounded fixed categories and image ordinal without raw stderr', async () => {
+  assert.equal(ci1DockerFailureCode('FAKE_UNIT_SECRET: no space left on device'), 'DOCKER_NO_SPACE');
+  assert.equal(ci1DockerFailureCode('manifest unknown: FAKE_UNIT_SECRET'), 'DOCKER_REGISTRY_NOT_FOUND');
+  assert.equal(ci1DockerFailureCode('client version 1.43 is too old. Minimum supported API version is 1.44'), 'DOCKER_API_VERSION');
+  assert.equal(ci1DockerFailureCode('FAKE_UNIT_SECRET'), null);
+  assert.equal(ci1DockerFailureCode('no space left on device'+'x'.repeat(1024**2)), null);
+  const fake=adapter(); fake.operation=()=> 'IMAGE_PULL'; fake.failureFacts=()=>({imageOrdinal:2,raw:'FAKE_UNIT_SECRET'});
+  fake.stage=async()=>{throw Object.assign(new Error('FAKE_UNIT_SECRET'), {ci1FailureCode:'DOCKER_REGISTRY_AUTH',ci1Command:'docker',status:1});};
+  const result=await runCi1Worker(fake,identity);
+  assert.deepEqual(result.failure,{stage:'loop',operation:'IMAGE_PULL',code:'DOCKER_REGISTRY_AUTH',command:'docker',exitCode:1,facts:{imageOrdinal:2}});
+  assert.equal(result.cleanup,true);assert.equal(JSON.stringify(result).includes('FAKE_UNIT_SECRET'),false);
+});
 
 test('worker plan applies caps before writes and separates network cache warm from offline service tests', () => {
   const plan = ci1WorkerPlan('12345', 1);
