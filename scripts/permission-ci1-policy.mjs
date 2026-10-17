@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 
 const GiB = 1024 ** 3;
+export const CI1_REPOSITORIES = Object.freeze(['nguyentronglinh045/pos-cafe-ci-preflight', '24tx810010-hcmute/pos-cafe']);
+export const ci1TrustedRepository = value => CI1_REPOSITORIES.includes(value);
 export const CI1_LIMITS = Object.freeze({
   cpuQuota: 300000, cpuPeriod: 100000, memoryBytes: 10 * GiB, swapBytes: 0,
   pids: 2048, runtimeSeconds: 1800, stopGraceSeconds: 30,
@@ -77,7 +79,7 @@ export function assertCi1Envelope(proof, identity) {
   const expected = ci1Identity(identity.runId, identity.attempt);
   if (!proof || proof.platform !== 'linux' || proof.arch !== 'x64' || proof.githubHosted !== true
     || proof.publicRepository !== true || proof.hostCPUs !== 4 || proof.hostMemoryBytes < 14 * GiB || proof.hostMemoryBytes > 18 * GiB
-    || proof.repository !== 'nguyentronglinh045/pos-cafe-ci-preflight' || proof.manual !== true
+    || !ci1TrustedRepository(proof.repository) || proof.manual !== true
     || proof.unit !== expected.unit || proof.cgroup !== `/system.slice/${expected.unit}` || proof.delegatedSupervisor !== true) refuse();
   if (proof.cpuMax !== `${CI1_LIMITS.cpuQuota} ${CI1_LIMITS.cpuPeriod}`
     || proof.memoryMax !== String(CI1_LIMITS.memoryBytes) || proof.swapMax !== '0'

@@ -1,6 +1,6 @@
 // Pure serializer only. The caller must supply results from a real, bound run.
 // This module does not execute tests, inspect the environment or publish output.
-const REPOSITORY = 'nguyentronglinh045/pos-cafe-ci-preflight';
+import { ci1TrustedRepository } from './permission-ci1-policy.mjs';
 const INVALID = 'CI1_EVIDENCE_INVALID';
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const STATUSES = ['PASS', 'FAIL', 'ERROR', 'NOT_RUN'];
@@ -73,7 +73,7 @@ function suite(value, expected) {
 function build(input) {
   const data = record(input, ['repository', 'runId', 'attempt', 'workflowSHA', 'sourceSHA', 'sourceFingerprint',
     'lockSHA', 'versions', 'startedAt', 'finishedAt', 'checks', 'suites']);
-  if (data.repository !== REPOSITORY) reject();
+  if (!ci1TrustedRepository(data.repository)) reject();
   const runId = text(data.runId, /^[1-9]\d{0,19}$/);
   if (!Number.isSafeInteger(data.attempt) || data.attempt < 1 || data.attempt > 1000) reject();
   const workflowSHA = text(data.workflowSHA, /^[a-f0-9]{40}$/);
@@ -108,8 +108,8 @@ function build(input) {
   }
   return {
     schemaVersion: 'permission-ci1-public-evidence-v1', verificationScope: 'CI1_PILOT_ONLY',
-    repository: REPOSITORY, runId, attempt: data.attempt,
-    runURL: `https://github.com/${REPOSITORY}/actions/runs/${runId}/attempts/${data.attempt}`,
+    repository: data.repository, runId, attempt: data.attempt,
+    runURL: `https://github.com/${data.repository}/actions/runs/${runId}/attempts/${data.attempt}`,
     workflowSHA, sourceSHA, sourceFingerprint, lockSHA, versions, startedAt, finishedAt,
     checks, suites, totals, overallStatus,
   };

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { posix } from 'node:path';
-import { CI1_LIMITS, CI1_PROJECT, ci1Identity } from './permission-ci1-policy.mjs';
+import { CI1_LIMITS, CI1_PROJECT, ci1Identity, ci1TrustedRepository } from './permission-ci1-policy.mjs';
 
 export const CI1_SETUP = Object.freeze({ sourceBytes: 64 * 1024 ** 2, npmBytes: 512 * 1024 ** 2,
   npmTarBytes: 32 * 1024 ** 2, toolBytes: 128 * 1024 ** 2, unpackBytes: 256 * 1024 ** 2,
@@ -100,7 +100,7 @@ export function assertCi1Supervisor(proof, identity) {
   const expected = ci1Identity(identity.runId, identity.attempt);
   if (proof?.platform !== 'linux' || proof.arch !== 'x64' || proof.root !== true || proof.wsl !== false
     || proof.authorized !== true || proof.githubHosted !== true || proof.publicRepository !== true || proof.manual !== true
-    || proof.repository !== 'nguyentronglinh045/pos-cafe-ci-preflight' || proof.cpus !== 4
+    || !ci1TrustedRepository(proof.repository) || proof.cpus !== 4
     || !Number.isSafeInteger(proof.memoryBytes) || proof.memoryBytes < 14 * 1024 ** 3 || proof.memoryBytes > 18 * 1024 ** 3
     || proof.cgroup !== `/system.slice/${expected.unit}/supervisor`
     || proof.cpuMax !== `${CI1_LIMITS.cpuQuota} ${CI1_LIMITS.cpuPeriod}` || proof.memoryMax !== String(CI1_LIMITS.memoryBytes)

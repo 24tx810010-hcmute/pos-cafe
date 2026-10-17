@@ -4,6 +4,8 @@ import { resolve } from 'node:path';
 import { CI1_LIMITS, CI1_PROJECT, CI1_RUNTIME, CI1_SUITES, assertCi1Envelope, assertCi1WriteBoundary, ci1ProcessEnvironment, ci1Identity, ci1Invocation, ci1SuiteResult } from './permission-ci1-policy.mjs';
 import { runCi1Pilot, ci1LinuxRecipe } from './permission-ci1-harness.mjs';
 import { summarizeCi1Modules } from './permission-ci1-vitest-reporter.mjs';
+import { assertCi1Supervisor } from './permission-ci1-intake.mjs';
+import { runCi1Worker } from './permission-ci1-worker.mjs';
 
 // All adapters/proofs below are fake unit data. No Linux/DB/CI operation is run.
 const identity = ci1Identity('12345', 1);
@@ -45,6 +47,29 @@ function fakeAdapter() {
     close: async () => { calls.push('close'); },
   };
 }
+
+test('both exact trusted repositories pass the full supervisor, envelope, worker and evidence chain; unknown repo is refused', async () => {
+  for (const repository of ['nguyentronglinh045/pos-cafe-ci-preflight', '24tx810010-hcmute/pos-cafe', 'attacker/pos-cafe']) {
+    const supervisor = { platform: 'linux', arch: 'x64', root: true, wsl: false, authorized: true, githubHosted: true,
+      publicRepository: true, manual: true, repository, cpus: 4, memoryBytes: 16 * 1024 ** 3,
+      cgroup: `/system.slice/${identity.unit}/supervisor`, cpuMax: '300000 100000', memoryMax: String(CI1_LIMITS.memoryBytes),
+      swapMax: '0', pidsMax: '2048', runtime: '30min', stop: '30s', kill: 'control-group', stdout: 'null', stderr: 'null',
+      oom: 0, pidsEvents: 0, hostFreeBytes: 60 * 1024 ** 3 };
+    const worker = { supervisor: () => supervisor, stage: async () => true, close: async () => true };
+    const fake = fakeAdapter(); fake.envelope = async () => ({ ...envelope(), repository });
+    if (repository.startsWith('attacker/')) {
+      assert.throws(() => assertCi1Supervisor(supervisor, identity));
+      assert.throws(() => assertCi1Envelope({ ...envelope(), repository }, identity));
+      assert.equal((await runCi1Worker(worker, identity)).status, 'ERROR');
+      await assert.rejects(runCi1Pilot(fake, { ...metadata(), repository }));
+    } else {
+      assert.equal(assertCi1Supervisor(supervisor, identity), true);
+      assert.equal((await runCi1Worker(worker, identity)).status, 'COMPLETE');
+      const proof = JSON.parse((await runCi1Pilot(fake, { ...metadata(), repository })).json);
+      assert.equal(proof.repository, repository); assert.equal(proof.overallStatus, 'PASS');
+    }
+  }
+});
 
 test('recipe keeps protective caps, preflight order and future execution blockers explicit', () => {
   const recipe = ci1LinuxRecipe('12345', 1);

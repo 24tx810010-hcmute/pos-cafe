@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { cpus, totalmem } from 'node:os';
-import { CI1_LIMITS, CI1_PROJECT, CI1_RUNTIME, ci1ProcessEnvironment, assertCi1Envelope } from './permission-ci1-policy.mjs';
+import { CI1_LIMITS, CI1_PROJECT, CI1_RUNTIME, ci1ProcessEnvironment, assertCi1Envelope, ci1TrustedRepository } from './permission-ci1-policy.mjs';
 import { ci1LinuxRecipe, readCi1LinuxEnvelope } from './permission-ci1-harness.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
 import { CI1_SETUP, ci1BytesHash, ci1NpmIntake, ci1ToolsIntake, ci1CheckTarListing, ci1EdgeIntake,
@@ -84,7 +84,7 @@ export async function runCi1Worker(adapter, identity) {
 function runnerGuard(env) {
   if (process.platform !== 'linux' || process.arch !== 'x64' || process.getuid?.() !== 0
     || env.CI1_EXECUTION_AUTHORIZED !== 'yes' || env.GITHUB_ACTIONS !== 'true'
-    || env.RUNNER_ENVIRONMENT !== 'github-hosted' || env.GITHUB_REPOSITORY !== 'nguyentronglinh045/pos-cafe-ci-preflight'
+    || env.RUNNER_ENVIRONMENT !== 'github-hosted' || !ci1TrustedRepository(env.GITHUB_REPOSITORY)
     || env.GITHUB_EVENT_NAME !== 'workflow_dispatch' || cpus().length !== 4 || totalmem() < 14 * 1024 ** 3
     || /microsoft/i.test(readFileSync('/proc/version', 'utf8')) || parse(env.GITHUB_EVENT_PATH)?.repository?.private !== false
     || typeof env.GITHUB_SHA !== 'string' || env.GITHUB_SHA.length !== 40
@@ -458,10 +458,10 @@ async function setup(layout, input, parentEnv) {
         for (const name of ['private', 'docker', 'containerd', 'run', 'tmp', 'home/.cache', 'npm-cache', 'runtime/bin', 'downloads']) mkdirSync(`${root}/${name}`, { recursive: true, mode: 0o700 });
         for (const file of ['npm-user.conf', 'npm-global.conf']) writeFileSync(`${root}/run/${file}`, '', { mode: 0o600 });
       } else if (stage === 'source-tools') {
-        if (boundedTree(input, CI1_SETUP.sourceBytes).bytes > CI1_SETUP.sourceBytes || run('git', ['-C', input, 'rev-parse', 'HEAD']).trim() !== baseEnv.GITHUB_SHA
-          || run('git', ['-C', input, 'status', '--porcelain', '--untracked-files=all']).trim()) refused();
+        if (boundedTree(input, CI1_SETUP.sourceBytes).bytes > CI1_SETUP.sourceBytes || run('git', ['-c', `safe.directory=${input}`, '-C', input, 'rev-parse', 'HEAD']).trim() !== baseEnv.GITHUB_SHA
+          || run('git', ['-c', `safe.directory=${input}`, '-C', input, 'status', '--porcelain', '--untracked-files=all']).trim()) refused();
         source = `${root}/source`;
-        run('git', ['-c', 'core.hooksPath=/dev/null', 'clone', '--no-hardlinks', '--depth=1', '--no-local', '--', 'file://' + input, source]);
+        run('git', ['-c', `safe.directory=${input}`, '-c', 'core.hooksPath=/dev/null', 'clone', '--no-hardlinks', '--depth=1', '--no-local', '--', 'file://' + input, source]);
         if (run('git', ['-C', source, 'rev-parse', 'HEAD']).trim() !== baseEnv.GITHUB_SHA) refused();
         // No checkout credentials are accepted in the clone; actual published Git
         // commit is sourceSHA, never fabricated as the POS working-tree baseline.

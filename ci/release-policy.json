@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "pos-release-policy-v1",
+  "reviewers": [
+    "nguyentronglinh045"
+  ],
+  "allowedSourceBranches": [
+    "main",
+    "ci/project-pipeline-20261017"
+  ],
+  "productionEnabled": false,
+  "trustedFiles": {
+    ".github/workflows/ci.yml": "202b59395429917704dd80b00b533927ce11c5ff7d12aef3118af515c9ee38eb",
+    "scripts/project-ci-launch.mjs": "888af14c7d6be0b92ec0e9af843e03099c253154067a64a14c8cfc4bd19bf77a",
+    "scripts/project-ci.mjs": "ac4620354b18272c2de9537b551d6aa43baf5ac9e2e190589418326e5ab2c01c",
+    "scripts/project-ci-results.mjs": "1987e04f1f80e70728cb38e03da4ff22af702609368f7fb34034a304ed7b5f4d",
+    "vitest.config.ts": "1cb32e60581f3bc8c6f2a6e487e2c337a89d40f3ae966b82896792ce5b077042",
+    "vitest.project-tooling.config.ts": "57952a3d1782e32dbf069d4fd7ccee3dd40b8fa7a7c435db4bd7179e265097f1",
+    "playwright.config.ts": "ab6f474cd4094ede9c33ff2f6fc376f97e28587413fc5c69fbf0d97c5a17d838",
+    "ci/smoke-applicability.json": "d45efdb184ce72ab9435c7d2359258fdcfe29712b183194d26792f32df791b61",
+    "ui-audit/run.mjs": "04f7afb18eeb9c2701cb20b9ba81c2b8362737438a4c3172dce9896c88c3ff4a",
+    "ui-audit/config.json": "95229f82d79bd49419856b9a79d14643cb04ce2a3a2a6e7b6d895495a7722515",
+    "ui-audit/baseline.json": "bf94db0428557376481f01a3cabea474c73eef156a95218ae09cbf960d4ffd42",
+    "package.json": "f86774d7902b04c160b917f32fe913e71af73ecbc49202e9e37701478b628189",
+    "package-lock.json": "85969c1c161f74e9f68563182d99d1b0ac6fb5f17f5074444f329675ffd34e18",
+    "ui-audit/audit.js": "bfe37e148565ae43de944e23968beb3efc2befd1dca168918501ad68ad1b0fc2",
+    "ui-audit/demo-buggy.html": "4c1424232be357167b1cf643ff1baa602d2987856317d40460d95f6358662cce",
+    "tests/smoke/helpers.ts": "b82ac51cd36395d757b8e2ce630558ec7ee0ac8922ca6b88e57e22a2e48c6ad5",
+    "vercel.json": "c9dc103882632c479d5e0a385dfc600dc2e41e0f3e88810f8fc31574701f77eb"
+  }
+}
