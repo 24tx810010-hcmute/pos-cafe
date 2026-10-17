@@ -1,5 +1,7 @@
 # Chỉ mục bàn giao task
 
+- [Setup CI/CD dự án, 17/10/2026](project-ci-cd-setup-2026-10-17.md) — bàn giao theo DEC06: CI30 PASS exact0781f75; backend18 FAIL/fixture sang phiên phân quyền; CD39028263852 chờ duyệt, chưa production.
+
 - [Launcher dùng protected runtime, 16/10/2026](../../implementation-log/permission-protected-runtime-launcher-2026-10-16.md): owner duyệt hai file launcher/test mới và kiểm local;11/11PASS/source-bound, public140file/172ACL/144streams đóng. Chờ SEC/EVC frozen candidate; chưa private inputs/credential/probe PostgreSQL/DB/push/CI/deploy/delete. Lượt probe mới cần owner duyệt riêng sau review.
 
 - [Thực thi runtime riêng và offline, 16/10/2026](../../implementation-log/permission-runtime-private-execution-2026-10-16.md): checkpoint đã SEC/EVC APPROVE; actual PASS đủ140files/92.755.145B, actual pg private34CJS/network0 và post-audit hash/ACL PASS. Chưa PG actor/scope online/DB compatibility/push/deploy; chuẩn bị launcher mới ở hồ sơ phía trên, chưa dùng credential.
