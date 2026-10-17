@@ -160,8 +160,24 @@
       "integrity": "sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg==",
       "tarball": "https://registry.npmjs.org/ws/-/ws-8.22.0.tgz",
       "dependencies": {}
+    },
+    {
+      "name": "@types/node",
+      "version": "22.5.4",
+      "integrity": "sha512-FDuKUJQm/ju9fT/SeX/6+gBzoPzlVCzfzmGkwKvRHQVxi4BntVbyIwf6a4Xn62mrvndLiml6z/UBXIdEVjQLXg==",
+      "tarball": "https://registry.npmjs.org/@types/node/-/node-22.5.4.tgz",
+      "dependencies": {
+        "undici-types": "~6.19.2"
+      }
+    },
+    {
+      "name": "undici-types",
+      "version": "6.19.8",
+      "integrity": "sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==",
+      "tarball": "https://registry.npmjs.org/undici-types/-/undici-types-6.19.8.tgz",
+      "dependencies": {}
     }
   ],
-  "provenance": "Exact npm metadata candidate16/10, actual Edge resolution still must match. Optional peers may be unused. No package bytes downloaded.",
-  "sourceReceiptSHA256": "a40db2763150bf91548935e724b9f4a9e1c892b5a45d37f66fad5f8e182365c5"
+  "provenance": "Exact npm metadata candidate16/10, actual Edge resolution still must match. Optional peers may be unused. No package bytes downloaded. Additional exact @types/node22.5.4 observed in run39008709126 and its undici-types6.19.8 dependency pinned from official registry metadata; both archive SRI verified by stream. Existing pins retained; actual full Edge cache proof still required.",
+  "sourceReceiptSHA256": "2f0c842a4641461fb3c38d21e035157b324400b8c30b0b2e87aad062b0f97e9b"
 }

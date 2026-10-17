@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
 import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit, allocatedBytes, coreLimitDisabled } from './project-ci.mjs';
-import { lightService, withLightCorePattern, stopLightUnit } from './project-ci-launch.mjs';
+import { lightService, withLightCorePattern, stopLightUnit, coreDumpDisabled, linuxCorePatternAdapter } from './project-ci-launch.mjs';
 import { backendInvocation } from './project-backend.mjs';
 import { verifyReleaseRun, verifyReleaseEnvironment, verifyReleaseFiles, productionCommands, PRODUCTION_ENABLED } from './project-release.mjs';
 import { ci1TrustedRepository } from './permission-ci1-policy.mjs';
@@ -41,6 +41,36 @@ test('browser setup signatures become finite diagnostics without exporting priva
   assert.equal(JSON.stringify(result).includes('FAKE_UNIT_SECRET'),false);
   assert.equal(JSON.stringify(result).includes('private.example'),false);
   for(const code of ['RESOURCE_CORE_PATTERN','RESOURCE_HOST_GROWTH'])assert.equal(guardFailureCode({code}),code);
+});
+
+test('smoke timeout exposes only finite API stage and a known failing source location', () => {
+  const messages = ['browser.newContext:', 'browserContext.newPage:', 'page.goto:', 'locator.click:',
+    'expect(locator).toBeVisible()', 'while setting up "page"', 'while tearing down "context"'];
+  const codes = ['BROWSER_CONTEXT', 'BROWSER_PAGE', 'PAGE_NAVIGATION', 'LOCATOR_ACTION', 'ASSERTION_VISIBLE', 'FIXTURE_SETUP', 'FIXTURE_TEARDOWN'];
+  for (const [i, message] of messages.entries()) {
+    const report = { suites: [{ specs: [{ file: 'pos-cafe.spec.ts', line: 119, tests: [{ projectName: 'desktop',
+      results: [{ status: 'timedOut', error: { message: message + ' FAKE_PRIVATE_TOKEN https://private.example',
+        stack: 'at /private/source/tests/smoke/pos-cafe.spec.ts:121:14' } }] }] }] }] };
+    const info = privateDiagnostics('', report, ['tests/smoke/pos-cafe.spec.ts']);
+    assert.ok(info.codes.includes(codes[i]));
+    assert.equal(info.metrics.smokeFailureLine, 121); assert.equal(info.metrics.smokeFailureColumn, 14);
+    const safe = publicSummary(binding, [{ id: 'install', status: 'FAIL', elapsedMs: 1, exitCode: 1,
+      invocationSHA: digest, reportSHA: digest, diagnostic: info }], { source: digest, lock: digest });
+    assert.equal(safe.phases[0].diagnostic.metrics.smokeFailureLine, 121);
+    for (const secret of ['FAKE_PRIVATE_TOKEN', 'private.example', '/private/source']) assert.equal(JSON.stringify(safe).includes(secret), false);
+    assert.equal(privateDiagnostics('', report, []).metrics.smokeFailureLine, undefined);
+    report.suites[0].specs[0].tests[0].results[0].error.stack = 'at /private/source/tests/smoke/pos-cafe.spec.ts:1000001:14';
+    assert.equal(privateDiagnostics('', report, ['tests/smoke/pos-cafe.spec.ts']).metrics.smokeFailureLine, undefined);
+  }
+});
+
+test('shared core adapter rejects arbitrary units and requires zero limits plus non-piped pattern', () => {
+  const limits='Max core file size        0                    0                    bytes';
+  assert.equal(coreDumpDisabled(limits,'core\n'),true);
+  assert.equal(coreDumpDisabled(limits,'|handler\n'),false);
+  assert.equal(coreDumpDisabled(limits.replace(/0/g,'unlimited'),'core\n'),false);
+  for(const unit of ['pos-cafe-light-r123-a1.service','pos-cafe-ci1-r123-a1.service']) assert.equal(typeof linuxCorePatternAdapter(unit).beforeRestore,'function');
+  for(const unit of ['ssh.service','pos-cafe-ci1-r123-a1.service\n','../arbitrary']) assert.throws(()=>linuxCorePatternAdapter(unit));
 });
 
 test('core restore requires stopped unit plus recursively empty or confirmed absent cgroup', () => {

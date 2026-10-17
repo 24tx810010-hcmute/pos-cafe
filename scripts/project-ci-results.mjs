@@ -13,7 +13,8 @@ const DIAGNOSTIC_CODES = Object.freeze(['COMMAND_FAILED', 'VITEST_ASSERTION', 'V
   'RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'RESOURCE_CORE_LIMIT', 'GUARD_IO_ENOENT', 'GUARD_IO_ENOTDIR',
   'GUARD_IO_EACCES', 'GUARD_REFUSED', 'COMMAND_TIMEOUT', 'OUTPUT_LIMIT', 'COMMAND_SPAWN_FAILED', 'RESULT_INVALID',
   'SOURCE_DRIFT', 'PROCESS_SIGTERM', 'PROCESS_SIGKILL', 'PROCESS_SIGABRT', 'PROCESS_SIGSEGV', 'RESOURCE_CORE_PATTERN', 'RESOURCE_HOST_GROWTH',
-  'BROWSER_LAUNCH', 'BROWSER_DEPENDENCIES', 'BROWSER_SANDBOX', 'BROWSER_CRASHPAD', 'BROWSER_EXECUTION']);
+  'BROWSER_LAUNCH', 'BROWSER_DEPENDENCIES', 'BROWSER_SANDBOX', 'BROWSER_CRASHPAD', 'BROWSER_EXECUTION',
+  'BROWSER_CONTEXT', 'BROWSER_PAGE', 'PAGE_NAVIGATION', 'LOCATOR_ACTION', 'ASSERTION_VISIBLE', 'FIXTURE_SETUP', 'FIXTURE_TEARDOWN']);
 export function guardFailureCode(error) {
   if (['RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'RESOURCE_CORE_LIMIT', 'RESOURCE_CORE_PATTERN', 'RESOURCE_HOST_GROWTH', 'SOURCE_DRIFT'].includes(error?.code)) return error.code;
   if (['ENOENT', 'ENOTDIR', 'EACCES'].includes(error?.code)) return `GUARD_IO_${error.code}`;
@@ -56,6 +57,14 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
     }
   }
   const privateText = stripVTControlCharacters(messages.join('\n'));
+  for (const file of [...new Set(smokeFailedFiles)]) {
+    const escaped = file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const location = new RegExp(escaped + ':(\\d+):(\\d+)').exec(privateText.replaceAll('\\', '/'));
+    if (location && Number(location[1]) > 0 && Number(location[1]) <= 1000000
+      && Number(location[2]) > 0 && Number(location[2]) <= 1000000) {
+      metrics.smokeFailureLine = Number(location[1]); metrics.smokeFailureColumn = Number(location[2]); break;
+    }
+  }
   if (expectedFiles.includes('tests/smoke/helpers.ts')) {
     const helper = /tests[/\\]smoke[/\\]helpers\.ts:(\d+):\d+/.exec(privateText);
     if (helper && Number(helper[1]) > 0 && Number(helper[1]) <= 1000000) metrics.smokeHelperLine = Number(helper[1]);
@@ -70,7 +79,14 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
     BROWSER_DEPENDENCIES: /Host system is missing dependencies|error while loading shared libraries/i,
     BROWSER_SANDBOX: /No usable sandbox|Running as root without --no-sandbox|Failed to move to new namespace/i,
     BROWSER_CRASHPAD: /chrome_crashpad_handler: --database is required|FATAL:.*crashpad/i,
-    BROWSER_EXECUTION: /Illegal instruction|signal=SIGILL|Exec format error|cannot execute binary/i })) {
+    BROWSER_EXECUTION: /Illegal instruction|signal=SIGILL|Exec format error|cannot execute binary/i,
+    BROWSER_CONTEXT: /\bbrowser\.newContext:/,
+    BROWSER_PAGE: /\bbrowserContext\.newPage:/,
+    PAGE_NAVIGATION: /\bpage\.(?:goto|reload|waitForURL):/,
+    LOCATOR_ACTION: /\blocator\.(?:click|fill|press|check|waitFor):/,
+    ASSERTION_VISIBLE: /expect\([^\r\n]*\)\.(?:toBeVisible|toBeHidden)/,
+    FIXTURE_SETUP: /while setting up \"[^\r\n\"]{1,100}\"/i,
+    FIXTURE_TEARDOWN: /while tearing down \"[^\r\n\"]{1,100}\"/i })) {
     if (pattern.test(privateText)) codes.push(code);
   }
   const failedFiles = (report?.testResults ?? []).filter(file => file.status === 'failed').map(file => {
@@ -232,7 +248,7 @@ export function publicSummary(binding, rows, fingerprints) {
       metrics: Object.fromEntries(Object.entries(diagnostic.metrics).filter(([key, value]) =>
         ['numTotalTests', 'numPassedTests', 'numFailedTests', 'numPendingTests', 'numRuntimeErrorTestSuites', 'architectureAssertion',
           'minimumObservedFreeBytes', 'initialFreeBytes', 'freeSpaceDecreaseBytes', 'ownedBytesAtCheckpoint', 'coreFileCount', 'coreAllocatedBytes', 'largestOwnedFileBytes', 'kernelCorePipe',
-          'smokeTestLine', 'smokeFailureProjectOrdinal', 'smokeHelperLine', 'smokeExpected', 'smokeUnexpected', 'smokeSkipped', 'smokeFlaky', 'smokeProgressIndex', 'smokeProgressTotal',
+          'smokeTestLine', 'smokeFailureProjectOrdinal', 'smokeHelperLine', 'smokeFailureLine', 'smokeFailureColumn', 'smokeExpected', 'smokeUnexpected', 'smokeSkipped', 'smokeFlaky', 'smokeProgressIndex', 'smokeProgressTotal',
           'memoryCurrentBytes', 'peakMemoryBytes', 'pidsCurrent', 'peakPids', 'oomEvents', 'oomKills', 'pidsLimitEvents'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));
   return { schemaVersion: 'pos-cafe-light-ci-v1', verificationScope: 'LIGHT_MOCK_ONLY', repository: PROJECT_REPOSITORY, repositoryID: PROJECT_REPOSITORY_ID,

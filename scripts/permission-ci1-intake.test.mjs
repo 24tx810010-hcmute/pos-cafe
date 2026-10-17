@@ -101,7 +101,9 @@ test('supervisor proof refuses missing/lax hardware, public-runner, logging and 
 
 test('Edge metadata pins are a separate closure from application npm lock and reject malformed/duplicate packages', () => {
   const edge = json('../tests/permissions/runtime/ci1-edge.json');
-  assert.equal(ci1EdgeIntake(edge).length, 18);
+  assert.equal(ci1EdgeIntake(edge).length, 20);
+  for (const [name, version] of [['@types/node', '22.5.4'], ['undici-types', '6.19.8'], ['@types/node', '26.6.5']])
+    assert.ok(edge.packages.some(item => item.name === name && item.version === version));
   assert.ok(edge.packages.some(item => item.name === '@supabase/supabase-js' && item.version === '2.45.0'));
   const duplicate = structuredClone(edge); duplicate.packages.push(duplicate.packages[0]);
   assert.throws(() => ci1EdgeIntake(duplicate));

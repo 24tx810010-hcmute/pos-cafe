@@ -51,8 +51,10 @@ test('Edge bundle primes an empty no-copy cache and uses no network in offline v
   const argv = ci1EdgeBundleArguments(layout, 'public.ecr.aws/supabase/edge-runtime:v1.74.3', 'none', 'offline1', 'menu-image-public', 0);
   assert.equal(argv[argv.indexOf('--network') + 1], 'none');
   assert.ok(argv.some(value => value.endsWith('/root/.cache/deno,volume-nocopy')));
-  assert.ok(argv.includes('bundle')); assert.ok(!argv.includes('--rm'));
+  assert.ok(argv.includes('bundle'));
   assert.ok(argv.some(value => value.endsWith(',readonly')));
+  assert.ok(argv.includes('--rm'));
+  assert.equal(argv[argv.indexOf('--ulimit') + 1], 'core=0:0');
   assert.throws(() => ci1EdgeBundleArguments(layout, 'image', 'bridge', 'offline1', 'menu-image-public', 0));
 });
 

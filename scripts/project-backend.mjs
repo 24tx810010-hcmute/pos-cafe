@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, appendFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { withLightCorePattern, linuxCorePatternAdapter } from './project-ci-launch.mjs';
 import { ci1WorkerLayout } from './permission-ci1-intake.mjs';
 import { ci1WorkerPlan, ci1PublicExport, ci1FailureExport } from './permission-ci1-worker.mjs';
 
@@ -34,7 +35,9 @@ export function backendEvidence(worker, evidence, env) {
 function main() {
   if (process.platform !== 'linux' || process.env.GITHUB_ACTIONS !== 'true' || process.env.RUNNER_ENVIRONMENT !== 'github-hosted') throw new Error();
   const { argv, layout } = backendInvocation(process.env, process.execPath, process.cwd());
-  const child = spawnSync('sudo', argv, { encoding: 'utf8', timeout: 1900000, maxBuffer: 1024 ** 2 });
+  const child = withLightCorePattern(linuxCorePatternAdapter(layout.identity.unit),
+    () => spawnSync('sudo', argv, { encoding: 'utf8', timeout: 1900000, maxBuffer: 1024 ** 2 }));
+  console.log('PROJECT_BACKEND_CORE_PATTERN_RESTORED');
   const read = path => {
     const result = spawnSync('sudo', ['--', 'cat', path], { encoding: 'utf8', timeout: 10000, maxBuffer: 1024 ** 2 });
     if (result.status !== 0) throw new Error();

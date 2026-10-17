@@ -10,9 +10,9 @@
   "productionEnabled": false,
   "trustedFiles": {
     ".github/workflows/ci.yml": "14fc00e62e1ca40e6cc71b004085ba7d411e6ad9bd0a3aed4c1185d644498705",
-    "scripts/project-ci-launch.mjs": "9bccdf1d7ae11dc9e346bdb1873b10ceabf3b4f87f01f10c32bb391788b2bf55",
+    "scripts/project-ci-launch.mjs": "52b56328e7d6719e10498dbf792204308e27ce7cc06f43887d03f5ccf2410490",
     "scripts/project-ci.mjs": "73dc97472c3075f2429a5fa46f65c146142d6c4fe1d1ffab003da601ee590da5",
-    "scripts/project-ci-results.mjs": "08dd4341cefc12d321f8f6f31b36e79086b9b99c49f3e4e1b3799c7c3f6f5fb8",
+    "scripts/project-ci-results.mjs": "ae1d1e87203802f8502ee00cd2341e7105648d2287471c116512c9a36deeae47",
     "vitest.config.ts": "1cb32e60581f3bc8c6f2a6e487e2c337a89d40f3ae966b82896792ce5b077042",
     "vitest.project-tooling.config.ts": "a85416abe41bd3bdb8b70262c82b102be5c48d1e1b5edfdad0eaf7ad9e2b9c31",
     "playwright.config.ts": "ab6f474cd4094ede9c33ff2f6fc376f97e28587413fc5c69fbf0d97c5a17d838",

@@ -55,7 +55,7 @@ export function assertCi1WriteBoundary({ root, environment, paths, runtimeMount,
       return daemon.argv.includes(flag) && daemon.argv.filter(arg => arg === key || arg.startsWith(key + '=')).length === 1; });
   if (!matches(dockerd, [`--host=unix://${root}/docker.sock`, `--data-root=${root}/docker`,
     `--exec-root=${root}/run/docker`, `--pidfile=${root}/run/dockerd.pid`, `--containerd=${root}/run/containerd.sock`,
-    `--cgroup-parent=${cgroup}`, '--exec-opt=native.cgroupdriver=cgroupfs'])
+    `--cgroup-parent=${cgroup}`, '--exec-opt=native.cgroupdriver=cgroupfs', '--default-ulimit=core=0:0'])
     || !matches(containerd, [`--root=${root}/containerd`, `--state=${root}/run/containerd-state`,
       `--address=${root}/run/containerd.sock`])) refuse();
   return true;
@@ -97,7 +97,8 @@ export function assertCi1Envelope(proof, identity) {
   if (proof.filesystemFreeBytes > proof.filesystemBytes) refuse();
   if (proof.memoryCurrent >= CI1_LIMITS.memoryBytes || proof.pidsCurrent >= CI1_LIMITS.pids
     || proof.oomEvents !== 0 || proof.pidsLimitEvents !== 0 || proof.privateNamespaces !== true
-    || proof.noDefaultRoute !== true || proof.ownedDaemon !== true || proof.containersInCgroup !== true) refuse();
+    || proof.noDefaultRoute !== true || proof.ownedDaemon !== true || proof.containersInCgroup !== true
+    || proof.containersCoreDisabled !== true) refuse();
   return true;
 }
 

@@ -30,29 +30,16 @@ export function withLightCorePattern(adapter, action) {
   }
 }
 
-export function lightService(env, node, root) {
-  if (!/^[1-9][0-9]*$/.test(env.GITHUB_RUN_ID ?? '') || !/^[1-9][0-9]*$/.test(env.GITHUB_RUN_ATTEMPT ?? '')
-    || env.GITHUB_REPOSITORY !== 'nguyentronglinh045/pos-cafe' || env.GITHUB_REPOSITORY_ID !== '1263057386' || env.GITHUB_ACTIONS !== 'true'
-    || env.RUNNER_ENVIRONMENT !== 'github-hosted' || !node.startsWith('/') || !root.startsWith('/')) throw new Error('PROJECT_CI_LAUNCH_INVALID');
-  const unit = `pos-cafe-light-r${env.GITHUB_RUN_ID}-a${env.GITHUB_RUN_ATTEMPT}.service`;
-  const names = ['PATH', 'LANG', 'GITHUB_ACTIONS', 'GITHUB_REPOSITORY', 'GITHUB_REPOSITORY_ID', 'GITHUB_EVENT_NAME', 'GITHUB_EVENT_PATH',
-    'GITHUB_SHA', 'GITHUB_WORKFLOW_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_STEP_SUMMARY', 'RUNNER_TEMP', 'RUNNER_ENVIRONMENT'];
-  const args = ['systemd-run', '--quiet', '--wait', '--pipe', '--collect', `--unit=${unit}`, `--working-directory=${root}`,
-    '--property=CPUQuota=300%', '--property=MemoryMax=8G', '--property=MemorySwapMax=0', '--property=TasksMax=1024',
-    '--property=RuntimeMaxSec=25min', '--property=TimeoutStopSec=10s', '--property=KillMode=control-group', '--property=LimitCORE=0',
-    ...names.filter(name => env[name]).map(name => `--setenv=${name}=${env[name]}`), node, resolve(root, 'scripts/project-ci.mjs')];
-  if (args.some(arg => /[\r\n\0]/.test(arg))) throw new Error('PROJECT_CI_LAUNCH_INVALID');
-  return args;
+export function coreDumpDisabled(limits, pattern) {
+  const match = /^Max core file size\s+(\S+)\s+(\S+)\s+bytes\s*$/m.exec(limits);
+  return match?.[1] === '0' && match[2] === '0' && pattern === 'core\n';
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  try {
-    if (process.platform !== 'linux') throw new Error();
-    const args = lightService(process.env, process.execPath, process.cwd());
-    const path = '/proc/sys/kernel/core_pattern';
-    const unit = `pos-cafe-light-r${process.env.GITHUB_RUN_ID}-a${process.env.GITHUB_RUN_ATTEMPT}.service`;
-    const cgroup = `/sys/fs/cgroup/system.slice/${unit}`;
-    const result = withLightCorePattern({ read: () => readFileSync(path, 'utf8'), write: input => {
+export function linuxCorePatternAdapter(unit) {
+  if (typeof unit !== 'string' || /[\r\n\0]/.test(unit)
+    || !/^pos-cafe-(?:light|ci1)-r[1-9][0-9]{0,19}-a[1-9][0-9]{0,3}\.service$/.test(unit)) throw new Error('PROJECT_CI_LAUNCH_INVALID');
+  const path = '/proc/sys/kernel/core_pattern', cgroup = `/sys/fs/cgroup/system.slice/${unit}`;
+  return { read: () => readFileSync(path, 'utf8'), write: input => {
       const write = spawnSync('/usr/bin/sudo', ['--', '/usr/bin/tee', path],
         { input, stdio: ['pipe', 'ignore', 'ignore'], timeout: 10000 });
       if (write.status !== 0) throw new Error('PROJECT_CI_CORE_PATTERN_INVALID');
@@ -77,7 +64,30 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
           } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
         },
       });
-    } }, () => spawnSync('sudo', ['--', ...args], { stdio: 'inherit', timeout: 1560000 }));
+    } };
+}
+
+export function lightService(env, node, root) {
+  if (!/^[1-9][0-9]*$/.test(env.GITHUB_RUN_ID ?? '') || !/^[1-9][0-9]*$/.test(env.GITHUB_RUN_ATTEMPT ?? '')
+    || env.GITHUB_REPOSITORY !== 'nguyentronglinh045/pos-cafe' || env.GITHUB_REPOSITORY_ID !== '1263057386' || env.GITHUB_ACTIONS !== 'true'
+    || env.RUNNER_ENVIRONMENT !== 'github-hosted' || !node.startsWith('/') || !root.startsWith('/')) throw new Error('PROJECT_CI_LAUNCH_INVALID');
+  const unit = `pos-cafe-light-r${env.GITHUB_RUN_ID}-a${env.GITHUB_RUN_ATTEMPT}.service`;
+  const names = ['PATH', 'LANG', 'GITHUB_ACTIONS', 'GITHUB_REPOSITORY', 'GITHUB_REPOSITORY_ID', 'GITHUB_EVENT_NAME', 'GITHUB_EVENT_PATH',
+    'GITHUB_SHA', 'GITHUB_WORKFLOW_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_STEP_SUMMARY', 'RUNNER_TEMP', 'RUNNER_ENVIRONMENT'];
+  const args = ['systemd-run', '--quiet', '--wait', '--pipe', '--collect', `--unit=${unit}`, `--working-directory=${root}`,
+    '--property=CPUQuota=300%', '--property=MemoryMax=8G', '--property=MemorySwapMax=0', '--property=TasksMax=1024',
+    '--property=RuntimeMaxSec=25min', '--property=TimeoutStopSec=10s', '--property=KillMode=control-group', '--property=LimitCORE=0',
+    ...names.filter(name => env[name]).map(name => `--setenv=${name}=${env[name]}`), node, resolve(root, 'scripts/project-ci.mjs')];
+  if (args.some(arg => /[\r\n\0]/.test(arg))) throw new Error('PROJECT_CI_LAUNCH_INVALID');
+  return args;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  try {
+    if (process.platform !== 'linux') throw new Error();
+    const args = lightService(process.env, process.execPath, process.cwd());
+    const unit = `pos-cafe-light-r${process.env.GITHUB_RUN_ID}-a${process.env.GITHUB_RUN_ATTEMPT}.service`;
+    const result = withLightCorePattern(linuxCorePatternAdapter(unit), () => spawnSync('sudo', ['--', ...args], { stdio: 'inherit', timeout: 1560000 }));
     console.log('PROJECT_CI_CORE_PATTERN_RESTORED');
     process.exitCode = result.status === 0 ? 0 : 1;
   } catch { console.log('PROJECT_CI_LAUNCH_BLOCKED'); process.exitCode = 1; }

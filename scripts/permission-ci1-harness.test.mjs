@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { resolve } from 'node:path';
 import { CI1_LIMITS, CI1_PROJECT, CI1_RUNTIME, CI1_SUITES, assertCi1Envelope, assertCi1WriteBoundary, ci1ProcessEnvironment, ci1Identity, ci1Invocation, ci1SuiteResult } from './permission-ci1-policy.mjs';
-import { runCi1Pilot, ci1LinuxRecipe } from './permission-ci1-harness.mjs';
+import { runCi1Pilot, ci1LinuxRecipe, ci1ContainersCoreDisabled } from './permission-ci1-harness.mjs';
 import { summarizeCi1Modules } from './permission-ci1-vitest-reporter.mjs';
 import { assertCi1Supervisor } from './permission-ci1-intake.mjs';
 import { runCi1Worker } from './permission-ci1-worker.mjs';
@@ -20,7 +20,7 @@ const envelope = () => ({ platform: 'linux', arch: 'x64', githubHosted: true,
   imageBytes: CI1_LIMITS.filesystemBytes, imageAllocatedBytes: CI1_LIMITS.filesystemBytes, filesystemBytes: CI1_LIMITS.filesystemBytes - 1024 ** 2,
   filesystemFreeBytes: 8 * 1024 ** 3, hostFreeBytes: 40 * 1024 ** 3, mutablePathsOnVolume: true,
   memoryCurrent: 1024 ** 3, pidsCurrent: 200, oomEvents: 0, pidsLimitEvents: 0,
-  privateNamespaces: true, noDefaultRoute: true, ownedDaemon: true, containersInCgroup: true });
+  privateNamespaces: true, noDefaultRoute: true, ownedDaemon: true, containersInCgroup: true, containersCoreDisabled: true });
 
 function completed(invocation) {
   return { exitCode: 0,
@@ -76,13 +76,30 @@ test('recipe keeps protective caps, preflight order and future execution blocker
   assert.equal(recipe.noAutomaticInstallOrExecution, true);
   assert.equal(recipe.limits.taskBytes, 20 * 1024 ** 3);
   for (const value of ['--property=CPUQuota=300%', '--property=MemoryMax=10737418240', '--property=MemorySwapMax=0',
-    '--property=TasksMax=2048', '--property=RuntimeMaxSec=1800s', '--property=KillMode=control-group']) {
+    '--property=TasksMax=2048', '--property=RuntimeMaxSec=1800s', '--property=KillMode=control-group', '--property=LimitCORE=0']) {
     assert.ok(recipe.systemdArgv.includes(value));
   }
   assert.ok(recipe.provisioningOrder.indexOf('apply-systemd-cgroup-before-heavy-writes')
     < recipe.provisioningOrder.indexOf('prefetch-pinned-images-and-Edge-npm-cache-inside-volume'));
   assert.ok(recipe.executionBlockedUntil.length > 0);
   assert.throws(() => ci1LinuxRecipe('12345\n--property=MemoryMax=infinity', 1));
+});
+
+test('all twelve live service processes must expose zero hard and soft core limits', () => {
+  const values = Array.from({ length: 12 }, (_, i) => ({ State: { Running: true, Pid: i + 1 } }));
+  const zero = 'Max core file size        0                    0                    bytes';
+  const read = [];
+  assert.equal(ci1ContainersCoreDisabled(values, 'core\n', pid => { read.push(pid); return zero; }), true);
+  assert.deepEqual(read, Array.from({ length: 12 }, (_, i) => i + 1));
+  for (const limits of ['', zero.replace('0', 'unlimited'), zero.replace(/0(\s+bytes)$/, 'unlimited$1')])
+    assert.equal(ci1ContainersCoreDisabled(values, 'core\n', pid => pid === 12 ? limits : zero), false);
+  assert.equal(ci1ContainersCoreDisabled(values, '|handler\n', () => zero), false);
+  assert.equal(ci1ContainersCoreDisabled(values, 'core\n', () => { throw Object.assign(new Error(), { code: 'EACCES' }); }), false);
+  assert.equal(ci1ContainersCoreDisabled(values.slice(1), 'core\n', () => zero), false);
+  for (const state of [{ Running: false, Pid: 12 }, { Running: true, Pid: 1 }, { Running: true, Pid: -1 }, { Running: true, Pid: '12' }]) {
+    const invalid = structuredClone(values); invalid[11].State = state;
+    assert.equal(ci1ContainersCoreDisabled(invalid, 'core\n', () => zero), false);
+  }
 });
 
 test('hardware readback refuses absent, exceeded or non-owned protection without fallback', () => {
@@ -94,8 +111,10 @@ test('hardware readback refuses absent, exceeded or non-owned protection without
     standardOutput: 'journal', standardError: 'inherit',
     imageBytes: 21 * 1024 ** 3, imageAllocatedBytes: 1024, filesystemFreeBytes: 0, hostFreeBytes: 29 * 1024 ** 3,
     mutablePathsOnVolume: false, delegatedSupervisor: false, privateNamespaces: false, noDefaultRoute: false, ownedDaemon: false,
-    containersInCgroup: false, oomEvents: 1, pidsLimitEvents: 1, memoryCurrent: CI1_LIMITS.memoryBytes, pidsCurrent: 2048,
+    containersInCgroup: false, containersCoreDisabled: false, oomEvents: 1, pidsLimitEvents: 1, memoryCurrent: CI1_LIMITS.memoryBytes, pidsCurrent: 2048,
   })) assert.throws(() => assertCi1Envelope({ ...envelope(), [key]: value }, identity), { message: 'CI1_GUARD_REFUSED' });
+  const missing = envelope(); delete missing.containersCoreDisabled;
+  assert.throws(() => assertCi1Envelope(missing, identity), { message: 'CI1_GUARD_REFUSED' });
 });
 
 test('actual write paths, environment, runtime mount and daemon flags must share the bounded volume', () => {
@@ -107,7 +126,7 @@ test('actual write paths, environment, runtime mount and daemon flags must share
     runtimeMount: { target: CI1_RUNTIME, filesystem: 'ext4' },
     dockerd: { inCgroup: true, argv: ['dockerd', `--host=unix://${root}/docker.sock`, `--data-root=${root}/docker`,
       `--exec-root=${root}/run/docker`, `--pidfile=${root}/run/dockerd.pid`, `--containerd=${root}/run/containerd.sock`,
-      `--cgroup-parent=/system.slice/${identity.unit}`, '--exec-opt=native.cgroupdriver=cgroupfs'] },
+      `--cgroup-parent=/system.slice/${identity.unit}`, '--exec-opt=native.cgroupdriver=cgroupfs', '--default-ulimit=core=0:0'] },
     containerd: { inCgroup: true, argv: ['containerd', `--root=${root}/containerd`, `--state=${root}/run/containerd-state`, `--address=${root}/run/containerd.sock`] } });
   assert.equal(assertCi1WriteBoundary(valid(), identity), true);
   assert.equal(valid().environment.FAKE_UNIT_SECRET, undefined);
@@ -127,6 +146,8 @@ test('actual write paths, environment, runtime mount and daemon flags must share
     value => { value.runtimeMount.target = '/var/tmp'; },
     value => { value.dockerd.argv = value.dockerd.argv.filter(arg => !arg.startsWith('--exec-root=')); },
     value => { value.dockerd.argv.push('--exec-root=/host/run'); },
+    value => { value.dockerd.argv = value.dockerd.argv.filter(arg => !arg.startsWith('--default-ulimit=')); },
+    value => { value.dockerd.argv.push('--default-ulimit=core=-1:-1'); },
     value => { value.containerd.argv = value.containerd.argv.filter(arg => !arg.startsWith('--address=')); },
     value => { value.containerd.inCgroup = false; },
   ]) { const value = valid(); mutate(value); assert.throws(() => assertCi1WriteBoundary(value, identity), { message: 'CI1_GUARD_REFUSED' }); }

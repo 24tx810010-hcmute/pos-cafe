@@ -7,6 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { cpus, totalmem } from 'node:os';
+import { coreDumpDisabled } from './project-ci-launch.mjs';
 import { CI1_LIMITS, CI1_PROJECT, CI1_RUNTIME, ci1ProcessEnvironment, assertCi1Envelope, ci1TrustedRepository } from './permission-ci1-policy.mjs';
 import { ci1LinuxRecipe, readCi1LinuxEnvelope } from './permission-ci1-harness.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
@@ -178,6 +179,7 @@ function commandRunner(env, guard = () => {}) {
 
 function supervisor(layout, env) {
   runnerGuard(env);
+  if (!coreDumpDisabled(readFileSync('/proc/self/limits', 'utf8'), readFileSync('/proc/sys/kernel/core_pattern', 'utf8'))) refused();
   try { taskControl(layout, env); } catch (error) { error.ci1FailureCode='CONTROL_REFUSED';throw error; }
   const cgroup = `/system.slice/${layout.identity.unit}`, cg = '/sys/fs/cgroup' + cgroup;
   const scalar = name => readFileSync(`${cg}/${name}`, 'utf8').trim();
@@ -282,6 +284,7 @@ async function daemonPair(layout, env, run, prefetch) {
     dockerd: [`--config-file=${root}/run/docker.json`, `--host=unix://${root}/docker.sock`,
     `--data-root=${root}/docker`, `--exec-root=${root}/run/docker`, `--pidfile=${root}/run/dockerd.pid`,
     `--containerd=${root}/run/containerd.sock`, `--cgroup-parent=${cgroup}`, '--exec-opt=native.cgroupdriver=cgroupfs',
+    '--default-ulimit=core=0:0',
     '--default-network-opt=bridge=com.docker.network.bridge.host_binding_ipv4=127.0.0.1',
     ...(prefetch ? ['--bridge=none', '--iptables=false', '--ip-masq=false'] : [])],
   };
@@ -469,7 +472,7 @@ export function ci1EdgeBundleArguments(layout, image, network, index, name, numb
   const root = layout.volume, functions = `${root}/runtime/stack/supabase/functions`;
   if (!['host', 'none'].includes(network) || !['warm', 'offline1', 'offline2'].includes(index)
     || !['menu-image-public', 'menu-image-gateway'].includes(name) || ![0, 1].includes(number)) refused();
-  return ['run', '--name', `ci1-${layout.identity.runId}-${layout.identity.attempt}-${index}-${number}`,
+  return ['run', '--rm', '--ulimit', 'core=0:0', '--name', `ci1-${layout.identity.runId}-${layout.identity.attempt}-${index}-${number}`,
       '--network', network, '--cgroup-parent', `/system.slice/${layout.identity.unit}`,
       '--mount', `type=volume,source=${layout.edgeVolume},target=/root/.cache/deno,volume-nocopy`,
       '--mount', `type=bind,source=${functions},target=${functions},readonly`,

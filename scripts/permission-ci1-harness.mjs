@@ -3,6 +3,7 @@ import { resolve, join, dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFileSync, spawn } from 'node:child_process';
 import { cpus, totalmem } from 'node:os';
+import { coreDumpDisabled } from './project-ci-launch.mjs';
 import { CI1_LIMITS, CI1_PROJECT, CI1_RUNTIME, CI1_SUITES, assertCi1Envelope, assertCi1WriteBoundary, ci1ProcessEnvironment, ci1Identity, ci1Invocation, ci1SuiteResult, ci1Hash } from './permission-ci1-policy.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
 
@@ -72,7 +73,7 @@ export function ci1LinuxRecipe(runId, attempt) {
       '--property=CPUQuota=300%', '--property=CPUQuotaPeriodSec=100ms', '--property=MemoryMax=10737418240',
       '--property=MemorySwapMax=0', '--property=TasksMax=2048', '--property=Delegate=yes', '--property=DelegateSubgroup=supervisor',
       '--property=RuntimeMaxSec=1800s', '--property=TimeoutStopSec=30s', '--property=KillMode=control-group',
-      '--property=PrivateTmp=yes', '--property=StandardOutput=null', '--property=StandardError=null'],
+      '--property=LimitCORE=0', '--property=PrivateTmp=yes', '--property=StandardOutput=null', '--property=StandardError=null'],
     provisioningOrder: ['verify-public-standard-free-runner-and-owner-run-scope', 'apply-systemd-cgroup-before-heavy-writes',
       'verify-host-free-at-least-50GiB-before-18GiB-image', 'create-exclusive-preallocated-18GiB-ext4-loop',
       'stage-approved-source-and-pinned-tools-inside-volume', 'prefetch-pinned-images-and-Edge-npm-cache-inside-volume',
@@ -85,10 +86,21 @@ export function ci1LinuxRecipe(runId, attempt) {
   };
 }
 
+export function ci1ContainersCoreDisabled(containers, pattern, readLimits) {
+  if (!Array.isArray(containers) || containers.length !== 12
+    || new Set(containers.map(value => value?.State?.Pid)).size !== 12) return false;
+  try {
+    return containers.every(value => value?.State?.Running === true
+      && Number.isSafeInteger(value.State.Pid) && value.State.Pid > 0
+      && coreDumpDisabled(readLimits(value.State.Pid), pattern));
+  } catch { return false; }
+}
+
 // Read kernel/daemon state for each phase. No user-provided limits receipt is trusted.
 export function readCi1LinuxEnvelope(root, identity, env = process.env) {
   if (process.platform !== 'linux' || process.arch !== 'x64' || process.getuid?.() !== 0
     || env.CI1_EXECUTION_AUTHORIZED !== 'yes' || /microsoft/i.test(readFileSync('/proc/version', 'utf8'))) refused();
+  if (!coreDumpDisabled(readFileSync('/proc/self/limits', 'utf8'), readFileSync('/proc/sys/kernel/core_pattern', 'utf8'))) refused();
   root = realpathSync(root);
   const ownCgroup = readFileSync('/proc/self/cgroup', 'utf8').trim().split('\n').find(value => value.startsWith('0::'))?.slice(3);
   const cgroup = `/system.slice/${identity.unit}`;
@@ -154,6 +166,8 @@ export function readCi1LinuxEnvelope(root, identity, env = process.env) {
     noDefaultRoute: child('ip', ['route', 'show', 'default']).trim() === '',
     ownedDaemon: docker.DockerRootDir === `${root}/docker` && docker.CgroupDriver === 'cgroupfs' && typeof docker.ID === 'string' && docker.ID.length > 0,
     containersInCgroup,
+    containersCoreDisabled: ci1ContainersCoreDisabled(containers, readFileSync('/proc/sys/kernel/core_pattern', 'utf8'),
+      pid => readFileSync(`/proc/${pid}/limits`, 'utf8')),
   };
 }
 
