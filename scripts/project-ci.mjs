@@ -192,6 +192,9 @@ export async function main() {
     // JSON reporter uses its explicit file rather than public stdout.
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke-discovery.json');
     await phase('smoke-discovery', process.execPath, ['node_modules/playwright/cli.js', 'test', '--list', '--reporter=json']);
+    // Browser stderr remains in the bounded private capture. The public parser
+    // exports only its existing finite failure codes, never the debug text.
+    env.DEBUG = 'pw:browser,pw:webserver';
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke-preflight.json');
     await phase('smoke-preflight', process.execPath, ['node_modules/playwright/cli.js', 'test', 'tests/smoke/pos-cafe.spec.ts:119',
       '--project=desktop', '--workers=1', '--retries=0', '--forbid-only', '--reporter=line,json,./scripts/project-ci-results.mjs'],
@@ -200,6 +203,7 @@ export async function main() {
     await phase('smoke', process.execPath, ['node_modules/playwright/cli.js', 'test', '--workers=2', '--retries=0', '--forbid-only', '--reporter=line,json,./scripts/project-ci-results.mjs'],
       () => smokeCounts(json('smoke'), json('smoke-discovery'), JSON.parse(readFileSync(join(root, 'ci/smoke-applicability.json'), 'utf8'))), 'smoke');
     delete env.PLAYWRIGHT_JSON_OUTPUT_NAME;
+    delete env.DEBUG;
     await phase('ui-selftest', process.execPath, ['ui-audit/run.mjs', '--selftest'], output => {
       if (!output.includes('selftest OK') || !/^selftest: 23 finding\(s\)/m.test(output)) refuse();
       return { detectedFindings: 23 };

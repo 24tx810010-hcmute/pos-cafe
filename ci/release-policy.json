@@ -11,7 +11,7 @@
   "trustedFiles": {
     ".github/workflows/ci.yml": "14fc00e62e1ca40e6cc71b004085ba7d411e6ad9bd0a3aed4c1185d644498705",
     "scripts/project-ci-launch.mjs": "52b56328e7d6719e10498dbf792204308e27ce7cc06f43887d03f5ccf2410490",
-    "scripts/project-ci.mjs": "ab5c1331a4ea599b52c63f4813b9bae1acfc94bf36211563fbcae7be386b8fd2",
+    "scripts/project-ci.mjs": "6c66fc04facc6aad423d7f076eca18095c011e311727f45a604cc8aac35a4a7c",
     "scripts/project-ci-results.mjs": "e125f7e8462ef1d77bf4bf874dd493559a869b8e668a4311f9777f08f03c263b",
     "vitest.config.ts": "1cb32e60581f3bc8c6f2a6e487e2c337a89d40f3ae966b82896792ce5b077042",
     "vitest.project-tooling.config.ts": "a85416abe41bd3bdb8b70262c82b102be5c48d1e1b5edfdad0eaf7ad9e2b9c31",
