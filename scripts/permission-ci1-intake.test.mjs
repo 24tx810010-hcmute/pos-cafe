@@ -68,6 +68,23 @@ test('pinned Supabase two-binary archive requires both colocated regular files a
     assert.throws(()=>ci1CheckTarListing(value,'supabase'));
 });
 
+test('npm named roots are bound to the exact @types tarball and reject mixed roots, links and traversal', () => {
+  const record = root => `-rw-r--r-- 1001/1001 100 2026-10-01 00:00 ${root}/index.d.ts`;
+  const node = 'https://registry.npmjs.org/@types/node/-/node-25.9.3.tgz';
+  const react = 'https://registry.npmjs.org/@types/react/-/react-18.3.31.tgz';
+  for (const root of ['node', 'node v25.9', 'package'])
+    assert.deepEqual(ci1CheckTarListing(record(root), 'npm', node), { entries: 1, unpackedBytes: 100 });
+  assert.deepEqual(ci1CheckTarListing(record('react v18.3'), 'npm', react), { entries: 1, unpackedBytes: 100 });
+  for (const [text, url] of [[record('node'), null], [record('node'), react],
+    [record('node'), node.replace('@types', '@other')], [record('node v25.8'), node],
+    [record('node')+'\n'+record('package'), node], [record('node/..'), node],
+    [record('/node'), node], [record('node').replace('-rw-', 'hrw-'), node],
+    [record('node').replace('-rw-', 'lrw-')+' -> ../escape', node],
+    [record('node').replace('100 ', String(CI1_SETUP.unpackBytes + 1)+' '), node],
+    [record('node'), node.replace('registry.npmjs.org', 'example.test')]])
+    assert.throws(() => ci1CheckTarListing(text, 'npm', url), { message: 'CI1_INTAKE_REFUSED' });
+});
+
 test('supervisor proof refuses missing/lax hardware, public-runner, logging and reserve facts', () => {
   assert.equal(assertCi1Supervisor(unitSupervisor(), identity), true);
   for (const [key, value] of Object.entries({ platform: 'win32', root: false, wsl: true, authorized: false,

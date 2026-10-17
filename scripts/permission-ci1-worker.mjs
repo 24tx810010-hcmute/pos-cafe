@@ -29,7 +29,8 @@ const failureStages = ['supervisor', 'loop', 'source-tools', 'npm-images', 'edge
   'private-namespaces', 'offline-edge', 'stack', 'harness', 'export', 'cleanup'];
 const failureOperations = ['SOURCE_INTAKE', 'SOURCE_CLONE', 'SOURCE_REF', 'SOURCE_CONFIG', 'TOOL_MANIFEST',
   'DOWNLOAD_NODE', 'INSPECT_NODE', 'EXTRACT_NODE', 'DOWNLOAD_SUPABASE', 'INSPECT_SUPABASE', 'EXTRACT_SUPABASE',
-  'PLACE_TOOLS', 'TOOL_VERSIONS', 'STACK_TEMPLATE', 'FORMAT_VOLUME', 'RESERVE_VOLUME'];
+  'PLACE_TOOLS', 'TOOL_VERSIONS', 'STACK_TEMPLATE', 'FORMAT_VOLUME', 'RESERVE_VOLUME',
+  'NPM_DOWNLOAD', 'NPM_INSPECT', 'NPM_CACHE'];
 const failureCommands = ['git', 'tar', 'node', 'npm', 'supabase', 'fallocate', 'losetup', 'mkfs.ext4', 'mount', 'umount',
   'cp', 'mv', 'docker', 'unshare', 'systemd-run', 'systemctl', 'findmnt', 'containerd', 'dockerd'];
 const failureCodes = ['GUARD_REFUSED', 'INTAKE_REFUSED', 'COMMAND_FAILED', 'COMMAND_TIMEOUT', 'OUTPUT_LIMIT',
@@ -569,12 +570,16 @@ async function setup(layout, input, parentEnv) {
         let total = 0;
         for (const [index, item] of ci1NpmIntake(parse(`${source}/package-lock.json`)).entries()) {
           const file = `${root}/downloads/npm-${index}.tgz`;
+          operation = 'NPM_DOWNLOAD';
           total += await download({ ...item, maxBytes: Math.min(item.maxBytes, CI1_SETUP.npmBytes - total) }, file, 'sha512', guard);
           // npm cache add extracts a temporary package to read its manifest.
           // Inspect the expanded bound before permitting that extraction.
-          ci1CheckTarListing(run('tar', ['-tvf', file, '--numeric-owner', '--utc']), 'npm');
+          operation = 'NPM_INSPECT';
+          ci1CheckTarListing(run('tar', ['-tvf', file, '--numeric-owner', '--utc']), 'npm', item.url);
+          operation = 'NPM_CACHE';
           run(`${root}/runtime/node/bin/npm`, ['cache', 'add', file, '--cache', `${root}/npm-cache`, '--loglevel=error']); unlinkSync(file);
         }
+        operation = null;
         pair = await daemonPair(layout, baseEnv, run, true);
         await ready(() => ownedDaemonReady(layout, pair, run), guard);
         for (const image of ci1ImagesIntake(parse(pinPath('ci1-images.json')))) {

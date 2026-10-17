@@ -54,10 +54,18 @@ export function ci1ToolsIntake(manifest) {
   return manifest.tools;
 }
 
-export function ci1CheckTarListing(text, id) {
+export function ci1CheckTarListing(text, id, npmTarball = null) {
   if (!['node', 'supabase', 'npm'].includes(id) || typeof text !== 'string' || text.length > 1024 ** 2) refuse();
   const lines = text.trim().split('\n');
-  let size = 0; const binaries = new Set();
+  let size = 0, npmRoot = null; const binaries = new Set(), npmRoots = new Set(['package']);
+  if (id === 'npm' && npmTarball !== null) {
+    const path = new URL(ci1RegistryTarball(npmTarball)).pathname;
+    // DefinitelyTyped publishes a named root, sometimes with its major/minor
+    // suffix. Bind that exception to the exact @types registry tarball URL;
+    // every archive still has one root and the same traversal/type/size checks.
+    const types = path.match(/^\/@types\/([a-z0-9][a-z0-9.-]*)\/-\/\1-(\d+)\.(\d+)\.\d+(?:-[A-Za-z0-9.-]+)?\.tgz$/);
+    if (types) { npmRoots.add(types[1]); npmRoots.add(`${types[1]} v${types[2]}.${types[3]}`); }
+  }
   for (const line of lines) {
     // GNU tar -tvf; reject unusual records, devices, hardlinks and escaping names.
     const match = line.match(/^([-dl])[rwxstST-]{9}\s+\S+\s+(\d+)\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+(.+)$/);
@@ -70,7 +78,10 @@ export function ci1CheckTarListing(text, id) {
       if (parts.length !== 1 || !['supabase', 'supabase-go'].includes(parts[0]) || match[1] !== '-' || binaries.has(parts[0])) refuse();
       binaries.add(parts[0]);
     }
-    if (id === 'npm' && parts[0] !== 'package') refuse();
+    if (id === 'npm') {
+      if (!npmRoots.has(parts[0]) || (npmRoot !== null && npmRoot !== parts[0])) refuse();
+      npmRoot = parts[0];
+    }
     if (target !== undefined) {
       const destination = posix.normalize(posix.join(posix.dirname(name), target));
       if (id !== 'node' || match[1] !== 'l' || target.startsWith('/') || /[\r\n\0\\]/.test(target)
