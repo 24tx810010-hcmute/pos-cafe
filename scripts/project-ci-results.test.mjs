@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync, writeFileSync, mkdtempSync, existsSync, linkSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, existsSync, linkSync } from 'node:fs';
+import { crc32 } from 'node:zlib';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import SmokeFailureReporter, { smokeStepDiagnostic, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
+import SmokeFailureReporter, { smokeStepDiagnostic, smokeTraceDiagnostics, smokeTraceEvents, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
 import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit, allocatedBytes, coreLimitDisabled } from './project-ci.mjs';
 import { lightService, withLightCorePattern, stopLightUnit, coreDumpDisabled, linuxCorePatternAdapter } from './project-ci-launch.mjs';
 import { backendInvocation } from './project-backend.mjs';
@@ -16,6 +17,82 @@ const sha = '1'.repeat(40), other = '2'.repeat(40), digest = '3'.repeat(64);
 const env = { GITHUB_REPOSITORY: 'nguyentronglinh045/pos-cafe', GITHUB_REPOSITORY_ID: '1263057386', GITHUB_ACTIONS: 'true', RUNNER_ENVIRONMENT: 'github-hosted',
   GITHUB_EVENT_NAME: 'push', GITHUB_SHA: sha, GITHUB_WORKFLOW_SHA: sha, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '1' };
 const binding = sourceBinding(env, { after: sha, repository: { full_name: env.GITHUB_REPOSITORY, id: 1263057386 } }, sha);
+
+const traceLines = events => [{type:'context-options',version:8,playwrightVersion:'1.60.0',browserName:'chromium'},
+  ...events].map(event => JSON.stringify(event)).join('\n') + '\n';
+function storedTraceZip(entries) {
+  const files = [], central = []; let offset = 0;
+  for (const [name, text] of Object.entries(entries)) {
+    const filename = Buffer.from(name), bytes = Buffer.from(text), local = Buffer.alloc(30), directory = Buffer.alloc(46);
+    local.writeUInt32LE(0x04034b50); local.writeUInt16LE(20, 4); local.writeUInt32LE(crc32(bytes), 14);
+    local.writeUInt32LE(bytes.length, 18); local.writeUInt32LE(bytes.length, 22); local.writeUInt16LE(filename.length, 26);
+    directory.writeUInt32LE(0x02014b50); directory.writeUInt16LE(20, 4); directory.writeUInt16LE(20, 6);
+    directory.writeUInt32LE(crc32(bytes), 16); directory.writeUInt32LE(bytes.length, 20); directory.writeUInt32LE(bytes.length, 24);
+    directory.writeUInt16LE(filename.length, 28); directory.writeUInt32LE(offset, 42);
+    files.push(local, filename, bytes); central.push(directory, filename); offset += local.length + filename.length + bytes.length;
+  }
+  const end = Buffer.alloc(22), directory = Buffer.concat(central), count = Object.keys(entries).length;
+  end.writeUInt32LE(0x06054b50); end.writeUInt16LE(count, 8); end.writeUInt16LE(count, 10);
+  end.writeUInt32LE(directory.length, 12); end.writeUInt32LE(offset, 16);
+  return Buffer.concat([...files, directory, end]);
+}
+const traceReport = path => ({suites:[{specs:[{tests:[{results:[{status:'timedOut',attachments:[{name:'trace',contentType:'application/zip',path}]}]}]}]}]});
+
+test('trace observes browser JS errors without exporting messages, URLs, secrets or unmapped paths', () => {
+  const secret = 'FAKE_TRACE_PRIVATE_TOKEN', file = 'src/app/App.tsx';
+  const result = smokeTraceEvents(traceLines([
+    {type:'event',class:'BrowserContext',method:'pageError',params:{error:{error:{name:'TypeError',message:secret,
+      stack:`TypeError ${secret}\n at http://127.0.0.1:5175/${file}?t=123:89:7\n at http://private/${secret}.js:1:1`}}}},
+    {type:'console',messageType:'error',text:`Maximum update depth exceeded ${secret}`},
+    {type:'console',messageType:'warning',text:`The result of getSnapshot should be cached ${secret}`},
+    {type:'resource-snapshot',snapshot:{request:{url:`http://private/${secret}`},response:{status:404}}},
+    {type:'resource-snapshot',snapshot:{response:{status:503}}},
+  ]), [file]);
+  assert.deepEqual(result.codes,['JS_TYPE_ERROR','REACT_UPDATE_DEPTH','REACT_UNSTABLE_SNAPSHOT']);
+  assert.deepEqual(result.failedFiles,[file]);
+  assert.deepEqual(result.metrics,{traceReadable:1,tracePageErrors:1,traceConsoleErrors:1,traceConsoleWarnings:1,
+    traceHttp4xx:1,traceHttp5xx:1,traceModuleLine:89,traceModuleColumn:7});
+  const row = {id:'install',status:'FAIL',exitCode:1,elapsedMs:1,invocationSHA:digest,reportSHA:digest,diagnostic:result};
+  const safe=publicSummary(binding,[row],{source:digest,lock:digest});
+  assert.equal(safe.overallStatus,'FAIL');assert.deepEqual(safe.phases[0].diagnostic,result);
+  assert.equal(JSON.stringify(safe).includes(secret),false);
+  assert.equal(JSON.stringify(result).includes('http'),false);
+  assert.equal(smokeTraceEvents(traceLines([{type:'event',class:'BrowserContext',method:'pageError',params:{error:{error:{stack:
+    'at http://127.0.0.1:5175/src/unknown.ts:1:1\n at http://127.0.0.1:5175/src/../private.ts:1:1'}}}}]),[file]).failedFiles.length,0);
+});
+
+test('real unzip streams only owned failed trace JSONL and never extracts resource files', () => {
+  const root=mkdtempSync(join(tmpdir(),'pos-trace-')), folder=join(root,'test-results','case');mkdirSync(folder,{recursive:true});
+  const file=join(folder,'trace.zip'), source='src/app/App.tsx';
+  writeFileSync(file,storedTraceZip({'0-trace.trace':traceLines([{type:'console',messageType:'error',text:'ReferenceError FAKE_TRACE_PRIVATE_TOKEN'}]),
+    '0-trace.network':traceLines([{type:'resource-snapshot',snapshot:{response:{status:500}}}]),'resources/private.txt':'FAKE_TRACE_PRIVATE_TOKEN'}));
+  const calls=[], unzip=process.platform==='win32'?'D:/Git/usr/bin/unzip.exe':'unzip';
+  const result=smokeTraceDiagnostics(traceReport(file),root,[source],(command,args,options)=>{
+    assert.equal(command,'unzip');calls.push(args);return execFileSync(unzip,args,options);
+  });
+  assert.equal(result.metrics.traceReadable,1);assert.equal(result.metrics.traceConsoleErrors,1);assert.equal(result.metrics.traceHttp5xx,1);
+  assert.deepEqual(result.codes,['JS_REFERENCE_ERROR']);assert.equal(calls.length,2);
+  assert.deepEqual(calls[1],['-p',file,'0-trace.trace','0-trace.network']);
+  assert.equal(existsSync(join(folder,'resources')),false);assert.equal(JSON.stringify(result).includes('FAKE_TRACE_PRIVATE_TOKEN'),false);
+});
+
+test('missing, outside, duplicate, corrupt or oversized trace data remains unavailable and cannot change failure', () => {
+  const root=mkdtempSync(join(tmpdir(),'pos-trace-refuse-')), folder=join(root,'test-results');mkdirSync(folder);
+  const file=join(folder,'trace.zip');writeFileSync(file,'not a zip');
+  const unavailable={codes:['TRACE_UNAVAILABLE'],metrics:{},failedFiles:[]};
+  const never=()=>{throw new Error('FAKE_TRACE_PRIVATE_TOKEN');};
+  assert.deepEqual(smokeTraceDiagnostics(null,root,[],never),unavailable);
+  assert.deepEqual(smokeTraceDiagnostics(traceReport(join(root,'outside.zip')),root,[],never),unavailable);
+  const duplicate=traceReport(file);duplicate.suites[0].specs[0].tests[0].results[0].attachments.push({name:'trace',contentType:'application/zip',path:file});
+  assert.deepEqual(smokeTraceDiagnostics(duplicate,root,[],never),unavailable);
+  const unzip=process.platform==='win32'?'D:/Git/usr/bin/unzip.exe':'unzip';
+  assert.deepEqual(smokeTraceDiagnostics(traceReport(file),root,[],(_command,args,options)=>execFileSync(unzip,args,options)),unavailable);
+  for(const data of ['not json\n','{}\n'.repeat(10001),'x'.repeat(16*1024**2+1)])
+    assert.deepEqual(smokeTraceDiagnostics(traceReport(file),root,[],(_command,args)=>args[0]==='-Z1'?'0-trace.trace\n':data),unavailable);
+  for(const delta of [{version:7},{playwrightVersion:'1.59.0'},{browserName:'firefox'}])
+    assert.throws(()=>smokeTraceEvents(JSON.stringify({type:'context-options',version:8,playwrightVersion:'1.60.0',browserName:'chromium',...delta}),[]));
+  assert.deepEqual(smokeTraceDiagnostics(traceReport(file),root,[],()=> '../private.trace\n'),unavailable);
+});
 
 test('temporary core handler is restored after success, action failure and failed setup; unsafe cleanup keeps it disabled', () => {
   const original='|/private/FAKE_UNIT_HANDLER\n';

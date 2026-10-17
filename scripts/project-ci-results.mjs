@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto';
 import { stripVTControlCharacters } from 'node:util';
+import { lstatSync, realpathSync } from 'node:fs';
+import { resolve, sep } from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 export const PROJECT_REPOSITORY = 'nguyentronglinh045/pos-cafe';
 export const PROJECT_REPOSITORY_ID = 1263057386;
@@ -50,13 +53,90 @@ export default class SmokeFailureReporter {
       this.emit({ error, location: error.location, category: 'test.error', duration: result.duration });
   }
 }
+
+// Read only the failed preflight's own trace. unzip streams selected JSONL to
+// RAM; it never extracts files. Every subprocess and decoded payload is bounded.
+export function smokeTraceDiagnostics(report, root, expectedFiles, run = execFileSync) {
+  const unavailable = { codes: ['TRACE_UNAVAILABLE'], metrics: {}, failedFiles: [] };
+  try {
+    const attachments = [], queue = [...(report?.suites ?? [])];
+    for (let n = 0; queue.length && n < 10000; n++) {
+      const suite = queue.shift();
+      queue.push(...(suite.suites ?? []).slice(0, 10000 - queue.length));
+      for (const spec of suite.specs ?? []) for (const test of spec.tests ?? [])
+        for (const result of test.results ?? []) if (['failed', 'timedOut', 'interrupted'].includes(result.status))
+          attachments.push(...(result.attachments ?? []).filter(a => a.name === 'trace' && a.contentType === 'application/zip'));
+    }
+    if (queue.length || attachments.length !== 1 || typeof attachments[0].path !== 'string') return unavailable;
+    const file = resolve(attachments[0].path), directory = resolve(root, 'test-results') + sep;
+    if (!file.startsWith(directory) || realpathSync(file) !== file) return unavailable;
+    const info = lstatSync(file);
+    if (!info.isFile() || info.isSymbolicLink() || info.size < 1 || info.size > 32 * 1024 ** 2) return unavailable;
+    const options = { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 10000, maxBuffer: 1024 ** 2,
+      env: { PATH: process.env.PATH, LANG: 'C', ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}) } };
+    const names = run('unzip', ['-Z1', file], options).trim().split(/\r?\n/);
+    if (names.length > 4096 || new Set(names).size !== names.length) return unavailable;
+    const selected = names.filter(name => /^[A-Za-z0-9_-]+\.(?:trace|network)$/.test(name));
+    if (!selected.some(name => name.endsWith('.trace')) || selected.length > 32) return unavailable;
+    const text = run('unzip', ['-p', file, ...selected], { ...options, maxBuffer: 16 * 1024 ** 2 });
+    return smokeTraceEvents(text, expectedFiles);
+  } catch { return unavailable; }
+}
+
+export function smokeTraceEvents(text, expectedFiles) {
+  if (typeof text !== 'string' || Buffer.byteLength(text) > 16 * 1024 ** 2) reject();
+  const lines = text.split('\n').filter(Boolean);
+  if (lines.length > 10000) reject();
+  const events = lines.map(line => JSON.parse(line));
+  if (!events.some(event => event?.type === 'context-options' && event.version === 8
+    && event.playwrightVersion === '1.60.0' && event.browserName === 'chromium')) reject();
+  const codes = new Set(), metrics = { traceReadable: 1, tracePageErrors: 0, traceConsoleErrors: 0,
+    traceConsoleWarnings: 0, traceHttp4xx: 0, traceHttp5xx: 0 }, failedFiles = [];
+  const classify = value => {
+    if (typeof value !== 'string') return;
+    for (const [code, pattern] of Object.entries({ JS_TYPE_ERROR: /\bTypeError\b/, JS_REFERENCE_ERROR: /\bReferenceError\b/,
+      JS_SYNTAX_ERROR: /\bSyntaxError\b/, JS_RANGE_ERROR: /\bRangeError\b/,
+      REACT_UPDATE_DEPTH: /Maximum update depth exceeded/i, REACT_UNSTABLE_SNAPSHOT: /result of getSnapshot should be cached/i,
+      JS_STACK_OVERFLOW: /Maximum call stack size exceeded/i, MODULE_EXPORT_MISSING: /does not provide an export named/i }))
+      if (pattern.test(value)) codes.add(code);
+    // Served module coordinates are observed generated-code locations, not a
+    // claim that browser stacks were mapped back to original TS/TSX lines.
+    for (const match of value.matchAll(/http:\/\/127\.0\.0\.1:5175\/(src\/[A-Za-z0-9_./-]+\.(?:tsx?|mjs))(?:\?[^\s):]{0,256})?:(\d+):(\d+)/g)) {
+      const [, file, line, column] = match;
+      if (!expectedFiles.includes(file) || file.split('/').includes('..') || failedFiles.includes(file) || failedFiles.length >= 32) continue;
+      failedFiles.push(file);
+      if (metrics.traceModuleLine === undefined && Number(line) > 0 && Number(line) <= 1000000
+        && Number(column) > 0 && Number(column) <= 1000000) {
+        metrics.traceModuleLine = Number(line); metrics.traceModuleColumn = Number(column);
+      }
+    }
+  };
+  for (const event of events) {
+    if (!event || typeof event !== 'object') reject();
+    if (event.type === 'console' && ['error', 'warning', 'warn'].includes(event.messageType)) {
+      metrics[event.messageType === 'error' ? 'traceConsoleErrors' : 'traceConsoleWarnings']++;
+      classify(event.text);
+    } else if (event.type === 'event' && event.class === 'BrowserContext' && event.method === 'pageError') {
+      metrics.tracePageErrors++;
+      const error = event.params?.error?.error;
+      classify(error?.name); classify(error?.message); classify(error?.stack);
+    } else if (event.type === 'resource-snapshot') {
+      const status = event.snapshot?.response?.status;
+      if (Number.isInteger(status) && status >= 400 && status <= 499) metrics.traceHttp4xx++;
+      if (Number.isInteger(status) && status >= 500 && status <= 599) metrics.traceHttp5xx++;
+    }
+  }
+  return { codes: [...codes], metrics, failedFiles };
+}
 const DIAGNOSTIC_CODES = Object.freeze(['COMMAND_FAILED', 'VITEST_ASSERTION', 'VITEST_RUNTIME', 'REPORT_MISSING',
   'TEST_TIMEOUT', 'ASSERTION_ERROR', 'TYPE_ERROR', 'REFERENCE_ERROR', 'MODULE_NOT_FOUND', 'OUT_OF_MEMORY', 'COVERAGE_LINES',
   'RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'RESOURCE_CORE_LIMIT', 'GUARD_IO_ENOENT', 'GUARD_IO_ENOTDIR',
   'GUARD_IO_EACCES', 'GUARD_REFUSED', 'COMMAND_TIMEOUT', 'OUTPUT_LIMIT', 'COMMAND_SPAWN_FAILED', 'RESULT_INVALID',
   'SOURCE_DRIFT', 'PROCESS_SIGTERM', 'PROCESS_SIGKILL', 'PROCESS_SIGABRT', 'PROCESS_SIGSEGV', 'RESOURCE_CORE_PATTERN', 'RESOURCE_HOST_GROWTH',
   'BROWSER_LAUNCH', 'BROWSER_DEPENDENCIES', 'BROWSER_SANDBOX', 'BROWSER_CRASHPAD', 'BROWSER_EXECUTION',
-  'BROWSER_CONTEXT', 'BROWSER_PAGE', 'PAGE_NAVIGATION', 'LOCATOR_ACTION', 'ASSERTION_VISIBLE', 'FIXTURE_SETUP', 'FIXTURE_TEARDOWN']);
+  'BROWSER_CONTEXT', 'BROWSER_PAGE', 'PAGE_NAVIGATION', 'LOCATOR_ACTION', 'ASSERTION_VISIBLE', 'FIXTURE_SETUP', 'FIXTURE_TEARDOWN',
+  'TRACE_UNAVAILABLE', 'JS_TYPE_ERROR', 'JS_REFERENCE_ERROR', 'JS_SYNTAX_ERROR', 'JS_RANGE_ERROR',
+  'REACT_UPDATE_DEPTH', 'REACT_UNSTABLE_SNAPSHOT', 'JS_STACK_OVERFLOW', 'MODULE_EXPORT_MISSING']);
 export function guardFailureCode(error) {
   if (['RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'RESOURCE_CORE_LIMIT', 'RESOURCE_CORE_PATTERN', 'RESOURCE_HOST_GROWTH', 'SOURCE_DRIFT'].includes(error?.code)) return error.code;
   if (['ENOENT', 'ENOTDIR', 'EACCES'].includes(error?.code)) return `GUARD_IO_${error.code}`;
@@ -312,6 +392,7 @@ export function publicSummary(binding, rows, fingerprints) {
           'minimumObservedFreeBytes', 'initialFreeBytes', 'freeSpaceDecreaseBytes', 'ownedBytesAtCheckpoint', 'coreFileCount', 'coreAllocatedBytes', 'largestOwnedFileBytes', 'kernelCorePipe',
           'smokeTestLine', 'smokeFailureProjectOrdinal', 'smokeHelperLine', 'smokeFailureLine', 'smokeFailureColumn',
           'smokeStepLocatorOrdinal', 'smokeStepCategoryOrdinal', 'smokeStepApiOrdinal', 'smokeStepSourceOrdinal', 'smokeStepDurationMs',
+          'traceReadable', 'tracePageErrors', 'traceConsoleErrors', 'traceConsoleWarnings', 'traceHttp4xx', 'traceHttp5xx', 'traceModuleLine', 'traceModuleColumn',
           'smokeExpected', 'smokeUnexpected', 'smokeSkipped', 'smokeFlaky', 'smokeProgressIndex', 'smokeProgressTotal',
           'memoryCurrentBytes', 'peakMemoryBytes', 'pidsCurrent', 'peakPids', 'oomEvents', 'oomKills', 'pidsLimitEvents'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));

@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, appendFileSync, mkdirSync, mkdtempSync, ls
 import { resolve, join } from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { hash, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode } from './project-ci-results.mjs';
+import { hash, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, smokeTraceDiagnostics, guardFailureCode } from './project-ci-results.mjs';
 
 const GiB = 1024 ** 3;
 const refuse = () => { throw new Error('PROJECT_CI_GUARD'); };
@@ -165,6 +165,12 @@ export async function main() {
     if (!valid && info?.isFile()) {
       let report = null; try { report = diagnosticReport ? json(diagnosticReport) : null; } catch { /* missing report stays unknown */ }
       diagnostic = privateDiagnostics(readFileSync(output, 'utf8'), report, paths, root);
+      if (id === 'smoke-preflight') {
+        const trace = smokeTraceDiagnostics(report, root, paths);
+        diagnostic.codes.push(...trace.codes);
+        Object.assign(diagnostic.metrics, trace.metrics);
+        diagnostic.failedFiles = [...new Set([...diagnostic.failedFiles, ...trace.failedFiles])].slice(0, 32);
+      }
     }
     if (!valid) {
       diagnostic ??= { codes: ['COMMAND_FAILED'], metrics: {}, failedFiles: [] };
@@ -197,7 +203,7 @@ export async function main() {
     env.DEBUG = 'pw:browser,pw:webserver';
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke-preflight.json');
     await phase('smoke-preflight', process.execPath, ['node_modules/playwright/cli.js', 'test', 'tests/smoke/pos-cafe.spec.ts:119',
-      '--project=desktop', '--workers=1', '--retries=0', '--forbid-only', '--reporter=line,json,./scripts/project-ci-results.mjs'],
+      '--project=desktop', '--workers=1', '--retries=0', '--forbid-only', '--trace=retain-on-failure', '--reporter=line,json,./scripts/project-ci-results.mjs'],
       () => smokePreflightCounts(json('smoke-preflight'), json('smoke-discovery')), 'smoke-preflight');
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke.json');
     await phase('smoke', process.execPath, ['node_modules/playwright/cli.js', 'test', '--workers=2', '--retries=0', '--forbid-only', '--reporter=line,json,./scripts/project-ci-results.mjs'],

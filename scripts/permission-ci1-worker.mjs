@@ -33,9 +33,13 @@ const failureOperations = ['SOURCE_INTAKE', 'SOURCE_CLONE', 'SOURCE_REF', 'SOURC
   'PLACE_TOOLS', 'TOOL_VERSIONS', 'STACK_TEMPLATE', 'FORMAT_VOLUME', 'RESERVE_VOLUME',
   'NPM_DOWNLOAD', 'NPM_INSPECT', 'NPM_CACHE', 'PREFETCH_DAEMONS', 'PREFETCH_READY',
   'IMAGE_PULL', 'IMAGE_TAG', 'IMAGE_INSPECT', 'EDGE_VOLUME_CHECK', 'EDGE_VOLUME_CREATE', 'EDGE_VOLUME_EMPTY',
-  'EDGE_BUNDLE', 'EDGE_CACHE_PROOF', 'EDGE_PROOF_WRITE', 'CLEANUP_EXPORT', 'CLEANUP_DAEMONS', 'CLEANUP_UNMOUNT', 'CLEANUP_DETACH'];
+  'EDGE_BUNDLE', 'EDGE_CACHE_PROOF', 'EDGE_PROOF_WRITE', 'CLEANUP_EXPORT', 'CLEANUP_DAEMONS', 'CLEANUP_UNMOUNT', 'CLEANUP_DETACH',
+  'OFFLINE_SUPERVISOR', 'OFFLINE_LOOP', 'OFFLINE_NAMESPACES', 'OFFLINE_MOUNT_PRIVATE', 'OFFLINE_RUNTIME_BIND', 'OFFLINE_NETWORK',
+  'OFFLINE_IMAGE', 'OFFLINE_DAEMONS', 'OFFLINE_READY', 'OFFLINE_CACHE_BEFORE', 'OFFLINE_BUNDLE1', 'OFFLINE_BUNDLE2',
+  'OFFLINE_CACHE_AFTER', 'OFFLINE_PROOF_WRITE', 'STACK_START', 'STACK_ENVELOPE', 'STACK_STATUS',
+  'EDGE_HEALTH_PUBLIC', 'EDGE_HEALTH_GATEWAY', 'OFFLINE_CACHE_FINAL', 'PILOT_HARNESS', 'ISOLATED_STOP_DAEMONS'];
 const failureCommands = ['git', 'tar', 'node', 'npm', 'supabase', 'fallocate', 'losetup', 'mkfs.ext4', 'mount', 'umount',
-  'cp', 'mv', 'docker', 'unshare', 'systemd-run', 'systemctl', 'findmnt', 'containerd', 'dockerd'];
+  'cp', 'mv', 'docker', 'unshare', 'systemd-run', 'systemctl', 'findmnt', 'containerd', 'dockerd', 'ip'];
 const failureCodes = ['GUARD_REFUSED', 'INTAKE_REFUSED', 'COMMAND_FAILED', 'COMMAND_TIMEOUT', 'OUTPUT_LIMIT',
   'IO_MISSING', 'IO_NOTDIR', 'IO_DENIED', 'JS_TYPE_ERROR', 'SUPERVISOR_REFUSED', 'LOOP_REFUSED', 'CONTROL_REFUSED',
   'DOCKER_DAEMON_UNAVAILABLE', 'DOCKER_NO_SPACE', 'DOCKER_PERMISSION', 'DOCKER_TLS', 'DOCKER_REGISTRY_AUTH',
@@ -46,7 +50,8 @@ const failureCodes = ['GUARD_REFUSED', 'INTAKE_REFUSED', 'COMMAND_FAILED', 'COMM
 const failureMetrics = ['hostFreeBytes', 'memoryBytes', 'oom', 'pidsEvents', 'memoryCurrentBytes', 'pidsCurrent',
   'cpuMatches', 'memoryLimitMatches', 'swapLimitMatches', 'pidsLimitMatches', 'cgroupMatches', 'runtimeMatches', 'loggingMatches',
   'loopImageBytes', 'loopAllocatedBytes', 'loopFilesystemBytes', 'loopFreeBytes', 'loopOffset', 'loopSizeLimit', 'mountMatches', 'ownerMatches', 'imageOrdinal', 'edgePackageOrdinal',
-  'edgeVersionMajor', 'edgeVersionMinor', 'edgeVersionPatch', 'edgeVersionCopy', 'edgeCacheEntryCount', 'edgeRegistryMetadataPresent', 'loopNestedMounts'];
+  'edgeVersionMajor', 'edgeVersionMinor', 'edgeVersionPatch', 'edgeVersionCopy', 'edgeCacheEntryCount', 'edgeRegistryMetadataPresent', 'loopNestedMounts',
+  'isolatedFailureSeen', 'isolatedCleanupFailed'];
 export function ci1UnmountFailureCode(stderr) {
   if (typeof stderr !== 'string' || Buffer.byteLength(stderr) > 1024 ** 2) return null;
   for (const [code, pattern] of Object.entries({ UNMOUNT_BUSY: /target is busy|device or resource busy/i,
@@ -97,6 +102,23 @@ export function ci1FailureExport(value) {
     failureMetrics.includes(key) && Number.isSafeInteger(number) && number >= 0));
   if (Object.keys(facts).length) output.facts = facts;
   return output;
+}
+export function ci1IsolatedFailure(value, identity, sourceSHA) {
+  if (value?.schemaVersion !== 'permission-ci1-isolated-failure-v1'
+    || Object.keys(value).sort().join(',') !== ['schemaVersion','runId','attempt','sourceSHA','failure','cleanupFailure'].sort().join(',')
+    || value.runId !== identity.runId || value.attempt !== identity.attempt || value.sourceSHA !== sourceSHA
+    || !/^[a-f0-9]{40}$/.test(sourceSHA) || (!value.failure && !value.cleanupFailure)) refused();
+  const failure = ci1FailureExport(value.failure), cleanupFailure = ci1FailureExport(value.cleanupFailure);
+  if (JSON.stringify(failure) !== JSON.stringify(value.failure) || JSON.stringify(cleanupFailure) !== JSON.stringify(value.cleanupFailure)
+    || (failure && failure.stage !== 'offline-edge') || (cleanupFailure && cleanupFailure.stage !== 'cleanup')) refused();
+  return { failure, cleanupFailure };
+}
+export function ci1IsolatedError(value, identity, sourceSHA) {
+  const inner = ci1IsolatedFailure(value, identity, sourceSHA), cause = inner.failure ?? inner.cleanupFailure;
+  return { operation: cause.operation, error: Object.assign(new Error('CI1_WORKER_REFUSED'), {
+    ci1FailureCode: cause.code, ci1Command: cause.command, status: cause.exitCode,
+    ci1Facts: { ...cause.facts, isolatedFailureSeen: 1, isolatedCleanupFailed: inner.cleanupFailure ? 1 : 0 },
+  }) };
 }
 const failureDetails = (error, stage, operation, facts = {}) => ci1FailureExport({stage, operation,
   code: failureCodes.includes(error?.ci1FailureCode) ? error.ci1FailureCode
@@ -530,47 +552,71 @@ function ownedDaemonReady(layout, pair, run) {
 
 async function offlinePhase(layout, source, env) {
   const root = layout.volume, guard = () => supervisor(layout, env), run = commandRunner(env, guard);
-  guard(); loopControl(layout);
-  const origin = parse(`${layout.task}/host-namespaces.json`);
-  if (['mnt', 'net', 'pid'].some(name => readlinkSync(`/proc/self/ns/${name}`) === origin[name])) refused();
-  run('mount', ['--make-rprivate', '/']);
-  if (lstatSync(CI1_RUNTIME, { throwIfNoEntry: false })) refused();
-  mkdirSync(CI1_RUNTIME, { mode: 0o700 }); run('mount', ['--bind', `${root}/runtime`, CI1_RUNTIME]);
-  run('ip', ['link', 'set', 'lo', 'up']);
-  if (run('ip', ['route', 'show', 'default']).trim()) refused();
-    const image = ci1ImagesIntake(parse(`${source}/tests/permissions/runtime/ci1-images.json`)).find(item => item.ref.includes('/edge-runtime:'))?.ref;
-  if (!image) refused();
-  const expected = parse(`${source}/tests/permissions/runtime/ci1-edge.json`);
-  let pair;
+  let pair, operation = 'OFFLINE_SUPERVISOR', failure = null, cleanupFailure = null;
   try {
+    guard(); operation = 'OFFLINE_LOOP'; loopControl(layout);
+    operation = 'OFFLINE_NAMESPACES';
+    const origin = parse(`${layout.task}/host-namespaces.json`);
+    if (['mnt', 'net', 'pid'].some(name => readlinkSync(`/proc/self/ns/${name}`) === origin[name])) refused();
+    operation = 'OFFLINE_MOUNT_PRIVATE'; run('mount', ['--make-rprivate', '/']);
+    operation = 'OFFLINE_RUNTIME_BIND';
+    if (lstatSync(CI1_RUNTIME, { throwIfNoEntry: false })) refused();
+    mkdirSync(CI1_RUNTIME, { mode: 0o700 }); run('mount', ['--bind', `${root}/runtime`, CI1_RUNTIME]);
+    operation = 'OFFLINE_NETWORK'; run('ip', ['link', 'set', 'lo', 'up']);
+    if (run('ip', ['route', 'show', 'default']).trim()) refused();
+    operation = 'OFFLINE_IMAGE';
+    const image = ci1ImagesIntake(parse(`${source}/tests/permissions/runtime/ci1-images.json`)).find(item => item.ref.includes('/edge-runtime:'))?.ref;
+    if (!image) refused();
+    const expected = parse(`${source}/tests/permissions/runtime/ci1-edge.json`);
+    operation = 'OFFLINE_DAEMONS';
     pair = await daemonPair(layout, env, run, false);
+    operation = 'OFFLINE_READY';
     await ready(() => ownedDaemonReady(layout, pair, run), guard);
+    operation = 'OFFLINE_CACHE_BEFORE';
     const cacheRoot = JSON.parse(run('docker', ['volume', 'inspect', layout.edgeVolume]))[0].Mountpoint;
     if (statSync(cacheRoot).dev !== statSync(root).dev) refused();
     const before = ci1EdgeCacheProof(cacheRoot, expected);
-    edgeBundle(layout, run, image, 'none', 'offline1'); edgeBundle(layout, run, image, 'none', 'offline2');
+    operation = 'OFFLINE_BUNDLE1'; edgeBundle(layout, run, image, 'none', 'offline1');
+    operation = 'OFFLINE_BUNDLE2'; edgeBundle(layout, run, image, 'none', 'offline2');
+    operation = 'OFFLINE_CACHE_AFTER';
     if (ci1EdgeCacheProof(cacheRoot, expected).sha256 !== before.sha256) refused();
+    operation = 'OFFLINE_PROOF_WRITE';
     writeFileSync(`${root}/private/edge-cache-proof.json`, JSON.stringify(before), { flag: 'wx', mode: 0o600 });
+    operation = 'STACK_START';
     run(`${CI1_RUNTIME}/bin/supabase`, ['start', '--workdir', `${CI1_RUNTIME}/stack`]);
+    operation = 'STACK_ENVELOPE';
     assertCi1Envelope(readCi1LinuxEnvelope(root, layout.identity, env), layout.identity);
+    operation = 'STACK_STATUS';
     const status = JSON.parse(run(`${CI1_RUNTIME}/bin/supabase`, ['status', '--workdir', `${CI1_RUNTIME}/stack`, '-o', 'json']));
     if (status.API_URL !== 'http://127.0.0.1:62421') refused();
     for (const [name, path, code, message] of [
       ['menu-image-public', '/not-a-uuid', 404, 'NOT_FOUND'], ['menu-image-gateway', '', 401, 'EMPLOYEE_SESSION_REQUIRED']]) {
+      operation = name === 'menu-image-public' ? 'EDGE_HEALTH_PUBLIC' : 'EDGE_HEALTH_GATEWAY';
       const response = await fetch(`${status.API_URL}/functions/v1/${name}${path}`, {
         headers: { apikey: status.ANON_KEY, Authorization: `Bearer ${status.ANON_KEY}` }, signal: AbortSignal.timeout(30000) });
       if (response.status !== code || (await response.json())?.error?.code !== message) refused();
     }
+    operation = 'OFFLINE_CACHE_FINAL';
     if (ci1EdgeCacheProof(cacheRoot, expected).sha256 !== before.sha256) refused();
+    operation = 'PILOT_HARNESS';
     run(`${root}/runtime/node/bin/node`, [`${source}/scripts/permission-ci1-harness.mjs`, 'run', root],
       { cwd: source, timeout: 900000 });
-  } finally {
+  } catch (error) { failure = failureDetails(error, 'offline-edge', operation); }
+  finally {
     if (pair) {
       try { const ids = JSON.parse(run('docker', ['inspect', ...names.map(name => `supabase_${name}_${CI1_PROJECT}`)]))
         .map(item => { if (item.Config?.Labels?.['com.supabase.cli.project'] !== CI1_PROJECT) refused(); return item.Id; });
         run('docker', ['stop', '--time', '10', ...ids]); } catch { /* Unit KillMode stops all remaining descendants. */ }
-      await stopDaemons(layout, pair);
+      try { await stopDaemons(layout, pair); }
+      catch (error) { cleanupFailure = failureDetails(error, 'cleanup', 'ISOLATED_STOP_DAEMONS'); }
     }
+  }
+  if (failure || cleanupFailure) {
+    const record = { schemaVersion: 'permission-ci1-isolated-failure-v1', runId: layout.identity.runId,
+      attempt: layout.identity.attempt, sourceSHA: env.GITHUB_SHA, failure, cleanupFailure };
+    ci1IsolatedFailure(record, layout.identity, env.GITHUB_SHA);
+    writeFileSync(`${root}/private/isolated-failure.json`, JSON.stringify(record), { flag: 'wx', mode: 0o600 });
+    refused();
   }
 }
 
@@ -701,8 +747,18 @@ async function setup(layout, input, parentEnv) {
       } else if (stage === 'private-namespaces') {
         writeFileSync(`${layout.task}/host-namespaces.json`, JSON.stringify(Object.fromEntries(['mnt', 'net', 'pid'].map(name => [name, readlinkSync(`/proc/self/ns/${name}`)]))), { flag: 'wx', mode: 0o600 });
       } else if (stage === 'offline-edge') {
-        run('unshare', ['--mount', '--net', '--pid', '--fork', '--mount-proc', `${root}/runtime/node/bin/node`,
-          `${source}/scripts/permission-ci1-worker.mjs`, 'isolated'], { cwd: source, timeout: 1200000 });
+        try {
+          run('unshare', ['--mount', '--net', '--pid', '--fork', '--mount-proc', `${root}/runtime/node/bin/node`,
+            `${source}/scripts/permission-ci1-worker.mjs`, 'isolated'], { cwd: source, timeout: 1200000 });
+        } catch (error) {
+          const file = `${root}/private/isolated-failure.json`, info = lstatSync(file, { throwIfNoEntry: false });
+          if (info?.isFile() && !info.isSymbolicLink() && info.uid === 0 && !(info.mode & 0o077)
+            && info.size <= 8192 && realpathSync(file) === file) {
+            const inner = ci1IsolatedError(parse(file), layout.identity, baseEnv.GITHUB_SHA);
+            operation = inner.operation; throw inner.error;
+          }
+          throw error;
+        }
       } else if (stage === 'stack' || stage === 'harness') {
         // The child carries its namespace through stack→harness. It must publish
         // an exact completion receipt; a successful unshare alone is not proof.

@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { ci1Identity } from './permission-ci1-policy.mjs';
 import { ci1WorkerPlan, runCi1Worker, ci1EdgeCacheProof, ci1PublicExport, ci1EdgeBundleArguments,
   ci1AcquireDaemons, ci1CloseDaemons, ci1TerminateDaemon, ci1FailureExport, ci1DockerFailureCode,
-  ci1OwnedMountCount, ci1UnmountFailureCode } from './permission-ci1-worker.mjs';
+  ci1OwnedMountCount, ci1UnmountFailureCode, ci1IsolatedFailure, ci1IsolatedError } from './permission-ci1-worker.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
 import { backendEvidence } from './project-backend.mjs';
 
@@ -18,6 +18,31 @@ const proof = () => ({ platform: 'linux', arch: 'x64', root: true, wsl: false, a
   stdout: 'null', stderr: 'null', oom: 0, pidsEvents: 0, hostFreeBytes: 60 * 1024 ** 3 });
 const adapter = () => { const calls = []; return { calls, supervisor: () => proof(), stage: async name => { calls.push(name); return true; },
   close: async () => { calls.push('close'); return true; } }; };
+
+test('isolated failure receipts bind run, attempt and source and reject raw or unknown fields', () => {
+  const sourceSHA='a'.repeat(40), failure={stage:'offline-edge',operation:'STACK_START',code:'COMMAND_FAILED',command:'supabase',exitCode:1};
+  const record={schemaVersion:'permission-ci1-isolated-failure-v1',runId:identity.runId,attempt:identity.attempt,sourceSHA,failure,cleanupFailure:null};
+  assert.deepEqual(ci1IsolatedFailure(record,identity,sourceSHA),{failure,cleanupFailure:null});
+  for(const delta of [{runId:'999'},{attempt:2},{sourceSHA:'b'.repeat(40)},{raw:'FAKE_UNIT_SECRET'},
+    {failure:null},{failure:{...failure,operation:'FAKE_UNIT_SECRET'}},{failure:{...failure,facts:{raw:'FAKE_UNIT_SECRET'}}},
+    {failure:{...failure,exitCode:-1}},{cleanupFailure:{...failure,stage:'offline-edge'}}])
+    assert.throws(()=>ci1IsolatedFailure({...record,...delta},identity,sourceSHA));
+});
+
+test('inner primary and teardown failures stay separate and cannot be replaced by successful outer cleanup', async () => {
+  const sourceSHA='a'.repeat(40), record={schemaVersion:'permission-ci1-isolated-failure-v1',runId:identity.runId,
+    attempt:identity.attempt,sourceSHA,failure:{stage:'offline-edge',operation:'OFFLINE_BUNDLE1',code:'DOCKER_NETWORK',command:'docker',exitCode:1},
+    cleanupFailure:{stage:'cleanup',operation:'ISOLATED_STOP_DAEMONS',code:'CONTROL_REFUSED',command:null,exitCode:null}};
+  const inner=ci1IsolatedError(record,identity,sourceSHA), fake=adapter();let operation=null;
+  fake.operation=()=>operation;fake.stage=async name=>{if(name==='offline-edge'){operation=inner.operation;throw inner.error;}return true;};
+  const result=await runCi1Worker(fake,identity);
+  assert.equal(result.status,'ERROR');assert.equal(result.cleanup,true);assert.equal(result.businessCounts,null);
+  assert.equal(result.failure.operation,'OFFLINE_BUNDLE1');assert.equal(result.failure.code,'DOCKER_NETWORK');
+  assert.deepEqual(result.failure.facts,{isolatedFailureSeen:1,isolatedCleanupFailed:1});
+  assert.equal(JSON.stringify(result).includes('FAKE_UNIT_SECRET'),false);
+  const cleanupOnly=ci1IsolatedError({...record,failure:null},identity,sourceSHA);
+  assert.equal(cleanupOnly.operation,'ISOLATED_STOP_DAEMONS');assert.equal(cleanupOnly.error.ci1FailureCode,'CONTROL_REFUSED');
+});
 
 test('Docker failures expose bounded fixed categories and image ordinal without raw stderr', async () => {
   assert.equal(ci1DockerFailureCode('FAKE_UNIT_SECRET: no space left on device'), 'DOCKER_NO_SPACE');
