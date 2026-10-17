@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 import { ci1Identity } from './permission-ci1-policy.mjs';
 import { CI1_SETUP, ci1NpmIntake, ci1RegistryTarball, ci1ToolsIntake, ci1EdgeIntake,
-  ci1ImagesIntake, ci1CheckTarListing, assertCi1Supervisor, ci1WorkerLayout } from './permission-ci1-intake.mjs';
+  ci1ImagesIntake, ci1PinnedImageProof, ci1CheckTarListing, assertCi1Supervisor, ci1WorkerLayout } from './permission-ci1-intake.mjs';
 
 const json = path => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
 const identity = ci1Identity('12345', 1);
@@ -45,6 +46,56 @@ test('tool pins require official exact version, size and SHA; image references s
   assert.throws(() => ci1ImagesIntake(bad));
   const duplicate = structuredClone(images); duplicate.images[1] = duplicate.images[0];
   assert.throws(() => ci1ImagesIntake(duplicate));
+});
+
+test('runtime image proof accepts only exact pinned ECR or official GHCR repository digests', () => {
+  for(const pin of ci1ImagesIntake(json('../tests/permissions/runtime/ci1-images.json'))){
+    const repository=pin.ref.slice(0,pin.ref.lastIndexOf(':')),container={image:pin.ref,imageId:pin.configDigest};
+    for(const repo of [repository,repository.replace('public.ecr.aws/','ghcr.io/')])
+      for(const digest of [pin.indexDigest,pin.manifestDigest]){
+        const image={Os:'linux',Architecture:'amd64',Id:pin.configDigest,RepoDigests:[`${repo}@${digest}`]};
+        assert.equal(ci1PinnedImageProof(pin,container,image),true);
+      }
+  }
+});
+test('real fixture image verifier wires all twelve canonical containers to mirror-aware content proof', () => {
+  const manifest=json('../tests/permissions/runtime/ci1-images.json');
+  const source=readFileSync(new URL('./permission-ci1-fixture.mjs',import.meta.url),'utf8').replaceAll('\r\n','\n');
+  const start=source.indexOf('export function verifyCi1ImagePins() {'),end=source.indexOf('\nasync function storageRequest',start);
+  assert.ok(start>=0&&end>start);
+  const body=source.slice(start,end).replace('export function','function')+'\nverifyCi1ImagePins();';
+  for(const mirror of [false,true]){
+    const proof={containers:manifest.images.map(pin=>({image:pin.ref,imageId:pin.configDigest}))};
+    let inspected=0;
+    const result=runInNewContext(body,{
+      readFileSync:path=>{assert.equal(path,'tests/permissions/runtime/ci1-images.json');return JSON.stringify(manifest);},
+      runtime:{runtimeProof:()=>proof},ci1ImagesIntake,ci1PinnedImageProof,
+      execFileSync:(command,args)=>{
+        assert.equal(command,'docker');assert.equal(args[0],'image');assert.equal(args[1],'inspect');
+        const pin=manifest.images.find(value=>value.ref===args[2]);assert.ok(pin);inspected++;
+        const repository=pin.ref.slice(0,pin.ref.lastIndexOf(':')).replace('public.ecr.aws/',mirror?'ghcr.io/':'public.ecr.aws/');
+        return JSON.stringify([{Os:'linux',Architecture:'amd64',Id:pin.configDigest,RepoDigests:[`${repository}@${pin.manifestDigest}`]}]);
+      },
+      refuse:()=>{throw new Error('CI1_FIXTURE_REFUSED');},
+    },{timeout:1000});
+    assert.equal(result,proof);assert.equal(inspected,12);
+  }
+});
+test('runtime image proof rejects registry, platform, config and manifest substitution', () => {
+  const pin=ci1ImagesIntake(json('../tests/permissions/runtime/ci1-images.json'))[0],repository=pin.ref.slice(0,pin.ref.lastIndexOf(':'));
+  const container={image:pin.ref,imageId:pin.configDigest},image={Os:'linux',Architecture:'amd64',Id:pin.configDigest,RepoDigests:[`${repository}@${pin.manifestDigest}`]};
+  for(const bad of [undefined,{...pin,ref:'ghcr.io/supabase/postgres:latest'},{...pin,configDigest:'PRIVATE_SECRET'}])
+    assert.throws(()=>ci1PinnedImageProof(bad,container,image),e=>e.ci1ImageProofOrdinal===1&&!e.message.includes('PRIVATE_SECRET'));
+  assert.throws(()=>ci1PinnedImageProof(pin,{...container,image:pin.ref.replace('public.ecr.aws','ghcr.io')},image),e=>e.ci1ImageProofOrdinal===1);
+  for(const update of [{Os:'windows'},{Architecture:'arm64'}])assert.throws(()=>ci1PinnedImageProof(pin,container,{...image,...update}),e=>e.ci1ImageProofOrdinal===2);
+  for(const digest of [pin.indexDigest,pin.manifestDigest,'sha256:'+'0'.repeat(64)]){
+    assert.throws(()=>ci1PinnedImageProof(pin,container,{...image,Id:digest}),e=>e.ci1ImageProofOrdinal===3);
+    assert.throws(()=>ci1PinnedImageProof(pin,{...container,imageId:digest},image),e=>e.ci1ImageProofOrdinal===3);
+  }
+  for(const digests of [undefined,{},[],[`${repository}:latest`],[`${repository}@${pin.configDigest}`],
+    [`ghcr.io/other/postgres@${pin.manifestDigest}`],[`private.example.test/supabase/postgres@${pin.manifestDigest}`],
+    [`${repository}@sha256:${'0'.repeat(64)}`]])
+    assert.throws(()=>ci1PinnedImageProof(pin,container,{...image,RepoDigests:digests}),e=>e.ci1ImageProofOrdinal===4);
 });
 
 test('archive inspection refuses traversal, devices, hardlinks and excessive expanded bytes before extraction', () => {

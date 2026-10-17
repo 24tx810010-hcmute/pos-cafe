@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { CI1_PROJECT, CI1_RUNTIME } from './permission-ci1-policy.mjs';
+import { ci1ImagesIntake, ci1PinnedImageProof } from './permission-ci1-intake.mjs';
 import * as runtime from './permission-identity-runtime.mjs';
 import { collectInventory } from './permission-inventory.mjs';
 import pg from 'pg';
@@ -15,19 +16,14 @@ const cliStatus = () => JSON.parse(execFileSync(`${CI1_RUNTIME}/bin/supabase`, [
   { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 30000, maxBuffer: 1024 ** 2 }));
 
 export function verifyCi1ImagePins() {
-  const pins = JSON.parse(readFileSync('tests/permissions/runtime/ci1-images.json', 'utf8'));
-  if (pins.schemaVersion !== 'permission-ci1-images-v1' || pins.platform !== 'linux/amd64' || pins.images.length !== 12) refuse();
+  const pins = ci1ImagesIntake(JSON.parse(readFileSync('tests/permissions/runtime/ci1-images.json', 'utf8')));
   const proof = runtime.runtimeProof();
   for (const container of proof.containers) {
-    const pin = pins.images.find(value => value.ref === container.image);
-    if (!pin) refuse();
+    const pin = pins.find(value => value.ref === container.image);
+    if (!pin) ci1PinnedImageProof(pin, container, null);
     const image = JSON.parse(execFileSync('docker', ['image', 'inspect', container.image],
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 30000, maxBuffer: 1024 ** 2 }))[0];
-    const repository = pin.ref.slice(0, pin.ref.lastIndexOf(':'));
-    if (image.Os !== 'linux' || image.Architecture !== 'amd64'
-      || ![pin.indexDigest, pin.manifestDigest, pin.configDigest].includes(image.Id)
-      || ![pin.indexDigest, pin.manifestDigest, pin.configDigest].includes(container.imageId)
-      || !image.RepoDigests?.some(value => value === `${repository}@${pin.indexDigest}` || value === `${repository}@${pin.manifestDigest}`)) refuse();
+    ci1PinnedImageProof(pin, container, image);
   }
   return proof;
 }

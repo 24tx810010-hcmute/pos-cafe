@@ -19,9 +19,13 @@ const child = (command, args, options = {}) => execFileSync(command, args,
 // Private stderr transport: only fixed numeric facts cross the worker boundary.
 export function ci1HarnessFailureMarker(phase, error) {
   if (!Number.isSafeInteger(phase) || phase < 1 || phase > 15) refused();
-  const code = ['CI1_HARNESS_REFUSED', 'CI1_GUARD_REFUSED'].includes(error?.message) ? 1
+  const runtimeCode = phase === 8 ? ({ISOLATED_RUNTIME_CONFIG_MISMATCH:11,ISOLATED_SERVICE_NOT_HEALTHY:12,
+    NONLOCAL_CONTAINER_PORT_REFUSED:13,DEDICATED_DB_VOLUME_REQUIRED:14,CLI_VERSION_MISMATCH:15,CI1_INTAKE_REFUSED:16})[error?.message]
+    ?? (error?.message === 'CI1_PINNED_IMAGE_REFUSED' && Number.isSafeInteger(error.ci1ImageProofOrdinal)
+      && error.ci1ImageProofOrdinal >= 1 && error.ci1ImageProofOrdinal <= 4 ? 16 + error.ci1ImageProofOrdinal : undefined) : undefined;
+  const code = runtimeCode ?? (['CI1_HARNESS_REFUSED', 'CI1_GUARD_REFUSED'].includes(error?.message) ? 1
     : ({ENOENT:2,ENOTDIR:3,EACCES:4,EPERM:4,ETIMEDOUT:5,ENOBUFS:6,ERR_CHILD_PROCESS_STDIO_MAXBUFFER:6})[error?.code]
-      ?? (error?.name === 'TypeError' ? 7 : error?.name === 'SyntaxError' ? 8 : Number.isInteger(error?.status) ? 9 : 10);
+      ?? (error?.name === 'TypeError' ? 7 : error?.name === 'SyntaxError' ? 8 : Number.isInteger(error?.status) ? 9 : 10));
   const exit = Number.isInteger(error?.status) && error.status >= 0 && error.status <= 255 ? error.status : 256;
   let npm = 0;
   if (phase === 4 && typeof error?.stderr === 'string' && Buffer.byteLength(error.stderr) <= CI1_LIMITS.outputBytes) {
@@ -38,7 +42,7 @@ export function ci1HarnessFailureFacts(stderr) {
   const match = /^CI1_HARNESS_FAILURE ([1-9][0-9]?) ([1-9][0-9]?) (0|[1-9][0-9]{0,2}) ([0-8])$/.exec(lines[0]);
   if (!match) return {};
   const [phase, code, exit, npm] = match.slice(1).map(Number);
-  if (phase > 15 || code > 10 || exit > 256 || (phase !== 4 && npm !== 0)) return {};
+  if (phase > 15 || code > 20 || (phase !== 8 && code > 10) || exit > 256 || (phase !== 4 && npm !== 0)) return {};
   return {harnessPhaseOrdinal:phase,harnessFailureOrdinal:code,harnessExitOrdinal:exit,harnessNpmFailureOrdinal:npm};
 }
 

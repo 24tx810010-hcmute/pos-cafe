@@ -23,11 +23,23 @@ test('harness setup diagnostics export only bounded phase and failure ordinals',
 });
 test('malformed, duplicated and unbounded private harness markers cannot create facts', () => {
   for(const value of ['CI1_HARNESS_FAILURE 4 9 1 1 PRIVATE_SECRET','CI1_HARNESS_FAILURE 16 9 1 1',
-    'CI1_HARNESS_FAILURE 4 11 1 1','CI1_HARNESS_FAILURE 4 9 257 1','CI1_HARNESS_FAILURE 3 9 1 1',
+    'CI1_HARNESS_FAILURE 8 21 1 0','CI1_HARNESS_FAILURE 4 11 1 1','CI1_HARNESS_FAILURE 4 9 257 1','CI1_HARNESS_FAILURE 3 9 1 1',
     'CI1_HARNESS_FAILURE 04 9 1 1','CI1_HARNESS_FAILURE 4 9 -1 1',
     'CI1_HARNESS_FAILURE 4 9 1 1\nCI1_HARNESS_FAILURE 4 9 1 1','x'.repeat(1024**2+1)])
     assert.deepEqual(ci1HarnessFailureFacts(value),{});
   assert.equal(ci1HarnessFailureMarker(4,{stderr:'npm error code ENOTCACHED\nnpm error code EACCES\n'}),'CI1_HARNESS_FAILURE 4 10 256 0');
+});
+test('phase8 runtime and image pin failures use fixed ordinals without reflecting private facts', () => {
+  for(const [message,code] of Object.entries({ISOLATED_RUNTIME_CONFIG_MISMATCH:11,ISOLATED_SERVICE_NOT_HEALTHY:12,
+    NONLOCAL_CONTAINER_PORT_REFUSED:13,DEDICATED_DB_VOLUME_REQUIRED:14,CLI_VERSION_MISMATCH:15,CI1_INTAKE_REFUSED:16})){
+    const marker=ci1HarnessFailureMarker(8,{message});
+    assert.equal(ci1HarnessFailureFacts(marker).harnessFailureOrdinal,code);
+    assert.equal(ci1HarnessFailureFacts(ci1HarnessFailureMarker(7,{message})).harnessFailureOrdinal,10);
+  }
+  for(const ordinal of [1,2,3,4])assert.equal(ci1HarnessFailureFacts(ci1HarnessFailureMarker(8,{
+    message:'CI1_PINNED_IMAGE_REFUSED',ci1ImageProofOrdinal:ordinal,stderr:'PRIVATE_SECRET'})).harnessFailureOrdinal,16+ordinal);
+  for(const ordinal of [0,5,'4',NaN])assert.equal(ci1HarnessFailureFacts(ci1HarnessFailureMarker(8,{
+    message:'CI1_PINNED_IMAGE_REFUSED',ci1ImageProofOrdinal:ordinal})).harnessFailureOrdinal,10);
 });
 
 test('live systemd reads use only five exact properties on the owned unit over the ordinary system bus', () => {

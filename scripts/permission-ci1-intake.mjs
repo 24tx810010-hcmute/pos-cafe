@@ -137,14 +137,30 @@ export function ci1WorkerLayout(runId, attempt) {
     edgeVolume: `supabase_edge_runtime_${CI1_PROJECT}` };
 }
 
+const validImagePin = image => image && typeof image.ref === 'string'
+  && /^public\.ecr\.aws\/supabase\/[a-z0-9-]+:[a-zA-Z0-9_.-]+$/.test(image.ref) && !/[\r\n\0]/.test(image.ref)
+  && ['indexDigest', 'manifestDigest', 'configDigest'].every(key => typeof image[key] === 'string'
+    && image[key].length === 71 && /^sha256:[a-f0-9]{64}$/.test(image[key]));
+
+export function ci1PinnedImageProof(pin, container, image) {
+  const fail = ordinal => { throw Object.assign(new Error('CI1_PINNED_IMAGE_REFUSED'), {ci1ImageProofOrdinal:ordinal}); };
+  if (!validImagePin(pin) || container?.image !== pin.ref) fail(1);
+  if (image?.Os !== 'linux' || image.Architecture !== 'amd64') fail(2);
+  // Docker image/container IDs identify the config object, not the OCI index.
+  if (image.Id !== pin.configDigest || container.imageId !== pin.configDigest) fail(3);
+  const repository = pin.ref.slice(0, pin.ref.lastIndexOf(':'));
+  const repositories = [repository, repository.replace(/^public\.ecr\.aws\//, 'ghcr.io/')];
+  if (!Array.isArray(image.RepoDigests) || !image.RepoDigests.some(value =>
+    repositories.some(repo => value === `${repo}@${pin.indexDigest}` || value === `${repo}@${pin.manifestDigest}`))) fail(4);
+  return true;
+}
+
 export function ci1ImagesIntake(manifest) {
   if (manifest?.schemaVersion !== 'permission-ci1-images-v1' || manifest.platform !== 'linux/amd64'
     || !Array.isArray(manifest.images) || manifest.images.length !== 12) refuse();
   const names = new Set();
   for (const image of manifest.images) {
-    if (!/^public\.ecr\.aws\/supabase\/[a-z0-9-]+:[a-zA-Z0-9_.-]+$/.test(image.ref) || /[\r\n\0]/.test(image.ref) || names.has(image.ref)
-      || ['indexDigest', 'manifestDigest', 'configDigest'].some(key => typeof image[key] !== 'string'
-        || image[key].length !== 71 || !/^sha256:[a-f0-9]{64}$/.test(image[key]))) refuse();
+    if (!validImagePin(image) || names.has(image.ref)) refuse();
     names.add(image.ref);
   }
   return manifest.images;
