@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -67,14 +67,19 @@ export function linuxCorePatternAdapter(unit) {
     } };
 }
 
-export function lightService(env, node, root) {
+export function lightOwnerMatches(uid, owner) {
+  return Number.isSafeInteger(uid) && uid > 0 && uid <= 2147483647 && uid === owner;
+}
+export function lightService(env, node, root, uid) {
   if (!/^[1-9][0-9]*$/.test(env.GITHUB_RUN_ID ?? '') || !/^[1-9][0-9]*$/.test(env.GITHUB_RUN_ATTEMPT ?? '')
     || env.GITHUB_REPOSITORY !== 'nguyentronglinh045/pos-cafe' || env.GITHUB_REPOSITORY_ID !== '1263057386' || env.GITHUB_ACTIONS !== 'true'
-    || env.RUNNER_ENVIRONMENT !== 'github-hosted' || !node.startsWith('/') || !root.startsWith('/')) throw new Error('PROJECT_CI_LAUNCH_INVALID');
+    || env.RUNNER_ENVIRONMENT !== 'github-hosted' || !node.startsWith('/') || !root.startsWith('/')
+    || !lightOwnerMatches(uid, uid)) throw new Error('PROJECT_CI_LAUNCH_INVALID');
   const unit = `pos-cafe-light-r${env.GITHUB_RUN_ID}-a${env.GITHUB_RUN_ATTEMPT}.service`;
   const names = ['PATH', 'LANG', 'GITHUB_ACTIONS', 'GITHUB_REPOSITORY', 'GITHUB_REPOSITORY_ID', 'GITHUB_EVENT_NAME', 'GITHUB_EVENT_PATH',
     'GITHUB_SHA', 'GITHUB_WORKFLOW_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_STEP_SUMMARY', 'RUNNER_TEMP', 'RUNNER_ENVIRONMENT'];
   const args = ['systemd-run', '--quiet', '--wait', '--pipe', '--collect', `--unit=${unit}`, `--working-directory=${root}`,
+    `--property=User=${uid}`,
     '--property=CPUQuota=300%', '--property=MemoryMax=8G', '--property=MemorySwapMax=0', '--property=TasksMax=1024',
     '--property=RuntimeMaxSec=25min', '--property=TimeoutStopSec=10s', '--property=KillMode=control-group', '--property=LimitCORE=0',
     ...names.filter(name => env[name]).map(name => `--setenv=${name}=${env[name]}`), node, resolve(root, 'scripts/project-ci.mjs')];
@@ -85,7 +90,9 @@ export function lightService(env, node, root) {
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
     if (process.platform !== 'linux') throw new Error();
-    const args = lightService(process.env, process.execPath, process.cwd());
+    const uid = process.getuid();
+    if (!lightOwnerMatches(uid, statSync(process.cwd()).uid)) throw new Error();
+    const args = lightService(process.env, process.execPath, process.cwd(), uid);
     const unit = `pos-cafe-light-r${process.env.GITHUB_RUN_ID}-a${process.env.GITHUB_RUN_ATTEMPT}.service`;
     const result = withLightCorePattern(linuxCorePatternAdapter(unit), () => spawnSync('sudo', ['--', ...args], { stdio: 'inherit', timeout: 1560000 }));
     console.log('PROJECT_CI_CORE_PATTERN_RESTORED');

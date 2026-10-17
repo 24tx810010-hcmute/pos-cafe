@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import SmokeFailureReporter, { smokeStepDiagnostic, smokeTraceDiagnostics, smokeTraceEvents, smokeTraceSnapshotFacts, smokeTraceExpectFacts, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
 import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit, allocatedBytes, coreLimitDisabled, browserRuntimeControlCanStart } from './project-ci.mjs';
-import { lightService, withLightCorePattern, stopLightUnit, coreDumpDisabled, linuxCorePatternAdapter } from './project-ci-launch.mjs';
+import { lightService, lightOwnerMatches, withLightCorePattern, stopLightUnit, coreDumpDisabled, linuxCorePatternAdapter } from './project-ci-launch.mjs';
 import { backendInvocation } from './project-backend.mjs';
 import { verifyReleaseRun, verifyReleaseEnvironment, verifyReleaseFiles, productionCommands, PRODUCTION_ENABLED } from './project-release.mjs';
 import { ci1TrustedRepository } from './permission-ci1-policy.mjs';
@@ -218,6 +218,32 @@ test('partial browser control progress survives forced timeout without inventing
   const final={schemaVersion:'pos-browser-runtime-control-v1',stage:9,crashed:0,complete:1,cleanup:1};
   assert.equal(privateDiagnostics(stages(9)+'\nPROJECT_BROWSER_RUNTIME_CONTROL '+JSON.stringify(final),null).metrics.browserProbeComplete,1);
   assert.equal(privateDiagnostics(stages(8)+'\nPROJECT_BROWSER_RUNTIME_CONTROL '+JSON.stringify(final),null).metrics.browserProbeComplete,undefined);
+});
+
+test('native browser fatal diagnostics export known source ordinals and numeric facts without paths or messages', () => {
+  const lines=['2026 pw:browser [pid=123][err] # Fatal error in ../../v8/src/base/platform/platform-posix.cc, line 42',
+    '2026 pw:browser [pid=123][err] # Check failed: mmap reserve virtual address space FAKE_PRIVATE',
+    '2026 pw:browser [pid=123][err] native stack FAKE_PRIVATE'];
+  const diagnostic=privateDiagnostics(lines.join('\n'),null);
+  assert.equal(diagnostic.metrics.browserNativeFatalSourceOrdinal,1);assert.equal(diagnostic.metrics.browserNativeFatalLine,42);
+  assert.equal(diagnostic.metrics.browserNativeFatalReasonMask,1+4+2048);
+  const safe=publicSummary(binding,[{id:'install',status:'FAIL',exitCode:1,elapsedMs:1,invocationSHA:digest,reportSHA:digest,diagnostic}],{source:digest,lock:digest});
+  assert.equal(JSON.stringify(safe).includes('PRIVATE'),false);assert.equal(JSON.stringify(safe).includes('platform-posix'),false);
+  const native=privateDiagnostics('pw:browser [pid=1][err] [123:456:1017/090000:FATAL:sandbox_linux.cc:123] Check failed: operation not permitted',null);
+  assert.equal(native.metrics.browserNativeFatalSourceOrdinal,16);assert.equal(native.metrics.browserNativeFatalLine,123);
+  for(const text of ['FATAL:platform-posix.cc:42 FAKE_PRIVATE','pw:protocol RECV '+JSON.stringify({result:{body:lines[0]}}),
+    'pw:browser [pid=1][err] [123:456:ERROR:CONSOLE:1] "# Fatal error in platform-posix.cc, line 42"'])
+    assert.equal(privateDiagnostics(text,null).metrics.browserNativeFatalObserved,undefined);
+  const unknown=privateDiagnostics('pw:browser [pid=1][err] # Fatal error in ../../FAKE_PRIVATE.cc, line 43',null);
+  assert.equal(unknown.metrics.browserNativeFatalObserved,1);assert.equal(unknown.metrics.browserNativeFatalSourceOrdinal,undefined);
+});
+
+test('target crash markers expose only finite status and exit code for the static control', () => {
+  const base='PROJECT_BROWSER_RUNTIME_STAGE 1\nPROJECT_BROWSER_RUNTIME_STAGE 2\n';
+  const diagnostic=privateDiagnostics(base+'PROJECT_BROWSER_RUNTIME_TARGET_CRASH 1 133',null);
+  assert.equal(diagnostic.metrics.browserProbeTargetStatusOrdinal,1);assert.equal(diagnostic.metrics.browserProbeTargetErrorCode,133);
+  for(const value of ['1 -1','5 133','1 65536','1 133 FAKE_PRIVATE','1 133\nPROJECT_BROWSER_RUNTIME_TARGET_CRASH 1 133'])
+    assert.equal(privateDiagnostics(base+'PROJECT_BROWSER_RUNTIME_TARGET_CRASH '+value,null).metrics.browserProbeTargetErrorCode,undefined);
 });
 
 test('real unzip streams only owned failed trace JSONL and never extracts resource files', () => {
@@ -533,7 +559,10 @@ test('fresh capture retains output privately; guard refusal stops dependent proc
 });
 
 test('light supervisor constrains descendants and passes no credential environment', () => {
-  const args = lightService({ ...env, GITHUB_TOKEN: 'FAKE_PRIVATE_TOKEN' }, '/node', '/source');
+  const args = lightService({ ...env, GITHUB_TOKEN: 'FAKE_PRIVATE_TOKEN' }, '/node', '/source', 1001);
+  assert.ok(args.includes('--property=User=1001'));
+  assert.equal(lightOwnerMatches(1001,1001),true);assert.equal(lightOwnerMatches(0,0),false);assert.equal(lightOwnerMatches(1001,1002),false);
+  for(const uid of [0,-1,1.5,NaN,'1001','1001\nUser=0']) assert.throws(()=>lightService(env,'/node','/source',uid));
   assert.ok(args.includes('--property=KillMode=control-group'));
   assert.ok(args.includes('--property=MemorySwapMax=0'));
   assert.ok(args.includes('--property=LimitCORE=0'));

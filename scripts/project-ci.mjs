@@ -1,9 +1,10 @@
 // GitHub Linux only. Raw subprocess output stays on the disposable runner.
-import { readFileSync, writeFileSync, appendFileSync, mkdirSync, mkdtempSync, lstatSync, readdirSync, statfsSync } from 'node:fs';
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync, mkdtempSync, lstatSync, statSync, readdirSync, statfsSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { hash, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, smokeTraceDiagnostics, guardFailureCode } from './project-ci-results.mjs';
+import { lightOwnerMatches } from './project-ci-launch.mjs';
 
 const GiB = 1024 ** 3;
 const refuse = () => { throw new Error('PROJECT_CI_GUARD'); };
@@ -17,8 +18,20 @@ try {
   const { chromium, expect } = await import('@playwright/test');
   step(2); browser = await chromium.launch({ channel: 'chromium', timeout: 5000 });
   step(3); const context = await browser.newContext();
+  const rootSession = await browser.newBrowserCDPSession();
+  let targetID;
+  rootSession.on('Target.targetCrashed', event => {
+    if (!targetID || event.targetId !== targetID) return;
+    const status = ['crashed','killed','abnormal','oom'].indexOf(event.status) + 1;
+    if (Number.isSafeInteger(event.errorCode) && event.errorCode >= 0 && event.errorCode <= 65535)
+      console.log('PROJECT_BROWSER_RUNTIME_TARGET_CRASH ' + status + ' ' + event.errorCode);
+  });
+  await rootSession.send('Target.setDiscoverTargets', { discover: true });
   step(4); const page = await context.newPage();
   page.on('crash', () => { if (!crashed) console.log('PROJECT_BROWSER_RUNTIME_CRASH 1'); crashed = 1; });
+  const pageSession = await context.newCDPSession(page);
+  targetID = (await pageSession.send('Target.getTargetInfo')).targetInfo.targetId;
+  await pageSession.detach();
   step(5); await page.setContent('<!doctype html><main data-testid="ci-runtime-control">runtime control</main>', { timeout: 5000 });
   const locator = page.getByTestId('ci-runtime-control');
   step(6); if (await locator.count() !== 1) throw new Error();
@@ -130,6 +143,9 @@ export async function main() {
   if (process.platform !== 'linux' || process.env.GITHUB_ACTIONS !== 'true'
     || process.env.RUNNER_ENVIRONMENT !== 'github-hosted' || process.version !== 'v24.16.0') refuse();
   const root = resolve(process.cwd());
+  // The resource supervisor remains privileged outside this service; app tests
+  // and browsers run as the checkout owner, with no root fallback.
+  if (!lightOwnerMatches(process.getuid(), statSync(root).uid)) refuse();
   const git = args => checkoutGit(root, args);
   if (git(['status', '--porcelain', '--untracked-files=all']).trim()) refuse();
   const paths = git(['ls-files', '-z']).split('\0').filter(Boolean).sort();
@@ -217,6 +233,8 @@ export async function main() {
             if (probeInfo?.isFile()) {
               const control = privateDiagnostics(readFileSync(probeOutput, 'utf8'), null);
               Object.assign(diagnostic.metrics, Object.fromEntries(Object.entries(control.metrics).filter(([key]) => key.startsWith('browserProbe'))));
+              for(const [key,value] of Object.entries(control.metrics))if(key.startsWith('browserNative'))
+                diagnostic.metrics['browserProbeNative'+key.slice('browserNative'.length)]=value;
               if (control.metrics.browserCrashSignal) diagnostic.metrics.browserProbeCrashSignal = control.metrics.browserCrashSignal;
             }
             guard();

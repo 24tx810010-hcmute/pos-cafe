@@ -10,9 +10,9 @@
   "productionEnabled": false,
   "trustedFiles": {
     ".github/workflows/ci.yml": "14fc00e62e1ca40e6cc71b004085ba7d411e6ad9bd0a3aed4c1185d644498705",
-    "scripts/project-ci-launch.mjs": "52b56328e7d6719e10498dbf792204308e27ce7cc06f43887d03f5ccf2410490",
-    "scripts/project-ci.mjs": "651a962ca25dcd8dfad4b37892c2194b1371cfd818c79cdb16a5358a12d1b888",
-    "scripts/project-ci-results.mjs": "df108e3074ac006674c78baa40de50582fa7549d8c85ae4fe673c415c55cdfca",
+    "scripts/project-ci-launch.mjs": "b59418a2e3613fc3fdc94c8b83d9b52879cdad1cc6f9d9ab77d3311860b4c3ac",
+    "scripts/project-ci.mjs": "f40082ef8861c20a63bf2fecd59e3945bfbc142924b390f0c53a5db59fe7eac5",
+    "scripts/project-ci-results.mjs": "f61a24a8e362da74ccbdb15bed5466f1356db19b1190535c5b4d1717f7ec9dfd",
     "vitest.config.ts": "1cb32e60581f3bc8c6f2a6e487e2c337a89d40f3ae966b82896792ce5b077042",
     "vitest.project-tooling.config.ts": "a85416abe41bd3bdb8b70262c82b102be5c48d1e1b5edfdad0eaf7ad9e2b9c31",
     "playwright.config.ts": "780a3bd5eb4bbb256a2fb1f81cb78a000bf2ee82fd0a2b4e752184eeaa19dba5",

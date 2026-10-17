@@ -17,6 +17,10 @@ const SMOKE_STEP_LOCATORS = Object.freeze(['landing-screen', 'store-pairing-scre
   'floor-page', 'order-drawer', 'submit-order-button']);
 const TRACE_SCREENS = Object.freeze(['landing-screen', 'store-pairing-screen', 'passcode-screen', 'floor-view',
   'compatibility-update-gate', 'required-pin-change-screen', 'rotate-guidance', 'create-store-screen']);
+const NATIVE_FATAL_FILES = Object.freeze(['platform-posix.cc','sandbox.cc','virtual-memory.cc','heap.cc','api.cc','compiler.cc','isolate.cc',
+  'objects.cc','js-objects.cc','partition_address_space.cc','page_allocator_internals_posix.cc','platform_thread_posix.cc','message_pump_epoll.cc',
+  'platform_shared_memory_region_posix.cc','shared_memory_mapping.cc','sandbox_linux.cc','sandbox_seccomp_bpf_linux.cc','zygote_linux.cc',
+  'zygote_host_impl_linux.cc','render_process_host_impl.cc','render_frame_impl.cc','logging.cc']);
 const SMOKE_STEP_CATEGORIES = Object.freeze(['pw:api', 'expect', 'fixture', 'hook', 'test.step', 'test.error']);
 const SMOKE_STEP_APIS = Object.freeze([/browserType\.launch|^Launch browser/i, /browser\.newContext|^Create context/i,
   /browserContext\.newPage|^Create page/i, /page\.goto|^Navigate to/i, /locator\.click|^Click /i,
@@ -329,6 +333,7 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
   const rawLines = rawPrivateText.split(/\r\n|\r|\n/);
   const privateText = rawLines.filter(line => !protocolLine.test(line)).join('\n');
   Object.assign(metrics, browserRuntimeControlFacts(rawPrivateText));
+  Object.assign(metrics, browserNativeFatalFacts(privateText));
   const failedStepIndex = rawLines.findIndex(line => line.trimStart().startsWith('PROJECT_SMOKE_FAILED_STEP '));
   let firstCrashIndex = -1;
   for (const [lineIndex,line] of rawLines.entries()) {
@@ -425,6 +430,29 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
   }
   return { codes, metrics, failedFiles };
 }
+export function browserNativeFatalFacts(text) {
+  const facts={};let remaining=0,mask=0;
+  const reasons=[/check failed/i,/out of memory|allocation failed/i,/reserve.*(?:virtual|address)|address space/i,
+    /pthread|thread.*creat/i,/shared.memory|shm_open|memfd/i,/permission denied|operation not permitted/i,
+    /too many open files/i,/no space left on device/i,/illegal instruction/i,/seccomp|bad system call/i,
+    /stack overflow|stack.*exhaust/i,/mmap|mprotect/i];
+  for(const line of text.split(/\r\n|\r|\n/)) {
+    const tail=/^[^\r\n{]*\bpw:browser\b[^\r\n{]{0,160}\[err\]\s*(.*)$/.exec(line)?.[1];
+    if(tail===undefined)continue;
+    const header=/^\[[0-9:./]+:FATAL:([A-Za-z0-9_./-]+?)(?::([0-9]+)|\(([0-9]+)\))\]/.exec(tail)
+      ?? /^# Fatal error in ([A-Za-z0-9_./-]*), line ([0-9]+)\b/.exec(tail);
+    if(header) {
+      facts.browserNativeFatalObserved=1;remaining=8;
+      delete facts.browserNativeFatalSourceOrdinal;delete facts.browserNativeFatalLine;
+      const ordinal=NATIVE_FATAL_FILES.indexOf(header[1].split('/').at(-1))+1,location=Number(header[2]??header[3]);
+      if(ordinal)facts.browserNativeFatalSourceOrdinal=ordinal;
+      if(Number.isSafeInteger(location)&&location>0&&location<=1000000)facts.browserNativeFatalLine=location;
+    }
+    if(remaining>0) {reasons.forEach((pattern,index)=>{if(pattern.test(tail))mask|=2**index;});remaining--;}
+  }
+  if(facts.browserNativeFatalObserved)facts.browserNativeFatalReasonMask=mask;
+  return facts;
+}
 export function browserRuntimeControlFacts(text) {
   const prefix = 'PROJECT_BROWSER_RUNTIME_CONTROL ';
   const all = text.split(/\r\n|\r|\n/);
@@ -434,7 +462,12 @@ export function browserRuntimeControlFacts(text) {
   if (crash.length > 1 || crash.some(line => line !== 'PROJECT_BROWSER_RUNTIME_CRASH 1')) return {};
   const failure = all.filter(line => line.startsWith('PROJECT_BROWSER_RUNTIME_FAILURE '));
   if (failure.length > 1 || failure.some(line => !/^PROJECT_BROWSER_RUNTIME_FAILURE [1-4]$/.test(line))) return {};
+  const targets = all.filter(line => line.startsWith('PROJECT_BROWSER_RUNTIME_TARGET_CRASH '));
+  if (targets.length > 1) return {};
+  const target = targets.length ? /^PROJECT_BROWSER_RUNTIME_TARGET_CRASH ([0-4]) ([0-9]{1,5})$/.exec(targets[0]) : null;
+  if (targets.length && (!target || Number(target[2]) > 65535)) return {};
   const partial = progress.length ? {browserProbeStageOrdinal:progress.length} : {};
+  if (target) { partial.browserProbeTargetStatusOrdinal=Number(target[1]); partial.browserProbeTargetErrorCode=Number(target[2]); }
   if (crash.length) partial.browserProbeCrashed = 1;
   if (failure.length) partial.browserProbeFailureNameOrdinal = Number(failure[0].at(-1));
   const lines = all.filter(line => line.startsWith(prefix));
@@ -608,6 +641,9 @@ export function publicSummary(binding, rows, fingerprints) {
           'browserCrashSignal', 'browserInspectorCrashObserved', 'browserTargetCrashObserved', 'browserTargetCrashStatusOrdinal', 'browserTargetCrashErrorCode', 'browserCrashBeforeFailedStep',
           'browserProbeCommandCompleted', 'browserProbeStageOrdinal', 'browserProbeCrashed', 'browserProbeComplete', 'browserProbeCleanup', 'browserProbeSkippedOrdinal', 'browserProbeCrashSignal',
           'browserProbeFailureNameOrdinal', 'browserProbeTimedOut', 'browserProbeDescendantsRemaining',
+          'browserProbeTargetStatusOrdinal', 'browserProbeTargetErrorCode',
+          'browserNativeFatalObserved', 'browserNativeFatalSourceOrdinal', 'browserNativeFatalLine', 'browserNativeFatalReasonMask',
+          'browserProbeNativeFatalObserved', 'browserProbeNativeFatalSourceOrdinal', 'browserProbeNativeFatalLine', 'browserProbeNativeFatalReasonMask',
           'smokeExpected', 'smokeUnexpected', 'smokeSkipped', 'smokeFlaky', 'smokeProgressIndex', 'smokeProgressTotal',
           'memoryCurrentBytes', 'peakMemoryBytes', 'pidsCurrent', 'peakPids', 'oomEvents', 'oomKills', 'pidsLimitEvents'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));
