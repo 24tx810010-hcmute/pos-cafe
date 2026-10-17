@@ -29,7 +29,7 @@ const failureStages = ['supervisor', 'loop', 'source-tools', 'npm-images', 'edge
   'private-namespaces', 'offline-edge', 'stack', 'harness', 'export', 'cleanup'];
 const failureOperations = ['SOURCE_INTAKE', 'SOURCE_CLONE', 'SOURCE_REF', 'SOURCE_CONFIG', 'TOOL_MANIFEST',
   'DOWNLOAD_NODE', 'INSPECT_NODE', 'EXTRACT_NODE', 'DOWNLOAD_SUPABASE', 'INSPECT_SUPABASE', 'EXTRACT_SUPABASE',
-  'PLACE_TOOLS', 'TOOL_VERSIONS', 'STACK_TEMPLATE'];
+  'PLACE_TOOLS', 'TOOL_VERSIONS', 'STACK_TEMPLATE', 'FORMAT_VOLUME', 'RESERVE_VOLUME'];
 const failureCommands = ['git', 'tar', 'node', 'npm', 'supabase', 'fallocate', 'losetup', 'mkfs.ext4', 'mount', 'umount',
   'cp', 'mv', 'docker', 'unshare', 'systemd-run', 'systemctl', 'findmnt', 'containerd', 'dockerd'];
 const failureCodes = ['GUARD_REFUSED', 'INTAKE_REFUSED', 'COMMAND_FAILED', 'COMMAND_TIMEOUT', 'OUTPUT_LIMIT',
@@ -510,7 +510,17 @@ async function setup(layout, input, parentEnv) {
         if (realpathSync(proof['back-file']) !== layout.image || Number(proof.offset) !== 0 || Number(proof.sizelimit) !== CI1_LIMITS.filesystemBytes) refused();
         const image = statSync(layout.image);
         if (image.size !== CI1_LIMITS.filesystemBytes || image.blocks * 512 < CI1_LIMITS.filesystemBytes) refused();
-        run('mkfs.ext4', ['-E', 'nodiscard', loop]); mkdirSync(root, { mode: 0o700 });
+        operation = 'FORMAT_VOLUME';
+        run('mkfs.ext4', ['-E', 'nodiscard,lazy_itable_init=0,lazy_journal_init=0', loop]);
+        // Formatting/zeroing may punch holes in a loop backing file. Complete
+        // inode/journal initialization first, then restore the full reservation
+        // before mount. The continuous allocation proof remains unchanged.
+        operation = 'RESERVE_VOLUME';
+        const formatted = statSync(layout.image), missing = Math.max(0, CI1_LIMITS.filesystemBytes - formatted.blocks * 512);
+        const host = statfsSync(layout.task);
+        if (host.bavail * host.bsize < CI1_LIMITS.hostReserveBytes + missing) refused();
+        run('fallocate', ['-l', String(CI1_LIMITS.filesystemBytes), layout.image]);
+        mkdirSync(root, { mode: 0o700 });
         run('mount', ['-o', 'nodiscard', loop, root]); mounted = true;
         if (statSync(layout.image).blocks * 512 < CI1_LIMITS.filesystemBytes) refused();
         for (const name of ['private', 'docker', 'containerd', 'run', 'tmp', 'home/.cache', 'npm-cache', 'runtime/bin', 'downloads']) mkdirSync(`${root}/${name}`, { recursive: true, mode: 0o700 });
