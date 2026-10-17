@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import SmokeFailureReporter, { smokeStepDiagnostic, smokeTraceDiagnostics, smokeTraceEvents, smokeTraceSnapshotFacts, smokeTraceExpectFacts, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePreflightCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
-import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit, allocatedBytes, coreLimitDisabled } from './project-ci.mjs';
+import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit, allocatedBytes, coreLimitDisabled, browserRuntimeControlCanStart } from './project-ci.mjs';
 import { lightService, withLightCorePattern, stopLightUnit, coreDumpDisabled, linuxCorePatternAdapter } from './project-ci-launch.mjs';
 import { backendInvocation } from './project-backend.mjs';
 import { verifyReleaseRun, verifyReleaseEnvironment, verifyReleaseFiles, productionCommands, PRODUCTION_ENABLED } from './project-release.mjs';
@@ -153,6 +153,45 @@ test('renderer crash protocol signals stay finite and never expose captured prot
     'pw:protocol RECV {"id":1,"result":{"body":"pw:browser Received signal 11"}}',
     'pw:protocol RECV {"id":1,"result":{"body":"\\\"method\\\":\\\"Inspector.targetCrashed\\\""}}'])
     assert.equal(privateDiagnostics(line,null).codes.includes('BROWSER_RENDERER_CRASH'),false);
+});
+
+test('protocol source strings do not become application errors and only top-level crash facts survive', () => {
+  const payload='pw:protocol SEND '+JSON.stringify({method:'Runtime.callFunctionOn',params:{functionDeclaration:'TypeError ReferenceError Timed out FAKE_PRIVATE'}});
+  const nested='pw:protocol RECV '+JSON.stringify({id:1,result:{method:'Target.targetCrashed',params:{errorCode:99}}});
+  const clean=privateDiagnostics(payload+'\n'+nested,null);
+  for(const code of ['TYPE_ERROR','REFERENCE_ERROR','TEST_TIMEOUT','BROWSER_RENDERER_CRASH']) assert.equal(clean.codes.includes(code),false);
+  const event='2026-10-17T00:00:00Z pw:protocol RECV ◀ '+JSON.stringify({method:'Target.targetCrashed',params:{status:'crashed',errorCode:139,targetId:'FAKE_PRIVATE'}});
+  const marker='PROJECT_SMOKE_FAILED_STEP {}';
+  const observed=privateDiagnostics(event+'\n'+marker+'\npw:browser [pid=123][err] Received signal 11 FAKE_PRIVATE',null);
+  assert.equal(observed.metrics.browserTargetCrashStatusOrdinal,1); assert.equal(observed.metrics.browserTargetCrashErrorCode,139);
+  assert.equal(observed.metrics.browserCrashBeforeFailedStep,1); assert.equal(observed.metrics.browserCrashSignal,11);
+  assert.equal(privateDiagnostics(marker+'\n'+event,null).metrics.browserCrashBeforeFailedStep,0);
+  const safe=publicSummary(binding,[{id:'install',status:'FAIL',exitCode:1,elapsedMs:1,invocationSHA:digest,reportSHA:digest,diagnostic:observed}],{source:digest,lock:digest});
+  assert.equal(safe.overallStatus,'FAIL'); assert.equal(safe.phases[0].diagnostic.metrics.browserTargetCrashErrorCode,139);
+  assert.equal(JSON.stringify(safe).includes('PRIVATE'),false);
+  const unknown=privateDiagnostics('pw:protocol RECV '+JSON.stringify({method:'Target.targetCrashed',params:{status:'FAKE_PRIVATE',errorCode:-1}}),null);
+  assert.equal(unknown.metrics.browserTargetCrashStatusOrdinal,undefined); assert.equal(unknown.metrics.browserTargetCrashErrorCode,undefined);
+});
+
+test('static browser runtime control has strict finite facts and cannot replace failed application acceptance', () => {
+  const record={schemaVersion:'pos-browser-runtime-control-v1',stage:9,crashed:0,complete:1,cleanup:1};
+  const line=value=>'PROJECT_BROWSER_RUNTIME_CONTROL '+JSON.stringify(value);
+  const diagnostic=privateDiagnostics(line(record),null);
+  assert.equal(diagnostic.metrics.browserProbeComplete,1); assert.equal(diagnostic.metrics.browserProbeStageOrdinal,9);
+  const safe=publicSummary(binding,[{id:'install',status:'FAIL',exitCode:1,elapsedMs:1,invocationSHA:digest,reportSHA:digest,diagnostic}],{source:digest,lock:digest});
+  assert.equal(safe.overallStatus,'FAIL');
+  for(const bad of [{...record,raw:'FAKE_PRIVATE'},{...record,stage:10},{...record,crashed:1},{...record,stage:8},{...record,complete:2}])
+    assert.equal(privateDiagnostics(line(bad),null).metrics.browserProbeComplete,undefined);
+  assert.equal(privateDiagnostics(line(record)+'\n'+line(record),null).metrics.browserProbeComplete,undefined);
+  assert.equal(privateDiagnostics('pw:browser [err] '+line(record),null).metrics.browserProbeComplete,undefined);
+  const failed=privateDiagnostics(line({...record,stage:8,crashed:1,complete:0}),null);
+  assert.equal(failed.metrics.browserProbeStageOrdinal,8); assert.equal(failed.metrics.browserProbeCrashed,1);
+});
+
+test('static browser control refuses attribution while previous cgroup processes or descendants remain', () => {
+  assert.equal(browserRuntimeControlCanStart('123\n','nr_descendants 0\nnr_dying_descendants 0\n',123),true);
+  for(const [procs,stat] of [['123\n124\n','nr_descendants 0'],['123\n','nr_descendants 1'],['123\n',''],['','nr_descendants 0'],['0123','nr_descendants 0']])
+    assert.equal(browserRuntimeControlCanStart(procs,stat,123),false);
 });
 
 test('real unzip streams only owned failed trace JSONL and never extracts resource files', () => {

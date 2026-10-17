@@ -7,6 +7,32 @@ import { hash, sourceBinding, vitestCounts, nodeCounts, smokeCounts, smokePrefli
 
 const GiB = 1024 ** 3;
 const refuse = () => { throw new Error('PROJECT_CI_GUARD'); };
+// Failure-only runtime control. It never replaces the application preflight or
+// contributes a PASS to any required phase. No app code or network is loaded.
+export const BROWSER_PROBE_SOURCE = String.raw`
+let browser, stage = 1, crashed = 0, complete = 0, cleanup = 0;
+try {
+  const { chromium, expect } = await import('@playwright/test');
+  stage = 2; browser = await chromium.launch({ timeout: 5000 });
+  stage = 3; const context = await browser.newContext();
+  stage = 4; const page = await context.newPage();
+  page.on('crash', () => { crashed = 1; });
+  stage = 5; await page.setContent('<!doctype html><main data-testid="ci-runtime-control">runtime control</main>', { timeout: 5000 });
+  const locator = page.getByTestId('ci-runtime-control');
+  stage = 6; if (await locator.count() !== 1) throw new Error();
+  stage = 7; if (!await locator.isVisible()) throw new Error();
+  stage = 8; await expect(locator).toBeVisible({ timeout: 1000 });
+  stage = 9; complete = 1;
+} catch { /* Runtime control exports no arbitrary error text. */ }
+finally { try { if (browser) await browser.close(); cleanup = 1; } catch {} }
+console.log('PROJECT_BROWSER_RUNTIME_CONTROL ' + JSON.stringify({schemaVersion:'pos-browser-runtime-control-v1',stage,crashed,complete,cleanup}));
+`;
+export function browserRuntimeControlCanStart(procs, stat, ownPID) {
+  const lines = procs.trim().split(/\s+/);
+  const descendants = /^nr_descendants ([0-9]+)$/m.exec(stat);
+  return Number.isSafeInteger(ownPID) && ownPID > 0 && lines.length === 1
+    && lines[0] === String(ownPID) && descendants?.[1] === '0';
+}
 export function trackedFingerprint(root, paths) {
   return hash(paths.map(path => path + '\0' + hash(readFileSync(join(root, path))) + '\0').join(''));
 }
@@ -170,6 +196,28 @@ export async function main() {
         diagnostic.codes.push(...trace.codes);
         Object.assign(diagnostic.metrics, trace.metrics);
         diagnostic.failedFiles = [...new Set([...diagnostic.failedFiles, ...trace.failedFiles])].slice(0, 32);
+        // Same pinned browser and limits, fresh static page, primary result
+        // remains FAIL even when the isolated runtime control completes.
+        try {
+          if (!browserRuntimeControlCanStart(readFileSync(join(cgroup, 'cgroup.procs'), 'utf8'),
+            readFileSync(join(cgroup, 'cgroup.stat'), 'utf8'), process.pid)) {
+            diagnostic.metrics.browserProbeSkippedOrdinal = 1;
+          } else {
+            const probeOutput = join(task, 'browser-runtime-control.log');
+            const probe = await capturedCommand(process.execPath, ['--input-type=module', '--eval', BROWSER_PROBE_SOURCE],
+              { cwd: root, env: { ...env, DEBUG: 'pw:browser' }, output: probeOutput, guard, timeoutMs: 15000, maxBytes: 32768 });
+            const probeInfo = lstatSync(probeOutput, { throwIfNoEntry: false });
+            diagnostic.metrics.browserProbeCommandCompleted = !probe.blocked && probe.exitCode === 0 ? 1 : 0;
+            if (probeInfo?.isFile()) {
+              const control = privateDiagnostics(readFileSync(probeOutput, 'utf8'), null);
+              Object.assign(diagnostic.metrics, Object.fromEntries(Object.entries(control.metrics).filter(([key]) => key.startsWith('browserProbe'))));
+              if (control.metrics.browserCrashSignal) diagnostic.metrics.browserProbeCrashSignal = control.metrics.browserCrashSignal;
+            }
+          }
+        } catch (error) {
+          diagnostic.metrics.browserProbeCommandCompleted = 0;
+          diagnostic.codes.push(guardFailureCode(error));
+        }
       }
     }
     if (!valid) {

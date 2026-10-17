@@ -322,7 +322,33 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
       for (const value of assertion.failureMessages ?? []) if (typeof value === 'string') messages.push(value);
     }
   }
-  const privateText = stripVTControlCharacters(messages.join('\n'));
+  const rawPrivateText = stripVTControlCharacters(messages.join('\n'));
+  // CDP payloads contain injected source code and arbitrary page data. Their
+  // strings are not evidence of TypeError, timeout or assertion failures.
+  const protocolLine = /^[^\r\n{]*\bpw:protocol\b[^\r\n{]{0,64}\b(?:SEND|RECV)\b/;
+  const privateText = rawPrivateText.split('\n').filter(line => !protocolLine.test(line)).join('\n');
+  Object.assign(metrics, browserRuntimeControlFacts(rawPrivateText));
+  const rawLines = rawPrivateText.split('\n');
+  const failedStepIndex = rawLines.findIndex(line => line.trimStart().startsWith('PROJECT_SMOKE_FAILED_STEP '));
+  let firstCrashIndex = -1;
+  for (const [lineIndex,line] of rawLines.entries()) {
+    const signal = /^[^\r\n{]*\bpw:browser\b[^\r\n]{0,160}Received signal (4|5|6|11)\b/.exec(line);
+    if (signal) { metrics.browserCrashSignal = Number(signal[1]); if (firstCrashIndex < 0) firstCrashIndex = lineIndex; }
+    if (line.length > 4096 || !/^[^\r\n{]*\bpw:protocol\b[^\r\n{]{0,64}\bRECV[^\r\n{]{0,16}\{/.test(line)) continue;
+    let event; try { event = JSON.parse(line.slice(line.indexOf('{'))); } catch { continue; }
+    if (event?.method === 'Inspector.targetCrashed') { metrics.browserInspectorCrashObserved = 1; if (firstCrashIndex < 0) firstCrashIndex = lineIndex; }
+    if (event?.method === 'Target.targetCrashed') {
+      metrics.browserTargetCrashObserved = 1;
+      if (firstCrashIndex < 0) firstCrashIndex = lineIndex;
+      const ordinal = ['crashed','killed','abnormal','oom'].indexOf(event.params?.status) + 1;
+      if (ordinal) metrics.browserTargetCrashStatusOrdinal = ordinal;
+      if (Number.isSafeInteger(event.params?.errorCode) && event.params.errorCode >= 0 && event.params.errorCode <= 65535)
+        metrics.browserTargetCrashErrorCode = event.params.errorCode;
+    }
+  }
+  if (firstCrashIndex >= 0 && failedStepIndex >= 0) metrics.browserCrashBeforeFailedStep = firstCrashIndex < failedStepIndex ? 1 : 0;
+  if (metrics.browserInspectorCrashObserved || metrics.browserTargetCrashObserved || metrics.browserCrashSignal
+    || /^[^\r\n{]*\bpw:api\b[^\r\n]{0,160}Page crashed/im.test(privateText)) codes.push('BROWSER_RENDERER_CRASH');
   for (const file of [...new Set(smokeFailedFiles)]) {
     const escaped = file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const location = new RegExp(escaped + ':(\\d+):(\\d+)').exec(privateText.replaceAll('\\', '/'));
@@ -379,7 +405,6 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
     BROWSER_CLOSED: /Target page, context or browser has been closed|Target closed|Browser closed|Connection closed/i,
     CONTEXT_DESTROYED: /Execution context was destroyed|Cannot find context with specified id/i,
     PROTOCOL_ERROR: /Protocol error|Target crashed/i,
-    BROWSER_RENDERER_CRASH: /^[^\r\n{]*\bpw:protocol\b[^\r\n{]{0,64}\bRECV[^\r\n{]{0,16}\{\s*"method"\s*:\s*"Inspector\.targetCrashed"|^[^\r\n{]*\bpw:api\b[^\r\n]{0,160}Page crashed|^[^\r\n{]*\bpw:browser\b[^\r\n]{0,160}Received signal (?:6|11)\b/im,
     FIXTURE_SETUP: /while setting up \"[^\r\n\"]{1,100}\"/i,
     FIXTURE_TEARDOWN: /while tearing down \"[^\r\n\"]{1,100}\"/i })) {
     if (pattern.test(privateText)) codes.push(code);
@@ -396,6 +421,17 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
     if (index >= 0 && index < 5) metrics.architectureAssertion = index + 1;
   }
   return { codes, metrics, failedFiles };
+}
+export function browserRuntimeControlFacts(text) {
+  const prefix = 'PROJECT_BROWSER_RUNTIME_CONTROL ';
+  const lines = text.split('\n').filter(line => line.startsWith(prefix));
+  if (lines.length !== 1 || lines[0].length > 512) return {};
+  let value; try { value = JSON.parse(lines[0].slice(prefix.length)); } catch { return {}; }
+  if (!value || Object.keys(value).sort().join(',') !== 'cleanup,complete,crashed,schemaVersion,stage'
+    || value.schemaVersion !== 'pos-browser-runtime-control-v1' || !Number.isInteger(value.stage) || value.stage < 1 || value.stage > 9
+    || [value.complete,value.crashed,value.cleanup].some(n => n !== 0 && n !== 1)
+    || (value.complete === 1 && (value.stage !== 9 || value.crashed !== 0)) || (value.stage === 9 && value.complete !== 1)) return {};
+  return {browserProbeStageOrdinal:value.stage,browserProbeCrashed:value.crashed,browserProbeComplete:value.complete,browserProbeCleanup:value.cleanup};
 }
 const sameSet = (a, b) => a.length === b.length && new Set(a).size === a.length
   && [...a].sort().every((value, index) => value === [...b].sort()[index]);
@@ -554,6 +590,8 @@ export function publicSummary(binding, rows, fingerprints) {
           'traceExpectCalls', 'traceExpectTimeoutMs', 'traceExpectLogTimeoutMs', 'traceExpectMatches', 'traceExpectTimedOut',
           'traceExpectReceivedOrdinal', 'traceExpectErrorOrdinal', 'traceExpectDurationMs',
           'smokeConfiguredTimeoutMs', 'smokeResultDurationMs', 'smokeResultStatusOrdinal',
+          'browserCrashSignal', 'browserInspectorCrashObserved', 'browserTargetCrashObserved', 'browserTargetCrashStatusOrdinal', 'browserTargetCrashErrorCode', 'browserCrashBeforeFailedStep',
+          'browserProbeCommandCompleted', 'browserProbeStageOrdinal', 'browserProbeCrashed', 'browserProbeComplete', 'browserProbeCleanup', 'browserProbeSkippedOrdinal', 'browserProbeCrashSignal',
           'smokeExpected', 'smokeUnexpected', 'smokeSkipped', 'smokeFlaky', 'smokeProgressIndex', 'smokeProgressTotal',
           'memoryCurrentBytes', 'peakMemoryBytes', 'pidsCurrent', 'peakPids', 'oomEvents', 'oomKills', 'pidsLimitEvents'].includes(key) && integer(value))),
       failedFiles: diagnostic.failedFiles.filter(path => /^(?:src|tests)\/[A-Za-z0-9_./-]+\.(?:ts|tsx|mjs)$/.test(path)).slice(0, 32) } : null }));
