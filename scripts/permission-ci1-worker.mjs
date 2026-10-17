@@ -52,7 +52,10 @@ const failureMetrics = ['hostFreeBytes', 'memoryBytes', 'oom', 'pidsEvents', 'me
   'loopImageBytes', 'loopAllocatedBytes', 'loopFilesystemBytes', 'loopFreeBytes', 'loopOffset', 'loopSizeLimit', 'mountMatches', 'ownerMatches', 'imageOrdinal', 'edgePackageOrdinal',
   'edgeVersionMajor', 'edgeVersionMinor', 'edgeVersionPatch', 'edgeVersionCopy', 'edgeCacheEntryCount', 'edgeRegistryMetadataPresent', 'loopNestedMounts',
   'isolatedFailureSeen', 'isolatedCleanupFailed', 'systemdPropertyOrdinal', 'imagePullAttempt', 'imageRegistryOrdinal',
-  'harnessPhaseOrdinal', 'harnessFailureOrdinal', 'harnessExitOrdinal', 'harnessNpmFailureOrdinal'];
+  'harnessPhaseOrdinal', 'harnessFailureOrdinal', 'harnessExitOrdinal', 'harnessNpmFailureOrdinal',
+  'suiteOrdinal','suiteHookErrorCount','suiteRunErrorCount','suiteErrorOriginOrdinal',
+  'suiteCleanupPhaseOrdinal','suiteCleanupStepOrdinal','suiteCleanupCodeOrdinal','suiteCleanupSqlstateOrdinal',
+  'preservationComponentDriftMask','preservationFinancialDriftMask'];
 
 export async function ci1PullImage(run, reference, guard = () => {}, wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)), onAttempt = () => {}) {
   if (typeof reference !== 'string' || !/^public\.ecr\.aws\/supabase\/[a-z0-9._-]+@sha256:[a-f0-9]{64}$/.test(reference)) refused();

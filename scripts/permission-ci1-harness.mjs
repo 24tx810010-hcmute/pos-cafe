@@ -6,6 +6,7 @@ import { cpus, totalmem } from 'node:os';
 import { coreDumpDisabled } from './project-ci-launch.mjs';
 import { CI1_LIMITS, CI1_PROJECT, CI1_RUNTIME, CI1_SUITES, assertCi1Envelope, assertCi1WriteBoundary, ci1ProcessEnvironment, ci1Identity, ci1Invocation, ci1SuiteResult, ci1Hash } from './permission-ci1-policy.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
+import { ci1SuiteFailureMarker, ci1SuiteFailureFacts, ci1PreservationFacts } from './permission-ci1-diagnostics.mjs';
 
 const refused = () => { throw new Error('CI1_HARNESS_REFUSED'); };
 const stopped = id => ({ id, status: 'NOT_RUN', exitCode: null, counts: null });
@@ -37,13 +38,15 @@ export function ci1HarnessFailureMarker(phase, error) {
 }
 export function ci1HarnessFailureFacts(stderr) {
   if (typeof stderr !== 'string' || Buffer.byteLength(stderr) > CI1_LIMITS.outputBytes) return {};
+  const suiteFacts = {...ci1SuiteFailureFacts(stderr),...ci1PreservationFacts(stderr)};
   const lines = stderr.split(/\r?\n/).filter(line=>line.startsWith('CI1_HARNESS_FAILURE'));
+  if (lines.length === 0) return suiteFacts;
   if (lines.length !== 1) return {};
   const match = /^CI1_HARNESS_FAILURE ([1-9][0-9]?) ([1-9][0-9]?) (0|[1-9][0-9]{0,2}) ([0-8])$/.exec(lines[0]);
   if (!match) return {};
   const [phase, code, exit, npm] = match.slice(1).map(Number);
   if (phase > 15 || code > 20 || (phase !== 8 && code > 10) || exit > 256 || (phase !== 4 && npm !== 0)) return {};
-  return {harnessPhaseOrdinal:phase,harnessFailureOrdinal:code,harnessExitOrdinal:exit,harnessNpmFailureOrdinal:npm};
+  return {...suiteFacts,harnessPhaseOrdinal:phase,harnessFailureOrdinal:code,harnessExitOrdinal:exit,harnessNpmFailureOrdinal:npm};
 }
 
 // systemctl's root shortcut checks the peer PID of the host manager, which is
@@ -73,7 +76,7 @@ export function ci1SystemdProperty(identity, property, run = execFileSync) {
 }
 
 // The adapter boundary permits in-memory unit checks without starting any stack.
-export async function runCi1Pilot(adapter, metadata) {
+export async function runCi1Pilot(adapter, metadata, diagnostic = () => {}) {
   const identity = ci1Identity(metadata.runId, metadata.attempt);
   const startedAt = new Date().toISOString();
   const checks = { bootstrap: 'NOT_RUN', auth: 'NOT_RUN', apiBinding: 'NOT_RUN', sourcePreservation: 'NOT_RUN', cleanup: 'NOT_RUN' };
@@ -99,7 +102,15 @@ export async function runCi1Pilot(adapter, metadata) {
         configSHA: await adapter.configHash(spec.config) });
       const result = await adapter.execute(invocation);
       suites[index] = ci1SuiteResult(invocation, { ...result, markerProof: bootstrap.markerProof });
-      if (suites[index].status !== 'PASS') break;
+      if (suites[index].status !== 'PASS') {
+        if (suites[index].status === 'FAIL') {
+          try {
+            const marker = ci1SuiteFailureMarker(spec.id,result.result);
+            if (marker) diagnostic(marker);
+          } catch { /* Diagnostics cannot change the primary result. */ }
+        }
+        break;
+      }
     }
     assertCi1Envelope(await adapter.envelope(), identity);
   } catch {
@@ -257,7 +268,7 @@ async function realAdapter(root, identity, mark = () => {}) {
     configHash: config => ci1Hash(readFileSync(join(source, config), 'utf8')),
     bootstrap: async () => { await runtime.bootstrapBridgeRuntime(privateRoot); return fixture.prepareCi1Fixture(privateRoot); },
     baseline: () => fixture.captureCi1Baseline(privateRoot),
-    preserved: baseline => fixture.verifyCi1Baseline(baseline),
+    preserved: baseline => fixture.verifyCi1Baseline(baseline, marker=>console.error(marker)),
     close: async () => {
       try { await fixture.closeCi1Fixture(); }
       finally { child('docker', ['stop', '--time', '10', ...pinned.containers.map(value => value.id)]); }
@@ -319,7 +330,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
         sourceFingerprint, lockSHA: ci1Hash(readFileSync('package-lock.json', 'utf8')),
         versions: { node: process.versions.node, npm, supabase: '2.117.0' } };
       phase = 13;
-      const output = await runCi1Pilot(adapter, metadata);
+      const output = await runCi1Pilot(adapter, metadata, marker=>console.error(marker));
       phase = 14;
       writeFileSync(join(root, 'private', 'public-evidence.json'), output.json, { flag: 'wx', mode: 0o600 });
       phase = 15;

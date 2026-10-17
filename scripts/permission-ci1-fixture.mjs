@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { CI1_PROJECT, CI1_RUNTIME } from './permission-ci1-policy.mjs';
 import { ci1ImagesIntake, ci1PinnedImageProof } from './permission-ci1-intake.mjs';
+import { ci1PreservationMask } from './permission-ci1-diagnostics.mjs';
 import * as runtime from './permission-identity-runtime.mjs';
 import { collectInventory } from './permission-inventory.mjs';
 import pg from 'pg';
@@ -108,11 +109,24 @@ async function snapshot() {
     if (actual !== object.sha256) refuse();
     payloads.push(actual);
   }
-  return hash({ catalog, financial, metadata, buckets, payloads });
+  return { catalog, financial, metadata, buckets, payloads };
 }
 
-export const captureCi1Baseline = () => snapshot();
-export const verifyCi1Baseline = async before => typeof before === 'string' && before === await snapshot();
+const preservationHashes = value => ({components:[value.catalog,hash(value.financial),hash(value.metadata),hash(value.buckets),hash(value.payloads)],financial:value.financial});
+export const captureCi1Baseline = async () => {
+  const value=await snapshot(),baseline=hash(value);
+  state.baseline={hash:baseline,hashes:preservationHashes(value)};
+  return baseline;
+};
+export const verifyCi1Baseline = async (before, diagnostic=()=>{}) => {
+  if(typeof before!=='string')return false;
+  const value=await snapshot(),preserved=before===hash(value);
+  if(!preserved&&state.baseline?.hash===before){
+    const marker=ci1PreservationMask(state.baseline.hashes,preservationHashes(value));
+    if(marker)try{diagnostic(marker);}catch{/* Observations cannot alter preservation acceptance. */}
+  }
+  return preserved;
+};
 
 export async function closeCi1Fixture() {
   if (!state) return;

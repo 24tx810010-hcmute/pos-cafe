@@ -2,6 +2,8 @@ import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { CI1_SUITES } from './permission-ci1-policy.mjs';
 
+import { ci1SuiteDiagnostic } from './permission-ci1-diagnostics.mjs';
+
 // A finite projection for the private harness; it never serializes errors/stacks.
 export function summarizeCi1Modules(modules, errors, reason, expectedModule) {
   if (!Array.isArray(modules) || modules.length !== 1 || resolve(modules[0].moduleId) !== resolve(expectedModule)
@@ -32,7 +34,7 @@ export default class Ci1VitestReporter {
     const result = { schemaVersion: 'permission-ci1-suite-v1', runId: env.PERM_RUN_ID,
       commandId: suite.commandId, invocationSHA: env.CI1_INVOCATION_SHA,
       sourceFingerprint: env.CI1_SOURCE_FINGERPRINT, lockSHA: env.CI1_LOCK_SHA, configSHA: env.CI1_CONFIG_SHA,
-      ...summarizeCi1Modules(modules, errors, reason, suite.module) };
+      ...summarizeCi1Modules(modules, errors, reason, suite.module), diagnostic:ci1SuiteDiagnostic(modules,errors) };
     writeFileSync(env.CI1_RESULTS_FILE, `${JSON.stringify(result)}\n`, { flag: 'wx', mode: 0o600 });
   }
 }

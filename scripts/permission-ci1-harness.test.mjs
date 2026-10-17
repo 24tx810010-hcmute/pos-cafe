@@ -4,11 +4,99 @@ import { resolve } from 'node:path';
 import { CI1_LIMITS, CI1_PROJECT, CI1_RUNTIME, CI1_SUITES, assertCi1Envelope, assertCi1WriteBoundary, ci1ProcessEnvironment, ci1Identity, ci1Invocation, ci1SuiteResult } from './permission-ci1-policy.mjs';
 import { runCi1Pilot, ci1LinuxRecipe, ci1ContainersCoreDisabled, ci1SystemdProperty, ci1HarnessFailureMarker, ci1HarnessFailureFacts } from './permission-ci1-harness.mjs';
 import { summarizeCi1Modules } from './permission-ci1-vitest-reporter.mjs';
+import { ci1SuiteDiagnostic, ci1SuiteFailureMarker, ci1SuiteFailureFacts, ci1PreservationMask, ci1PreservationFacts } from './permission-ci1-diagnostics.mjs';
+import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
+import { createHash } from 'node:crypto';
 import { assertCi1Supervisor } from './permission-ci1-intake.mjs';
-import { runCi1Worker } from './permission-ci1-worker.mjs';
+import { runCi1Worker, ci1FailureExport } from './permission-ci1-worker.mjs';
 
 // All adapters/proofs below are fake unit data. No Linux/DB/CI operation is run.
 const identity = ci1Identity('12345', 1);
+
+test('failed teardown projection retains finite hook origin and cleanup step without private error text', () => {
+  const error={message:'PRIVATE_SECRET',stack:'PRIVATE_SECRET',permissionCleanupDiagnostics:[{
+    phase:'database-surface',step:'restore-functions',code:'IMAGE_CLEANUP_STEP_FAILED',sqlstate:'2BP01',raw:'PRIVATE_SECRET'}]};
+  const modules=[{errors:()=>[error],children:{allSuites:()=>[],allTests:()=>[{result:()=>({state:'passed'})}]}}];
+  const diagnostic=ci1SuiteDiagnostic(modules,[]);
+  assert.deepEqual(diagnostic,{originOrdinal:1,phaseOrdinal:3,stepOrdinal:3,codeOrdinal:17,sqlstateOrdinal:7});
+  const marker=ci1SuiteFailureMarker('T09',{hookErrorCount:1,errorCount:0,diagnostic});
+  assert.equal(marker,'CI1_SUITE_FAILURE 1 1 0 1 3 3 17 7');
+  const facts=ci1HarnessFailureFacts(marker+'\n');
+  assert.deepEqual(facts,{suiteOrdinal:1,suiteHookErrorCount:1,suiteRunErrorCount:0,suiteErrorOriginOrdinal:1,
+    suiteCleanupPhaseOrdinal:3,suiteCleanupStepOrdinal:3,suiteCleanupCodeOrdinal:17,suiteCleanupSqlstateOrdinal:7});
+  const failure=ci1FailureExport({stage:'offline-edge',operation:'PILOT_HARNESS',code:'COMMAND_FAILED',command:'node',exitCode:1,facts});
+  assert.deepEqual(failure.facts,facts);
+  assert.ok(!JSON.stringify({diagnostic,marker,failure}).includes('PRIVATE_SECRET'));
+});
+
+test('suite diagnostics refuse ambiguous markers and bound unknown errors, counts and iterables', () => {
+  const modules=[{errors:[{message:'PRIVATE_SECRET',permissionCleanupDiagnostics:[{phase:'PRIVATE_SECRET',step:'PRIVATE_SECRET',code:'PRIVATE_SECRET',sqlstate:'PRIVATE_SECRET'}]}],children:{allSuites:()=>[]}}];
+  assert.deepEqual(ci1SuiteDiagnostic(modules,[]),{originOrdinal:1,phaseOrdinal:0,stepOrdinal:0,codeOrdinal:0,sqlstateOrdinal:0});
+  const line='CI1_SUITE_FAILURE 1 1 0 1 0 0 0 0';
+  for(const value of [line+' PRIVATE_SECRET',line+'\n'+line,line.replace(' 1 1',' 01 1'),
+    'CI1_SUITE_FAILURE 3 1 0 1 0 0 0 0','CI1_SUITE_FAILURE 1 129 0 1 0 0 0 0',
+    'CI1_SUITE_FAILURE 1 0 0 1 0 0 0 0','CI1_SUITE_FAILURE 1 1 0 1 6 0 0 0',
+    'CI1_SUITE_FAILURE 1 1 0 1 0 15 0 0','CI1_SUITE_FAILURE 1 1 0 1 0 0 20 0',
+    'CI1_SUITE_FAILURE 1 1 0 1 0 0 0 18','x'.repeat(1024**2+1)])assert.deepEqual(ci1SuiteFailureFacts(value),{});
+  assert.equal(ci1SuiteDiagnostic(modules,Array(129).fill({})),null);
+  for(const diagnostic of ['PRIVATE_SECRET',true,42,[],null])assert.equal(ci1SuiteFailureMarker('T09',{hookErrorCount:1,errorCount:0,diagnostic}),null);
+  modules[0].children.allSuites=function*(){while(true)yield {errors:[]};};
+  assert.equal(ci1SuiteDiagnostic(modules,[]),null);
+});
+
+test('valid assertion-pass suite failure emits diagnostics without converting cleanup or unrun suite to PASS', async () => {
+  const adapter=fakeAdapter(),markers=[];
+  adapter.execute=async invocation=>{
+    const result=completed(invocation);result.exitCode=1;result.result.success=false;result.result.hookErrorCount=1;
+    result.result.diagnostic={originOrdinal:1,phaseOrdinal:3,stepOrdinal:9,codeOrdinal:11,sqlstateOrdinal:0};
+    return result;
+  };
+  adapter.preserved=async()=>false;
+  const output=JSON.parse((await runCi1Pilot(adapter,metadata(),marker=>markers.push(marker))).json);
+  assert.deepEqual(markers,['CI1_SUITE_FAILURE 1 1 0 1 3 9 11 0']);
+  assert.equal(output.overallStatus,'FAIL');assert.equal(output.checks.cleanup,'FAIL');
+  assert.equal(output.suites[0].status,'FAIL');assert.equal(output.suites[0].counts.pass,1);
+  assert.equal(output.suites[1].status,'NOT_RUN');assert.equal(output.totals.pass,null);
+  const sinkFailure=JSON.parse((await runCi1Pilot(adapter,metadata(),()=>{throw new Error('PRIVATE_SECRET');})).json);
+  assert.equal(sinkFailure.suites[0].status,'FAIL');assert.equal(sinkFailure.checks.cleanup,'FAIL');
+  const passMarkers=[];await runCi1Pilot(fakeAdapter(),metadata(),marker=>passMarkers.push(marker));
+  assert.deepEqual(passMarkers,[]);
+});
+
+test('preservation drift exposes only bounded component and financial masks with consistent bits', () => {
+  const before={components:Array(5).fill('a'.repeat(64)),financial:Array(6).fill('b'.repeat(32))};
+  const after=structuredClone(before);after.components[1]='c'.repeat(64);after.components[4]='d'.repeat(64);after.financial[2]='e'.repeat(32);
+  assert.equal(ci1PreservationMask(before,after),'CI1_PRESERVATION_FAILURE 18 4');
+  assert.deepEqual(ci1HarnessFailureFacts('CI1_PRESERVATION_FAILURE 18 4'),{preservationComponentDriftMask:18,preservationFinancialDriftMask:4});
+  assert.equal(ci1PreservationMask(before,before),null);
+  for(const key of ['components','financial']){
+    const sparse=structuredClone(before);delete sparse[key][0];assert.equal(ci1PreservationMask(sparse,before),null);assert.equal(ci1PreservationMask(before,sparse),null);
+    const newline=structuredClone(before);newline[key][0]+='\n';assert.equal(ci1PreservationMask(before,newline),null);
+  }
+  after.components[1]=before.components[1];assert.equal(ci1PreservationMask(before,after),null);
+  for(const value of ['CI1_PRESERVATION_FAILURE 32 0','CI1_PRESERVATION_FAILURE 2 64','CI1_PRESERVATION_FAILURE 0 0',
+    'CI1_PRESERVATION_FAILURE 1 1','CI1_PRESERVATION_FAILURE 2 0','CI1_PRESERVATION_FAILURE 01 0',
+    'CI1_PRESERVATION_FAILURE 1 0 PRIVATE_SECRET','CI1_PRESERVATION_FAILURE 1 0\nCI1_PRESERVATION_FAILURE 1 0'])assert.deepEqual(ci1PreservationFacts(value),{});
+});
+
+test('actual fixture capture and verification retain the original whole-snapshot hash acceptance', async () => {
+  const source=readFileSync(new URL('./permission-ci1-fixture.mjs',import.meta.url),'utf8');
+  const start=source.indexOf('const preservationHashes ='),end=source.indexOf('export async function closeCi1Fixture');
+  assert.ok(start>0&&end>start);
+  const hash=value=>createHash('sha256').update(typeof value==='string'?value:JSON.stringify(value)).digest('hex');
+  let value={catalog:'a'.repeat(64),financial:Array(6).fill('b'.repeat(32)),metadata:[{fake:'PRIVATE_SECRET'}],buckets:[],payloads:['c'.repeat(64)]};
+  const context={snapshot:async()=>value,state:{},hash,ci1PreservationMask};
+  runInNewContext(source.slice(start,end).replaceAll('export ','')+'\nthis.capture=captureCi1Baseline;this.verify=verifyCi1Baseline;',context);
+  const original=hash(value),baseline=await context.capture();assert.equal(baseline,original);
+  const markers=[];assert.equal(await context.verify(baseline,m=>markers.push(m)),true);assert.deepEqual(markers,[]);
+  value={...value,metadata:[{fake:'CHANGED_SECRET'}]};
+  assert.equal(await context.verify(baseline,m=>markers.push(m)),false);assert.deepEqual(markers,['CI1_PRESERVATION_FAILURE 4 0']);
+  assert.equal(await context.verify(baseline,()=>{throw new Error('PRIVATE_SECRET');}),false);
+  assert.equal(await context.verify(hash(value)),true); // Same original equality rule, independent of diagnostic state.
+  assert.equal(await context.verify(null),false);
+  assert.ok(!JSON.stringify(markers).includes('SECRET'));
+});
 
 test('harness setup diagnostics export only bounded phase and failure ordinals', () => {
   const error = Object.assign(new Error('PRIVATE_SECRET'), {status:1,stderr:'npm error code ENOTCACHED\nnpm error PRIVATE_SECRET /private/path\n'});
