@@ -29,21 +29,33 @@ export function checkoutGit(root, args) {
     { encoding: 'utf8', timeout: 30000, maxBuffer: 8 * 1024 ** 2, stdio: ['ignore', 'pipe', 'pipe'] });
 }
 
-export function allocatedBytes(roots) {
+export function coreLimitDisabled(text) {
+  const value = /^Max core file size\s+(\S+)\s+(\S+)\s+bytes\s*$/m.exec(text);
+  return value?.[1] === '0' && value[2] === '0';
+}
+
+export function allocatedBytes(roots, facts = null) {
   const seen = new Set(); let bytes = 0;
+  let coreFiles = 0, coreBytes = 0, largest = 0;
   const walk = path => {
     const item = lstatSync(path, { throwIfNoEntry: false });
     if (!item || item.isSymbolicLink()) return;
     const key = `${item.dev}:${item.ino}`;
     if (seen.has(key)) return;
     seen.add(key);
-    bytes += item.blocks === undefined ? item.size : item.blocks * 512;
+    const allocated = item.blocks === undefined ? item.size : item.blocks * 512;
+    bytes += allocated;
+    if (item.isFile()) {
+      largest = Math.max(largest, allocated);
+      if (/(?:^|[/\\])core(?:\.[0-9]+)?$/.test(path)) { coreFiles++; coreBytes += allocated; }
+    }
     if (item.isDirectory()) {
       let names; try { names = readdirSync(path); } catch (error) { if (error.code === 'ENOENT') return; throw error; }
       for (const name of names) if (name !== '.git') walk(join(path, name));
     }
   };
   for (const root of roots) walk(root);
+  if (facts) Object.assign(facts, { ownedBytesAtCheckpoint: bytes, coreFileCount: coreFiles, coreAllocatedBytes: coreBytes, largestOwnedFileBytes: largest });
   return bytes;
 }
 
@@ -108,6 +120,8 @@ export async function main() {
   const guardFacts = {};
   const guardRefuse = code => { throw Object.assign(new Error('PROJECT_CI_GUARD'), { code }); };
   const guard = () => {
+    if (!coreLimitDisabled(readFileSync('/proc/self/limits', 'utf8'))) guardRefuse('RESOURCE_CORE_LIMIT');
+    guardFacts.kernelCorePipe = readFileSync('/proc/sys/kernel/core_pattern', 'utf8').startsWith('|') ? 1 : 0;
     for (const [file, key] of [['memory.current', 'memoryCurrentBytes'], ['pids.current', 'pidsCurrent']])
       guardFacts[key] = Number(readFileSync(join(cgroup, file), 'utf8').trim());
     guardFacts.peakMemoryBytes = Math.max(guardFacts.peakMemoryBytes ?? 0, guardFacts.memoryCurrentBytes);
@@ -116,12 +130,15 @@ export async function main() {
       for (const line of readFileSync(join(cgroup, file), 'utf8').trim().split('\n')) {
         const [key, value] = line.split(/\s+/); if (keys[key]) guardFacts[keys[key]] = Number(value);
       }
+    let freeNow = Number.MAX_SAFE_INTEGER;
     for (const path of [root, task]) {
       const disk = statfsSync(path), free = disk.bavail * disk.bsize;
       guardFacts.minimumObservedFreeBytes = Math.min(guardFacts.minimumObservedFreeBytes ?? Number.MAX_SAFE_INTEGER, free);
-      if (free < 30 * GiB) guardRefuse('RESOURCE_FREE_SPACE');
+      freeNow = Math.min(freeNow, free);
     }
-    peak = Math.max(peak, allocatedBytes([root, task]));
+    guardFacts.initialFreeBytes ??= freeNow;
+    peak = Math.max(peak, allocatedBytes([root, task], guardFacts));
+    if (freeNow < 30 * GiB) guardRefuse('RESOURCE_FREE_SPACE');
     if (peak > 5 * GiB) guardRefuse('RESOURCE_OWNED_CAP');
     for (const [name, value] of Object.entries(limits)) if (readFileSync(join(cgroup, name), 'utf8').trim() !== value) guardRefuse('RESOURCE_CGROUP_DRIFT');
   };

@@ -57,7 +57,7 @@ export function ci1ToolsIntake(manifest) {
 export function ci1CheckTarListing(text, id) {
   if (!['node', 'supabase', 'npm'].includes(id) || typeof text !== 'string' || text.length > 1024 ** 2) refuse();
   const lines = text.trim().split('\n');
-  let size = 0;
+  let size = 0; const binaries = new Set();
   for (const line of lines) {
     // GNU tar -tvf; reject unusual records, devices, hardlinks and escaping names.
     const match = line.match(/^([-dl])[rwxstST-]{9}\s+\S+\s+(\d+)\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+(.+)$/);
@@ -66,7 +66,10 @@ export function ci1CheckTarListing(text, id) {
     const parts = name.replace(/\/$/, '').split('/');
     if (name.startsWith('/') || parts.some(part => !part || part === '..' || /[\r\n\0]/.test(part))) refuse();
     if (id === 'node' && parts[0] !== 'node-v24.16.0-linux-x64') refuse();
-    if (id === 'supabase' && (parts.length !== 1 || !['supabase', 'LICENSE', 'README.md'].includes(parts[0]))) refuse();
+    if (id === 'supabase') {
+      if (parts.length !== 1 || !['supabase', 'supabase-go'].includes(parts[0]) || match[1] !== '-' || binaries.has(parts[0])) refuse();
+      binaries.add(parts[0]);
+    }
     if (id === 'npm' && parts[0] !== 'package') refuse();
     if (target !== undefined) {
       const destination = posix.normalize(posix.join(posix.dirname(name), target));
@@ -76,6 +79,7 @@ export function ci1CheckTarListing(text, id) {
     size += Number(match[2]);
     if (!Number.isSafeInteger(size) || size > CI1_SETUP.unpackBytes) refuse();
   }
+  if (id === 'supabase' && (binaries.size !== 2 || !binaries.has('supabase') || !binaries.has('supabase-go'))) refuse();
   return { entries: lines.length, unpackedBytes: size };
 }
 

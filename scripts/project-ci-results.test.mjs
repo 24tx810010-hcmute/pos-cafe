@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, existsSync, linkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { sourceBinding, vitestCounts, nodeCounts, smokeCounts, uiCounts, publicSummary, privateDiagnostics, guardFailureCode, PROJECTS, PROJECT_PHASES, hash } from './project-ci-results.mjs';
-import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit } from './project-ci.mjs';
+import { capturedCommand, trackedFingerprint, lightEnvironment, checkoutGit, allocatedBytes, coreLimitDisabled } from './project-ci.mjs';
 import { lightService } from './project-ci-launch.mjs';
 import { backendInvocation } from './project-backend.mjs';
 import { verifyReleaseRun, verifyReleaseEnvironment, verifyReleaseFiles, productionCommands, PRODUCTION_ENABLED } from './project-release.mjs';
@@ -125,7 +125,21 @@ test('light supervisor constrains descendants and passes no credential environme
   const args = lightService({ ...env, GITHUB_TOKEN: 'FAKE_PRIVATE_TOKEN' }, '/node', '/source');
   assert.ok(args.includes('--property=KillMode=control-group'));
   assert.ok(args.includes('--property=MemorySwapMax=0'));
+  assert.ok(args.includes('--property=LimitCORE=0'));
+  assert.equal(coreLimitDisabled('Max core file size        0        0        bytes\n'), true);
+  assert.equal(coreLimitDisabled('Max core file size        0        unlimited        bytes\n'), false);
+  assert.equal(coreLimitDisabled('Max core file size        unlimited        unlimited        bytes\n'), false);
   assert.equal(args.join(' ').includes('FAKE_PRIVATE_TOKEN'), false);
+});
+
+test('allocation facts deduplicate overlapping roots and hardlinks without treating logical bytes as allocated bytes', () => {
+  const root=mkdtempSync(join(tmpdir(),'pos-ci-owned-'));
+  writeFileSync(join(root,'core.1'),Buffer.alloc(32));linkSync(join(root,'core.1'),join(root,'core.2'));
+  const facts={},bytes=allocatedBytes([root,root],facts);
+  assert.equal(facts.coreFileCount,1);
+  assert.equal(facts.ownedBytesAtCheckpoint,bytes);
+  assert.ok(facts.coreAllocatedBytes>=0&&facts.coreAllocatedBytes<=bytes);
+  assert.equal(Object.values(facts).every(Number.isSafeInteger),true);
 });
 
 test('light npm loads two separate empty configs and ignores inherited credentials', () => {

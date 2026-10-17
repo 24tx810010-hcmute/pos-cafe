@@ -33,23 +33,31 @@ const failureOperations = ['SOURCE_INTAKE', 'SOURCE_CLONE', 'SOURCE_REF', 'SOURC
 const failureCommands = ['git', 'tar', 'node', 'npm', 'supabase', 'fallocate', 'losetup', 'mkfs.ext4', 'mount', 'umount',
   'cp', 'mv', 'docker', 'unshare', 'systemd-run', 'systemctl', 'findmnt', 'containerd', 'dockerd'];
 const failureCodes = ['GUARD_REFUSED', 'INTAKE_REFUSED', 'COMMAND_FAILED', 'COMMAND_TIMEOUT', 'OUTPUT_LIMIT',
-  'IO_MISSING', 'IO_NOTDIR', 'IO_DENIED', 'JS_TYPE_ERROR', 'UNKNOWN'];
+  'IO_MISSING', 'IO_NOTDIR', 'IO_DENIED', 'JS_TYPE_ERROR', 'SUPERVISOR_REFUSED', 'LOOP_REFUSED', 'CONTROL_REFUSED', 'UNKNOWN'];
+const failureMetrics = ['hostFreeBytes', 'memoryBytes', 'oom', 'pidsEvents', 'memoryCurrentBytes', 'pidsCurrent',
+  'cpuMatches', 'memoryLimitMatches', 'swapLimitMatches', 'pidsLimitMatches', 'cgroupMatches', 'runtimeMatches', 'loggingMatches',
+  'loopImageBytes', 'loopAllocatedBytes', 'loopFilesystemBytes', 'loopFreeBytes', 'loopOffset', 'loopSizeLimit', 'mountMatches', 'ownerMatches'];
 export function ci1FailureExport(value) {
   if (!value || typeof value !== 'object') return null;
-  return {
+  const output = {
     stage: failureStages.includes(value.stage) ? value.stage : 'supervisor',
     operation: failureOperations.includes(value.operation) ? value.operation : null,
     code: failureCodes.includes(value.code) ? value.code : 'UNKNOWN',
     command: failureCommands.includes(value.command) ? value.command : null,
     exitCode: Number.isSafeInteger(value.exitCode) && value.exitCode >= 0 && value.exitCode <= 255 ? value.exitCode : null,
   };
+  const facts = Object.fromEntries(Object.entries(value.facts ?? {}).filter(([key, number]) =>
+    failureMetrics.includes(key) && Number.isSafeInteger(number) && number >= 0));
+  if (Object.keys(facts).length) output.facts = facts;
+  return output;
 }
 const failureDetails = (error, stage, operation) => ci1FailureExport({stage, operation,
-  code: ({ENOENT:'IO_MISSING',ENOTDIR:'IO_NOTDIR',EACCES:'IO_DENIED',ETIMEDOUT:'COMMAND_TIMEOUT',
+  code: ['SUPERVISOR_REFUSED','LOOP_REFUSED','CONTROL_REFUSED'].includes(error?.ci1FailureCode) ? error.ci1FailureCode
+    : ({ENOENT:'IO_MISSING',ENOTDIR:'IO_NOTDIR',EACCES:'IO_DENIED',ETIMEDOUT:'COMMAND_TIMEOUT',
     ENOBUFS:'OUTPUT_LIMIT',ERR_CHILD_PROCESS_STDIO_MAXBUFFER:'OUTPUT_LIMIT'})[error?.code]
     ?? (error?.message === 'CI1_WORKER_REFUSED' ? 'GUARD_REFUSED' : error?.message === 'CI1_INTAKE_REFUSED'
       ? 'INTAKE_REFUSED' : error?.name === 'TypeError' ? 'JS_TYPE_ERROR' : Number.isInteger(error?.status) ? 'COMMAND_FAILED' : 'UNKNOWN'),
-  command:error?.ci1Command,exitCode:error?.status});
+  command:error?.ci1Command,exitCode:error?.status,facts:error?.ci1Facts});
 
 function taskControl(layout, env) {
   const directory = lstatSync(layout.task), path = `${layout.task}/run-control.json`, info = lstatSync(path);
@@ -62,17 +70,24 @@ function taskControl(layout, env) {
 }
 
 function loopControl(layout) {
+  const facts = {};
+  try {
   const root = layout.volume, options = { encoding: 'utf8', timeout: 10000, maxBuffer: 8192, stdio: ['ignore', 'pipe', 'pipe'] };
   const mount = JSON.parse(execFileSync('findmnt', ['--json', '--target', root, '--output', 'TARGET,SOURCE,FSTYPE'], options)).filesystems[0];
   if (mount.target !== root || mount.fstype !== 'ext4' || !/^\/dev\/loop[0-9]+$/.test(mount.source)) refused();
   const loop = JSON.parse(execFileSync('losetup', ['--json', '--list', '--output', 'BACK-FILE,OFFSET,SIZELIMIT', mount.source], options)).loopdevices[0];
   const image = lstatSync(layout.image), filesystem = statfsSync(root);
+  Object.assign(facts, {loopImageBytes:image.size,loopAllocatedBytes:image.blocks*512,
+    loopFilesystemBytes:filesystem.blocks*filesystem.bsize,loopFreeBytes:filesystem.bavail*filesystem.bsize,
+    loopOffset:Number(loop.offset),loopSizeLimit:Number(loop.sizelimit),
+    mountMatches:mount.target===root&&mount.fstype==='ext4'?1:0,ownerMatches:image.uid===0?1:0});
   if (!image.isFile() || image.isSymbolicLink() || image.uid !== 0 || realpathSync(loop['back-file']) !== layout.image
     || Number(loop.offset) !== 0 || Number(loop.sizelimit) !== CI1_LIMITS.filesystemBytes || image.size !== CI1_LIMITS.filesystemBytes
     || image.blocks * 512 < CI1_LIMITS.filesystemBytes || image.blocks * 512 > CI1_LIMITS.filesystemBytes + 1024 ** 2
     || filesystem.blocks * filesystem.bsize > CI1_LIMITS.filesystemBytes
     || filesystem.bavail * filesystem.bsize < CI1_LIMITS.filesystemReserveBytes) refused();
   return true;
+  } catch (error) { error.ci1FailureCode='LOOP_REFUSED';error.ci1Facts=facts;throw error; }
 }
 
 export function ci1WorkerPlan(runId, attempt) {
@@ -131,7 +146,7 @@ function commandRunner(env, guard = () => {}) {
 
 function supervisor(layout, env) {
   runnerGuard(env);
-  taskControl(layout, env);
+  try { taskControl(layout, env); } catch (error) { error.ci1FailureCode='CONTROL_REFUSED';throw error; }
   const cgroup = `/system.slice/${layout.identity.unit}`, cg = '/sys/fs/cgroup' + cgroup;
   const scalar = name => readFileSync(`${cg}/${name}`, 'utf8').trim();
   const metric = (file, name) => Number(scalar(file).split('\n').find(line => line.startsWith(name + ' '))?.split(' ')[1] ?? -1);
@@ -146,8 +161,19 @@ function supervisor(layout, env) {
     stdout: show('StandardOutput'), stderr: show('StandardError'),
     oom: metric('memory.events', 'oom') + metric('memory.events', 'oom_kill'), pidsEvents: metric('pids.events', 'max'),
     hostFreeBytes: host.bavail * host.bsize };
-  assertCi1Supervisor(proof, layout.identity);
-  if (Number(scalar('memory.current')) >= CI1_LIMITS.memoryBytes || Number(scalar('pids.current')) >= CI1_LIMITS.pids) refused();
+  const memoryCurrentBytes=Number(scalar('memory.current')),pidsCurrent=Number(scalar('pids.current'));
+  try {
+    assertCi1Supervisor(proof, layout.identity);
+    if (memoryCurrentBytes >= CI1_LIMITS.memoryBytes || pidsCurrent >= CI1_LIMITS.pids) refused();
+  } catch (error) {
+    error.ci1FailureCode='SUPERVISOR_REFUSED';
+    error.ci1Facts={hostFreeBytes:proof.hostFreeBytes,memoryBytes:proof.memoryBytes,oom:proof.oom,pidsEvents:proof.pidsEvents,memoryCurrentBytes,pidsCurrent,
+      cpuMatches:proof.cpuMax===`${CI1_LIMITS.cpuQuota} ${CI1_LIMITS.cpuPeriod}`?1:0,memoryLimitMatches:proof.memoryMax===String(CI1_LIMITS.memoryBytes)?1:0,
+      swapLimitMatches:proof.swapMax==='0'?1:0,pidsLimitMatches:proof.pidsMax===String(CI1_LIMITS.pids)?1:0,
+      cgroupMatches:proof.cgroup===`${cgroup}/supervisor`?1:0,runtimeMatches:proof.runtime==='30min'?1:0,
+      loggingMatches:proof.stdout==='null'&&proof.stderr==='null'?1:0};
+    throw error;
+  }
   if (existsSync(layout.volume) && statSync(layout.volume).dev !== statSync(layout.task).dev) {
     loopControl(layout);
   }
@@ -516,8 +542,10 @@ async function setup(layout, input, parentEnv) {
         }
         operation = 'PLACE_TOOLS';
         run('mv', [`${root}/runtime/node-v24.16.0-linux-x64`, `${root}/runtime/node`]);
-        run('mv', [`${root}/runtime/supabase`, `${root}/runtime/bin/supabase`]);
-        chmodSync(`${root}/runtime/bin/supabase`, 0o700);
+        for (const name of ['supabase', 'supabase-go']) {
+          run('mv', [`${root}/runtime/${name}`, `${root}/runtime/bin/${name}`]);
+          chmodSync(`${root}/runtime/bin/${name}`, 0o700);
+        }
         operation = 'TOOL_VERSIONS';
         if (run(`${root}/runtime/node/bin/node`, ['--version']).trim() !== 'v24.16.0'
           || run(`${root}/runtime/node/bin/npm`, ['--version']).trim() !== '11.13.0'

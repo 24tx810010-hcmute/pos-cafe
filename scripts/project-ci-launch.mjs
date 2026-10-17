@@ -11,7 +11,7 @@ export function lightService(env, node, root) {
     'GITHUB_SHA', 'GITHUB_WORKFLOW_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_STEP_SUMMARY', 'RUNNER_TEMP', 'RUNNER_ENVIRONMENT'];
   const args = ['systemd-run', '--quiet', '--wait', '--pipe', '--collect', `--unit=${unit}`, `--working-directory=${root}`,
     '--property=CPUQuota=300%', '--property=MemoryMax=8G', '--property=MemorySwapMax=0', '--property=TasksMax=1024',
-    '--property=RuntimeMaxSec=25min', '--property=TimeoutStopSec=10s', '--property=KillMode=control-group',
+    '--property=RuntimeMaxSec=25min', '--property=TimeoutStopSec=10s', '--property=KillMode=control-group', '--property=LimitCORE=0',
     ...names.filter(name => env[name]).map(name => `--setenv=${name}=${env[name]}`), node, resolve(root, 'scripts/project-ci.mjs')];
   if (args.some(arg => /[\r\n\0]/.test(arg))) throw new Error('PROJECT_CI_LAUNCH_INVALID');
   return args;

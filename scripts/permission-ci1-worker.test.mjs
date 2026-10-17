@@ -68,6 +68,9 @@ test('worker failure reports finite stage/operation/command and teardown without
     command:'FAKE_UNIT_SECRET',exitCode:-1,raw:'FAKE_UNIT_SECRET'});
   assert.equal(JSON.stringify(safe).includes('FAKE_UNIT_SECRET'),false);
   assert.equal(safe.code,'UNKNOWN'); assert.equal(safe.exitCode,null);
+  const facts = ci1FailureExport({code:'LOOP_REFUSED',facts:{loopAllocatedBytes:123,raw:'FAKE_UNIT_SECRET',loopFreeBytes:-1}});
+  assert.deepEqual(facts.facts,{loopAllocatedBytes:123});
+  assert.equal(JSON.stringify(facts).includes('FAKE_UNIT_SECRET'),false);
 });
 
 test('daemon acquisition retains each child before PID-write/readiness/second-spawn failures', async () => {

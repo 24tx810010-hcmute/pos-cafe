@@ -59,6 +59,15 @@ test('archive inspection refuses traversal, devices, hardlinks and excessive exp
   assert.throws(() => ci1CheckTarListing(file, 'supabase'));
 });
 
+test('pinned Supabase two-binary archive requires both colocated regular files and rejects extra or duplicate entries', () => {
+  const file='-rwxr-xr-x 1001/1001 95393248 2026-09-07 16:40 supabase';
+  const companion='-rwxr-xr-x 1001/1001 40521890 2026-09-07 16:40 supabase-go';
+  assert.deepEqual(ci1CheckTarListing(file+'\n'+companion,'supabase'),{entries:2,unpackedBytes:135915138});
+  for(const value of [file,file+'\n'+file,file+'\n'+companion.replace('supabase-go','../supabase-go'),
+    file+'\n'+companion.replace('supabase-go','unknown'),file+'\n'+companion.replace('-rwx','lrwx')])
+    assert.throws(()=>ci1CheckTarListing(value,'supabase'));
+});
+
 test('supervisor proof refuses missing/lax hardware, public-runner, logging and reserve facts', () => {
   assert.equal(assertCi1Supervisor(unitSupervisor(), identity), true);
   for (const [key, value] of Object.entries({ platform: 'win32', root: false, wsl: true, authorized: false,
