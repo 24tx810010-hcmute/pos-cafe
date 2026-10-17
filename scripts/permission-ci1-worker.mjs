@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { cpus, totalmem } from 'node:os';
 import { coreDumpDisabled } from './project-ci-launch.mjs';
 import { CI1_LIMITS, CI1_PROJECT, CI1_RUNTIME, ci1ProcessEnvironment, assertCi1Envelope, ci1TrustedRepository } from './permission-ci1-policy.mjs';
-import { ci1LinuxRecipe, readCi1LinuxEnvelope, ci1SystemdProperty } from './permission-ci1-harness.mjs';
+import { ci1LinuxRecipe, readCi1LinuxEnvelope, ci1SystemdProperty, ci1HarnessFailureFacts } from './permission-ci1-harness.mjs';
 import { renderCi1Evidence } from './permission-ci1-evidence.mjs';
 import { CI1_SETUP, ci1BytesHash, ci1NpmIntake, ci1ToolsIntake, ci1CheckTarListing, ci1EdgeIntake,
   assertCi1Supervisor, ci1WorkerLayout, ci1ImagesIntake } from './permission-ci1-intake.mjs';
@@ -51,7 +51,8 @@ const failureMetrics = ['hostFreeBytes', 'memoryBytes', 'oom', 'pidsEvents', 'me
   'cpuMatches', 'memoryLimitMatches', 'swapLimitMatches', 'pidsLimitMatches', 'cgroupMatches', 'runtimeMatches', 'loggingMatches',
   'loopImageBytes', 'loopAllocatedBytes', 'loopFilesystemBytes', 'loopFreeBytes', 'loopOffset', 'loopSizeLimit', 'mountMatches', 'ownerMatches', 'imageOrdinal', 'edgePackageOrdinal',
   'edgeVersionMajor', 'edgeVersionMinor', 'edgeVersionPatch', 'edgeVersionCopy', 'edgeCacheEntryCount', 'edgeRegistryMetadataPresent', 'loopNestedMounts',
-  'isolatedFailureSeen', 'isolatedCleanupFailed', 'systemdPropertyOrdinal', 'imagePullAttempt', 'imageRegistryOrdinal'];
+  'isolatedFailureSeen', 'isolatedCleanupFailed', 'systemdPropertyOrdinal', 'imagePullAttempt', 'imageRegistryOrdinal',
+  'harnessPhaseOrdinal', 'harnessFailureOrdinal', 'harnessExitOrdinal', 'harnessNpmFailureOrdinal'];
 
 export async function ci1PullImage(run, reference, guard = () => {}, wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)), onAttempt = () => {}) {
   if (typeof reference !== 'string' || !/^public\.ecr\.aws\/supabase\/[a-z0-9._-]+@sha256:[a-f0-9]{64}$/.test(reference)) refused();
@@ -619,8 +620,9 @@ async function offlinePhase(layout, source, env) {
     operation = 'OFFLINE_CACHE_FINAL';
     if (ci1EdgeCacheProof(cacheRoot, expected).sha256 !== before.sha256) refused();
     operation = 'PILOT_HARNESS';
-    run(`${root}/runtime/node/bin/node`, [`${source}/scripts/permission-ci1-harness.mjs`, 'run', root],
-      { cwd: source, timeout: 900000 });
+    try { run(`${root}/runtime/node/bin/node`, [`${source}/scripts/permission-ci1-harness.mjs`, 'run', root],
+      { cwd: source, timeout: 900000 }); }
+    catch (error) { error.ci1Facts = {...error.ci1Facts, ...ci1HarnessFailureFacts(error.stderr)}; throw error; }
   } catch (error) { failure = failureDetails(error, 'offline-edge', operation); }
   finally {
     if (pair) {

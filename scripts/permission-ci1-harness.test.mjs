@@ -2,13 +2,33 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { resolve } from 'node:path';
 import { CI1_LIMITS, CI1_PROJECT, CI1_RUNTIME, CI1_SUITES, assertCi1Envelope, assertCi1WriteBoundary, ci1ProcessEnvironment, ci1Identity, ci1Invocation, ci1SuiteResult } from './permission-ci1-policy.mjs';
-import { runCi1Pilot, ci1LinuxRecipe, ci1ContainersCoreDisabled, ci1SystemdProperty } from './permission-ci1-harness.mjs';
+import { runCi1Pilot, ci1LinuxRecipe, ci1ContainersCoreDisabled, ci1SystemdProperty, ci1HarnessFailureMarker, ci1HarnessFailureFacts } from './permission-ci1-harness.mjs';
 import { summarizeCi1Modules } from './permission-ci1-vitest-reporter.mjs';
 import { assertCi1Supervisor } from './permission-ci1-intake.mjs';
 import { runCi1Worker } from './permission-ci1-worker.mjs';
 
 // All adapters/proofs below are fake unit data. No Linux/DB/CI operation is run.
 const identity = ci1Identity('12345', 1);
+
+test('harness setup diagnostics export only bounded phase and failure ordinals', () => {
+  const error = Object.assign(new Error('PRIVATE_SECRET'), {status:1,stderr:'npm error code ENOTCACHED\nnpm error PRIVATE_SECRET /private/path\n'});
+  const marker = ci1HarnessFailureMarker(4,error);
+  assert.equal(marker,'CI1_HARNESS_FAILURE 4 9 1 1');
+  assert.deepEqual(ci1HarnessFailureFacts(marker+'\nCI1_HARNESS_BLOCKED\n'),{
+    harnessPhaseOrdinal:4,harnessFailureOrdinal:9,harnessExitOrdinal:1,harnessNpmFailureOrdinal:1});
+  assert.equal(ci1HarnessFailureMarker(3,error),'CI1_HARNESS_FAILURE 3 9 1 0');
+  assert.equal(ci1HarnessFailureMarker(4,{code:'ETIMEDOUT'}),'CI1_HARNESS_FAILURE 4 5 256 0');
+  for(const phase of [0,16,NaN,'4'])assert.throws(()=>ci1HarnessFailureMarker(phase,error));
+  assert.ok(!JSON.stringify(ci1HarnessFailureFacts(marker)).includes('PRIVATE_SECRET'));
+});
+test('malformed, duplicated and unbounded private harness markers cannot create facts', () => {
+  for(const value of ['CI1_HARNESS_FAILURE 4 9 1 1 PRIVATE_SECRET','CI1_HARNESS_FAILURE 16 9 1 1',
+    'CI1_HARNESS_FAILURE 4 11 1 1','CI1_HARNESS_FAILURE 4 9 257 1','CI1_HARNESS_FAILURE 3 9 1 1',
+    'CI1_HARNESS_FAILURE 04 9 1 1','CI1_HARNESS_FAILURE 4 9 -1 1',
+    'CI1_HARNESS_FAILURE 4 9 1 1\nCI1_HARNESS_FAILURE 4 9 1 1','x'.repeat(1024**2+1)])
+    assert.deepEqual(ci1HarnessFailureFacts(value),{});
+  assert.equal(ci1HarnessFailureMarker(4,{stderr:'npm error code ENOTCACHED\nnpm error code EACCES\n'}),'CI1_HARNESS_FAILURE 4 10 256 0');
+});
 
 test('live systemd reads use only five exact properties on the owned unit over the ordinary system bus', () => {
   const values={RuntimeMaxUSec:['t 1800000000','30min'],TimeoutStopUSec:['t 30000000','30s'],

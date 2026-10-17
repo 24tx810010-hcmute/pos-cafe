@@ -16,6 +16,32 @@ const readJSON = path => {
 const child = (command, args, options = {}) => execFileSync(command, args,
   { encoding: 'utf8', maxBuffer: CI1_LIMITS.outputBytes, timeout: 30000, stdio: ['ignore', 'pipe', 'pipe'], ...options });
 
+// Private stderr transport: only fixed numeric facts cross the worker boundary.
+export function ci1HarnessFailureMarker(phase, error) {
+  if (!Number.isSafeInteger(phase) || phase < 1 || phase > 15) refused();
+  const code = ['CI1_HARNESS_REFUSED', 'CI1_GUARD_REFUSED'].includes(error?.message) ? 1
+    : ({ENOENT:2,ENOTDIR:3,EACCES:4,EPERM:4,ETIMEDOUT:5,ENOBUFS:6,ERR_CHILD_PROCESS_STDIO_MAXBUFFER:6})[error?.code]
+      ?? (error?.name === 'TypeError' ? 7 : error?.name === 'SyntaxError' ? 8 : Number.isInteger(error?.status) ? 9 : 10);
+  const exit = Number.isInteger(error?.status) && error.status >= 0 && error.status <= 255 ? error.status : 256;
+  let npm = 0;
+  if (phase === 4 && typeof error?.stderr === 'string' && Buffer.byteLength(error.stderr) <= CI1_LIMITS.outputBytes) {
+    const codes = [...new Set([...error.stderr.matchAll(/^npm (?:error|ERR!) code ([A-Z_]+)\s*$/gm)].map(m=>m[1]))];
+    if (codes.length === 1) npm = ({ENOTCACHED:1,EACCES:2,ENOSPC:3,ELIFECYCLE:4,EINTEGRITY:5,
+      ENETUNREACH:6,EAI_AGAIN:6,ECONNREFUSED:6,ERESOLVE:7,EBADENGINE:8})[codes[0]] ?? 0;
+  }
+  return `CI1_HARNESS_FAILURE ${phase} ${code} ${exit} ${npm}`;
+}
+export function ci1HarnessFailureFacts(stderr) {
+  if (typeof stderr !== 'string' || Buffer.byteLength(stderr) > CI1_LIMITS.outputBytes) return {};
+  const lines = stderr.split(/\r?\n/).filter(line=>line.startsWith('CI1_HARNESS_FAILURE'));
+  if (lines.length !== 1) return {};
+  const match = /^CI1_HARNESS_FAILURE ([1-9][0-9]?) ([1-9][0-9]?) (0|[1-9][0-9]{0,2}) ([0-8])$/.exec(lines[0]);
+  if (!match) return {};
+  const [phase, code, exit, npm] = match.slice(1).map(Number);
+  if (phase > 15 || code > 10 || exit > 256 || (phase !== 4 && npm !== 0)) return {};
+  return {harnessPhaseOrdinal:phase,harnessFailureOrdinal:code,harnessExitOrdinal:exit,harnessNpmFailureOrdinal:npm};
+}
+
 // systemctl's root shortcut checks the peer PID of the host manager, which is
 // not visible inside our private PID namespace. Query the ordinary filesystem
 // system bus instead; these are live read-only properties of the exact unit.
@@ -197,22 +223,30 @@ export function readCi1LinuxEnvelope(root, identity, env = process.env) {
   };
 }
 
-async function realAdapter(root, identity) {
+async function realAdapter(root, identity, mark = () => {}) {
   const source = realpathSync(process.cwd()), privateRoot = join(root, 'private');
+  mark(2);
   assertCi1Envelope(readCi1LinuxEnvelope(root, identity), identity);
+  mark(3);
   if (process.versions.node !== '24.16.0' || existsSync(join(privateRoot, 'bridge.env'))
     || lstatSync(join(source, 'node_modules'), { throwIfNoEntry: false })) refused();
   const lockBefore = ci1Hash(readFileSync('package-lock.json', 'utf8'));
   const installEnv = ci1ProcessEnvironment(root, process.env);
   // Fresh exact-lock install is offline, confined to the already verified volume.
   // No fallback to online/npm-global/cache from the host.
+  mark(4);
   child('npm', ['ci', '--offline', '--cache', `${root}/npm-cache`, '--no-audit', '--no-fund'],
     { env: installEnv, timeout: CI1_LIMITS.phaseTimeoutMs });
+  mark(5);
   if (ci1Hash(readFileSync('package-lock.json', 'utf8')) !== lockBefore) refused();
+  mark(6);
   assertCi1Envelope(readCi1LinuxEnvelope(root, identity), identity);
+  mark(7);
   const runtime = await import('./permission-identity-runtime.mjs');
   const fixture = await import('./permission-ci1-fixture.mjs');
+  mark(8);
   const pinned = fixture.verifyCi1ImagePins();
+  mark(9);
   const fingerprint = (await import('./permission-preflight-core.mjs')).permissionFingerprint;
   const adapter = {
     source, privateRoot, envelope: () => { fixture.verifyCi1ImagePins(); return readCi1LinuxEnvelope(root, identity); }, sourceFingerprint: fingerprint,
@@ -262,22 +296,32 @@ async function realAdapter(root, identity) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  let phase = 1;
   try {
     if (process.argv[2] === 'plan' && process.argv.length === 5) {
       console.log(JSON.stringify(ci1LinuxRecipe(process.argv[3], Number(process.argv[4])), null, 2));
     } else if (process.argv[2] === 'run' && process.argv.length === 4) {
       const identity = ci1Identity(process.env.GITHUB_RUN_ID, Number(process.env.GITHUB_RUN_ATTEMPT));
       if (!/^[a-f0-9]{40}$/.test(process.env.GITHUB_WORKFLOW_SHA ?? '') || process.env.GITHUB_WORKFLOW_SHA.length !== 40) refused();
-      const root = realpathSync(process.argv[3]), adapter = await realAdapter(root, identity);
+      const root = realpathSync(process.argv[3]), adapter = await realAdapter(root, identity, value=>{phase=value;});
+      phase = 10;
+      const sourceSHA = child('git', ['rev-parse', 'HEAD']).trim();
+      phase = 11;
+      const sourceFingerprint = await adapter.sourceFingerprint();
+      phase = 12;
+      const npm = child('npm', ['--version']).trim();
       const metadata = { repository: process.env.GITHUB_REPOSITORY, runId: identity.runId, attempt: identity.attempt,
-        workflowSHA: process.env.GITHUB_WORKFLOW_SHA, sourceSHA: child('git', ['rev-parse', 'HEAD']).trim(),
-        sourceFingerprint: await adapter.sourceFingerprint(), lockSHA: ci1Hash(readFileSync('package-lock.json', 'utf8')),
-        versions: { node: process.versions.node, npm: child('npm', ['--version']).trim(), supabase: '2.117.0' } };
+        workflowSHA: process.env.GITHUB_WORKFLOW_SHA, sourceSHA,
+        sourceFingerprint, lockSHA: ci1Hash(readFileSync('package-lock.json', 'utf8')),
+        versions: { node: process.versions.node, npm, supabase: '2.117.0' } };
+      phase = 13;
       const output = await runCi1Pilot(adapter, metadata);
+      phase = 14;
       writeFileSync(join(root, 'private', 'public-evidence.json'), output.json, { flag: 'wx', mode: 0o600 });
+      phase = 15;
       writeFileSync(join(root, 'private', 'public-summary.md'), output.markdown, { flag: 'wx', mode: 0o600 });
       // Export/publish belongs to the separately approved future workflow.
       if (JSON.parse(output.json).overallStatus !== 'PASS') process.exitCode = 1;
     } else refused();
-  } catch { console.error('CI1_HARNESS_BLOCKED'); process.exitCode = 78; }
+  } catch (error) { console.error(ci1HarnessFailureMarker(phase, error)); console.error('CI1_HARNESS_BLOCKED'); process.exitCode = 78; }
 }
