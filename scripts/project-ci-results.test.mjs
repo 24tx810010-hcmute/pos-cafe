@@ -136,6 +136,25 @@ test('trace distinguishes configured timeout from observed fixed-locator expect 
     assert.ok(privateDiagnostics(text,null).codes.includes('TEST_TIMEOUT'));
 });
 
+test('renderer crash protocol signals stay finite and never expose captured protocol content', () => {
+  for(const line of ['pw:protocol RECV {"method":"Inspector.targetCrashed","private":"FAKE_TRACE_PRIVATE_TOKEN"}',
+    'pw:api Page crashed FAKE_TRACE_PRIVATE_TOKEN','pw:browser [pid=123][err] Received signal 11 FAKE_TRACE_PRIVATE_TOKEN']) {
+    const diagnostic=privateDiagnostics(line,null);
+    assert.ok(diagnostic.codes.includes('BROWSER_RENDERER_CRASH'));
+    const safe=publicSummary(binding,[{id:'install',status:'FAIL',exitCode:1,elapsedMs:1,invocationSHA:digest,reportSHA:digest,diagnostic}],{source:digest,lock:digest});
+    assert.equal(safe.overallStatus,'FAIL');assert.ok(safe.phases[0].diagnostic.codes.includes('BROWSER_RENDERER_CRASH'));
+    assert.equal(JSON.stringify(safe).includes('PRIVATE'),false);
+  }
+  assert.equal(privateDiagnostics('Target.detachedFromTarget on normal cleanup',null).codes.includes('BROWSER_RENDERER_CRASH'),false);
+  assert.equal(privateDiagnostics('pw:protocol RECV {"id":1,"result":{"body":"Inspector.targetCrashed"}}',null).codes.includes('BROWSER_RENDERER_CRASH'),false);
+  for(const line of ['pw:protocol RECV {"id":1,"result":{"method":"Inspector.targetCrashed"}}',
+    'pw:protocol SEND {"method":"Inspector.targetCrashed"}',
+    'pw:protocol RECV {"id":1,"result":{"body":"pw:api Page crashed"}}',
+    'pw:protocol RECV {"id":1,"result":{"body":"pw:browser Received signal 11"}}',
+    'pw:protocol RECV {"id":1,"result":{"body":"\\\"method\\\":\\\"Inspector.targetCrashed\\\""}}'])
+    assert.equal(privateDiagnostics(line,null).codes.includes('BROWSER_RENDERER_CRASH'),false);
+});
+
 test('real unzip streams only owned failed trace JSONL and never extracts resource files', () => {
   const root=mkdtempSync(join(tmpdir(),'pos-trace-')), folder=join(root,'test-results','case');mkdirSync(folder,{recursive:true});
   const file=join(folder,'trace.zip'), source='src/app/App.tsx';

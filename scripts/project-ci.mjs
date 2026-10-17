@@ -200,11 +200,12 @@ export async function main() {
     await phase('smoke-discovery', process.execPath, ['node_modules/playwright/cli.js', 'test', '--list', '--reporter=json']);
     // Browser stderr remains in the bounded private capture. The public parser
     // exports only its existing finite failure codes, never the debug text.
-    env.DEBUG = 'pw:browser,pw:webserver';
+    env.DEBUG = 'pw:browser,pw:webserver,pw:protocol';
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke-preflight.json');
     await phase('smoke-preflight', process.execPath, ['node_modules/playwright/cli.js', 'test', 'tests/smoke/pos-cafe.spec.ts:119',
       '--project=desktop', '--workers=1', '--retries=0', '--forbid-only', '--trace=retain-on-failure', '--reporter=line,json,./scripts/project-ci-results.mjs'],
       () => smokePreflightCounts(json('smoke-preflight'), json('smoke-discovery')), 'smoke-preflight');
+    env.DEBUG = 'pw:browser,pw:webserver';
     env.PLAYWRIGHT_JSON_OUTPUT_NAME = join(task, 'smoke.json');
     await phase('smoke', process.execPath, ['node_modules/playwright/cli.js', 'test', '--workers=2', '--retries=0', '--forbid-only', '--reporter=line,json,./scripts/project-ci-results.mjs'],
       () => smokeCounts(json('smoke'), json('smoke-discovery'), JSON.parse(readFileSync(join(root, 'ci/smoke-applicability.json'), 'utf8'))), 'smoke');

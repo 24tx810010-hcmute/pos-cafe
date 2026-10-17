@@ -277,7 +277,7 @@ const DIAGNOSTIC_CODES = Object.freeze(['COMMAND_FAILED', 'VITEST_ASSERTION', 'V
   'BROWSER_CONTEXT', 'BROWSER_PAGE', 'PAGE_NAVIGATION', 'LOCATOR_ACTION', 'ASSERTION_VISIBLE', 'FIXTURE_SETUP', 'FIXTURE_TEARDOWN',
   'TRACE_UNAVAILABLE', 'JS_TYPE_ERROR', 'JS_REFERENCE_ERROR', 'JS_SYNTAX_ERROR', 'JS_RANGE_ERROR',
   'REACT_UPDATE_DEPTH', 'REACT_UNSTABLE_SNAPSHOT', 'JS_STACK_OVERFLOW', 'MODULE_EXPORT_MISSING', 'LOCATOR_NOT_FOUND', 'LOCATOR_HIDDEN',
-  'SELECTOR_STRICT', 'SELECTOR_INVALID', 'EXPECT_LOCATOR_REQUIRED', 'BROWSER_CLOSED', 'CONTEXT_DESTROYED', 'PROTOCOL_ERROR']);
+  'SELECTOR_STRICT', 'SELECTOR_INVALID', 'EXPECT_LOCATOR_REQUIRED', 'BROWSER_CLOSED', 'CONTEXT_DESTROYED', 'PROTOCOL_ERROR', 'BROWSER_RENDERER_CRASH']);
 export function guardFailureCode(error) {
   if (['RESOURCE_FREE_SPACE', 'RESOURCE_OWNED_CAP', 'RESOURCE_CGROUP_DRIFT', 'RESOURCE_CORE_LIMIT', 'RESOURCE_CORE_PATTERN', 'RESOURCE_HOST_GROWTH', 'SOURCE_DRIFT'].includes(error?.code)) return error.code;
   if (['ENOENT', 'ENOTDIR', 'EACCES'].includes(error?.code)) return `GUARD_IO_${error.code}`;
@@ -379,6 +379,7 @@ export function privateDiagnostics(output, report, expectedFiles = [], root = ''
     BROWSER_CLOSED: /Target page, context or browser has been closed|Target closed|Browser closed|Connection closed/i,
     CONTEXT_DESTROYED: /Execution context was destroyed|Cannot find context with specified id/i,
     PROTOCOL_ERROR: /Protocol error|Target crashed/i,
+    BROWSER_RENDERER_CRASH: /^[^\r\n{]*\bpw:protocol\b[^\r\n{]{0,64}\bRECV[^\r\n{]{0,16}\{\s*"method"\s*:\s*"Inspector\.targetCrashed"|^[^\r\n{]*\bpw:api\b[^\r\n]{0,160}Page crashed|^[^\r\n{]*\bpw:browser\b[^\r\n]{0,160}Received signal (?:6|11)\b/im,
     FIXTURE_SETUP: /while setting up \"[^\r\n\"]{1,100}\"/i,
     FIXTURE_TEARDOWN: /while tearing down \"[^\r\n\"]{1,100}\"/i })) {
     if (pattern.test(privateText)) codes.push(code);
